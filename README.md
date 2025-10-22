@@ -107,3 +107,4 @@ Desarrollado para empleados públicos de Catalunya
 ## 📄 Licencia
 
 Privado - Todos los derechos reservados
+# Test branch protection
