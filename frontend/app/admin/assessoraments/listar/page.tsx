@@ -1,18 +1,27 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+// import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { assessoramentsMock } from '@/data/assessoraments-mock';
 
+type AssessoramentWithStatus = typeof assessoramentsMock[0] & {
+  status?: 'publicat' | 'esborrany' | 'inactiu';
+};
+
 export default function ListarAssessoraments() {
-  const router = useRouter();
+  // const router = useRouter();
   const [assessoraments, setAssessoraments] = useState(assessoramentsMock);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [searchTerm, setSearchTerm] = useState('');
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [filterCategory, setFilterCategory] = useState('');
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [filterStatus, setFilterStatus] = useState('');
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const categories = ['legal', 'fiscal', 'salut', 'tecnologia', 'immobiliari'];
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const statuses = ['publicat', 'esborrany', 'inactiu'];
 
   // Filtrar assessoraments
@@ -20,7 +29,7 @@ export default function ListarAssessoraments() {
     const matchesSearch = item.titol.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           item.empresa.nom.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = !filterCategory || item.categoria === filterCategory;
-    const matchesStatus = !filterStatus || (item as any).status === filterStatus;
+    const matchesStatus = !filterStatus || (item as AssessoramentWithStatus).status === filterStatus;
 
     return matchesSearch && matchesCategory && matchesStatus;
   });
@@ -31,12 +40,13 @@ export default function ListarAssessoraments() {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleToggleStatus = (id: string) => {
     setAssessoraments(prev => prev.map(a => {
       if (a.id === id) {
         return {
           ...a,
-          status: (a as any).status === 'publicat' ? 'inactiu' : 'publicat'
+          status: (a as AssessoramentWithStatus).status === 'publicat' ? 'inactiu' : 'publicat'
         };
       }
       return a;
@@ -47,7 +57,7 @@ export default function ListarAssessoraments() {
     <div className="max-w-full">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Gestió d'Assessoraments</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Gestió d&apos;Assessoraments</h1>
         <Link
           href="/admin/assessoraments/crear"
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
@@ -57,7 +67,7 @@ export default function ListarAssessoraments() {
       </div>
 
 
-      {/* Taula d'assessoraments */}
+      {/* Taula d&apos;assessoraments */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
@@ -79,6 +89,7 @@ export default function ListarAssessoraments() {
             </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredAssessoraments.map((assessorament) => {
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
               const modalitatsActives = assessorament.modalitats
                 .filter(m => m.activa)
                 .map(m => {
@@ -118,13 +129,13 @@ export default function ListarAssessoraments() {
 
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 py-1 text-xs rounded-full ${
-                      (assessorament as any).status === 'publicat'
+                      (assessorament as AssessoramentWithStatus).status === 'publicat'
                         ? 'bg-green-100 text-green-800'
-                        : (assessorament as any).status === 'esborrany'
+                        : (assessorament as AssessoramentWithStatus).status === 'esborrany'
                         ? 'bg-yellow-100 text-yellow-800'
                         : 'bg-gray-100 text-gray-800'
                     }`}>
-                      {(assessorament as any).status === 'publicat' ? 'Publicat' : (assessorament as any).status === 'esborrany' ? 'Esborrany' : 'Inactiu'}
+                      {(assessorament as AssessoramentWithStatus).status === 'publicat' ? 'Publicat' : (assessorament as AssessoramentWithStatus).status === 'esborrany' ? 'Esborrany' : 'Inactiu'}
                     </span>
                   </td>
 
@@ -151,7 +162,7 @@ export default function ListarAssessoraments() {
 
         {filteredAssessoraments.length === 0 && (
           <div className="text-center py-8 text-gray-500">
-            No s'han trobat assessoraments
+            No s&apos;han trobat assessoraments
           </div>
         )}
       </div>

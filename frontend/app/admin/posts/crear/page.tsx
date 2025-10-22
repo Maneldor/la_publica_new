@@ -41,7 +41,7 @@ export default function CrearPostPage() {
         const error = await response.json();
         alert(error.message || 'Error al crear el post');
       }
-    } catch (err) {
+    } catch {
       alert('Error de conexión');
     } finally {
       setLoading(false);

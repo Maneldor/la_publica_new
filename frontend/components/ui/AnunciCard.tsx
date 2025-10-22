@@ -176,7 +176,7 @@ export function AnunciCard({ anunci, viewMode }: AnunciCardProps) {
               overflow: 'hidden',
               display: '-webkit-box',
               WebkitLineClamp: '2',
-              WebkitBoxOrient: 'vertical' as any,
+              WebkitBoxOrient: 'vertical' as const,
               textOverflow: 'ellipsis',
               wordBreak: 'break-word',
               maxHeight: '2.8em'
@@ -360,7 +360,7 @@ export function AnunciCard({ anunci, viewMode }: AnunciCardProps) {
           overflow: 'hidden',
           display: '-webkit-box',
           WebkitLineClamp: '2',
-          WebkitBoxOrient: 'vertical' as any,
+          WebkitBoxOrient: 'vertical' as const,
           textOverflow: 'ellipsis',
           wordBreak: 'break-word',
           maxHeight: '2.6em'
@@ -388,7 +388,7 @@ export function AnunciCard({ anunci, viewMode }: AnunciCardProps) {
           overflow: 'hidden',
           display: '-webkit-box',
           WebkitLineClamp: '2',
-          WebkitBoxOrient: 'vertical' as any,
+          WebkitBoxOrient: 'vertical' as const,
           textOverflow: 'ellipsis',
           wordBreak: 'break-word',
           maxHeight: '2.8em'

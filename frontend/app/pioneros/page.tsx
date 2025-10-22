@@ -196,7 +196,7 @@ export default function PionerosPage() {
               <ul className="space-y-3 text-gray-700">
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2">✓</span>
-                  <span>Selecció acurada d'empreses compromeses</span>
+                  <span>Selecció acurada d&apos;empreses compromeses</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2">✓</span>
@@ -255,7 +255,7 @@ export default function PionerosPage() {
                   </li>
                   <li className="flex items-start">
                     <span className="text-green-600 mr-2 mt-1">•</span>
-                    <span>Badge 'Empresa Pionera'</span>
+                    <span>Badge &apos;Empresa Pionera&apos;</span>
                   </li>
                   <li className="flex items-start">
                     <span className="text-green-600 mr-2 mt-1">•</span>
@@ -378,7 +378,7 @@ export default function PionerosPage() {
 
             <div className="bg-blue-50 p-6 rounded-2xl border-2 border-blue-200">
               <h3 className="text-xl font-bold text-blue-800 mb-2">✍️ FASE 2: Contracte anual amb 50% dto</h3>
-              <p className="text-blue-700">Si t'agrada, signes contracte anual<br/>
+              <p className="text-blue-700">Si t&apos;agrada, signes contracte anual<br/>
               Pla Estàndard: 300€/any (vs 600€)</p>
             </div>
 
@@ -441,7 +441,7 @@ export default function PionerosPage() {
               </div>
 
               <div className="bg-blue-100 p-3 rounded-lg mb-4">
-                <div className="text-sm font-semibold text-blue-800 mb-2">Inclou tot l'anterior més:</div>
+                <div className="text-sm font-semibold text-blue-800 mb-2">Inclou tot l&apos;anterior més:</div>
                 <ul className="text-xs text-blue-700 space-y-1">
                   <li>+ Acompanyament IA</li>
                   <li>+ Informes mensuals</li>
@@ -471,7 +471,7 @@ export default function PionerosPage() {
               </div>
 
               <div className="bg-purple-100 p-3 rounded-lg mb-4">
-                <div className="text-sm font-semibold text-purple-800 mb-2">Inclou tot l'anterior més:</div>
+                <div className="text-sm font-semibold text-purple-800 mb-2">Inclou tot l&apos;anterior més:</div>
                 <ul className="text-xs text-purple-700 space-y-1">
                   <li>+ Integració marca</li>
                   <li>+ Gestor dedicat</li>

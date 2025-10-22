@@ -321,7 +321,7 @@ export function BasicCursSingle({ course }: BasicCursSingleProps) {
                 {course.hasInstructor && (
                   <div className="flex items-center gap-2">
                     <span className="text-green-600">✓</span>
-                    <span>Suport de l'instructor</span>
+                    <span>Suport de l&apos;instructor</span>
                   </div>
                 )}
                 <div className="flex items-center gap-2">

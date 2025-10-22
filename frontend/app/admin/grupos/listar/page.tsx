@@ -49,7 +49,7 @@ export default function ListarGruposPage() {
         setError('Error al cargar los grupos');
         setGroups([]);
       }
-    } catch (err) {
+    } catch {
       console.error('Error:', err);
       setError('Error de conexión');
       setGroups([]);
@@ -75,7 +75,7 @@ export default function ListarGruposPage() {
       } else {
         alert('Error al eliminar el grupo');
       }
-    } catch (err) {
+    } catch {
       alert('Error de conexión');
     }
   };

@@ -3,6 +3,12 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
+interface Member {
+  id: number;
+  name: string;
+  avatar: string;
+}
+
 export function MembresOnlineCard() {
   const router = useRouter();
 
@@ -27,7 +33,7 @@ export function MembresOnlineCard() {
     { id: 10, name: 'Francesc Pons', avatar: '/avatar6.jpg' },
   ];
 
-  const renderMemberItem = (member: any) => (
+  const renderMemberItem = (member: Member) => (
     <div
       key={member.id}
       style={{

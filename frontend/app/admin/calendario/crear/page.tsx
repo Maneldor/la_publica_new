@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { CalendarEvent } from '@/lib/types/calendar';
+import { EventCategory, TenantType, UserRole, EventVisibility } from '@/lib/types/calendar';
 import { useCalendar } from '@/lib/hooks/useCalendar';
 
 interface EventFormData {
@@ -95,8 +95,8 @@ export default function CalendarioCrearPage() {
       // Preparar datos del evento usando el formato de CalendarEvent
       const eventData = {
         titol: formData.titol,
-        categoria: formData.categoria as any,
-        tenantType: formData.tenantType as any,
+        categoria: formData.categoria as EventCategory,
+        tenantType: formData.tenantType as TenantType,
         dataInici: `${formData.dataInici}T${formData.horaInici || '00:00'}:00`,
         dataFi: `${formData.dataFi}T${formData.horaFi || '23:59'}:00`,
         totElDia: formData.totElDia,
@@ -114,8 +114,8 @@ export default function CalendarioCrearPage() {
         // Campos multi-tenant
         tenantId: formData.tenantId,
         createdBy: formData.createdBy,
-        createdByRole: formData.createdByRole as any,
-        visibility: formData.visibility as any,
+        createdByRole: formData.createdByRole as UserRole,
+        visibility: formData.visibility as EventVisibility,
         canEdit: [formData.createdBy],
         canDelete: [formData.createdBy]
       };

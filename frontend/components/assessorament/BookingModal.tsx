@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Building2, Video, Phone, Mail, Calendar, Clock, AlertCircle } from 'lucide-react';
+import { X, Building2, Video, Phone, Mail, AlertCircle } from 'lucide-react';
+// Unused: Calendar, Clock
 
 interface Modalitat {
   tipus: 'presencial' | 'online' | 'telefonica' | 'email';
@@ -149,9 +150,9 @@ export default function BookingModal({ assessorament, isOpen, onClose }: Booking
             <p style={{ fontWeight: '600', marginBottom: '12px' }}>Què passa ara:</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '14px', color: '#6b7280' }}>
               <span>1️⃣ Rebràs un email de confirmació en 24h</span>
-              <span>2️⃣ L'empresa confirmarà data i hora</span>
+              <span>2️⃣ L&apos;empresa confirmarà data i hora</span>
               <span>3️⃣ Rebràs les instruccions (adreça o link Zoom)</span>
-              <span>4️⃣ El dia de la consulta, l'expert t'atendrà</span>
+              <span>4️⃣ El dia de la consulta, l&apos;expert t&apos;atendrà</span>
             </div>
           </div>
 
@@ -548,7 +549,7 @@ export default function BookingModal({ assessorament, isOpen, onClose }: Booking
               </label>
               <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '14px' }}>
                 <input type="checkbox" required style={{ marginTop: '2px' }} />
-                <span>Accepto compartir les meves dades amb l'empresa per a la consulta</span>
+                <span>Accepto compartir les meves dades amb l&apos;empresa per a la consulta</span>
               </label>
               <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '14px' }}>
                 <input type="checkbox" required style={{ marginTop: '2px' }} />
@@ -603,7 +604,7 @@ export default function BookingModal({ assessorament, isOpen, onClose }: Booking
           }}>
             <AlertCircle style={{ width: '16px', height: '16px', color: '#3b82f6', marginTop: '2px' }} />
             <p style={{ fontSize: '12px', color: '#1e40af', margin: 0 }}>
-              Rebràs confirmació per email en menys de 24h. L'empresa es posarà en contacte amb tu per confirmar els detalls.
+              Rebràs confirmació per email en menys de 24h. L&apos;empresa es posarà en contacte amb tu per confirmar els detalls.
             </p>
           </div>
         </form>

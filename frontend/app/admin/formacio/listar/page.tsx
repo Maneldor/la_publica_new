@@ -171,7 +171,7 @@ const EditCourseModal = ({ course, onClose, onSave }: { course: Course; onClose:
       onSave(formData);
       onClose();
       alert('Curs actualitzat correctament');
-    } catch (err) {
+    } catch {
       console.error('Error updating course:', err);
       alert('Error al actualitzar el curs');
     } finally {
@@ -208,7 +208,7 @@ const EditCourseModal = ({ course, onClose, onSave }: { course: Course; onClose:
     try {
       const imageUrl = await uploadImage(file);
       setFormData({...formData, coverImage: imageUrl});
-    } catch (err) {
+    } catch {
       console.error('Error uploading image:', err);
       alert('Error al pujar la imatge');
     } finally {
@@ -313,7 +313,7 @@ const EditCourseModal = ({ course, onClose, onSave }: { course: Course; onClose:
 
       const uploadedFiles = await Promise.all(uploadPromises);
       setMaterialFiles(prev => [...prev, ...uploadedFiles]);
-    } catch (err) {
+    } catch {
       console.error('Error uploading materials:', err);
       alert('Error al pujar els arxius');
     } finally {
@@ -964,7 +964,7 @@ export default function ListarCursosPage() {
       });
       setCourses(response.data);
       setError('');
-    } catch (err) {
+    } catch {
       console.error('Error loading courses:', err);
       setError('Error al cargar los cursos');
       const sampleCourse = {
@@ -1068,7 +1068,7 @@ export default function ListarCursosPage() {
         return course;
       });
       setCourses(updatedCourses);
-    } catch (err) {
+    } catch {
       console.error('Error updating course status:', err);
       alert('Error al actualitzar l\'estat del curs');
     }
@@ -1086,7 +1086,7 @@ export default function ListarCursosPage() {
         return course;
       });
       setCourses(updatedCourses);
-    } catch (err) {
+    } catch {
       console.error('Error updating course highlight:', err);
       alert('Error al actualitzar el destacat del curs');
     }
@@ -1106,7 +1106,7 @@ export default function ListarCursosPage() {
         });
         setCourses(updatedCourses);
         alert('Curs arxivat correctament');
-      } catch (err) {
+      } catch {
         console.error('Error archiving course:', err);
         alert('Error al arxivar el curs');
       }
@@ -1119,7 +1119,7 @@ export default function ListarCursosPage() {
         const updatedCourses = courses.filter(c => c.id !== id);
         setCourses(updatedCourses);
         alert('Curs eliminat correctament');
-      } catch (err) {
+      } catch {
         console.error('Error deleting course:', err);
         alert('Error al eliminar el curs');
       }

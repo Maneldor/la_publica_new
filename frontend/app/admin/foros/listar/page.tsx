@@ -50,7 +50,7 @@ export default function ListarForosPage() {
         setError('Error al cargar los foros');
         setForums([]);
       }
-    } catch (err) {
+    } catch {
       console.error('Error:', err);
       setError('Error de conexión');
       setForums([]);
@@ -76,7 +76,7 @@ export default function ListarForosPage() {
       } else {
         alert('Error al eliminar el foro');
       }
-    } catch (err) {
+    } catch {
       alert('Error de conexión');
     }
   };

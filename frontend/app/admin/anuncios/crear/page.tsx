@@ -41,7 +41,7 @@ export default function CrearAnuncioPage() {
         const error = await response.json();
         alert(error.message || 'Error al crear el anuncio');
       }
-    } catch (err) {
+    } catch {
       alert('Error de conexión');
     } finally {
       setLoading(false);

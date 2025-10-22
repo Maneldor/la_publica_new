@@ -50,8 +50,8 @@ export default function ListarBlogPage() {
         setError('Error al cargar los posts');
         setPosts([]);
       }
-    } catch (err) {
-      console.error('Error:', err);
+    } catch {
+      console.error('Error de conexión');
       setError('Error de conexión');
       setPosts([]);
     } finally {
@@ -76,7 +76,7 @@ export default function ListarBlogPage() {
       } else {
         alert('Error al eliminar el post');
       }
-    } catch (err) {
+    } catch {
       alert('Error de conexión');
     }
   };

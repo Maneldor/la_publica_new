@@ -44,7 +44,7 @@ export default function ListarPostsPage() {
         setError('Error al cargar los posts');
         setPosts([]);
       }
-    } catch (err) {
+    } catch {
       setError('Error de conexión');
       setPosts([]);
     } finally {
@@ -69,7 +69,7 @@ export default function ListarPostsPage() {
       } else {
         alert('Error al eliminar el post');
       }
-    } catch (err) {
+    } catch {
       alert('Error de conexión');
     }
   };

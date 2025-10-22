@@ -70,7 +70,7 @@ export default function CrearUsuarioPage() {
           setCustomFields(result.data);
         }
       }
-    } catch (err) {
+    } catch {
       console.error('Error loading custom fields:', err);
     }
   };
@@ -121,7 +121,7 @@ export default function CrearUsuarioPage() {
         const error = await response.json();
         alert(error.message || 'Error al crear el usuario');
       }
-    } catch (err) {
+    } catch {
       alert('Error de conexión');
     } finally {
       setLoading(false);

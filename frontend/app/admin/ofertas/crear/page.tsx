@@ -92,7 +92,7 @@ export default function CrearOfertaPage() {
         console.error('Error al cargar empresas');
         setCompanies([]);
       }
-    } catch (err) {
+    } catch {
       console.error('Error de conexión:', err);
       setCompanies([]);
     }
@@ -195,7 +195,7 @@ export default function CrearOfertaPage() {
         const error = await response.json();
         alert(error.message || 'Error al crear la oferta');
       }
-    } catch (err) {
+    } catch {
       alert('Error de conexión');
     } finally {
       setLoading(false);

@@ -74,7 +74,7 @@ export default function CrearGrupoPage() {
         const error = await response.json();
         alert(error.message || 'Error al crear el grupo');
       }
-    } catch (err) {
+    } catch {
       alert('Error de conexión');
     } finally {
       setLoading(false);

@@ -2,9 +2,17 @@
 
 import { useState } from 'react';
 
+interface CourseFilters {
+  category: string;
+  level: string;
+  mode: string;
+  duration: string;
+  price: string;
+}
+
 interface CourseSearchFiltersProps {
   onSearch: (searchTerm: string) => void;
-  onFilterChange: (filters: any) => void;
+  onFilterChange: (filters: CourseFilters) => void;
   totalResults: number;
   availableCategories: string[];
 }

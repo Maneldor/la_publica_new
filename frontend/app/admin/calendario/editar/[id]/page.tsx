@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { CalendarEvent } from '@/lib/types/calendar';
+import { CalendarEvent, EventCategory, TenantType, EventVisibility } from '@/lib/types/calendar';
 import { useCalendar } from '@/lib/hooks/useCalendar';
 
 interface EventFormData {
@@ -155,8 +155,8 @@ export default function CalendarioEditarPage() {
       // Preparar actualizaciones usando solo los campos que han cambiado
       const updates = {
         titol: formData.titol,
-        categoria: formData.categoria as any,
-        tenantType: formData.tenantType as any,
+        categoria: formData.categoria as EventCategory,
+        tenantType: formData.tenantType as TenantType,
         dataInici: `${formData.dataInici}T${formData.horaInici || '00:00'}:00`,
         dataFi: `${formData.dataFi}T${formData.horaFi || '23:59'}:00`,
         totElDia: formData.totElDia,
@@ -173,7 +173,7 @@ export default function CalendarioEditarPage() {
         objectius: formData.objectius,
         // Campos multi-tenant
         tenantId: formData.tenantId,
-        visibility: formData.visibility as any
+        visibility: formData.visibility as EventVisibility
       };
 
       // Usar el hook para actualizar el evento

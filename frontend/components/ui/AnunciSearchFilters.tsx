@@ -2,9 +2,18 @@
 
 import { useState } from 'react';
 
+interface AnunciFilters {
+  category: string;
+  type: string;
+  priceMin: string;
+  priceMax: string;
+  province: string;
+  condition: string;
+}
+
 interface AnunciSearchFiltersProps {
   onSearch: (searchTerm: string) => void;
-  onFilterChange: (filters: any) => void;
+  onFilterChange: (filters: AnunciFilters) => void;
   totalResults: number;
 }
 
@@ -149,7 +158,7 @@ export function AnunciSearchFilters({ onSearch, onFilterChange, totalResults }: 
                 color: '#374151',
                 marginBottom: '6px'
               }}>
-                Tipus d'anunci
+                Tipus d&apos;anunci
               </label>
               <select
                 value={filters.type}

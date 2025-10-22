@@ -62,7 +62,7 @@ export default function ListarUsuariosPage() {
       } else {
         setError('Error al cargar los usuarios');
       }
-    } catch (err) {
+    } catch {
       setError('Error de conexión');
     } finally {
       setLoading(false);
@@ -89,7 +89,7 @@ export default function ListarUsuariosPage() {
       } else {
         alert('Error al cambiar el estado del usuario');
       }
-    } catch (err) {
+    } catch {
       alert('Error de conexión');
     }
   };
@@ -114,7 +114,7 @@ export default function ListarUsuariosPage() {
       } else {
         alert('Error al eliminar el usuario');
       }
-    } catch (err) {
+    } catch {
       alert('Error de conexión');
     }
   };

@@ -3,7 +3,7 @@
 import { useInfinitePosts, usePrefetchPost, useLikePost } from '@/lib/hooks/useContent';
 import { PostsSkeletonList } from '@/components/skeletons/PostSkeleton';
 import { useEffect, useRef, useState } from 'react';
-import Image from 'next/image';
+// import Image from 'next/image'; // Unused
 
 export default function InfinitePostsFeed() {
   const {

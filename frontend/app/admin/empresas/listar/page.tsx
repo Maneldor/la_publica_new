@@ -49,7 +49,7 @@ export default function ListarEmpresasPage() {
         setError('Error al cargar las empresas');
         setCompanies([]);
       }
-    } catch (err) {
+    } catch {
       console.error('Error:', err);
       setError('Error de conexión');
       setCompanies([]);
@@ -75,7 +75,7 @@ export default function ListarEmpresasPage() {
       } else {
         alert('Error al eliminar la empresa');
       }
-    } catch (err) {
+    } catch {
       alert('Error de conexión');
     }
   };

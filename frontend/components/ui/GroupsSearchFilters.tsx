@@ -2,9 +2,16 @@
 
 import { useState } from 'react';
 
+interface GroupFilters {
+  category: string;
+  privacy: string;
+  members: string;
+  activity: string;
+}
+
 interface GroupsSearchFiltersProps {
   onSearch: (searchTerm: string) => void;
-  onFilterChange: (filters: any) => void;
+  onFilterChange: (filters: GroupFilters) => void;
   totalResults: number;
 }
 

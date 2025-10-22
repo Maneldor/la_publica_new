@@ -6,7 +6,7 @@ import Link from 'next/link';
 
 // Tipos para el sistema modular de cursos
 type CourseType = 'micro' | 'basic' | 'complet' | 'premium';
-type ContentType = 'ai' | 'manual';
+// type ContentType = 'ai' | 'manual'; // Unused
 type InstructorType = 'none' | 'existing' | 'new';
 type PricingType = 'gratuit' | 'pagament';
 type ModalityType = 'online' | 'presencial' | 'hibrid';
@@ -38,7 +38,7 @@ interface CourseFormData {
   // Step 4: Instructor
   hasInstructor: boolean;
   instructorType: InstructorType;
-  selectedInstructor: any;
+  selectedInstructor: any | null;
 
   // Step 5: Precios y modalidad
   pricingType: PricingType;
@@ -95,7 +95,7 @@ export default function CrearCursoPage() {
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [aiGenerating, setAiGenerating] = useState(false);
-  const [aiGeneratedContent, setAiGeneratedContent] = useState<any>(null);
+  const [aiGeneratedContent, setAiGeneratedContent] = useState<{lessons: any[], totalDuration: number} | null>(null);
 
   const [formData, setFormData] = useState<CourseFormData>({
     // Step 1: Tipo de curso
@@ -841,7 +841,7 @@ export default function CrearCursoPage() {
             <h4 className="font-medium text-gray-900 mb-3">VISTA PRÈVIA DEL CONTINGUT GENERAT:</h4>
 
             <div className="space-y-2">
-              {aiGeneratedContent.lessons.map((lesson: any, index: number) => (
+              {aiGeneratedContent.lessons.map((lesson: {id: string, title: string, duration: number, type: string}, index: number) => (
                 <div key={lesson.id} className="flex items-center justify-between p-2 bg-white rounded border">
                   <div>
                     <span className="text-green-600 mr-2">✓</span>
@@ -906,7 +906,7 @@ export default function CrearCursoPage() {
             ? {
                 ...module,
                 lessons: module.lessons.map(lesson =>
-                  lesson.id === lessonId ? { ...lesson, type: type as any } : lesson
+                  lesson.id === lessonId ? { ...lesson, type: type as 'video' | 'text' | 'quiz' | 'exercise' } : lesson
                 )
               }
             : module
@@ -1350,7 +1350,7 @@ export default function CrearCursoPage() {
                 <div className="space-y-3">
                   <h4 className="font-medium text-gray-700">Instructors disponibles:</h4>
                   {filteredInstructors.length === 0 ? (
-                    <p className="text-gray-500 text-center py-4">No s'han trobat instructors amb aquest criteri</p>
+                    <p className="text-gray-500 text-center py-4">No s&apos;han trobat instructors amb aquest criteri</p>
                   ) : (
                     <div className="space-y-2">
                       {filteredInstructors.map((instructor) => (
@@ -1917,7 +1917,7 @@ export default function CrearCursoPage() {
                 name="publishType"
                 value="immediate"
                 checked={formData.publishType === 'immediate'}
-                onChange={(e) => setFormData({...formData, publishType: e.target.value as any})}
+                onChange={(e) => setFormData({...formData, publishType: e.target.value as 'immediate' | 'scheduled' | 'draft'})}
                 className="mr-2"
               />
               Publicar immediatament
@@ -1928,7 +1928,7 @@ export default function CrearCursoPage() {
                 name="publishType"
                 value="scheduled"
                 checked={formData.publishType === 'scheduled'}
-                onChange={(e) => setFormData({...formData, publishType: e.target.value as any})}
+                onChange={(e) => setFormData({...formData, publishType: e.target.value as 'immediate' | 'scheduled' | 'draft'})}
                 className="mr-2"
               />
               Programar publicació
@@ -1949,7 +1949,7 @@ export default function CrearCursoPage() {
                 name="publishType"
                 value="draft"
                 checked={formData.publishType === 'draft'}
-                onChange={(e) => setFormData({...formData, publishType: e.target.value as any})}
+                onChange={(e) => setFormData({...formData, publishType: e.target.value as 'immediate' | 'scheduled' | 'draft'})}
                 className="mr-2"
               />
               Desar com esborrany
@@ -1969,7 +1969,7 @@ export default function CrearCursoPage() {
                 name="visibility"
                 value="public"
                 checked={formData.visibility === 'public'}
-                onChange={(e) => setFormData({...formData, visibility: e.target.value as any})}
+                onChange={(e) => setFormData({...formData, visibility: e.target.value as 'public' | 'members' | 'private'})}
                 className="mr-2"
               />
               Públic (visible per tothom)
@@ -1980,7 +1980,7 @@ export default function CrearCursoPage() {
                 name="visibility"
                 value="members"
                 checked={formData.visibility === 'members'}
-                onChange={(e) => setFormData({...formData, visibility: e.target.value as any})}
+                onChange={(e) => setFormData({...formData, visibility: e.target.value as 'public' | 'members' | 'private'})}
                 className="mr-2"
               />
               Només membres verificats
@@ -1991,7 +1991,7 @@ export default function CrearCursoPage() {
                 name="visibility"
                 value="private"
                 checked={formData.visibility === 'private'}
-                onChange={(e) => setFormData({...formData, visibility: e.target.value as any})}
+                onChange={(e) => setFormData({...formData, visibility: e.target.value as 'public' | 'members' | 'private'})}
                 className="mr-2"
               />
               Privat (només amb link)

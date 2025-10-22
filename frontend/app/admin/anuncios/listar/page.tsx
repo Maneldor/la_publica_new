@@ -50,8 +50,8 @@ export default function ListarAnunciosPage() {
         setError('Error al cargar los anuncios');
         setAnnouncements([]);
       }
-    } catch (err) {
-      console.error('Error:', err);
+    } catch {
+      console.error('Error de conexión');
       setError('Error de conexión');
       setAnnouncements([]);
     } finally {
@@ -76,7 +76,7 @@ export default function ListarAnunciosPage() {
       } else {
         alert('Error al eliminar el anuncio');
       }
-    } catch (err) {
+    } catch {
       alert('Error de conexión');
     }
   };

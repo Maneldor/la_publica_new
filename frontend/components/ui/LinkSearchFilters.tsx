@@ -2,9 +2,14 @@
 
 import { useState } from 'react';
 
+interface LinkFilters {
+  category: string;
+  type: string;
+}
+
 interface LinkSearchFiltersProps {
   onSearch: (searchTerm: string) => void;
-  onFilterChange: (filters: any) => void;
+  onFilterChange: (filters: LinkFilters) => void;
   totalResults: number;
   availableCategories: string[];
 }
@@ -181,7 +186,7 @@ export function LinkSearchFilters({ onSearch, onFilterChange, totalResults, avai
                 color: '#374151',
                 marginBottom: '6px'
               }}>
-                Tipus d'Entitat
+                Tipus d&apos;Entitat
               </label>
               <select
                 value={filters.type}

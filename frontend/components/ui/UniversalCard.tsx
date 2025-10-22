@@ -141,7 +141,7 @@ export function UniversalCard({
 
     const height = topZone.height || (variant === 'compact' ? 40 : 120);
 
-    const backgroundStyle: any = {};
+    const backgroundStyle: React.CSSProperties = {};
     let content = null;
 
     // Configurar el fondo según el tipo

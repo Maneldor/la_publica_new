@@ -2,9 +2,16 @@
 
 import { useState } from 'react';
 
+interface MemberFilters {
+  department: string;
+  location: string;
+  role: string;
+  status: string;
+}
+
 interface MembersSearchFiltersProps {
   onSearch: (searchTerm: string) => void;
-  onFilterChange: (filters: any) => void;
+  onFilterChange: (filters: MemberFilters) => void;
   totalResults: number;
 }
 

@@ -78,7 +78,7 @@ export default function CrearEmpresaPage() {
         const error = await response.json();
         alert(error.message || 'Error al crear la empresa');
       }
-    } catch (err) {
+    } catch {
       alert('Error de conexión');
     } finally {
       setLoading(false);

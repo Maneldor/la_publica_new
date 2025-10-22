@@ -49,7 +49,7 @@ export function CourseCard({ course, viewMode }: CourseCardProps) {
 
   const handleEnroll = (e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log('Inscriure\'s a:', course.title);
+    console.log('Inscriure&apos;s a:', course.title);
   };
 
   const getModeIcon = () => {
@@ -247,7 +247,7 @@ export function CourseCard({ course, viewMode }: CourseCardProps) {
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3b82f6'}
             >
-              Inscriure's
+              Inscriure&apos;s
             </button>
           </div>
         </div>
@@ -433,7 +433,7 @@ export function CourseCard({ course, viewMode }: CourseCardProps) {
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3b82f6'}
           >
-            Inscriure's
+            Inscriure&apos;s
           </button>
         </div>
       </div>

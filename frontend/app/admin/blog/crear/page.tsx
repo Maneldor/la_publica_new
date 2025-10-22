@@ -73,6 +73,7 @@ export default function CrearBlogPage() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [customTag, setCustomTag] = useState('');
   const [featuredImage, setFeaturedImage] = useState('');
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -104,7 +105,7 @@ export default function CrearBlogPage() {
       } else {
         alert('Error al subir la imagen');
       }
-    } catch (err) {
+    } catch {
       alert('Error de conexión');
     } finally {
       setUploadingImage(false);
@@ -164,7 +165,7 @@ export default function CrearBlogPage() {
         const error = await response.json();
         alert(error.error || 'Error al generar el contenido');
       }
-    } catch (err) {
+    } catch {
       alert('Error de conexión con el servicio de IA');
     } finally {
       setGenerating(false);
@@ -187,8 +188,8 @@ export default function CrearBlogPage() {
         const data = await response.json();
         setImages(data.data);
       }
-    } catch (err) {
-      console.error('Error buscando imágenes:', err);
+    } catch {
+      console.error('Error buscando imágenes');
     }
   };
 
@@ -214,8 +215,8 @@ export default function CrearBlogPage() {
         return validation;
       }
       return { isValid: true }; // Si falla la validación, permitir continuar
-    } catch (err) {
-      console.error('Error validando contenido:', err);
+    } catch {
+      console.error('Error validando contenido');
       return { isValid: true }; // Si falla la validación, permitir continuar
     }
   };
@@ -297,7 +298,7 @@ export default function CrearBlogPage() {
         const error = await response.json();
         alert(error.message || 'Error al publicar el post');
       }
-    } catch (err) {
+    } catch {
       alert('Error de conexión');
     } finally {
       setLoading(false);
@@ -547,7 +548,7 @@ export default function CrearBlogPage() {
               <label className="block text-sm font-medium text-gray-700 mb-2">Tono</label>
               <select
                 value={tone}
-                onChange={(e) => setTone(e.target.value as any)}
+                onChange={(e) => setTone(e.target.value as 'professional' | 'casual' | 'informative')}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg"
               >
                 <option value="professional">Profesional</option>
@@ -560,7 +561,7 @@ export default function CrearBlogPage() {
               <label className="block text-sm font-medium text-gray-700 mb-2">Longitud</label>
               <select
                 value={length}
-                onChange={(e) => setLength(e.target.value as any)}
+                onChange={(e) => setLength(e.target.value as 'short' | 'medium' | 'long')}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg"
               >
                 <option value="short">Corto (300-500 palabras)</option>

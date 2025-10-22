@@ -217,7 +217,7 @@ export default function FormacioPage() {
         //   limit: 100
         // });
         // setCourses(response.data);
-      } catch (err) {
+      } catch {
         console.error('Error loading courses:', err);
         setError('Error al cargar los cursos');
         // Fallback a datos mock si hay error

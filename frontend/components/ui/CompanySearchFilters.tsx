@@ -2,9 +2,16 @@
 
 import { useState } from 'react';
 
+interface CompanyFilters {
+  sector: string;
+  location: string;
+  collaborationType: string;
+  status: string;
+}
+
 interface CompanySearchFiltersProps {
   onSearch: (searchTerm: string) => void;
-  onFilterChange: (filters: any) => void;
+  onFilterChange: (filters: CompanyFilters) => void;
   totalResults: number;
   availableCategories: string[];
 }

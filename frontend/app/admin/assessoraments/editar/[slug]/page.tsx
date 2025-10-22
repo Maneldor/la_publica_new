@@ -40,7 +40,7 @@ export default function EditarAssessoramentPage() {
   const router = useRouter();
   const params = useParams();
   const [loading, setLoading] = useState(false);
-  const [assessorament, setAssessorament] = useState<any>(null);
+  const [assessorament, setAssessorament] = useState<typeof assessoramentsMock[0] | null>(null);
 
   const [formData, setFormData] = useState({
     titol: '',
@@ -89,7 +89,7 @@ export default function EditarAssessoramentPage() {
         metodologia: currentAssessorament.metodologia || '',
         recursos_necessaris: currentAssessorament.recursos_necessaris || '',
         resultats_esperats: currentAssessorament.resultats_esperats || '',
-        status: (currentAssessorament as any).status || 'publicat'
+        status: (currentAssessorament as any).status as 'esborrany' | 'publicat' | 'inactiu' || 'publicat'
       });
 
       // Cargar modalitats
@@ -118,7 +118,7 @@ export default function EditarAssessoramentPage() {
     );
   };
 
-  const handleModalityConfigChange = (tipus: string, field: string, value: any) => {
+  const handleModalityConfigChange = (tipus: string, field: string, value: string | number) => {
     setModalitats(prev =>
       prev.map(m =>
         m.tipus === tipus
@@ -193,9 +193,9 @@ export default function EditarAssessoramentPage() {
         router.push('/admin/assessoraments/listar');
       } else {
         const error = await response.json();
-        alert(error.message || 'Error al actualitzar l\'assessorament');
+        alert(error.message || 'Error al actualitzar l&apos;assessorament');
       }
-    } catch (err) {
+    } catch {
       alert('Error de connexió');
     } finally {
       setLoading(false);
@@ -229,7 +229,7 @@ export default function EditarAssessoramentPage() {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Títol de l'Assessorament *
+                Títol de l&apos;Assessorament *
               </label>
               <input
                 type="text"
@@ -281,7 +281,7 @@ export default function EditarAssessoramentPage() {
                 onChange={(e) => setFormData({ ...formData, descripcio: e.target.value })}
                 rows={4}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Descripció detallada de l'assessorament..."
+                placeholder="Descripció detallada de l&apos;assessorament..."
               />
             </div>
 
@@ -291,7 +291,7 @@ export default function EditarAssessoramentPage() {
               </label>
               <select
                 value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value as 'esborrany' | 'publicat' | 'inactiu' })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="esborrany">Esborrany</option>
@@ -304,13 +304,13 @@ export default function EditarAssessoramentPage() {
 
         {/* Expert Information */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Informació de l'Expert</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Informació de l&apos;Expert</h2>
 
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nom de l'Expert *
+                  Nom de l&apos;Expert *
                 </label>
                 <input
                   type="text"
@@ -347,7 +347,7 @@ export default function EditarAssessoramentPage() {
                 value={formData.expert_experiencia}
                 onChange={(e) => setFormData({ ...formData, expert_experiencia: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="15 anys d'experiència en contractació pública"
+                placeholder="15 anys d&apos;experiència en contractació pública"
               />
             </div>
 
@@ -360,7 +360,7 @@ export default function EditarAssessoramentPage() {
                 onChange={(e) => setFormData({ ...formData, expert_bio: e.target.value })}
                 rows={3}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Biografia professional de l'expert..."
+                placeholder="Biografia professional de l&apos;expert..."
               />
             </div>
 
@@ -500,7 +500,7 @@ export default function EditarAssessoramentPage() {
                 onChange={(e) => setFormData({ ...formData, metodologia: e.target.value })}
                 rows={3}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Explica com es desenvoluparà l'assessorament..."
+                placeholder="Explica com es desenvoluparà l&apos;assessorament..."
               />
             </div>
 
@@ -513,7 +513,7 @@ export default function EditarAssessoramentPage() {
                 onChange={(e) => setFormData({ ...formData, recursos_necessaris: e.target.value })}
                 rows={3}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Documentació o materials que ha d'aportar l'usuari..."
+                placeholder="Documentació o materials que ha d&apos;aportar l&apos;usuari..."
               />
             </div>
 
@@ -526,7 +526,7 @@ export default function EditarAssessoramentPage() {
                 onChange={(e) => setFormData({ ...formData, resultats_esperats: e.target.value })}
                 rows={3}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Què obtindrà l'usuari després de l'assessorament..."
+                placeholder="Què obtindrà l&apos;usuari després de l&apos;assessorament..."
               />
             </div>
           </div>
@@ -558,7 +558,7 @@ export default function EditarAssessoramentPage() {
             <div className="bg-gray-50 p-4 rounded-lg">
               <p className="text-sm text-gray-600">Conversió</p>
               <p className="text-2xl font-bold text-purple-600">{assessorament.stats?.ratio_conversio || 0}%</p>
-              <p className="text-xs text-gray-500">taxa d'èxit</p>
+              <p className="text-xs text-gray-500">taxa d&apos;èxit</p>
             </div>
           </div>
         </div>

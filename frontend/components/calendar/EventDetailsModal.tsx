@@ -172,7 +172,7 @@ export function EventDetailsModal({ event, onClose }: EventDetailsModalProps) {
           ) : (
             <div className="flex gap-3">
               <button className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors">
-                🎯 Inscriure'm
+                🎯 Inscriure&apos;m
               </button>
               <button className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
                 ❤️ Guardar

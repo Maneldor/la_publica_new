@@ -2,9 +2,16 @@
 
 import { useState } from 'react';
 
+interface ForumFilters {
+  category: string;
+  tags: string;
+  author: string;
+  hasAttachments: boolean;
+}
+
 interface ForumSearchFiltersProps {
   onSearch: (searchTerm: string) => void;
-  onFilterChange: (filters: any) => void;
+  onFilterChange: (filters: ForumFilters) => void;
   totalResults: number;
 }
 

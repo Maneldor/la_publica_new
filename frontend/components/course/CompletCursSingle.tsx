@@ -331,7 +331,7 @@ export function CompletCursSingle({ course }: CompletCursSingleProps) {
                       <span>{course.instructor.courses} cursos</span>
                     </div>
 
-                    <p className="text-gray-700 leading-relaxed">{course.instructor.bio || 'Expert en la matèria amb anys d\'experiència en el sector.'}</p>
+                    <p className="text-gray-700 leading-relaxed">{course.instructor.bio || 'Expert en la matèria amb anys d&apos;experiència en el sector.'}</p>
                   </div>
                 </div>
               </div>
@@ -530,19 +530,19 @@ export function CompletCursSingle({ course }: CompletCursSingleProps) {
                 {course.hasForum && (
                   <div className="flex items-center gap-2">
                     <span className="text-green-600">✓</span>
-                    <span>Fòrum d'estudiants</span>
+                    <span>Fòrum d&apos;estudiants</span>
                   </div>
                 )}
                 {course.hasInstructor && (
                   <div className="flex items-center gap-2">
                     <span className="text-green-600">✓</span>
-                    <span>Suport de l'instructor</span>
+                    <span>Suport de l&apos;instructor</span>
                   </div>
                 )}
                 {course.hasCertificate && (
                   <div className="flex items-center gap-2">
                     <span className="text-green-600">✓</span>
-                    <span>Certificat d'acabament</span>
+                    <span>Certificat d&apos;acabament</span>
                   </div>
                 )}
                 <div className="flex items-center gap-2">

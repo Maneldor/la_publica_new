@@ -844,7 +844,7 @@ export default function CompanySinglePage({ params }: { params: { slug: string }
                     gap: '8px'
                   }}>
                     <span>📊</span>
-                    <span>Dades de l'empresa</span>
+                    <span>Dades de l&apos;empresa</span>
                   </h2>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
                     <div>
@@ -852,7 +852,7 @@ export default function CompanySinglePage({ params }: { params: { slug: string }
                       <div style={{ color: '#6b7280' }}>{company.founded}</div>
                     </div>
                     <div>
-                      <div style={{ fontWeight: '600', color: '#111827' }}>Nombre d'empleats:</div>
+                      <div style={{ fontWeight: '600', color: '#111827' }}>Nombre d&apos;empleats:</div>
                       <div style={{ color: '#6b7280' }}>{company.employees}</div>
                     </div>
                     <div>
@@ -968,7 +968,7 @@ export default function CompanySinglePage({ params }: { params: { slug: string }
                   gap: '8px'
                 }}>
                   <span>📸</span>
-                  <span>Galeria d'imatges</span>
+                  <span>Galeria d&apos;imatges</span>
                 </h2>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>

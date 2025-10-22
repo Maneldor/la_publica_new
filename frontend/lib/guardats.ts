@@ -135,7 +135,7 @@ export const toggleGuardar = async (
   usuariId: string,
   tipus: string,
   itemId: string,
-  metadata?: any
+  metadata?: { titol: string; imatge?: string; url: string; description?: string }
 ): Promise<boolean> => {
   const isGuardat = await isItemGuardat(usuariId, tipus, itemId);
 

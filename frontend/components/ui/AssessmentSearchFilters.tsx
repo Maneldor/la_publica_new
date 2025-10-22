@@ -2,9 +2,16 @@
 
 import { useState } from 'react';
 
+interface AssessmentFilters {
+  type: string;
+  category: string;
+  mode: string;
+  duration: string;
+}
+
 interface AssessmentSearchFiltersProps {
   onSearch: (searchTerm: string) => void;
-  onFilterChange: (filters: any) => void;
+  onFilterChange: (filters: AssessmentFilters) => void;
   totalResults: number;
   availableTypes: string[];
   availableCategories: string[];
@@ -154,7 +161,7 @@ export function AssessmentSearchFilters({ onSearch, onFilterChange, totalResults
                 color: '#374151',
                 marginBottom: '6px'
               }}>
-                Tipus d'Assessorament
+                Tipus d&apos;Assessorament
               </label>
               <select
                 value={filters.type}

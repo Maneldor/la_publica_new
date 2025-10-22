@@ -47,7 +47,7 @@ export default function ListarOfertasPage() {
       } else {
         setError('Error al cargar las ofertas');
       }
-    } catch (err) {
+    } catch {
       setError('Error de conexión');
     } finally {
       setLoading(false);
@@ -71,7 +71,7 @@ export default function ListarOfertasPage() {
       } else {
         alert('Error al eliminar la oferta');
       }
-    } catch (err) {
+    } catch {
       alert('Error de conexión');
     }
   };

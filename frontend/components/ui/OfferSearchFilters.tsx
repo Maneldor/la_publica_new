@@ -2,9 +2,16 @@
 
 import { useState } from 'react';
 
+interface OfferFilters {
+  category: string;
+  company: string;
+  discountRange: string;
+  validUntil: string;
+}
+
 interface OfferSearchFiltersProps {
   onSearch: (searchTerm: string) => void;
-  onFilterChange: (filters: any) => void;
+  onFilterChange: (filters: OfferFilters) => void;
   totalResults: number;
   availableCategories: string[];
 }
@@ -268,7 +275,7 @@ export function OfferSearchFilters({ onSearch, onFilterChange, totalResults, ava
                 <option value="today">Acaben avui</option>
                 <option value="week">Aquesta setmana</option>
                 <option value="month">Aquest mes</option>
-                <option value="extended">Més d'un mes</option>
+                <option value="extended">Més d&apos;un mes</option>
               </select>
             </div>
           </div>
