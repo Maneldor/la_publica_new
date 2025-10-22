@@ -1,0 +1,415 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// USUARIOS Y AUTENTICACIÓN
+// ============================================
+
+model User {
+  id                     String    @id @default(cuid())
+  email                  String    @unique
+  password               String
+  role                   String    @default("EMPLEADO_PUBLICO")
+  isEmailVerified        Boolean   @default(false)
+  emailVerificationToken String?
+  passwordResetToken     String?
+  passwordResetExpires   DateTime?
+  refreshToken           String?
+  lastLogin              DateTime?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  employee         Employee?
+  company          Company?
+  posts            Post[]
+  groupMemberships GroupMember[]
+  announcements    Announcement[]
+  interestLinks    InterestLink[]
+
+  @@index([email])
+  @@index([role])
+}
+
+model Employee {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firstName    String
+  lastName     String
+  dni          String?  @unique
+  jobTitle     String?
+  department   String?
+  organization String?
+  community    String
+  province     String?
+  city         String?
+  avatar       String?
+  bio          String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([community])
+}
+
+model Company {
+  id          String          @id @default(cuid())
+  userId      String          @unique
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  sector      String
+  website     String?
+  email       String
+  phone       String?
+  cif         String          @unique
+  logo        String?
+  isActive    Boolean         @default(true)
+  profile     CompanyProfile?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([sector])
+}
+
+// ============================================
+// SISTEMA DE CONTENIDO MULTIREGIONAL
+// ============================================
+
+model ContenidoMaestro {
+  id                String                 @id @default(cuid())
+  tipo              String
+  tituloOriginal    String
+  contenidoOriginal String
+  extracto          String?
+  idiomaOrigen      String                 @default("es")
+  autorId           String
+  autorNombre       String
+  estado            String                 @default("borrador")
+  metadatos         String?
+  traducciones      Traduccion[]
+  publicaciones     PublicacionComunidad[]
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  @@index([estado])
+  @@index([tipo])
+  @@index([autorId])
+}
+
+model Traduccion {
+  id                  String           @id @default(cuid())
+  contenidoId         String
+  contenido           ContenidoMaestro @relation(fields: [contenidoId], references: [id], onDelete: Cascade)
+  idiomaDestino       String
+  tituloTraducido     String
+  contenidoTraducido  String
+  extractoTraducido   String?
+  metadatosTraducidos String?
+  estadoTraduccion    String           @default("automatica")
+  traducidoPor        String
+  confianzaTraduccion Float            @default(0.0)
+  revisadoPor         String?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  @@unique([contenidoId, idiomaDestino])
+  @@index([contenidoId])
+  @@index([estadoTraduccion])
+}
+
+model PublicacionComunidad {
+  id               String           @id @default(cuid())
+  contenidoId      String
+  contenido        ContenidoMaestro @relation(fields: [contenidoId], references: [id], onDelete: Cascade)
+  traduccionId     String?
+  comunidadSlug    String
+  idioma           String
+  publicado        Boolean          @default(false)
+  fechaPublicacion DateTime?
+  slug             String
+  urlPublica       String?
+  vistas           Int              @default(0)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@unique([contenidoId, comunidadSlug, idioma])
+  @@index([comunidadSlug, publicado])
+  @@index([contenidoId])
+  @@index([slug])
+}
+
+model ComunidadConfig {
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  nombre        String
+  nombreLocal   String?
+  idiomas       String
+  idiomaDefault String   @default("es")
+  dominioBase   String
+  activa        Boolean  @default(true)
+  configuracion String?
+  descripcion   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([slug])
+  @@index([activa])
+}
+
+// ============================================
+// RED SOCIAL - POSTS
+// ============================================
+
+model Post {
+  id            String        @id @default(cuid())
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content       String
+  images        String?
+  type          String        @default("texto")
+  isPinned      Boolean       @default(false)
+  isModerated   Boolean       @default(false)
+  comunidadSlug String?
+  idioma        String        @default("es")
+  viewsCount    Int           @default(0)
+  sharesCount   Int           @default(0)
+  likes         PostLike[]
+  comments      PostComment[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([comunidadSlug])
+  @@index([isPinned])
+}
+
+model PostLike {
+  id        String   @id @default(cuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  emoji     String   @default("👍")
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId])
+}
+
+model PostComment {
+  id        String         @id @default(cuid())
+  postId    String
+  post      Post           @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  content   String
+  isEdited  Boolean        @default(false)
+  parentId  String?
+  parent    PostComment?   @relation("CommentReplies", fields: [parentId], references: [id])
+  replies   PostComment[]  @relation("CommentReplies")
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@index([postId])
+}
+
+// ============================================
+// GRUPOS
+// ============================================
+
+model Group {
+  id            String        @id @default(cuid())
+  name          String
+  description   String?
+  type          String
+  creatorId     String
+  coverImage    String?
+  comunidadSlug String?
+  members       GroupMember[]
+  posts         GroupPost[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([type])
+  @@index([comunidadSlug])
+}
+
+model GroupMember {
+  id       String   @id @default(cuid())
+  groupId  String
+  group    Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role     String   @default("member")
+  joinedAt DateTime @default(now())
+
+  @@unique([groupId, userId])
+}
+
+model GroupPost {
+  id        String   @id @default(cuid())
+  groupId   String
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId    String
+  content   String
+  isPinned  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([groupId])
+}
+
+// ============================================
+// FOROS
+// ============================================
+
+model Forum {
+  id            String       @id @default(cuid())
+  title         String
+  description   String?
+  creatorId     String
+  isPinned      Boolean      @default(false)
+  isLocked      Boolean      @default(false)
+  comunidadSlug String?
+  topics        ForumTopic[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([comunidadSlug])
+  @@index([isPinned])
+}
+
+model ForumTopic {
+  id        String       @id @default(cuid())
+  forumId   String
+  forum     Forum        @relation(fields: [forumId], references: [id], onDelete: Cascade)
+  userId    String
+  title     String
+  content   String
+  isPinned  Boolean      @default(false)
+  isLocked  Boolean      @default(false)
+  replies   ForumReply[]
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([forumId])
+}
+
+model ForumReply {
+  id        String     @id @default(cuid())
+  topicId   String
+  topic     ForumTopic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  userId    String
+  content   String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@index([topicId])
+}
+
+// ============================================
+// ANUNCIOS
+// ============================================
+
+model Announcement {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title         String
+  content       String
+  type          String
+  isPinned      Boolean   @default(false)
+  expiresAt     DateTime?
+  comunidadSlug String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([comunidadSlug])
+  @@index([isPinned])
+  @@index([expiresAt])
+}
+
+// ============================================
+// EMPRESAS COLABORADORAS
+// ============================================
+
+model CompanyProfile {
+  id         String            @id @default(cuid())
+  companyId  String            @unique
+  company    Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  isVerified Boolean           @default(false)
+  isFeatured Boolean           @default(false)
+  services   CompanyService[]
+  products   CompanyProduct[]
+  advisories CompanyAdvisory[]
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+}
+
+model CompanyService {
+  id               String         @id @default(cuid())
+  companyProfileId String
+  companyProfile   CompanyProfile @relation(fields: [companyProfileId], references: [id], onDelete: Cascade)
+  title            String
+  description      String
+  price            String?
+  comunidadSlug    String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([companyProfileId])
+  @@index([comunidadSlug])
+}
+
+model CompanyProduct {
+  id               String         @id @default(cuid())
+  companyProfileId String
+  companyProfile   CompanyProfile @relation(fields: [companyProfileId], references: [id], onDelete: Cascade)
+  name             String
+  description      String
+  price            String?
+  imageUrl         String?
+  comunidadSlug    String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([companyProfileId])
+}
+
+model CompanyAdvisory {
+  id               String         @id @default(cuid())
+  companyProfileId String
+  companyProfile   CompanyProfile @relation(fields: [companyProfileId], references: [id], onDelete: Cascade)
+  title            String
+  description      String
+  category         String
+  comunidadSlug    String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([companyProfileId])
+}
+
+// ============================================
+// ENLACES DE INTERÉS
+// ============================================
+
+model InterestLink {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title         String
+  url           String
+  description   String?
+  category      String?
+  comunidadSlug String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([comunidadSlug])
+  @@index([category])
+}

@@ -1,0 +1,1342 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                     String         @id @default(cuid())
+  email                  String         @unique
+  password               String
+  primaryRole            UserRole       @default(EMPLEADO_PUBLICO)
+  isActive               Boolean        @default(true)
+  isEmailVerified        Boolean        @default(false)
+  emailVerificationToken String?
+  passwordResetToken     String?
+  passwordResetExpires   DateTime?
+  refreshToken           String?
+  lastLogin              DateTime?
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+
+  // Relaciones existentes
+  announcements          Announcement[]
+  company                Company?
+  employee               Employee?
+  publicAdministration   PublicAdministration?
+  groupMemberships       GroupMember[]
+  interestLinks          InterestLink[]
+  posts                  Post[]
+  contents               Content[]
+  reports                Report[]
+  postReports            PostReport[] @relation("PostReports")
+  commentReports         PostCommentReport[] @relation("CommentReports")
+  groupPostReports       GroupPostReport[] @relation("GroupPostReports")
+  forumTopicReports      ForumTopicReport[] @relation("ForumTopicReports")
+  forumReplyReports      ForumReplyReport[] @relation("ForumReplyReports")
+  announcementReports    AnnouncementReport[] @relation("AnnouncementReports")
+
+  // Nuevas relaciones para roles múltiples
+  additionalRoles        UserAdditionalRole[]
+  permissions            UserPermission[]
+
+  // Nuevas relaciones para el sistema de formación
+  createdCourses         Course[]           @relation("CreatedCourses")
+  enrollments            Enrollment[]       @relation("UserEnrollments")
+  courseProgress         CourseProgress[]   @relation("UserCourseProgress")
+  lessonProgress         LessonProgress[]   @relation("UserLessonProgress")
+  courseRatings          CourseRating[]     @relation("UserCourseRatings")
+  courseReviews          CourseReview[]     @relation("UserCourseReviews")
+  certificates           Certificate[]      @relation("UserCertificates")
+  courseWishlists        CourseWishlist[]   @relation("UserWishlists")
+
+  @@index([email])
+  @@index([primaryRole])
+  @@index([isActive])
+}
+
+// Tabla para roles adicionales (un usuario puede tener múltiples roles)
+model UserAdditionalRole {
+  id        String   @id @default(cuid())
+  userId    String
+  role      UserRole
+  groupId   String?  // Para roles específicos de grupo
+  createdAt DateTime @default(now())
+  createdBy String   // Usuario que asignó el rol
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, role, groupId]) // Un usuario no puede tener el mismo rol múltiples veces en el mismo grupo
+  @@index([userId])
+  @@index([role])
+}
+
+// Tabla para permisos específicos
+model UserPermission {
+  id         String           @id @default(cuid())
+  userId     String
+  permission PermissionType
+  resource   String?          // Recurso específico (ej: groupId, forumId)
+  granted    Boolean          @default(true)
+  createdAt  DateTime         @default(now())
+  createdBy  String           // Usuario que otorgó el permiso
+  expiresAt  DateTime?        // Permisos temporales
+
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, permission, resource])
+  @@index([userId])
+  @@index([permission])
+}
+
+model Employee {
+  id                    String                    @id @default(cuid())
+  userId                String                    @unique
+  firstName             String
+  lastName              String
+  nick                  String?
+  dni                   String?                   @unique
+  jobTitle              String?
+  department            String?
+  organization          String?
+  community             String                    // Comunidad Autónoma
+  administrationType    AdministrationType        // Local, Autonómica, Central
+  province              String?
+  city                  String?
+
+  // Datos de perfil ampliado
+  avatar                String?
+  generalInfo           String?                   // Información general
+  skills                String?                   // Habilidades (JSON array)
+  workExperience        String?                   // Experiencia laboral (JSON array)
+  socialNetworks        String?                   // Redes sociales (JSON object)
+  bio                   String?                   // Biografía
+
+  // Configuración de privacidad (JSON object con cada campo y su nivel de privacidad)
+  privacySettings       String?                   // {avatar: 'public', bio: 'private', etc}
+
+  // Campos para roles de grupo
+  canBeGroupAdmin       Boolean                   @default(false)  // Puede ser administrador de grupos
+  canBeGroupModerator   Boolean                   @default(false)  // Puede ser moderador de grupos
+  canBeContentManager   Boolean                   @default(false)  // Puede ser gestor de contenido
+
+  // Campos personalizados dinámicos
+  customFields          Json?                     // Valores de campos personalizados {fieldId: value, ...}
+  customFieldsPrivacy   Json?                     // Configuración de privacidad de campos custom {fieldId: 'public'|'private', ...}
+
+  isActive              Boolean                   @default(true)
+  createdAt             DateTime                  @default(now())
+  updatedAt             DateTime                  @updatedAt
+  user                  User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([community])
+  @@index([administrationType])
+}
+
+model Company {
+  id             String            @id @default(cuid())
+  userId         String            @unique
+  name           String
+  description    String?
+  sector         String
+  size           String            @default("pequeña")
+  cif            String?           @unique
+  address        String?
+  phone          String?
+  email          String
+  website        String?
+  socialMedia    String?
+  logo           String?
+  certifications String?
+  foundedYear    Int?
+  employeeCount  Int?
+  annualRevenue  Float?
+  configuration  String?
+
+  // Campos personalizados dinámicos
+  customFields          Json?             // Valores de campos personalizados
+  customFieldsPrivacy   Json?             // Configuración de privacidad
+
+  isVerified     Boolean           @default(false)
+  isActive       Boolean           @default(true)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  advisories     CompanyAdvisory[]
+  products       CompanyProduct[]
+  profile        CompanyProfile?
+  ratings        CompanyRating[]
+  services       CompanyService[]
+
+  @@index([sector])
+  @@index([size])
+  @@index([isVerified])
+  @@index([isActive])
+}
+
+model PublicAdministration {
+  id                    String                    @id @default(cuid())
+  userId                String                    @unique
+  name                  String                    // Nombre de la administración
+  administrationType    AdministrationType        // Local, Autonómica, Central
+  community             String?                   // Comunidad Autónoma (para local y autonómica)
+  province              String?                   // Provincia (para local)
+  city                  String?                   // Ciudad (para local)
+  address               String?                   // Dirección
+  phone                 String?                   // Teléfono
+  email                 String                    // Email oficial
+  website               String?                   // Sitio web oficial
+  description           String?                   // Descripción de servicios
+
+  // Información específica
+  citizenServices       String?                   // Servicios al ciudadano (JSON array)
+  departments           String?                   // Departamentos (JSON array)
+  publicHours           String?                   // Horarios de atención al público
+  contactInfo           String?                   // Información de contacto adicional (JSON)
+
+  // Campos personalizados dinámicos
+  customFields          Json?                     // Valores de campos personalizados
+  customFieldsPrivacy   Json?                     // Configuración de privacidad
+
+  // Estado y verificación
+  isVerified            Boolean                   @default(false)  // Verificado por admin
+  isActive              Boolean                   @default(true)
+
+  createdAt             DateTime                  @default(now())
+  updatedAt             DateTime                  @updatedAt
+  user                  User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([administrationType])
+  @@index([community])
+  @@index([isVerified])
+  @@index([isActive])
+}
+
+model Category {
+  id          String             @id @default(cuid())
+  name        String             @unique
+  slug        String             @unique
+  description String?
+  color       String             @default("#3B82F6")
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  contents    ContenidoMaestro[] @relation("CategoryContents")
+  contentPosts Content[]
+}
+
+model ContenidoMaestro {
+  id                String                 @id @default(cuid())
+  tipo              String
+  tituloOriginal    String
+  contenidoOriginal String
+  extracto          String?
+  idiomaOrigen      String                 @default("es")
+  autorId           String
+  autorNombre       String
+  estado            String                 @default("borrador")
+  metadatos         String?
+  categoryId        String?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  category          Category?              @relation("CategoryContents", fields: [categoryId], references: [id])
+  publicaciones     PublicacionComunidad[]
+  traducciones      Traduccion[]
+
+  @@index([estado])
+  @@index([tipo])
+  @@index([autorId])
+  @@index([categoryId])
+}
+
+model Traduccion {
+  id                  String           @id @default(cuid())
+  contenidoId         String
+  idiomaDestino       String
+  tituloTraducido     String
+  contenidoTraducido  String
+  extractoTraducido   String?
+  metadatosTraducidos String?
+  estadoTraduccion    String           @default("automatica")
+  traducidoPor        String
+  confianzaTraduccion Float            @default(0.0)
+  revisadoPor         String?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  contenido           ContenidoMaestro @relation(fields: [contenidoId], references: [id], onDelete: Cascade)
+
+  @@unique([contenidoId, idiomaDestino])
+  @@index([contenidoId])
+  @@index([estadoTraduccion])
+}
+
+model PublicacionComunidad {
+  id               String           @id @default(cuid())
+  contenidoId      String
+  traduccionId     String?
+  comunidadSlug    String
+  idioma           String
+  publicado        Boolean          @default(false)
+  fechaPublicacion DateTime?
+  slug             String
+  urlPublica       String?
+  vistas           Int              @default(0)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  contenido        ContenidoMaestro @relation(fields: [contenidoId], references: [id], onDelete: Cascade)
+
+  @@unique([contenidoId, comunidadSlug, idioma])
+  @@index([comunidadSlug, publicado])
+  @@index([contenidoId])
+  @@index([slug])
+}
+
+model ComunidadConfig {
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  nombre        String
+  nombreLocal   String?
+  idiomas       String
+  idiomaDefault String   @default("es")
+  dominioBase   String
+  activa        Boolean  @default(true)
+  configuracion String?
+  descripcion   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([slug])
+  @@index([activa])
+}
+
+model Post {
+  id            String        @id @default(cuid())
+  userId        String
+  content       String
+  images        String?
+  type          String        @default("texto")
+  isPinned      Boolean       @default(false)
+  isModerated   Boolean       @default(false)
+  reported      Boolean       @default(false)
+  comunidadSlug String?
+  idioma        String        @default("es")
+  viewsCount    Int           @default(0)
+  sharesCount   Int           @default(0)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comments      PostComment[]
+  likes         PostLike[]
+  reports       PostReport[]
+
+  @@index([userId])
+  @@index([comunidadSlug])
+  @@index([isPinned])
+  @@index([reported])
+}
+
+model PostLike {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  emoji     String   @default("👍")
+  createdAt DateTime @default(now())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+}
+
+model PostComment {
+  id        String              @id @default(cuid())
+  postId    String
+  userId    String
+  content   String
+  isEdited  Boolean             @default(false)
+  parentId  String?
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  parent    PostComment?        @relation("CommentReplies", fields: [parentId], references: [id])
+  replies   PostComment[]       @relation("CommentReplies")
+  post      Post                @relation(fields: [postId], references: [id], onDelete: Cascade)
+  reports   PostCommentReport[]
+
+  @@index([postId])
+}
+
+model PostReport {
+  id          String       @id @default(cuid())
+  postId      String
+  reportedBy  String
+  reason      String
+  status      ReportStatus @default(PENDING)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  post        Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  reporter    User         @relation("PostReports", fields: [reportedBy], references: [id])
+
+  @@index([postId])
+  @@index([reportedBy])
+  @@index([status])
+}
+
+model Group {
+  id            String        @id @default(cuid())
+  name          String
+  description   String?
+  type          String
+  category      String?
+  configuration String?
+  order         Int           @default(0)
+  isActive      Boolean       @default(true)
+  creatorId     String
+  coverImage    String?
+  comunidadSlug String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  members       GroupMember[]
+  posts         GroupPost[]
+
+  @@index([type])
+  @@index([comunidadSlug])
+  @@index([category])
+  @@index([isActive])
+}
+
+model GroupMember {
+  id       String    @id @default(cuid())
+  groupId  String
+  userId   String
+  role     String    @default("member")
+  status   String    @default("active")
+  joinedAt DateTime  @default(now())
+  leftAt   DateTime?
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group    Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@index([status])
+  @@index([role])
+}
+
+model GroupPost {
+  id          String    @id @default(cuid())
+  groupId     String
+  userId      String
+  title       String
+  content     String
+  type        String    @default("texto")
+  tags        String?
+  multimedia  String?
+  isPublished Boolean   @default(true)
+  publishedAt DateTime?
+  isPinned    Boolean   @default(false)
+  isActive    Boolean   @default(true)
+  order       Int       @default(0)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  group       Group             @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  reports     GroupPostReport[]
+
+  @@index([groupId])
+  @@index([type])
+  @@index([isPublished])
+  @@index([isActive])
+}
+
+model Forum {
+  id            String           @id @default(cuid())
+  title         String
+  description   String?
+  category      String
+  type          String           @default("publico")
+  order         Int              @default(0)
+  configuration String?
+  isActive      Boolean          @default(true)
+  creatorId     String
+  isPinned      Boolean          @default(false)
+  isLocked      Boolean          @default(false)
+  comunidadSlug String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  moderators    ForumModerator[]
+  topics        ForumTopic[]
+
+  @@index([comunidadSlug])
+  @@index([isPinned])
+  @@index([category])
+  @@index([type])
+  @@index([isActive])
+}
+
+model ForumTopic {
+  id           String       @id @default(cuid())
+  forumId      String
+  userId       String
+  title        String
+  content      String
+  type         String       @default("discusion")
+  tags         String?
+  isPinned     Boolean      @default(false)
+  isLocked     Boolean      @default(false)
+  isActive     Boolean      @default(true)
+  lastActivity DateTime     @default(now())
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  replies      ForumReply[]
+  forum        Forum              @relation(fields: [forumId], references: [id], onDelete: Cascade)
+  reports      ForumTopicReport[]
+
+  @@index([forumId])
+  @@index([type])
+  @@index([isPinned])
+  @@index([isLocked])
+  @@index([isActive])
+  @@index([lastActivity])
+}
+
+model ForumReply {
+  id        String       @id @default(cuid())
+  topicId   String
+  userId    String
+  content   String
+  replyToId String?
+  isActive  Boolean      @default(true)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+  replyTo   ForumReply?        @relation("ReplyToReply", fields: [replyToId], references: [id])
+  replies   ForumReply[]       @relation("ReplyToReply")
+  topic     ForumTopic         @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  reports   ForumReplyReport[]
+
+  @@index([topicId])
+  @@index([replyToId])
+  @@index([isActive])
+}
+
+model Announcement {
+  id            String             @id @default(cuid())
+  userId        String
+  title         String
+  content       String
+  type          String
+  priority      String             @default("media")
+  scope         String             @default("global")
+  targets       String?
+  startDate     DateTime           @default(now())
+  expiresAt     DateTime?
+  configuration String?
+  isPinned      Boolean            @default(false)
+  isRead        Boolean            @default(false)
+  isActive      Boolean            @default(true)
+  comunidadSlug String?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reads         AnnouncementRead[]
+  reports       AnnouncementReport[]
+
+  @@index([comunidadSlug])
+  @@index([isPinned])
+  @@index([expiresAt])
+  @@index([priority])
+  @@index([scope])
+  @@index([isActive])
+}
+
+model AnnouncementRead {
+  id             String       @id @default(cuid())
+  announcementId String
+  userId         String
+  readAt         DateTime     @default(now())
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+
+  @@unique([announcementId, userId])
+  @@index([announcementId])
+  @@index([userId])
+}
+
+model ForumModerator {
+  id         String   @id @default(cuid())
+  forumId    String
+  userId     String
+  role       String   @default("moderador")
+  assignedAt DateTime @default(now())
+  forum      Forum    @relation(fields: [forumId], references: [id], onDelete: Cascade)
+
+  @@unique([forumId, userId])
+  @@index([forumId])
+  @@index([userId])
+  @@index([role])
+}
+
+model CompanyProfile {
+  id         String            @id @default(cuid())
+  companyId  String            @unique
+  isVerified Boolean           @default(false)
+  isFeatured Boolean           @default(false)
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  advisories CompanyAdvisory[]
+  products   CompanyProduct[]
+  company    Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  services   CompanyService[]
+}
+
+model CompanyService {
+  id               String          @id @default(cuid())
+  companyId        String
+  companyProfileId String?
+  name             String
+  description      String
+  category         String
+  subcategory      String?
+  features         String?
+  pricing          String?
+  duration         String?
+  modality         String          @default("presencial")
+  availability     String?
+  order            Int             @default(0)
+  isActive         Boolean         @default(true)
+  comunidadSlug    String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  companyProfile   CompanyProfile? @relation(fields: [companyProfileId], references: [id], onDelete: Cascade)
+  company          Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([companyProfileId])
+  @@index([category])
+  @@index([modality])
+  @@index([isActive])
+  @@index([comunidadSlug])
+}
+
+model CompanyProduct {
+  id               String          @id @default(cuid())
+  companyId        String
+  companyProfileId String?
+  name             String
+  description      String
+  category         String
+  subcategory      String?
+  price            Float
+  features         String?
+  images           String?
+  stock            Int?
+  isAvailable      Boolean         @default(true)
+  order            Int             @default(0)
+  isActive         Boolean         @default(true)
+  comunidadSlug    String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  companyProfile   CompanyProfile? @relation(fields: [companyProfileId], references: [id], onDelete: Cascade)
+  company          Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([companyProfileId])
+  @@index([category])
+  @@index([price])
+  @@index([isAvailable])
+  @@index([isActive])
+}
+
+model CompanyAdvisory {
+  id               String          @id @default(cuid())
+  companyId        String
+  companyProfileId String?
+  serviceId        String?
+  clientId         String
+  subject          String
+  description      String
+  urgency          String          @default("media")
+  estimatedBudget  Float?
+  deadline         DateTime?
+  contact          String?
+  status           String          @default("pendiente")
+  response         String?
+  finalBudget      Float?
+  requestDate      DateTime        @default(now())
+  responseDate     DateTime?
+  comunidadSlug    String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  companyProfile   CompanyProfile? @relation(fields: [companyProfileId], references: [id], onDelete: Cascade)
+  company          Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([companyProfileId])
+  @@index([clientId])
+  @@index([status])
+  @@index([urgency])
+}
+
+model CompanyRating {
+  id         String   @id @default(cuid())
+  companyId  String
+  userId     String
+  rating     Int
+  comment    String?
+  serviceId  String?
+  advisoryId String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, userId])
+  @@index([companyId])
+  @@index([userId])
+  @@index([rating])
+}
+
+model InterestLink {
+  id            String   @id @default(cuid())
+  userId        String
+  title         String
+  url           String
+  description   String?
+  category      String?
+  comunidadSlug String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([comunidadSlug])
+  @@index([category])
+}
+
+model Content {
+  id          String        @id @default(cuid())
+  title       String
+  slug        String        @unique
+  excerpt     String
+  content     String
+  status      ContentStatus @default(DRAFT)
+  pinned      Boolean       @default(false)
+  categoryId  String?
+  category    Category?     @relation(fields: [categoryId], references: [id])
+  authorId    String
+  author      User          @relation(fields: [authorId], references: [id])
+  tags        Tag[]
+  reports     Report[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([authorId])
+  @@index([categoryId])
+  @@index([pinned])
+}
+
+model Tag {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  slug      String    @unique
+  contents  Content[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Report {
+  id          String       @id @default(cuid())
+  contentId   String
+  content     Content      @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  reportedBy  String
+  reporter    User         @relation(fields: [reportedBy], references: [id])
+  reason      String
+  status      ReportStatus @default(PENDING)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([contentId])
+  @@index([reportedBy])
+  @@index([status])
+}
+
+model InappropriateWord {
+  id        String   @id @default(cuid())
+  word      String   @unique
+  createdAt DateTime @default(now())
+}
+
+// Reportes para comentarios (blog y posts)
+model PostCommentReport {
+  id          String       @id @default(cuid())
+  commentId   String
+  reportedBy  String
+  reason      String
+  status      ReportStatus @default(PENDING)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  comment     PostComment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  reporter    User         @relation("CommentReports", fields: [reportedBy], references: [id])
+
+  @@index([commentId])
+  @@index([reportedBy])
+  @@index([status])
+}
+
+// Reportes para posts en grupos
+model GroupPostReport {
+  id          String       @id @default(cuid())
+  postId      String
+  reportedBy  String
+  reason      String
+  status      ReportStatus @default(PENDING)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  post        GroupPost    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  reporter    User         @relation("GroupPostReports", fields: [reportedBy], references: [id])
+
+  @@index([postId])
+  @@index([reportedBy])
+  @@index([status])
+}
+
+// Reportes para topics de foros
+model ForumTopicReport {
+  id          String       @id @default(cuid())
+  topicId     String
+  reportedBy  String
+  reason      String
+  status      ReportStatus @default(PENDING)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  topic       ForumTopic   @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  reporter    User         @relation("ForumTopicReports", fields: [reportedBy], references: [id])
+
+  @@index([topicId])
+  @@index([reportedBy])
+  @@index([status])
+}
+
+// Reportes para respuestas de foros
+model ForumReplyReport {
+  id          String       @id @default(cuid())
+  replyId     String
+  reportedBy  String
+  reason      String
+  status      ReportStatus @default(PENDING)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  reply       ForumReply   @relation(fields: [replyId], references: [id], onDelete: Cascade)
+  reporter    User         @relation("ForumReplyReports", fields: [reportedBy], references: [id])
+
+  @@index([replyId])
+  @@index([reportedBy])
+  @@index([status])
+}
+
+// Reportes para anuncios
+model AnnouncementReport {
+  id             String       @id @default(cuid())
+  announcementId String
+  reportedBy     String
+  reason         String
+  status         ReportStatus @default(PENDING)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  reporter       User         @relation("AnnouncementReports", fields: [reportedBy], references: [id])
+
+  @@index([announcementId])
+  @@index([reportedBy])
+  @@index([status])
+}
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ReportStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  EMPLEADO_PUBLICO
+  ADMINISTRADOR_GRUPO
+  MODERADOR_GRUPO
+  GESTOR_CONTENIDO
+  GESTOR_EMPRESAS
+  GESTOR_ADMINISTRACIONES
+  EMPRESA
+  ADMINISTRACION_PUBLICA
+}
+
+enum AdministrationType {
+  LOCAL
+  AUTONOMICA
+  CENTRAL
+}
+
+enum PermissionType {
+  // Permisos generales del sistema
+  MANAGE_USERS
+  MANAGE_ROLES
+  MANAGE_PERMISSIONS
+  VIEW_ADMIN_DASHBOARD
+  MANAGE_SYSTEM_CONFIG
+
+  // Permisos de contenido
+  CREATE_CONTENT
+  EDIT_CONTENT
+  DELETE_CONTENT
+  PUBLISH_CONTENT
+  MODERATE_CONTENT
+  PIN_CONTENT
+
+  // Permisos de posts y comentarios
+  CREATE_POST
+  EDIT_POST
+  DELETE_POST
+  MODERATE_POST
+  PIN_POST
+  CREATE_COMMENT
+  EDIT_COMMENT
+  DELETE_COMMENT
+  MODERATE_COMMENT
+
+  // Permisos de grupos
+  CREATE_GROUP
+  EDIT_GROUP
+  DELETE_GROUP
+  MANAGE_GROUP_MEMBERS
+  MODERATE_GROUP_CONTENT
+  PIN_GROUP_CONTENT
+
+  // Permisos de foros
+  CREATE_FORUM
+  EDIT_FORUM
+  DELETE_FORUM
+  CREATE_FORUM_TOPIC
+  EDIT_FORUM_TOPIC
+  DELETE_FORUM_TOPIC
+  MODERATE_FORUM
+  PIN_FORUM_TOPIC
+  LOCK_FORUM_TOPIC
+
+  // Permisos de anuncios
+  CREATE_ANNOUNCEMENT
+  EDIT_ANNOUNCEMENT
+  DELETE_ANNOUNCEMENT
+  PUBLISH_ANNOUNCEMENT
+  PIN_ANNOUNCEMENT
+
+  // Permisos de empresas
+  MANAGE_COMPANIES
+  CREATE_COMPANY_PROFILE
+  EDIT_COMPANY_PROFILE
+  MANAGE_COMPANY_SERVICES
+
+  // Permisos de administraciones públicas
+  MANAGE_PUBLIC_ADMINISTRATIONS
+  CREATE_ADMIN_PROFILE
+  EDIT_ADMIN_PROFILE
+
+  // Permisos de reportes y moderación
+  VIEW_REPORTS
+  HANDLE_REPORTS
+  VIEW_MODERATION_STATS
+  BULK_MODERATE
+
+  // Permisos especiales
+  IMPERSONATE_USER
+  VIEW_AUDIT_LOGS
+  MANAGE_TRANSLATIONS
+  MANAGE_COMMUNITIES
+}
+
+// Enum para tipos de campos personalizados
+enum CustomFieldType {
+  TEXT
+  NUMBER
+  DATE
+  EMAIL
+  URL
+  SELECT
+  MULTISELECT
+  BOOLEAN
+  TEXTAREA
+  FILE
+}
+
+// Tabla para definir campos personalizados
+model CustomField {
+  id                String          @id @default(cuid())
+  name              String          // Nombre del campo (ej: "Certificaciones")
+  fieldType         CustomFieldType // Tipo de campo
+  userType          UserRole        // Para qué tipo de usuario aplica
+  required          Boolean         @default(false)  // ¿Es obligatorio?
+  isPublicByDefault Boolean         @default(false)  // ¿Es público por defecto?
+  allowUserPrivacy  Boolean         @default(true)   // ¿El usuario puede cambiar privacidad?
+  options           Json?           // Opciones para campos SELECT/MULTISELECT
+  validation        Json?           // Reglas de validación (min, max, regex, etc.)
+  placeholder       String?         // Texto de ayuda
+  description       String?         // Descripción del campo
+  order             Int             @default(0)      // Orden de aparición
+  isActive          Boolean         @default(true)
+  createdBy         String          // Admin que creó el campo
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@unique([name, userType])
+  @@index([userType])
+  @@index([isActive])
+}
+
+// ==================== SISTEMA DE FORMACIÓN ====================
+
+// Enum para niveles de curso
+enum CourseLevel {
+  PRINCIPIANT
+  INTERMEDI
+  AVANÇAT
+}
+
+// Enum para modalidades
+enum CourseMode {
+  ONLINE
+  PRESENCIAL
+  HIBRID
+}
+
+// Enum para categorías de curso
+enum CourseCategory {
+  TECNOLOGIA
+  DISSENY
+  MARQUETING_DIGITAL
+  GESTIO_I_LIDERATGE
+  IDIOMES
+  OFIMATICA
+  COMPTABILITAT_I_FINANCES
+  COMUNICACIO
+  RECURSOS_HUMANS
+  CIBERSEGURETAT
+  DESENVOLUPAMENT_PERSONAL
+}
+
+// Enum para estado del curso
+enum CourseStatus {
+  DRAFT
+  PUBLISHED
+  CANCELLED
+  COMPLETED
+}
+
+// Enum para estado de inscripción
+enum EnrollmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  DROPPED_OUT
+}
+
+// Modelo principal del curso
+model Course {
+  id               String         @id @default(cuid())
+  title            String
+  description      String
+  shortDescription String?
+  slug             String         @unique
+
+  // Información del instructor/institución
+  instructor       String
+  institution      String
+  instructorEmail  String?
+  institutionLogo  String?
+
+  // Categorización
+  category         CourseCategory
+  subcategory      String?
+  tags             String?
+
+  // Características del curso
+  level            CourseLevel
+  mode             CourseMode
+  duration         Int
+  language         String         @default("ca")
+
+  // Precios y disponibilidad
+  price            Float
+  originalPrice    Float?
+  discount         Int?
+  currency         String         @default("EUR")
+
+  // Fechas y plazas
+  startDate        DateTime?
+  endDate          DateTime?
+  enrollmentDeadline DateTime?
+  availableSlots   Int?
+  totalSlots       Int?
+
+  // Estado y configuración
+  status           CourseStatus   @default(DRAFT)
+  isHighlighted    Boolean        @default(false)
+  isFeatured       Boolean        @default(false)
+  isNew            Boolean        @default(true)
+
+  // Multimedia y recursos
+  coverImage       String?
+  promoVideo       String?
+  materials        String?
+
+  // Métricas
+  viewsCount       Int            @default(0)
+  enrollmentCount  Int            @default(0)
+  completionRate   Float?
+  averageRating    Float?
+  totalRatings     Int            @default(0)
+
+  // Metadatos
+  creatorId        String
+  comunidadSlug    String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  // Relaciones
+  creator          User           @relation("CreatedCourses", fields: [creatorId], references: [id])
+  modules          CourseModule[]
+  enrollments      Enrollment[]
+  ratings          CourseRating[]
+  reviews          CourseReview[]
+  progress         CourseProgress[]
+  certificates     Certificate[]
+  announcements    CourseAnnouncement[]
+  wishlists        CourseWishlist[] @relation("CourseWishlists")
+
+  @@index([category])
+  @@index([level])
+  @@index([mode])
+  @@index([status])
+  @@index([isHighlighted])
+  @@index([isFeatured])
+  @@index([startDate])
+  @@index([creatorId])
+  @@index([comunidadSlug])
+}
+
+// Módulos del curso
+model CourseModule {
+  id          String       @id @default(cuid())
+  courseId    String
+  title       String
+  description String?
+  order       Int          @default(0)
+  duration    Int?
+  isRequired  Boolean      @default(true)
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  course      Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons     Lesson[]
+
+  @@index([courseId])
+  @@index([order])
+}
+
+// Lecciones dentro de módulos
+model Lesson {
+  id          String          @id @default(cuid())
+  moduleId    String
+  title       String
+  content     String?
+  type        String          @default("text")
+  order       Int             @default(0)
+  duration    Int?
+  videoUrl    String?
+  materials   String?
+  isRequired  Boolean         @default(true)
+  isActive    Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  module      CourseModule    @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  progress    LessonProgress[]
+
+  @@index([moduleId])
+  @@index([order])
+}
+
+// Inscripciones a cursos
+model Enrollment {
+  id              String           @id @default(cuid())
+  courseId        String
+  userId          String
+  status          EnrollmentStatus @default(PENDING)
+  enrolledAt      DateTime         @default(now())
+  completedAt     DateTime?
+  droppedAt       DateTime?
+  lastAccessedAt  DateTime?
+
+  // Información de pago
+  paymentAmount   Float?
+  paymentMethod   String?
+  paymentDate     DateTime?
+  transactionId   String?
+
+  // Progreso
+  progressPercent Float            @default(0)
+  currentModuleId String?
+  currentLessonId String?
+
+  // Metadatos
+  enrollmentData  Json?
+
+  course          Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user            User             @relation("UserEnrollments", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, userId])
+  @@index([userId])
+  @@index([status])
+  @@index([enrolledAt])
+}
+
+// Progreso del curso por usuario
+model CourseProgress {
+  id              String    @id @default(cuid())
+  courseId        String
+  userId          String
+  progressPercent Float     @default(0)
+  completedModules Int      @default(0)
+  totalModules    Int       @default(0)
+  completedLessons Int      @default(0)
+  totalLessons    Int       @default(0)
+  timeSpent       Int       @default(0)
+  lastAccessedAt  DateTime  @default(now())
+  completedAt     DateTime?
+
+  course          Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user            User      @relation("UserCourseProgress", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, userId])
+  @@index([userId])
+  @@index([progressPercent])
+}
+
+// Progreso de lecciones individuales
+model LessonProgress {
+  id          String    @id @default(cuid())
+  lessonId    String
+  userId      String
+  isCompleted Boolean   @default(false)
+  timeSpent   Int       @default(0)
+  completedAt DateTime?
+  lastAccessed DateTime @default(now())
+
+  lesson      Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  user        User      @relation("UserLessonProgress", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([lessonId, userId])
+  @@index([userId])
+  @@index([isCompleted])
+}
+
+// Calificaciones de cursos
+model CourseRating {
+  id        String   @id @default(cuid())
+  courseId  String
+  userId    String
+  rating    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user      User     @relation("UserCourseRatings", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, userId])
+  @@index([courseId])
+  @@index([rating])
+}
+
+// Reseñas de cursos
+model CourseReview {
+  id        String   @id @default(cuid())
+  courseId  String
+  userId    String
+  rating    Int
+  title     String?
+  comment   String
+  isPublic  Boolean  @default(true)
+  isVerified Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user      User     @relation("UserCourseReviews", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, userId])
+  @@index([courseId])
+  @@index([rating])
+  @@index([isPublic])
+}
+
+// Certificados
+model Certificate {
+  id            String    @id @default(cuid())
+  courseId      String
+  userId        String
+  certificateId String    @unique
+  issuedAt      DateTime  @default(now())
+  expiresAt     DateTime?
+  isValid       Boolean   @default(true)
+
+  // Datos del certificado
+  recipientName String
+  courseName    String
+  institution   String
+  instructor    String
+  completionDate DateTime
+  grade         String?
+
+  // Verificación
+  verificationUrl String?
+  digitalSignature String?
+
+  course        Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user          User      @relation("UserCertificates", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, userId])
+  @@index([certificateId])
+  @@index([userId])
+  @@index([isValid])
+}
+
+// Anuncios específicos de cursos
+model CourseAnnouncement {
+  id        String   @id @default(cuid())
+  courseId  String
+  title     String
+  content   String
+  type      String   @default("info")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([courseId])
+  @@index([type])
+  @@index([isActive])
+}
+
+// Lista de deseos de cursos
+model CourseWishlist {
+  id        String   @id @default(cuid())
+  courseId  String
+  userId    String
+  addedAt   DateTime @default(now())
+
+  course    Course   @relation("CourseWishlists", fields: [courseId], references: [id], onDelete: Cascade)
+  user      User     @relation("UserWishlists", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, userId])
+  @@index([userId])
+}

@@ -1,0 +1,9 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Favicon simple de la P de La Pública -->
+  <rect width="32" height="32" fill="white"/>
+  <path d="M8 6h10c3.5 0 6 2.5 6 6s-2.5 6-6 6h-6v8H8V6z" fill="#e53e3e"/>
+  <rect x="12" y="10" width="6" height="8" fill="white"/>
+  <path d="M8 20h4v1c0 0.5-0.5 1-1 1H9c-0.5 0-1-0.5-1-1v-1z" fill="#f6e05e"/>
+  <path d="M8 22h4v1c0 0.5-0.5 1-1 1H9c-0.5 0-1-0.5-1-1v-1z" fill="#f6e05e"/>
+  <path d="M8 24h4v1c0 0.5-0.5 1-1 1H9c-0.5 0-1-0.5-1-1v-1z" fill="#f6e05e"/>
+</svg>
