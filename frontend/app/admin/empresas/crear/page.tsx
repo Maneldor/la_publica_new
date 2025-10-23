@@ -1,265 +1,216 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { useAdminCreateEmpresa } from './hooks/useAdminCreateEmpresa';
+import { ProgressIndicator } from './components/ProgressIndicator';
+import { Step1Branding } from './components/steps/Step1Branding';
+import { Step2BasicInfo } from './components/steps/Step2BasicInfo';
+import { Step3Contact } from './components/steps/Step3Contact';
+import { Step4Professional } from './components/steps/Step4Professional';
+import { Step5Certifications } from './components/steps/Step5Certifications';
+import { Step6Team } from './components/steps/Step6Team';
+import { Step7AdminConfig } from './components/steps/Step7AdminConfig';
+import { Step8Review } from './components/steps/Step8Review';
 
 export default function CrearEmpresaPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [logo, setLogo] = useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string>('');
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    category: '',
-    website: '',
-    email: '',
-    phone: '',
-    address: '',
-    isVerified: false,
-  });
+  const {
+    currentStep,
+    formData,
+    errors,
+    updateField,
+    addTeamMember,
+    updateTeamMember,
+    removeTeamMember,
+    addCertification,
+    updateCertification,
+    removeCertification,
+    nextStep,
+    prevStep,
+  } = useAdminCreateEmpresa();
 
-  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setLogo(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setLogoPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
+  const handleSaveDraft = async () => {
+    // TODO: Implement save as draft functionality
+    console.log('Guardant esborrany:', formData);
+    alert('✅ Esborrany guardat correctament!');
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  const handlePublish = async () => {
+    // TODO: Implement full publish functionality with API calls
+    console.log('Publicant empresa:', formData);
 
-    try {
-      const token = localStorage.getItem('token');
-      
-      // 1. Subir logo si existe
-      let logoUrl = '';
-      if (logo) {
-        const logoFormData = new FormData();
-        logoFormData.append('image', logo);
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 2000));
 
-        const logoResponse = await fetch('http://localhost:5000/api/v1/cloudinary/companies', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          },
-          body: logoFormData
-        });
+    alert('✅ Empresa publicada correctament!');
+    router.push('/admin/empresas/listar');
+  };
 
-        if (logoResponse.ok) {
-          const logoData = await logoResponse.json();
-          logoUrl = logoData.data.url;
-        }
-      }
+  const steps = [
+    'Branding',
+    'Informació',
+    'Contacte',
+    'Professional',
+    'Certificacions',
+    'Equip',
+    'Config Admin',
+    'Revisió'
+  ];
 
-      // 2. Crear empresa
-      const response = await fetch('http://localhost:5000/api/v1/companies', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          ...formData,
-          logoUrl
-        })
-      });
-
-      if (response.ok) {
-        alert('Empresa creada exitosamente');
-        router.push('/admin/empresas/listar');
-      } else {
-        const error = await response.json();
-        alert(error.message || 'Error al crear la empresa');
-      }
-    } catch {
-      alert('Error de conexión');
-    } finally {
-      setLoading(false);
+  const renderStep = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <Step1Branding
+            formData={formData}
+            errors={errors}
+            updateField={updateField}
+          />
+        );
+      case 2:
+        return (
+          <Step2BasicInfo
+            formData={formData}
+            errors={errors}
+            updateField={updateField}
+          />
+        );
+      case 3:
+        return (
+          <Step3Contact
+            formData={formData}
+            errors={errors}
+            updateField={updateField}
+          />
+        );
+      case 4:
+        return (
+          <Step4Professional
+            formData={formData}
+            errors={errors}
+            updateField={updateField}
+          />
+        );
+      case 5:
+        return (
+          <Step5Certifications
+            formData={formData}
+            errors={errors}
+            updateField={updateField}
+            addCertification={addCertification}
+            updateCertification={updateCertification}
+            removeCertification={removeCertification}
+          />
+        );
+      case 6:
+        return (
+          <Step6Team
+            formData={formData}
+            errors={errors}
+            updateField={updateField}
+            addTeamMember={addTeamMember}
+            updateTeamMember={updateTeamMember}
+            removeTeamMember={removeTeamMember}
+          />
+        );
+      case 7:
+        return (
+          <Step7AdminConfig
+            formData={formData}
+            errors={errors}
+            updateField={updateField}
+          />
+        );
+      case 8:
+        return (
+          <Step8Review
+            formData={formData}
+            errors={errors}
+            onSaveDraft={handleSaveDraft}
+            onPublish={handlePublish}
+          />
+        );
+      default:
+        return (
+          <div className="text-center py-12">
+            <div className="text-6xl mb-4">🚧</div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              Pas {currentStep} - En construcció
+            </h3>
+            <p className="text-gray-600">
+              Aquest pas s'està desenvolupant.
+            </p>
+          </div>
+        );
     }
   };
 
   return (
-    <div className="max-w-2xl">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Crear Empresa Colaboradora</h1>
-
-      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-6">
-        {/* Logo */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Logo de la Empresa
-          </label>
-          <div className="flex items-center gap-4">
-            {logoPreview && (
-              <img
-                src={logoPreview}
-                alt="Preview"
-                className="w-24 h-24 object-contain rounded-lg border border-gray-200 p-2"
-              />
-            )}
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleLogoChange}
-              className="block w-full text-sm text-gray-500
-                file:mr-4 file:py-2 file:px-4
-                file:rounded-lg file:border-0
-                file:text-sm file:font-semibold
-                file:bg-blue-50 file:text-blue-700
-                hover:file:bg-blue-100"
-            />
-          </div>
-        </div>
-
-        {/* Nombre */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Nombre de la Empresa *
-          </label>
-          <input
-            type="text"
-            required
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Ej: Restaurante El Rincón"
-          />
-        </div>
-
-        {/* Descripción */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Descripción *
-          </label>
-          <textarea
-            required
-            value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            rows={4}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Describe la empresa y sus servicios..."
-          />
-        </div>
-
-        {/* Categoría */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Categoría *
-          </label>
-          <select
-            required
-            value={formData.category}
-            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="">Selecciona una categoría</option>
-            <option value="Restauración">Restauración</option>
-            <option value="Ocio">Ocio</option>
-            <option value="Salud">Salud y Bienestar</option>
-            <option value="Tecnología">Tecnología</option>
-            <option value="Educación">Educación</option>
-            <option value="Servicios">Servicios</option>
-            <option value="Comercio">Comercio</option>
-            <option value="Otros">Otros</option>
-          </select>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Email */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email
-            </label>
-            <input
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="contacto@empresa.com"
-            />
-          </div>
-
-          {/* Teléfono */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Teléfono
-            </label>
-            <input
-              type="tel"
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="912 345 678"
-            />
-          </div>
-        </div>
-
-        {/* Website */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Sitio Web
-          </label>
-          <input
-            type="url"
-            value={formData.website}
-            onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="https://www.empresa.com"
-          />
-        </div>
-
-        {/* Dirección */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Dirección
-          </label>
-          <input
-            type="text"
-            value={formData.address}
-            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Calle Principal 123, Barcelona"
-          />
-        </div>
-
-        {/* Verificada */}
-        <div className="flex items-center">
-          <input
-            type="checkbox"
-            id="verified"
-            checked={formData.isVerified}
-            onChange={(e) => setFormData({ ...formData, isVerified: e.target.checked })}
-            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-          />
-          <label htmlFor="verified" className="ml-2 text-sm text-gray-700">
-            Empresa verificada (mostrar badge de verificación)
-          </label>
-        </div>
-
-        {/* Botones */}
-        <div className="flex gap-4">
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-4xl mx-auto px-4">
+        {/* Header */}
+        <div className="mb-8">
           <button
-            type="submit"
-            disabled={loading}
-            className="flex-1 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50"
-          >
-            {loading ? 'Creando...' : 'Crear Empresa'}
-          </button>
-          <button
-            type="button"
             onClick={() => router.back()}
-            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors"
           >
-            Cancelar
+            <ArrowLeft className="w-5 h-5" />
+            Tornar
           </button>
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-3xl font-bold text-gray-900">
+              Crear Nova Empresa (Admin)
+            </h1>
+            <span className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-3 py-1 rounded-full text-sm font-medium">
+              👑 Administrador
+            </span>
+          </div>
+          <p className="text-gray-600">
+            Wizard avançat amb privilegis d'administrador per crear empreses col·laboradores
+          </p>
         </div>
-      </form>
+
+        {/* Progress Indicator */}
+        <ProgressIndicator
+          currentStep={currentStep}
+          totalSteps={8}
+          steps={steps}
+        />
+
+        {/* Form Card */}
+        <div className="bg-white rounded-lg shadow-sm p-8 mb-6">
+          {renderStep()}
+        </div>
+
+        {/* Navigation Buttons */}
+        <div className="flex justify-between">
+          <button
+            onClick={prevStep}
+            disabled={currentStep === 1}
+            className={`
+              flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all
+              ${currentStep === 1
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+              }
+            `}
+          >
+            <ArrowLeft className="w-5 h-5" />
+            Anterior
+          </button>
+
+          {currentStep < 8 && (
+            <button
+              onClick={nextStep}
+              className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-all"
+            >
+              {currentStep === 7 ? 'Revisar' : 'Següent'}
+              <ArrowRight className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

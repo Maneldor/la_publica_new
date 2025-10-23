@@ -11,12 +11,16 @@ type AssessoramentWithStatus = typeof assessoramentsMock[0] & {
 
 export default function ListarAssessoraments() {
   // const router = useRouter();
-  const [assessoraments, setAssessoraments] = useState(assessoramentsMock);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
+  // Añadir status por defecto a los assessoraments mock
+  const assessoramentsWithStatus = assessoramentsMock.map((item, index) => ({
+    ...item,
+    status: index % 3 === 0 ? 'publicat' : index % 3 === 1 ? 'esborrany' : 'inactiu'
+  } as AssessoramentWithStatus));
+
+  const [assessoraments, setAssessoraments] = useState(assessoramentsWithStatus);
   const [searchTerm, setSearchTerm] = useState('');
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [filterCategory, setFilterCategory] = useState('');
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [filterStatus, setFilterStatus] = useState('');
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -53,17 +57,126 @@ export default function ListarAssessoraments() {
     }));
   };
 
+  // Calcular estadísticas
+  const getStats = () => {
+    const total = assessoraments.length;
+    const publicats = assessoraments.filter(a => (a as AssessoramentWithStatus).status === 'publicat').length;
+    const esborranys = assessoraments.filter(a => (a as AssessoramentWithStatus).status === 'esborrany').length;
+    const inactius = assessoraments.filter(a => (a as AssessoramentWithStatus).status === 'inactiu').length;
+
+    return { total, publicats, esborranys, inactius };
+  };
+
+  const stats = getStats();
+
   return (
-    <div className="max-w-full">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Gestió d&apos;Assessoraments</h1>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">🎯 Gestió d&apos;Assessoraments</h1>
+          <p className="text-gray-600">Administra els assessoraments i serveis de la plataforma</p>
+        </div>
         <Link
           href="/admin/assessoraments/crear"
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
         >
           + Nou Assessorament
         </Link>
+      </div>
+
+      {/* Estadísticas */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white p-4 rounded-lg border border-gray-200">
+          <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
+          <div className="text-sm text-gray-600">Total assessoraments</div>
+        </div>
+        <div className="bg-white p-4 rounded-lg border border-gray-200">
+          <div className="text-2xl font-bold text-green-600">{stats.publicats}</div>
+          <div className="text-sm text-gray-600">Publicats</div>
+        </div>
+        <div className="bg-white p-4 rounded-lg border border-gray-200">
+          <div className="text-2xl font-bold text-yellow-600">{stats.esborranys}</div>
+          <div className="text-sm text-gray-600">Esborranys</div>
+        </div>
+        <div className="bg-white p-4 rounded-lg border border-gray-200">
+          <div className="text-2xl font-bold text-red-600">{stats.inactius}</div>
+          <div className="text-sm text-gray-600">Inactius</div>
+        </div>
+      </div>
+
+      {/* Filtros */}
+      <div className="bg-white p-6 rounded-lg border border-gray-200">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          {/* Búsqueda */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Buscar
+            </label>
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Títol o empresa..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* Filtro por categoría */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Categoria
+            </label>
+            <select
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Totes les categories</option>
+              <option value="legal">Legal</option>
+              <option value="fiscal">Fiscal</option>
+              <option value="salut">Salut</option>
+              <option value="tecnologia">Tecnologia</option>
+              <option value="immobiliari">Immobiliari</option>
+            </select>
+          </div>
+
+          {/* Filtro por estado */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Estat
+            </label>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Tots els estats</option>
+              <option value="publicat">Publicat</option>
+              <option value="esborrany">Esborrany</option>
+              <option value="inactiu">Inactiu</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Botón limpiar filtros */}
+        <div className="flex justify-between items-center">
+          <button
+            onClick={() => {
+              setSearchTerm('');
+              setFilterCategory('');
+              setFilterStatus('');
+            }}
+            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+          >
+            Netejar filtres
+          </button>
+
+          {/* Contador de resultados */}
+          <div className="text-sm text-gray-600">
+            Mostrant {filteredAssessoraments.length} de {assessoraments.length} assessoraments
+          </div>
+        </div>
       </div>
 
 

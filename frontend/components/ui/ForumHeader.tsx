@@ -14,8 +14,8 @@ export function ForumHeader({ viewMode, onViewChange, totalResults, activeTab }:
   const router = useRouter();
 
   const handleCreatePost = () => {
-    // Simular navegación a crear post
-    console.log('Crear nou fòrum');
+    // Navegar a la página de crear fórum
+    router.push('/dashboard/forums/crear');
   };
 
   const getTitle = () => {

@@ -27,6 +27,7 @@ export default function ListarOfertasPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filter, setFilter] = useState('ALL');
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     fetchOffers();
@@ -76,9 +77,35 @@ export default function ListarOfertasPage() {
     }
   };
 
-  const filteredOffers = filter === 'ALL' 
-    ? offers 
-    : offers.filter(o => o.status === filter);
+  // Aplicar filtros y búsqueda
+  let filteredOffers = offers;
+
+  // Filtrar por estado
+  if (filter !== 'ALL') {
+    filteredOffers = filteredOffers.filter(o => o.status === filter);
+  }
+
+  // Filtrar por búsqueda
+  if (searchTerm) {
+    filteredOffers = filteredOffers.filter(o =>
+      o.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      o.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      o.company.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }
+
+  // Calcular estadísticas
+  const getStats = () => {
+    const total = offers.length;
+    const activas = offers.filter(o => o.status === 'PUBLISHED').length;
+    const borradores = offers.filter(o => o.status === 'DRAFT').length;
+    const caducadas = offers.filter(o => {
+      const expireDate = new Date(o.validUntil);
+      return expireDate < new Date() || o.status === 'EXPIRED';
+    }).length;
+
+    return { total, activas, borradores, caducadas };
+  };
 
   if (loading) {
     return (
@@ -88,16 +115,42 @@ export default function ListarOfertasPage() {
     );
   }
 
+  const stats = getStats();
+
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Ofertas VIP</h1>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">🎁 Gestión de Ofertas VIP</h1>
+          <p className="text-gray-600">Administra las ofertas y promociones de la plataforma</p>
+        </div>
         <button
           onClick={() => router.push('/admin/ofertas/crear')}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
         >
           + Crear Oferta
         </button>
+      </div>
+
+      {/* Estadísticas */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white p-4 rounded-lg border border-gray-200">
+          <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
+          <div className="text-sm text-gray-600">Total ofertas</div>
+        </div>
+        <div className="bg-white p-4 rounded-lg border border-gray-200">
+          <div className="text-2xl font-bold text-green-600">{stats.activas}</div>
+          <div className="text-sm text-gray-600">Ofertas activas</div>
+        </div>
+        <div className="bg-white p-4 rounded-lg border border-gray-200">
+          <div className="text-2xl font-bold text-yellow-600">{stats.borradores}</div>
+          <div className="text-sm text-gray-600">Borradores</div>
+        </div>
+        <div className="bg-white p-4 rounded-lg border border-gray-200">
+          <div className="text-2xl font-bold text-red-600">{stats.caducadas}</div>
+          <div className="text-sm text-gray-600">Caducadas</div>
+        </div>
       </div>
 
       {error && (
@@ -107,22 +160,66 @@ export default function ListarOfertasPage() {
       )}
 
       {/* Filtros */}
-      <div className="mb-6 flex gap-2">
-        {['ALL', 'PUBLISHED', 'DRAFT', 'EXPIRED'].map(status => (
-          <button
-            key={status}
-            onClick={() => setFilter(status)}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filter === status
-                ? 'bg-blue-600 text-white'
-                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-            }`}
-          >
-            {status === 'ALL' ? 'Todas' : 
-             status === 'PUBLISHED' ? 'Publicadas' :
-             status === 'DRAFT' ? 'Borradores' : 'Caducadas'}
-          </button>
-        ))}
+      <div className="bg-white p-6 rounded-lg border border-gray-200">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          {/* Búsqueda */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Buscar
+            </label>
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Título, descripción o empresa..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* Botón limpiar filtros */}
+          <div className="flex items-end">
+            <button
+              onClick={() => {
+                setSearchTerm('');
+                setFilter('ALL');
+              }}
+              className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+            >
+              Limpiar filtros
+            </button>
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <h3 className="text-sm font-medium text-gray-700 mb-3">Filtrar por estado</h3>
+          <div className="flex gap-2">
+            {['ALL', 'PUBLISHED', 'DRAFT', 'EXPIRED'].map(status => (
+              <button
+                key={status}
+                onClick={() => setFilter(status)}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  filter === status
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {status === 'ALL' ? '📋 Todas' :
+                 status === 'PUBLISHED' ? '✅ Publicadas' :
+                 status === 'DRAFT' ? '📝 Borradores' : '⏰ Caducadas'}
+                <span className="ml-2 px-2 py-0.5 bg-white bg-opacity-20 rounded-full text-xs">
+                  {status === 'ALL' ? stats.total :
+                   status === 'PUBLISHED' ? stats.activas :
+                   status === 'DRAFT' ? stats.borradores : stats.caducadas}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Contador de resultados */}
+        <div className="text-sm text-gray-600">
+          Mostrando {filteredOffers.length} de {offers.length} ofertas
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
