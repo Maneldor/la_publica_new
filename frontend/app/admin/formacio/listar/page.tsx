@@ -964,7 +964,7 @@ export default function ListarCursosPage() {
       });
       setCourses(response.data);
       setError('');
-    } catch {
+    } catch (err) {
       console.error('Error loading courses:', err);
       setError('Error al cargar los cursos');
       const sampleCourse = {

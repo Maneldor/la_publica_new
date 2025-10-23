@@ -483,6 +483,28 @@ export default function PerfilPage() {
     }
   };
 
+  const handleProfileUpdate = async (updatedData: any) => {
+    setLoading(true);
+    try {
+      // Simular API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Update all the state with the new data from wizard
+      setAboutData(updatedData.aboutData);
+      setEducation(updatedData.education);
+      setExperience(updatedData.experience);
+      setSkills(updatedData.skills);
+      setInterests(updatedData.interests);
+      setLanguages(updatedData.languages);
+
+      showToast('success', '✓ Perfil actualitzat correctament amb el wizard!');
+    } catch (error) {
+      showToast('error', 'Error al guardar el perfil');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const months = [
@@ -826,6 +848,13 @@ export default function PerfilPage() {
           skills={skills}
           interests={interests}
           languages={languages}
+          onProfileUpdate={handleProfileUpdate}
+          userProfile={{
+            fullName: `${profile.firstName} ${profile.lastName}`,
+            username: profile.nick,
+            administration: profile.administration,
+            registrationDate: profile.createdAt
+          }}
         />}
 
         {activeTab === 'friends' && <FriendsTab />}

@@ -18,17 +18,20 @@ export interface Author {
     followersCount: number;
     likesReceived: number;
   };
+  blogCount?: number;
   isVerified: boolean;
   isFollowing: boolean;
 }
 
 export interface BlogPost {
   id: number;
+  slug: string;
   title: string;
   excerpt: string;
   content: string;
   author: Author;
   category: string;
+  categoryColor?: string;
   tags: string[];
   coverImage: string;
   publishedAt: string;
@@ -38,6 +41,7 @@ export interface BlogPost {
   comments: number;
   isBookmarked: boolean;
   isLiked: boolean;
+  isSaved?: boolean;
   status: 'draft' | 'published' | 'archived';
   featured: boolean;
 }

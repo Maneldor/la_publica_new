@@ -93,7 +93,7 @@ const sampleAuthors: Author[] = [
 const sampleBlogs: BlogPost[] = [
   {
     id: 1,
-    slug: 'protocols-teletreball-era-post-pandemia',
+    slug: 'protocols-teletreball-funcionaris-publics',
     title: 'Protocols de teletreball per a funcionaris públics en l\'era post-pandèmia',
     subtitle: 'Una reflexió sobre com adaptar-nos als nous models de treball i mantenir l\'eficiència en el sector públic',
     content: `
@@ -115,6 +115,133 @@ const sampleBlogs: BlogPost[] = [
     isLiked: false,
     isSaved: false,
     featured: true
+  },
+  {
+    id: 2,
+    slug: 'digitalitzacio-serveis-municipals',
+    title: 'La digitalització dels serveis municipals: reptes i oportunitats',
+    subtitle: 'Anàlisi dels processos de transformació digital en administracions locals catalanes',
+    content: `
+      <p>La transformació digital dels serveis municipals és un dels reptes més importants que afronten les administracions locals...</p>
+      <h2>Els beneficis de la digitalització</h2>
+      <p>La digitalització permet millorar l'eficiència, reduir costos i oferir millors serveis als ciutadans...</p>
+      <h2>Reptes a superar</h2>
+      <p>Malgrat els beneficis, hi ha diversos reptes que cal afrontar...</p>
+    `,
+    coverImage: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&h=400&fit=crop',
+    category: 'Tecnologia',
+    categoryColor: '#6366f1',
+    tags: ['digitalització', 'municipis', 'tecnologia', 'innovació'],
+    authorId: 2,
+    publishedAt: new Date('2024-10-14T14:30:00'),
+    updatedAt: new Date('2024-10-14T14:30:00'),
+    readTime: 6,
+    views: 987,
+    comments: 32,
+    likes: 89,
+    isLiked: true,
+    isSaved: false,
+    featured: false
+  },
+  {
+    id: 3,
+    slug: 'transparencia-participacio-ciutadana',
+    title: 'Transparència i participació ciutadana: eines per a una democràcia més forta',
+    subtitle: 'Explorant les noves plataformes digitals que permeten una major participació dels ciutadans',
+    content: `
+      <p>La transparència i la participació ciutadana són pilars fonamentals de la democràcia moderna...</p>
+      <h2>Plataformes de participació</h2>
+      <p>Les noves tecnologies ofereixen oportunitats sense precedents per involucrar els ciutadans...</p>
+    `,
+    coverImage: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&h=400&fit=crop',
+    category: 'Política',
+    categoryColor: '#3b82f6',
+    tags: ['transparència', 'participació', 'democràcia', 'ciutadania'],
+    authorId: 1,
+    publishedAt: new Date('2024-10-13T10:15:00'),
+    updatedAt: new Date('2024-10-13T10:15:00'),
+    readTime: 10,
+    views: 1567,
+    comments: 67,
+    likes: 234,
+    isLiked: false,
+    isSaved: true,
+    featured: true
+  },
+  {
+    id: 4,
+    slug: 'sostenibilitat-urbana-smart-cities',
+    title: 'Sostenibilitat urbana i smart cities: el futur de les nostres ciutats',
+    subtitle: 'Com les tecnologies intel·ligents poden ajudar a crear ciutats més verdes i eficients',
+    content: `
+      <p>Les smart cities representen el futur de la vida urbana, combinant tecnologia i sostenibilitat...</p>
+      <h2>Tecnologies per a ciutats intel·ligents</h2>
+      <p>Des de sensors IoT fins a sistemes de gestió intel·ligent del trànsit...</p>
+    `,
+    coverImage: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1f?w=800&h=400&fit=crop',
+    category: 'Tecnologia',
+    categoryColor: '#6366f1',
+    tags: ['sostenibilitat', 'smart-cities', 'medi-ambient', 'innovació'],
+    authorId: 2,
+    publishedAt: new Date('2024-10-12T16:45:00'),
+    updatedAt: new Date('2024-10-12T16:45:00'),
+    readTime: 7,
+    views: 756,
+    comments: 28,
+    likes: 156,
+    isLiked: false,
+    isSaved: false,
+    featured: false
+  },
+  {
+    id: 5,
+    slug: 'cultura-digital-administracio',
+    title: 'Cultura digital en l\'administració: canvi de mentalitat vs. canvi tecnològic',
+    subtitle: 'Per què la transformació digital requereix primer un canvi cultural profund',
+    content: `
+      <p>La transformació digital no és només una qüestió de tecnologia, sinó sobretot de cultura organitzacional...</p>
+      <h2>El factor humà en la transformació digital</h2>
+      <p>Les persones són el centre de qualsevol procés de canvi exitós...</p>
+    `,
+    coverImage: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&h=400&fit=crop',
+    category: 'Cultura',
+    categoryColor: '#f59e0b',
+    tags: ['cultura-digital', 'transformació', 'mentalitat', 'administració'],
+    authorId: 1,
+    publishedAt: new Date('2024-10-11T09:30:00'),
+    updatedAt: new Date('2024-10-11T09:30:00'),
+    readTime: 5,
+    views: 623,
+    comments: 19,
+    likes: 78,
+    isLiked: false,
+    isSaved: false,
+    featured: false
+  },
+  {
+    id: 6,
+    slug: 'gestio-recursos-humans-sector-public',
+    title: 'Gestió de recursos humans en el sector públic: noves estratègies per al talent',
+    subtitle: 'Estratègies innovadores per atreure i retenir talent en l\'administració pública',
+    content: `
+      <p>La gestió del talent en el sector públic afronta reptes únics que requereixen solucions innovadores...</p>
+      <h2>Atreure nou talent</h2>
+      <p>Com competir amb el sector privat per atreure els millors professionals...</p>
+    `,
+    coverImage: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=800&h=400&fit=crop',
+    category: 'Gestió Pública',
+    categoryColor: '#10b981',
+    tags: ['recursos-humans', 'talent', 'estratègies', 'administració'],
+    authorId: 2,
+    publishedAt: new Date('2024-10-10T11:20:00'),
+    updatedAt: new Date('2024-10-10T11:20:00'),
+    readTime: 9,
+    views: 892,
+    comments: 35,
+    likes: 145,
+    isLiked: true,
+    isSaved: true,
+    featured: false
   }
 ];
 

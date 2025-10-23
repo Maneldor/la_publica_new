@@ -1,192 +1,177 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { useAdminCreateAnunci } from './hooks/useAdminCreateAnunci';
+import { ProgressIndicator } from './components/ProgressIndicator';
+import { Step1BasicInfo } from './components/steps/Step1BasicInfo';
+import { Step2Details } from './components/steps/Step2Details';
+import { Step3Location } from './components/steps/Step3Location';
+import { Step4Images } from './components/steps/Step4Images';
+import { Step5Review } from './components/steps/Step5Review';
+import { StepAdminSettings } from './components/steps/StepAdminSettings';
 
-export default function CrearAnuncioPage() {
+export default function CrearAnuncioAdminPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    title: '',
-    content: '',
-    type: 'INFO',
-    priority: 'NORMAL',
-    targetAudience: 'ALL',
-    expiresAt: '',
-    isPinned: false,
-  });
+  const {
+    currentStep,
+    formData,
+    errors,
+    updateField,
+    nextStep,
+    prevStep,
+  } = useAdminCreateAnunci();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  const handlePublish = () => {
+    // Aquí iría la lógica de envío al backend con datos de admin
+    console.log('Publicando anuncio de admin:', formData);
 
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/v1/announcements', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          ...formData,
-          expiresAt: formData.expiresAt || null,
-        })
-      });
+    // Simular éxito
+    alert('✅ Anunci d\'admin publicat correctament!');
 
-      if (response.ok) {
-        alert('Anuncio creado exitosamente');
-        router.push('/admin/anuncios/listar');
-      } else {
-        const error = await response.json();
-        alert(error.message || 'Error al crear el anuncio');
-      }
-    } catch {
-      alert('Error de conexión');
-    } finally {
-      setLoading(false);
+    // Redirigir a la lista de anuncios del admin
+    router.push('/admin/anuncios/listar');
+  };
+
+  const steps = [
+    'Informació',
+    'Detalls',
+    'Ubicació',
+    'Imatges',
+    'Configuració Admin',
+    'Revisió'
+  ];
+
+  const renderStep = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <Step1BasicInfo
+            formData={formData}
+            errors={errors}
+            updateField={updateField}
+          />
+        );
+      case 2:
+        return (
+          <Step2Details
+            formData={formData}
+            errors={errors}
+            updateField={updateField}
+          />
+        );
+      case 3:
+        return (
+          <Step3Location
+            formData={formData}
+            errors={errors}
+            updateField={updateField}
+          />
+        );
+      case 4:
+        return (
+          <Step4Images
+            formData={formData}
+            errors={errors}
+            updateField={updateField}
+          />
+        );
+      case 5:
+        return (
+          <StepAdminSettings
+            formData={formData}
+            errors={errors}
+            updateField={updateField}
+          />
+        );
+      case 6:
+        return (
+          <Step5Review
+            formData={formData}
+            errors={errors}
+            onPublish={handlePublish}
+          />
+        );
+      default:
+        return (
+          <div className="text-center py-12">
+            <div className="text-6xl mb-4">🚧</div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              Step {currentStep} - En construcció
+            </h3>
+            <p className="text-gray-600">
+              Aquest pas s'està desenvolupant.
+            </p>
+          </div>
+        );
     }
   };
 
   return (
-    <div className="max-w-2xl">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Crear Anuncio</h1>
-
-      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-6">
-        {/* Título */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Título del Anuncio *
-          </label>
-          <input
-            type="text"
-            required
-            value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Ej: Nuevas ofertas disponibles"
-          />
-        </div>
-
-        {/* Contenido */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Contenido *
-          </label>
-          <textarea
-            required
-            value={formData.content}
-            onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-            rows={6}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Escribe el contenido del anuncio..."
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Tipo */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Tipo *
-            </label>
-            <select
-              required
-              value={formData.type}
-              onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="INFO">ℹ️ Información</option>
-              <option value="WARNING">⚠️ Advertencia</option>
-              <option value="URGENT">🚨 Urgente</option>
-              <option value="NEWS">📰 Noticia</option>
-              <option value="EVENT">📅 Evento</option>
-            </select>
-          </div>
-
-          {/* Prioridad */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Prioridad *
-            </label>
-            <select
-              required
-              value={formData.priority}
-              onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="LOW">Baja</option>
-              <option value="NORMAL">Normal</option>
-              <option value="HIGH">Alta</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Audiencia */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Audiencia Objetivo *
-          </label>
-          <select
-            required
-            value={formData.targetAudience}
-            onChange={(e) => setFormData({ ...formData, targetAudience: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-4xl mx-auto px-4">
+        {/* Header */}
+        <div className="mb-8">
+          <button
+            onClick={() => router.back()}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors"
           >
-            <option value="ALL">Todos los usuarios</option>
-            <option value="EMPLOYEES">Solo empleados públicos</option>
-            <option value="COMPANIES">Solo empresas</option>
-            <option value="ADMINS">Solo administradores</option>
-          </select>
-        </div>
-
-        {/* Fecha de expiración */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Fecha de Expiración (opcional)
-          </label>
-          <input
-            type="datetime-local"
-            value={formData.expiresAt}
-            onChange={(e) => setFormData({ ...formData, expiresAt: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            Dejar vacío para que el anuncio no expire
+            <ArrowLeft className="w-5 h-5" />
+            Tornar
+          </button>
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-3xl font-bold text-gray-900">
+              Crear Nou Anunci (Admin)
+            </h1>
+            <span className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-3 py-1 rounded-full text-sm font-medium">
+              👑 Administrador
+            </span>
+          </div>
+          <p className="text-gray-600">
+            Wizard avançat amb privilegis d'administrador per crear anuncis destacats
           </p>
         </div>
 
-        {/* Fijar */}
-        <div className="flex items-center">
-          <input
-            type="checkbox"
-            id="isPinned"
-            checked={formData.isPinned}
-            onChange={(e) => setFormData({ ...formData, isPinned: e.target.checked })}
-            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-          />
-          <label htmlFor="isPinned" className="ml-2 text-sm text-gray-700">
-            📌 Fijar anuncio (aparecerá siempre primero)
-          </label>
+        {/* Progress Indicator */}
+        <ProgressIndicator
+          currentStep={currentStep}
+          totalSteps={6}
+          steps={steps}
+        />
+
+        {/* Form Card */}
+        <div className="bg-white rounded-lg shadow-sm p-8 mb-6">
+          {renderStep()}
         </div>
 
-        {/* Botones */}
-        <div className="flex gap-4">
+        {/* Navigation Buttons */}
+        <div className="flex justify-between">
           <button
-            type="submit"
-            disabled={loading}
-            className="flex-1 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50"
+            onClick={prevStep}
+            disabled={currentStep === 1}
+            className={`
+              flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all
+              ${currentStep === 1
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+              }
+            `}
           >
-            {loading ? 'Creando...' : 'Crear Anuncio'}
+            <ArrowLeft className="w-5 h-5" />
+            Anterior
           </button>
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-          >
-            Cancelar
-          </button>
+
+          {currentStep < 6 && (
+            <button
+              onClick={nextStep}
+              className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-all"
+            >
+              {currentStep === 5 ? 'Revisar' : 'Següent'}
+              <ArrowRight className="w-5 h-5" />
+            </button>
+          )}
         </div>
-      </form>
+      </div>
     </div>
   );
 }

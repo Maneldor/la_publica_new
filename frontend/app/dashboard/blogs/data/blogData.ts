@@ -20,6 +20,7 @@ export const sampleAuthors: Author[] = [
       followersCount: 245,
       likesReceived: 1567
     },
+    blogCount: 2,
     isVerified: true,
     isFollowing: false
   },
@@ -40,6 +41,7 @@ export const sampleAuthors: Author[] = [
       followersCount: 567,
       likesReceived: 892
     },
+    blogCount: 2,
     isVerified: true,
     isFollowing: true
   },
@@ -61,6 +63,7 @@ export const sampleAuthors: Author[] = [
       followersCount: 432,
       likesReceived: 2134
     },
+    blogCount: 1,
     isVerified: true,
     isFollowing: true
   },
@@ -81,6 +84,7 @@ export const sampleAuthors: Author[] = [
       followersCount: 189,
       likesReceived: 456
     },
+    blogCount: 1,
     isVerified: false,
     isFollowing: false
   }
@@ -142,11 +146,13 @@ export const blogCategories: BlogCategory[] = [
 export const sampleBlogs: BlogPost[] = [
   {
     id: 1,
+    slug: 'protocols-teletreball-funcionaris-publics',
     title: 'Protocols de teletreball per a funcionaris públics en l\'era post-pandèmia',
     excerpt: 'Una reflexió sobre com adaptar-nos als nous models de treball i mantenir l\'eficiència en el sector públic...',
     content: 'Contingut complet del blog...',
     author: sampleAuthors[0],
     category: 'Gestió Pública',
+    categoryColor: '#10b981',
     tags: ['teletreball', 'protocols', 'gestió', 'funcionaris'],
     coverImage: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800&h=400&fit=crop',
     publishedAt: '2024-10-15T08:00:00Z',
@@ -161,11 +167,13 @@ export const sampleBlogs: BlogPost[] = [
   },
   {
     id: 2,
+    slug: 'digitalitzacio-serveis-municipals',
     title: 'La digitalització dels serveis municipals: reptes i oportunitats',
     excerpt: 'Anàlisi dels processos de transformació digital en administracions locals catalanes...',
     content: 'Contingut complet del blog...',
     author: sampleAuthors[1],
     category: 'Tecnologia',
+    categoryColor: '#6366f1',
     tags: ['digitalització', 'municipis', 'tecnologia', 'innovació'],
     coverImage: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&h=400&fit=crop',
     publishedAt: '2024-10-14T14:30:00Z',
@@ -180,11 +188,13 @@ export const sampleBlogs: BlogPost[] = [
   },
   {
     id: 3,
+    slug: 'transparencia-participacio-ciutadana',
     title: 'Transparència i participació ciutadana: eines per a una democràcia més forta',
     excerpt: 'Explorant les noves plataformes digitals que permeten una major participació dels ciutadans...',
     content: 'Contingut complet del blog...',
     author: sampleAuthors[2],
     category: 'Política',
+    categoryColor: '#3b82f6',
     tags: ['transparència', 'participació', 'democràcia', 'ciutadania'],
     coverImage: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&h=400&fit=crop',
     publishedAt: '2024-10-13T10:15:00Z',
@@ -199,11 +209,13 @@ export const sampleBlogs: BlogPost[] = [
   },
   {
     id: 4,
+    slug: 'sostenibilitat-urbana-smart-cities',
     title: 'Sostenibilitat urbana i smart cities: el futur de les nostres ciutats',
     excerpt: 'Com les tecnologies intel·ligents poden ajudar a crear ciutats més verdes i eficients...',
     content: 'Contingut complet del blog...',
     author: sampleAuthors[3],
     category: 'Tecnologia',
+    categoryColor: '#6366f1',
     tags: ['sostenibilitat', 'smart-cities', 'medi-ambient', 'innovació'],
     coverImage: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1f?w=800&h=400&fit=crop',
     publishedAt: '2024-10-12T16:45:00Z',
@@ -218,11 +230,13 @@ export const sampleBlogs: BlogPost[] = [
   },
   {
     id: 5,
+    slug: 'cultura-digital-administracio',
     title: 'Cultura digital en l\'administració: canvi de mentalitat vs. canvi tecnològic',
     excerpt: 'Per què la transformació digital requereix primer un canvi cultural profund...',
     content: 'Contingut complet del blog...',
     author: sampleAuthors[0],
     category: 'Cultura',
+    categoryColor: '#f59e0b',
     tags: ['cultura-digital', 'transformació', 'mentalitat', 'administració'],
     coverImage: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&h=400&fit=crop',
     publishedAt: '2024-10-11T09:30:00Z',
@@ -237,11 +251,13 @@ export const sampleBlogs: BlogPost[] = [
   },
   {
     id: 6,
+    slug: 'gestio-recursos-humans-sector-public',
     title: 'Gestió de recursos humans en el sector públic: noves estratègies per al talent',
     excerpt: 'Estratègies innovadores per atreure i retenir talent en l\'administració pública...',
     content: 'Contingut complet del blog...',
     author: sampleAuthors[1],
     category: 'Gestió Pública',
+    categoryColor: '#10b981',
     tags: ['recursos-humans', 'talent', 'estratègies', 'administració'],
     coverImage: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=800&h=400&fit=crop',
     publishedAt: '2024-10-10T11:20:00Z',

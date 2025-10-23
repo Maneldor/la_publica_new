@@ -70,7 +70,7 @@ export default function CrearUsuarioPage() {
           setCustomFields(result.data);
         }
       }
-    } catch {
+    } catch (err) {
       console.error('Error loading custom fields:', err);
     }
   };
