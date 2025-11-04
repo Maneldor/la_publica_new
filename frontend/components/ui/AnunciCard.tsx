@@ -36,6 +36,7 @@ export function AnunciCard({ anunci, viewMode }: AnunciCardProps) {
   const [isHovered, setIsHovered] = useState(false);
 
   const handleViewAnunci = () => {
+    // Usar directamente el ID real del anuncio
     router.push(`/dashboard/anuncis/${anunci.id}`);
   };
 

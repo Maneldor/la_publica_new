@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Users, Eye, EyeOff, Calendar } from 'lucide-react';
+import StatCard from '@/components/ui/StatCard';
 
 interface Group {
   id: number;
@@ -49,7 +51,7 @@ export default function ListarGruposPage() {
         setError('Error al cargar los grupos');
         setGroups([]);
       }
-    } catch {
+    } catch (err) {
       console.error('Error:', err);
       setError('Error de conexión');
       setGroups([]);
@@ -80,6 +82,20 @@ export default function ListarGruposPage() {
     }
   };
 
+  // Calcular estadísticas
+  const getStats = () => {
+    const total = groups.length;
+    const publicos = groups.filter(g => g.visibility === 'public').length;
+    const privados = groups.filter(g => g.visibility === 'private').length;
+    const hoy = groups.filter(g => {
+      const groupDate = new Date(g.createdAt).toDateString();
+      const today = new Date().toDateString();
+      return groupDate === today;
+    }).length;
+
+    return { total, publicos, privados, hoy };
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -88,10 +104,16 @@ export default function ListarGruposPage() {
     );
   }
 
+  const stats = getStats();
+
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Grupos</h1>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">👥 Gestión de Grupos</h1>
+          <p className="text-gray-600">Administra los grupos y comunidades de la plataforma</p>
+        </div>
         <button
           onClick={() => router.push('/admin/grupos/crear')}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
@@ -100,8 +122,36 @@ export default function ListarGruposPage() {
         </button>
       </div>
 
+      {/* Estadísticas */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <StatCard
+          title="Total Grupos"
+          value={stats.total}
+          icon={<Users className="w-10 h-10" />}
+          color="blue"
+        />
+        <StatCard
+          title="Grupos Públicos"
+          value={stats.publicos}
+          icon={<Eye className="w-10 h-10" />}
+          color="green"
+        />
+        <StatCard
+          title="Grupos Privados"
+          value={stats.privados}
+          icon={<EyeOff className="w-10 h-10" />}
+          color="yellow"
+        />
+        <StatCard
+          title="Creados Hoy"
+          value={stats.hoy}
+          icon={<Calendar className="w-10 h-10" />}
+          color="purple"
+        />
+      </div>
+
       {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
           {error}
         </div>
       )}

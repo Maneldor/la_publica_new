@@ -1,168 +1,96 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Megaphone, CheckCircle, Star, Clock, Check, X, AlertTriangle } from 'lucide-react';
+import StatCard from '@/components/ui/StatCard';
+import { useAnuncios, useDeleteAnuncio, usePendingAnuncios, useApproveAnuncio, useRejectAnuncio } from '@/hooks/useAnuncios';
+import { toast } from 'sonner';
 
-interface Announcement {
-  id: number;
-  title: string;
-  content: string;
-  type: string;
-  priority: string;
-  targetAudience: string;
-  isPinned: boolean;
-  expiresAt?: string;
-  createdAt: string;
-  category?: string;
-  status?: 'active' | 'pending' | 'archived';
-}
 
 export default function ListarAnunciosPage() {
   const router = useRouter();
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [filteredAnnouncements, setFilteredAnnouncements] = useState<Announcement[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
   // Filtros
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [page, setPage] = useState(1);
 
-  useEffect(() => {
-    fetchAnnouncements();
-  }, []);
-
-  useEffect(() => {
-    let filtered = announcements;
-
-    // Filtrar por búsqueda
-    if (searchTerm) {
-      filtered = filtered.filter(announcement =>
-        announcement.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        announcement.content.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Filtrar por categoría
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter(announcement =>
-        announcement.category === selectedCategory ||
-        announcement.type === selectedCategory
-      );
-    }
-
-    // Filtrar por estado
-    if (selectedStatus !== 'all') {
-      filtered = filtered.filter(announcement => {
-        if (selectedStatus === 'active') {
-          return !announcement.expiresAt || new Date(announcement.expiresAt) > new Date();
-        } else if (selectedStatus === 'pending') {
-          return announcement.status === 'pending';
-        } else if (selectedStatus === 'archived') {
-          return announcement.expiresAt && new Date(announcement.expiresAt) <= new Date();
-        }
-        return true;
-      });
-    }
-
-    setFilteredAnnouncements(filtered);
-  }, [announcements, searchTerm, selectedCategory, selectedStatus]);
-
-  const fetchAnnouncements = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/v1/announcements', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Datos recibidos:', data);
-
-        if (Array.isArray(data)) {
-          setAnnouncements(data);
-          setFilteredAnnouncements(data);
-        } else if (data.data && Array.isArray(data.data)) {
-          setAnnouncements(data.data);
-          setFilteredAnnouncements(data.data);
-        } else {
-          console.error('Los datos no son un array:', data);
-          setAnnouncements([]);
-          setFilteredAnnouncements([]);
-        }
-      } else {
-        setError('Error al cargar los anuncios');
-        setAnnouncements([]);
-        setFilteredAnnouncements([]);
-      }
-    } catch {
-      console.error('Error de conexión');
-      setError('Error de conexión');
-      setAnnouncements([]);
-      setFilteredAnnouncements([]);
-    } finally {
-      setLoading(false);
-    }
+  // Construir objeto de filtros para la API
+  const filters = {
+    search: searchTerm || undefined,
+    type: selectedType !== 'all' ? selectedType.toLowerCase() : undefined,
+    status: selectedStatus !== 'all' ? selectedStatus : undefined,
+    page,
+    limit: 10
   };
 
-  const handleDelete = async (id: number) => {
+  // Hooks de datos
+  const { data, isLoading, error } = useAnuncios(filters);
+  const { data: pendingData } = usePendingAnuncios();
+  const deleteAnuncioMutation = useDeleteAnuncio();
+  const approveAnuncioMutation = useApproveAnuncio();
+  const rejectAnuncioMutation = useRejectAnuncio();
+
+  const announcements = data?.data || [];
+  const pagination = data?.pagination;
+
+
+
+  const handleDelete = async (id: string) => {
     if (!confirm('¿Estás seguro de eliminar este anuncio?')) return;
+    deleteAnuncioMutation.mutate(id);
+  };
 
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/v1/announcements/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+  const handleApprove = async (id: string) => {
+    if (!confirm('¿Aprobar este anuncio? Se publicará inmediatamente.')) return;
+    approveAnuncioMutation.mutate(id);
+  };
 
-      if (response.ok) {
-        setAnnouncements(announcements.filter(a => a.id !== id));
-      } else {
-        alert('Error al eliminar el anuncio');
-      }
-    } catch {
-      alert('Error de conexión');
-    }
+  const handleReject = async (id: string) => {
+    const reason = prompt('Razón del rechazo (opcional):');
+    if (reason === null) return; // Usuario canceló
+    rejectAnuncioMutation.mutate({ id, reason: reason.trim() || undefined });
   };
 
   // Calcular estadísticas
   const getStats = () => {
-    const total = announcements.length;
-    const activos = announcements.filter(a =>
-      !a.expiresAt || new Date(a.expiresAt) > new Date()
+    const total = pagination?.total || 0;
+    const activos = announcements.filter((a: any) =>
+      a.status === 'approved'
     ).length;
-    const destacados = announcements.filter(a => a.isPinned).length;
-    const pendientes = announcements.filter(a =>
-      a.status === 'pending' || a.priority === 'LOW'
-    ).length;
+    const destacados = announcements.filter((a: any) => a.isPinned).length;
+    const pendientes = pendingData?.pagination?.total || 0;
 
     return { total, activos, destacados, pendientes };
   };
 
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'INFO': return 'ℹ️';
-      case 'WARNING': return '⚠️';
+      case 'GENERAL': return '📋';
       case 'URGENT': return '🚨';
-      case 'NEWS': return '📰';
       case 'EVENT': return '📅';
-      default: return 'ℹ️';
+      case 'MAINTENANCE': return '🔧';
+      case 'NEWS': return '📰';
+      case 'ALERT': return '⚠️';
+      case 'PROMOTION': return '🎁';
+      case 'REGULATION': return '📜';
+      default: return '📋';
     }
   };
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'INFO': return 'bg-blue-100 text-blue-800';
-      case 'WARNING': return 'bg-yellow-100 text-yellow-800';
+      case 'GENERAL': return 'bg-gray-100 text-gray-800';
       case 'URGENT': return 'bg-red-100 text-red-800';
-      case 'NEWS': return 'bg-green-100 text-green-800';
       case 'EVENT': return 'bg-purple-100 text-purple-800';
+      case 'MAINTENANCE': return 'bg-yellow-100 text-yellow-800';
+      case 'NEWS': return 'bg-green-100 text-green-800';
+      case 'ALERT': return 'bg-orange-100 text-orange-800';
+      case 'PROMOTION': return 'bg-blue-100 text-blue-800';
+      case 'REGULATION': return 'bg-indigo-100 text-indigo-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -186,6 +114,8 @@ export default function ListarAnunciosPage() {
       'llar': '🏡 Hogar',
       'serveis': '🔧 Servicios',
       'altres': '📦 Otros',
+      'OFERTA': '📤 Oferta',
+      'DEMANDA': '📥 Demanda',
       'INFO': 'ℹ️ Información',
       'WARNING': '⚠️ Aviso',
       'URGENT': '🚨 Urgente',
@@ -195,7 +125,7 @@ export default function ListarAnunciosPage() {
     return categories[category] || category;
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-gray-500">Cargando anuncios...</div>
@@ -223,22 +153,30 @@ export default function ListarAnunciosPage() {
 
       {/* Estadísticas */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
-          <div className="text-sm text-gray-600">Total anuncios</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-2xl font-bold text-green-600">{stats.activos}</div>
-          <div className="text-sm text-gray-600">Anuncios activos</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-2xl font-bold text-yellow-600">{stats.destacados}</div>
-          <div className="text-sm text-gray-600">Anuncios destacados</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-2xl font-bold text-orange-600">{stats.pendientes}</div>
-          <div className="text-sm text-gray-600">Pendientes revisión</div>
-        </div>
+        <StatCard
+          title="Total Anuncios"
+          value={stats.total}
+          icon={<Megaphone className="w-10 h-10" />}
+          color="blue"
+        />
+        <StatCard
+          title="Anuncios Activos"
+          value={stats.activos}
+          icon={<CheckCircle className="w-10 h-10" />}
+          color="green"
+        />
+        <StatCard
+          title="Anuncios Destacados"
+          value={stats.destacados}
+          icon={<Star className="w-10 h-10" />}
+          color="yellow"
+        />
+        <StatCard
+          title="Pendientes Revisión"
+          value={stats.pendientes}
+          icon={<Clock className="w-10 h-10" />}
+          color="orange"
+        />
       </div>
 
       {/* Filtros */}
@@ -259,26 +197,22 @@ export default function ListarAnunciosPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Categoría
+              Tipo
             </label>
             <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
+              value={selectedType}
+              onChange={(e) => setSelectedType(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="all">Todas las categorías</option>
-              <option value="tecnologia">💻 Tecnología</option>
-              <option value="vehicles">🚗 Vehículos</option>
-              <option value="immobiliaria">🏠 Inmobiliaria</option>
-              <option value="moda">👔 Moda</option>
-              <option value="esports">⚽ Deportes</option>
-              <option value="llar">🏡 Hogar</option>
-              <option value="serveis">🔧 Servicios</option>
-              <option value="INFO">ℹ️ Información</option>
-              <option value="WARNING">⚠️ Aviso</option>
-              <option value="URGENT">🚨 Urgente</option>
-              <option value="NEWS">📰 Noticias</option>
-              <option value="EVENT">📅 Evento</option>
+              <option value="all">Todos los tipos</option>
+              <option value="general">📋 General</option>
+              <option value="urgent">🚨 Urgente</option>
+              <option value="event">📅 Evento</option>
+              <option value="maintenance">🔧 Mantenimiento</option>
+              <option value="news">📰 Noticias</option>
+              <option value="alert">⚠️ Alerta</option>
+              <option value="promotion">🎁 Promoción</option>
+              <option value="regulation">📜 Normativa</option>
             </select>
           </div>
 
@@ -292,9 +226,10 @@ export default function ListarAnunciosPage() {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">Todos los estados</option>
-              <option value="active">✅ Activo</option>
-              <option value="pending">⏳ Pendiente</option>
-              <option value="archived">📁 Archivado</option>
+              <option value="approved">✅ Aprobado</option>
+              <option value="pending_review">⏳ Pendiente revisión</option>
+              <option value="rejected">❌ Rechazado</option>
+              <option value="draft">📝 Borrador</option>
             </select>
           </div>
 
@@ -302,8 +237,9 @@ export default function ListarAnunciosPage() {
             <button
               onClick={() => {
                 setSearchTerm('');
-                setSelectedCategory('all');
+                setSelectedType('all');
                 setSelectedStatus('all');
+                setPage(1);
               }}
               className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
             >
@@ -315,7 +251,7 @@ export default function ListarAnunciosPage() {
 
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-          {error}
+          {error.message || 'Error al cargar los anuncios'}
         </div>
       )}
 
@@ -323,25 +259,25 @@ export default function ListarAnunciosPage() {
       <div className="bg-white rounded-lg border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">
-            Anuncios ({filteredAnnouncements.length})
+            Anuncios ({announcements.length} de {pagination?.total || 0})
           </h2>
         </div>
 
-        {filteredAnnouncements.length === 0 ? (
+        {announcements.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
-            {announcements.length === 0
-              ? "No hay anuncios creados aún"
+            {isLoading
+              ? "Cargando anuncios..."
               : "No hay anuncios que coincidan con los filtros seleccionados."
             }
           </div>
         ) : (
           <div className="divide-y divide-gray-200">
-            {filteredAnnouncements.map((announcement) => (
+            {announcements.map((announcement: any) => (
               <div key={announcement.id} className="p-6 hover:bg-gray-50">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      {announcement.isPinned && <span className="text-xl">📌</span>}
+                      {announcement.isSticky && <span className="text-xl">📌</span>}
                       <span className="text-2xl">{getTypeIcon(announcement.type)}</span>
                       <h3 className="text-lg font-medium text-gray-900">
                         {announcement.title}
@@ -349,7 +285,7 @@ export default function ListarAnunciosPage() {
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${getTypeColor(announcement.type)}`}>
                         {announcement.type}
                       </span>
-                      {announcement.priority === 'HIGH' && (
+                      {announcement.priority > 7 && (
                         <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
                           Alta prioridad
                         </span>
@@ -362,14 +298,58 @@ export default function ListarAnunciosPage() {
 
                     <div className="flex items-center gap-4 text-sm text-gray-500">
                       <span>📅 {new Date(announcement.createdAt).toLocaleDateString('es-ES')}</span>
-                      <span>👥 {announcement.targetAudience === 'ALL' ? 'Todos' : announcement.targetAudience}</span>
+                      <span>👥 {announcement.audience === 'ALL' ? 'Todos' : announcement.audience}</span>
+                      <span>👤 {announcement.author?.name || announcement.author?.email}</span>
                       {announcement.expiresAt && (
                         <span>⏰ Expira: {new Date(announcement.expiresAt).toLocaleDateString('es-ES')}</span>
                       )}
+                      <span className={`px-2 py-1 text-xs rounded-full ${
+                        announcement.status === 'approved' ? 'bg-green-100 text-green-800' :
+                        announcement.status === 'pending_review' ? 'bg-yellow-100 text-yellow-800' :
+                        announcement.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                        announcement.status === 'draft' ? 'bg-gray-100 text-gray-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {announcement.status === 'approved' ? '✅ Aprobado' :
+                         announcement.status === 'pending_review' ? '⏳ Pendiente' :
+                         announcement.status === 'rejected' ? '❌ Rechazado' :
+                         announcement.status === 'draft' ? '📝 Borrador' :
+                         announcement.status}
+                      </span>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 ml-4">
+                    {/* Botones de moderación para anuncios pendientes */}
+                    {announcement.status === 'pending_review' && (
+                      <>
+                        <button
+                          onClick={() => handleApprove(announcement.id)}
+                          disabled={approveAnuncioMutation.isPending}
+                          className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors disabled:opacity-50 flex items-center gap-1"
+                        >
+                          <Check className="w-3 h-3" />
+                          Aprobar
+                        </button>
+                        <button
+                          onClick={() => handleReject(announcement.id)}
+                          disabled={rejectAnuncioMutation.isPending}
+                          className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors disabled:opacity-50 flex items-center gap-1"
+                        >
+                          <X className="w-3 h-3" />
+                          Rechazar
+                        </button>
+                      </>
+                    )}
+
+                    {/* Botón de alerta para rechazados */}
+                    {announcement.status === 'rejected' && (
+                      <span className="px-2 py-1 text-xs bg-red-50 text-red-600 rounded flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" />
+                        Rechazado
+                      </span>
+                    )}
+
                     <button
                       onClick={() => router.push(`/admin/anuncios/${announcement.id}`)}
                       className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
@@ -377,7 +357,7 @@ export default function ListarAnunciosPage() {
                       Ver
                     </button>
                     <Link
-                      href={`/admin/anuncios/editar/${announcement.id}`}
+                      href={`/admin/anuncios/${announcement.id}/editar`}
                       className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
                     >
                       Editar
@@ -395,6 +375,34 @@ export default function ListarAnunciosPage() {
           </div>
         )}
       </div>
+
+      {/* Paginación */}
+      {pagination && pagination.totalPages > 1 && (
+        <div className="bg-white p-4 rounded-lg border border-gray-200 flex items-center justify-between">
+          <div className="text-sm text-gray-600">
+            Mostrando {((pagination.page - 1) * pagination.limit) + 1} a {Math.min(pagination.page * pagination.limit, pagination.total)} de {pagination.total} anuncios
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage(Math.max(1, page - 1))}
+              disabled={page === 1 || isLoading}
+              className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Anterior
+            </button>
+            <span className="px-3 py-1 text-sm text-gray-700">
+              Página {pagination.page} de {pagination.totalPages}
+            </span>
+            <button
+              onClick={() => setPage(Math.min(pagination.totalPages, page + 1))}
+              disabled={page === pagination.totalPages || isLoading}
+              className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Siguiente
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

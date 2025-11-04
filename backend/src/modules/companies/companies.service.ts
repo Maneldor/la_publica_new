@@ -1,6 +1,82 @@
 import prisma from '../../config/database';
+import bcrypt from 'bcryptjs';
+import { UserRole } from '@prisma/client';
 
 export class CompaniesService {
+  async registerCompany(data: {
+    name: string;
+    email: string;
+    description: string;
+    sector: string;
+    size: 'startup' | 'pequeña' | 'mediana' | 'grande' | 'multinacional';
+    isVerified: boolean;
+    isActive: boolean;
+    configuration?: any;
+  }, password: string) {
+    // Verificar si ya existe una empresa con ese email
+    const existingCompany = await prisma.company.findFirst({
+      where: {
+        email: data.email
+      }
+    });
+
+    if (existingCompany) {
+      throw new Error('Ya existe una empresa registrada con ese email');
+    }
+
+    // Verificar si ya existe un usuario con ese email
+    const existingUser = await prisma.user.findUnique({
+      where: {
+        email: data.email
+      }
+    });
+
+    if (existingUser) {
+      throw new Error('Ya existe un usuario registrado con ese email');
+    }
+
+    // Hash de la contraseña
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Crear usuario y empresa en una transacción
+    const result = await prisma.$transaction(async (tx) => {
+      // Crear usuario para la empresa
+      const user = await tx.user.create({
+        data: {
+          email: data.email,
+          password: hashedPassword,
+          primaryRole: UserRole.COMPANY_MANAGER, // Rol de gestor de empresa
+          isActive: true
+        }
+      });
+
+      // Crear la empresa
+      const company = await tx.company.create({
+        data: {
+          name: data.name,
+          description: data.description,
+          sector: data.sector,
+          size: data.size,
+          email: data.email,
+          isVerified: data.isVerified,
+          isActive: data.isActive,
+          configuration: data.configuration ? JSON.stringify(data.configuration) : null,
+          userId: user.id
+        }
+      });
+
+      return { user, company };
+    });
+
+    return {
+      id: result.company.id,
+      name: result.company.name,
+      email: result.company.email,
+      isVerified: result.company.isVerified,
+      isActive: result.company.isActive,
+      userId: result.user.id
+    };
+  }
   async createCompany(data: {
     name: string;
     description?: string;

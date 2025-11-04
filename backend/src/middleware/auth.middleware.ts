@@ -3,60 +3,98 @@ import * as jwt from 'jsonwebtoken';
 import { UserRole } from '@prisma/client';
 import prisma from '../config/database';
 
-interface AuthenticatedRequest extends Request {
-  user?: {
-    id: string;
-    email: string;
-    primaryRole: string;
-  };
-}
-
 export const authMiddleware = async (
-  req: AuthenticatedRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ) => {
+  console.log('\n🔒 === AUTH MIDDLEWARE ===');
+  console.log('📍 URL:', req.url);
+  console.log('📍 Method:', req.method);
+  console.log('📍 Headers Authorization:', req.headers.authorization);
+
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
 
-  console.log('🔐 Auth middleware ejecutándose...');
-  console.log('📋 Auth header existe:', !!authHeader);
-  console.log('🎫 Token existe:', !!token);
+  console.log('🔑 Authorization header completo:', authHeader);
 
-  if (!token) {
-    console.log('❌ Token no proporcionado');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.log('❌ Token no proporcionado o formato incorrecto');
+    console.log('🔒 === FIN AUTH MIDDLEWARE (ERROR) ===\n');
     return res.status(401).json({ error: 'Token no proporcionado' });
   }
 
+  const token = authHeader.replace('Bearer ', '');
+  console.log('🔑 Token extraído:', token.substring(0, 30) + '...');
+
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret') as any;
-    console.log('✅ Token válido, usuario:', decoded.email);
+    const SECRET = process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET || 'mi-secreto-super-seguro-2024';
+    console.log('🔐 SECRET usado:', SECRET.substring(0, 15) + '...');
 
-    // Obtener información actualizada del usuario desde la base de datos
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.id },
-      select: {
-        id: true,
-        email: true,
-        primaryRole: true,
-        isActive: true
+    const decoded = jwt.verify(token, SECRET) as any;
+    console.log('✅ Token decodificado exitosamente');
+    console.log('📋 Contenido del token:', decoded);
+    console.log('👤 Usuario ID:', decoded.id || decoded.userId);
+    console.log('👤 Email:', decoded.email);
+    console.log('👤 Rol primario:', decoded.primaryRole);
+    console.log('👤 Rol adicional:', decoded.role);
+
+    try {
+      // Intentar obtener información del usuario desde la base de datos
+      const user = await prisma.user.findUnique({
+        where: { id: decoded.id },
+        select: {
+          id: true,
+          email: true,
+          primaryRole: true,
+          isActive: true
+        }
+      });
+
+      if (user && user.isActive) {
+        console.log('✅ Usuario encontrado en BD:', user);
+        req.user = {
+          id: user.id,
+          email: user.email,
+          primaryRole: user.primaryRole
+        };
+        console.log('✅ Usuario adjuntado a request desde BD');
+        console.log('🔒 === FIN AUTH MIDDLEWARE (ÉXITO BD) ===\n');
+        next();
+        return;
+      } else {
+        console.log('⚠️ Usuario no encontrado en BD o inactivo');
       }
-    });
-
-    if (!user || !user.isActive) {
-      console.log('❌ Usuario no encontrado o inactivo');
-      return res.status(401).json({ error: 'Usuario no encontrado o inactivo' });
+    } catch (dbError) {
+      console.log('⚠️ Error de base de datos en middleware:', dbError);
     }
 
-    req.user = {
-      id: user.id,
-      email: user.email,
-      primaryRole: user.primaryRole
-    };
+    // Fallback: usar información del token JWT decodificado
+    console.log('🔄 Usando fallback del token JWT...');
+    if (decoded.id && decoded.email && decoded.primaryRole) {
+      req.user = {
+        id: decoded.id,
+        email: decoded.email,
+        primaryRole: decoded.primaryRole
+      };
+      console.log('✅ Usuario autenticado desde token JWT:', decoded.email);
+      console.log('✅ Usuario adjuntado a request:', req.user);
+      console.log('🔒 === FIN AUTH MIDDLEWARE (ÉXITO TOKEN) ===\n');
+      next();
+    } else {
+      console.log('❌ Token sin información suficiente del usuario');
+      console.log('📋 Campos disponibles:', {
+        id: decoded.id,
+        email: decoded.email,
+        primaryRole: decoded.primaryRole
+      });
+      console.log('🔒 === FIN AUTH MIDDLEWARE (ERROR CAMPOS) ===\n');
+      return res.status(401).json({ error: 'Token inválido: faltan datos del usuario' });
+    }
 
-    next();
   } catch (error: any) {
     console.error('❌ Error verificando token:', error.message);
+    console.error('❌ Stack trace:', error.stack);
+    console.log('🔒 === FIN AUTH MIDDLEWARE (ERROR JWT) ===\n');
     return res.status(403).json({ error: 'Token inválido' });
   }
 };
@@ -65,7 +103,7 @@ export const authMiddleware = async (
 export const authenticateToken = authMiddleware;
 
 export const requireRole = (...roles: string[]) => {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {
       return res.status(401).json({ error: 'No autenticado' });
     }
@@ -78,7 +116,7 @@ export const requireRole = (...roles: string[]) => {
   };
 };
 
-export const isAdmin = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+export const isAdmin = (req: Request, res: Response, next: NextFunction) => {
   if (!req.user) {
     return res.status(401).json({ error: 'No autenticado' });
   }

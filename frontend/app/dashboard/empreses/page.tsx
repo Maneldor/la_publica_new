@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { PageTemplate } from '../../../components/ui/PageTemplate';
 import { CompanySearchFilters } from '../../../components/ui/CompanySearchFilters';
 import { CompanyTabs } from '../../../components/ui/CompanyTabs';
@@ -175,6 +175,7 @@ export default function EmpresesesPage() {
   const [activeTab, setActiveTab] = useState('totes');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchTerm, setSearchTerm] = useState('');
+  const [allCompanies, setAllCompanies] = useState(sampleCompanies);
   const [filters, setFilters] = useState({
     sector: '',
     location: '',
@@ -182,12 +183,45 @@ export default function EmpresesesPage() {
     status: ''
   });
 
-  const statsData = [
-    { label: 'Total Empreses', value: '347', trend: '+12%' },
+  // Cargar empresas creadas desde admin
+  useEffect(() => {
+    const createdEmpresas = JSON.parse(localStorage.getItem('createdEmpresas') || '[]');
+
+    // Convertir empresas de admin al formato Company
+    const convertedCompanies = createdEmpresas
+      .filter((empresa: any) => empresa.status === 'published')
+      .map((empresa: any) => ({
+        id: empresa.id,
+        name: empresa.name,
+        description: empresa.description,
+        sector: empresa.category,
+        location: empresa.address,
+        logo: empresa.logoUrl || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=150&h=150&fit=crop',
+        coverImage: empresa.imageUrls?.[0] || 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=400&h=150&fit=crop',
+        collaborationType: 'Partner verificat',
+        status: empresa.isVerified ? 'Verificada' : empresa.isFeatured ? 'Premium' : 'Activa',
+        contactEmail: empresa.email,
+        contactPhone: empresa.phone,
+        website: empresa.website,
+        rating: 5.0,
+        reviewsCount: 0,
+        certifications: empresa.services || [],
+        isHighlighted: empresa.isPinned || empresa.isFeatured,
+        yearEstablished: empresa.foundedYear ? parseInt(empresa.foundedYear) : new Date().getFullYear(),
+        employeeCount: empresa.employeeRange || '1-10'
+      }));
+
+    // Combinar empresas de ejemplo con empresas creadas (las creadas aparecen primero)
+    const combinedCompanies = [...convertedCompanies, ...sampleCompanies];
+    setAllCompanies(combinedCompanies);
+  }, []);
+
+  const statsData = useMemo(() => [
+    { label: 'Total Empreses', value: allCompanies.length.toString(), trend: '+12%' },
     { label: 'Noves Aquest Mes', value: '8', trend: '+3' },
-    { label: 'Verificades', value: '289', trend: '+8%' },
-    { label: 'Actives', value: '334', trend: '+5%' }
-  ];
+    { label: 'Verificades', value: allCompanies.filter(c => c.status === 'Verificada').length.toString(), trend: '+8%' },
+    { label: 'Actives', value: allCompanies.filter(c => c.status !== 'Suspesa').length.toString(), trend: '+5%' }
+  ], [allCompanies]);
 
   // Lista extensible de categorías disponibles
   const availableCategories = [
@@ -210,7 +244,7 @@ export default function EmpresesesPage() {
 
   // Filtrar empresas basado en búsqueda, filtros y tab activo
   const filteredCompanies = useMemo(() => {
-    let filtered = [...sampleCompanies];
+    let filtered = [...allCompanies];
 
     // Filtrar por término de búsqueda
     if (searchTerm) {
@@ -258,14 +292,14 @@ export default function EmpresesesPage() {
     }
 
     return filtered;
-  }, [searchTerm, filters, activeTab]);
+  }, [searchTerm, filters, activeTab, allCompanies]);
 
   // Calcular contadores para pestañas básicas
-  const tabCounts = {
-    totes: sampleCompanies.length,
-    destacades: sampleCompanies.filter(c => c.isHighlighted).length,
+  const tabCounts = useMemo(() => ({
+    totes: allCompanies.length,
+    destacades: allCompanies.filter(c => c.isHighlighted).length,
     noves: 3
-  };
+  }), [allCompanies]);
 
   return (
     <PageTemplate

@@ -1,9 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 // import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Users, CheckCircle, Clock, XCircle } from 'lucide-react';
 import { assessoramentsMock } from '@/data/assessoraments-mock';
+import StatCard from '@/components/ui/StatCard';
 
 type AssessoramentWithStatus = typeof assessoramentsMock[0] & {
   status?: 'publicat' | 'esborrany' | 'inactiu';
@@ -19,6 +21,26 @@ export default function ListarAssessoraments() {
   } as AssessoramentWithStatus));
 
   const [assessoraments, setAssessoraments] = useState(assessoramentsWithStatus);
+
+  // Cargar assessoraments creados desde admin
+  useEffect(() => {
+    const createdAssessoraments = JSON.parse(localStorage.getItem('createdAssessoraments') || '[]');
+
+    // Convertir assessoraments creados al formato esperado
+    const convertedAssessoraments = createdAssessoraments.map((assessorament: any) => ({
+      ...assessorament,
+      id: assessorament.id.toString(),
+      categoria: assessorament.categoria || 'general',
+      empresa: {
+        ...assessorament.empresa,
+        nom: assessorament.empresa?.nom || assessorament.empresa?.name || 'Empresa'
+      }
+    }));
+
+    // Combinar assessoraments de ejemplo con creados (creados aparecen primero)
+    const combinedAssessoraments = [...convertedAssessoraments, ...assessoramentsWithStatus];
+    setAssessoraments(combinedAssessoraments);
+  }, []);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -40,6 +62,12 @@ export default function ListarAssessoraments() {
 
   const handleDelete = (id: string) => {
     if (confirm('Estàs segur que vols eliminar aquest assessorament?')) {
+      // Eliminar del localStorage si es un assessorament creado
+      const createdAssessoraments = JSON.parse(localStorage.getItem('createdAssessoraments') || '[]');
+      const updatedCreated = createdAssessoraments.filter((a: any) => a.id.toString() !== id);
+      localStorage.setItem('createdAssessoraments', JSON.stringify(updatedCreated));
+
+      // Actualizar el estado local
       setAssessoraments(prev => prev.filter(a => a.id !== id));
     }
   };
@@ -87,22 +115,30 @@ export default function ListarAssessoraments() {
 
       {/* Estadísticas */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
-          <div className="text-sm text-gray-600">Total assessoraments</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-2xl font-bold text-green-600">{stats.publicats}</div>
-          <div className="text-sm text-gray-600">Publicats</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-2xl font-bold text-yellow-600">{stats.esborranys}</div>
-          <div className="text-sm text-gray-600">Esborranys</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-2xl font-bold text-red-600">{stats.inactius}</div>
-          <div className="text-sm text-gray-600">Inactius</div>
-        </div>
+        <StatCard
+          title="Total Assessoraments"
+          value={stats.total}
+          icon={<Users className="w-10 h-10" />}
+          color="blue"
+        />
+        <StatCard
+          title="Publicats"
+          value={stats.publicats}
+          icon={<CheckCircle className="w-10 h-10" />}
+          color="green"
+        />
+        <StatCard
+          title="Esborranys"
+          value={stats.esborranys}
+          icon={<Clock className="w-10 h-10" />}
+          color="yellow"
+        />
+        <StatCard
+          title="Inactius"
+          value={stats.inactius}
+          icon={<XCircle className="w-10 h-10" />}
+          color="red"
+        />
       </div>
 
       {/* Filtros */}

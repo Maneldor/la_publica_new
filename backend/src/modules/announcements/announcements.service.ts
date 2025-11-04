@@ -1,16 +1,36 @@
 import prisma from '../../config/database';
 
+// Tipos para prioridades
+type PriorityString = 'baja' | 'media' | 'alta' | 'critica';
+type PriorityInput = PriorityString | number;
+
+// Mapeo de prioridades string a número
+const priorityMap = {
+  'baja': 1,
+  'media': 5,
+  'alta': 8,
+  'critica': 10
+} as const;
+
+// Función auxiliar para convertir priority a número
+function convertPriorityToNumber(priority: PriorityInput | undefined): number | undefined {
+  if (priority === undefined) return undefined;
+  if (typeof priority === 'number') return priority;
+  return priorityMap[priority as PriorityString];
+}
+
 export class AnnouncementsService {
   async createAnnouncement(data: {
     title: string;
     content: string;
     type: 'general' | 'urgente' | 'mantenimiento' | 'actualizacion';
-    priority: 'baja' | 'media' | 'alta' | 'critica';
+    priority: PriorityInput;
     scope: 'global' | 'comunidad' | 'grupo' | 'usuarios';
     targets?: string[];
     startDate?: Date;
     expiresAt?: Date;
     configuration?: any;
+    status?: string;
     userId: string;
   }) {
     const announcement = await prisma.announcement.create({
@@ -18,13 +38,14 @@ export class AnnouncementsService {
         title: data.title,
         content: data.content,
         type: data.type,
-        priority: data.priority,
+        priority: convertPriorityToNumber(data.priority),
         scope: data.scope,
         targets: data.targets ? JSON.stringify(data.targets) : null,
         startDate: data.startDate || new Date(),
         expiresAt: data.expiresAt,
         configuration: data.configuration ? JSON.stringify(data.configuration) : null,
         userId: data.userId,
+        status: 'approved',
         isActive: true,
         isPinned: false,
         isRead: false
@@ -48,8 +69,9 @@ export class AnnouncementsService {
 
   async listAnnouncements(filters: {
     type?: 'general' | 'urgente' | 'mantenimiento' | 'actualizacion';
-    priority?: 'baja' | 'media' | 'alta' | 'critica';
+    priority?: PriorityString;
     scope?: 'global' | 'comunidad' | 'grupo' | 'usuarios';
+    status?: string;
     isActive?: boolean;
     isPinned?: boolean;
     isExpired?: boolean;
@@ -62,11 +84,13 @@ export class AnnouncementsService {
     limit?: number;
     offset?: number;
   }) {
+    console.log('🔍 Filtros recibidos en service:', filters);
     const where: any = {};
 
     if (filters.type) where.type = filters.type;
-    if (filters.priority) where.priority = filters.priority;
+    if (filters.priority) where.priority = convertPriorityToNumber(filters.priority);
     if (filters.scope) where.scope = filters.scope;
+    if (filters.status) where.status = filters.status;
     if (filters.isActive !== undefined) where.isActive = filters.isActive;
     if (filters.isPinned !== undefined) where.isPinned = filters.isPinned;
 
@@ -112,6 +136,8 @@ export class AnnouncementsService {
       }
     }
 
+    console.log('📋 Query WHERE:', JSON.stringify(where, null, 2));
+
     const [announcements, total] = await Promise.all([
       prisma.announcement.findMany({
         where,
@@ -122,11 +148,7 @@ export class AnnouncementsService {
               email: true
             }
           },
-          _count: {
-            select: {
-              reads: true
-            }
-          }
+          reads: true
         },
         orderBy: [
           { isPinned: 'desc' },
@@ -139,12 +161,15 @@ export class AnnouncementsService {
       prisma.announcement.count({ where })
     ]);
 
+    console.log(`✅ Trobats ${announcements.length} anuncis de ${total} total`);
+    console.log('📢 Primer anunci:', announcements[0]);
+
     return {
       announcements: announcements.map(announcement => ({
         ...announcement,
         targets: announcement.targets ? JSON.parse(announcement.targets as string) : [],
         configuration: announcement.configuration ? JSON.parse(announcement.configuration as string) : null,
-        totalReads: announcement._count.reads,
+        totalReads: announcement.reads?.length || 0,
         isExpired: announcement.expiresAt ? announcement.expiresAt < new Date() : false
       })),
       total
@@ -197,7 +222,7 @@ export class AnnouncementsService {
     title?: string;
     content?: string;
     type?: 'general' | 'urgente' | 'mantenimiento' | 'actualizacion';
-    priority?: 'baja' | 'media' | 'alta' | 'critica';
+    priority?: PriorityInput;
     scope?: 'global' | 'comunidad' | 'grupo' | 'usuarios';
     targets?: string[];
     startDate?: Date;
@@ -224,7 +249,7 @@ export class AnnouncementsService {
     if (data.title !== undefined) updateData.title = data.title;
     if (data.content !== undefined) updateData.content = data.content;
     if (data.type !== undefined) updateData.type = data.type;
-    if (data.priority !== undefined) updateData.priority = data.priority;
+    if (data.priority !== undefined) updateData.priority = convertPriorityToNumber(data.priority);
     if (data.scope !== undefined) updateData.scope = data.scope;
     if (data.startDate !== undefined) updateData.startDate = data.startDate;
     if (data.expiresAt !== undefined) updateData.expiresAt = data.expiresAt;
@@ -417,7 +442,7 @@ export class AnnouncementsService {
       })
     ]);
 
-    const readsByDate = readsByDay.reduce((acc: Record<string, number>, item) => {
+    const readsByDate = readsByDay.reduce((acc: Record<string, number>, item: any) => {
       const date = item.readAt.toISOString().split('T')[0];
       acc[date] = (acc[date] || 0) + item._count._all;
       return acc;
@@ -441,7 +466,7 @@ export class AnnouncementsService {
     userId?: string;
     comunidad?: string;
     grupo?: string;
-    priority?: 'baja' | 'media' | 'alta' | 'critica';
+    priority?: PriorityString;
     limit?: number;
   }) {
     const where: any = {
@@ -454,7 +479,7 @@ export class AnnouncementsService {
     };
 
     if (filters.priority) {
-      where.priority = filters.priority;
+      where.priority = convertPriorityToNumber(filters.priority);
     }
 
     if (filters.userId || filters.comunidad || filters.grupo) {
@@ -535,11 +560,173 @@ export class AnnouncementsService {
     return reach;
   }
 
+  async approveAnnouncement(id: string, userId: string) {
+    // TODO: Arreglar después de resolver conflictos de schema
+    throw new Error('Función temporalmente deshabilitada');
+    /*
+    const announcement = await prisma.announcement.findUnique({
+      where: { id }
+    });
+
+    if (!announcement) {
+      throw new Error('Anuncio no encontrado');
+    }
+
+    const isAdmin = await this.verifyAdminPermission(userId);
+    if (!isAdmin) {
+      throw new Error('No tienes permisos para aprobar anuncios');
+    }
+
+    const updatedAnnouncement = await prisma.announcement.update({
+      where: { id },
+      data: {
+        status: 'approved',
+        isActive: true
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true
+          }
+        }
+      }
+    });
+
+    return {
+      success: true,
+      message: 'Anuncio aprobado correctamente',
+      announcement: {
+        ...updatedAnnouncement,
+        targets: updatedAnnouncement.targets ? JSON.parse(updatedAnnouncement.targets as string) : [],
+        configuration: updatedAnnouncement.configuration ? JSON.parse(updatedAnnouncement.configuration as string) : null
+      }
+    };
+    */
+  }
+
+  async rejectAnnouncement(id: string, userId: string, reason?: string) {
+    // TODO: Arreglar después de resolver conflictos de schema
+    throw new Error('Función temporalmente deshabilitada');
+    /*
+    const announcement = await prisma.announcement.findUnique({
+      where: { id }
+    });
+
+    if (!announcement) {
+      throw new Error('Anuncio no encontrado');
+    }
+
+    const isAdmin = await this.verifyAdminPermission(userId);
+    if (!isAdmin) {
+      throw new Error('No tienes permisos para rechazar anuncios');
+    }
+
+    // Construir la nueva configuración con la razón de rechazo
+    let newConfiguration;
+    if (announcement.configuration) {
+      const currentConfig = JSON.parse(announcement.configuration as string);
+      newConfiguration = JSON.stringify({
+        ...currentConfig,
+        rejectionReason: reason
+      });
+    } else {
+      newConfiguration = JSON.stringify({ rejectionReason: reason });
+    }
+
+    const updatedAnnouncement = await prisma.announcement.update({
+      where: { id },
+      data: {
+        status: 'rejected',
+        isActive: false,
+        configuration: newConfiguration
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true
+          }
+        }
+      }
+    });
+
+    return {
+      success: true,
+      message: 'Anuncio rechazado correctamente',
+      announcement: {
+        ...updatedAnnouncement,
+        targets: updatedAnnouncement.targets ? JSON.parse(updatedAnnouncement.targets as string) : [],
+        configuration: updatedAnnouncement.configuration ? JSON.parse(updatedAnnouncement.configuration as string) : null
+      }
+    };
+  }
+    */
+  }
+
+  async getPendingAnnouncements(userId: string, filters: {
+    limit?: number;
+    offset?: number;
+  } = {}) {
+    // TODO: Arreglar después de resolver conflictos de schema
+    throw new Error('Función temporalmente deshabilitada');
+    /*
+    const isAdmin = await this.verifyAdminPermission(userId);
+    if (!isAdmin) {
+      throw new Error('No tienes permisos para ver anuncios pendientes');
+    }
+
+    const where = {
+      isActive: false
+    };
+
+    const [announcements, total] = await Promise.all([
+      prisma.announcement.findMany({
+        where,
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true
+            }
+          },
+          reads: true
+        },
+        orderBy: [
+          { createdAt: 'desc' }
+        ],
+        take: filters.limit || 20,
+        skip: filters.offset || 0
+      }),
+      prisma.announcement.count({ where })
+    ]);
+
+    return {
+      announcements: announcements.map(announcement => ({
+        ...announcement,
+        targets: announcement.targets ? JSON.parse(announcement.targets as string) : [],
+        configuration: announcement.configuration ? JSON.parse(announcement.configuration as string) : null,
+        totalReads: announcement.reads?.length || 0,
+        isExpired: announcement.expiresAt ? announcement.expiresAt < new Date() : false
+      })),
+      total
+    };
+    */
+  }
+
   private async verifyAdminPermission(userId: string): Promise<boolean> {
     const user = await prisma.user.findUnique({
       where: { id: userId }
     });
 
-    return user?.primaryRole === 'ADMIN' || user?.primaryRole === 'MODERADOR_GRUPO';
+    // Roles que pueden moderar anuncios
+    const moderationRoles = [
+      'SUPER_ADMIN',
+      'ADMIN',
+      'MODERADOR_GRUPO',
+      'GESTOR_CONTENIDO'
+    ];
+
+    return moderationRoles.includes(user?.primaryRole || '');
   }
 }

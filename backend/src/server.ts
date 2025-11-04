@@ -21,6 +21,7 @@ async function startServer() {
       console.log(`📝 Content: http://localhost:${PORT}/api/v1/content`);
       console.log(`👥 Admin Panel: http://localhost:${PORT}/api/v1/admin`);
       console.log(`🛡️ Roles: http://localhost:${PORT}/api/v1/roles`);
+      console.log(`📈 CRM: http://localhost:${PORT}/api/v1/crm`);
       if (redisConnected) {
         console.log(`🔴 Redis Cache: Habilitado`);
       }

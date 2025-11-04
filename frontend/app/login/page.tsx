@@ -3,8 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { signIn, getSession } from 'next-auth/react';
-import api from '@/lib/api';
+import { signIn } from 'next-auth/react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -19,42 +18,44 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const response = await api.post('/auth/login', { email, password });
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      });
 
-      if (response.data.success) {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-
-        // Redirigir según rol del usuario
-        const role = response.data.user.primaryRole;
-
-        if (role === 'SUPER_ADMIN' || role === 'ADMIN') {
-          router.push('/admin');
-        } else if (role === 'EMPLEADO_PUBLICO') {
-          router.push('/dashboard');
+      if (result?.error) {
+        setError('Credenciales incorrectas');
+      } else {
+        // Redirigir según el tipo de usuario detectado por el email
+        if (email.includes('empresa')) {
+          router.push('/empresa');
+        } else if (email.includes('gestor')) {
+          router.push('/gestor-empreses');
         } else {
-          router.push('/dashboard');
+          router.push('/admin');
         }
       }
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Error al iniciar sesión');
+      setError('Error al iniciar sesión');
     } finally {
       setLoading(false);
     }
   };
 
-  // Funciones de login rápido para desarrollo
+  // Funciones de login rápido para desarrollo con NextAuth
   const quickLoginAdmin = async () => {
     setLoading(true);
     try {
-      const response = await api.post('/auth/login', {
-        email: 'admin@lapublica.es',
-        password: 'admin123456'
+      const result = await signIn('credentials', {
+        email: 'admin@lapublica.com',
+        password: 'admin123',
+        redirect: false,
       });
 
-      if (response.data.success) {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+      if (result?.error) {
+        setError('Error en login rápido de admin');
+      } else {
         router.push('/admin');
       }
     } catch (err: any) {
@@ -64,18 +65,82 @@ export default function LoginPage() {
     }
   };
 
+  const quickLoginSuperAdmin = async () => {
+    setLoading(true);
+    try {
+      const result = await signIn('credentials', {
+        email: 'superadmin@lapublica.com',
+        password: 'super123',
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError('Error en login rápido de super admin');
+      } else {
+        router.push('/admin');
+      }
+    } catch (err: any) {
+      setError('Error en login rápido de super admin');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const quickLoginGestor = async () => {
+    setLoading(true);
+    try {
+      const result = await signIn('credentials', {
+        email: 'gestor@lapublica.es',
+        password: 'gestor123',
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError('Error en login rápido de gestor');
+      } else {
+        router.push('/gestor-empreses/dashboard'); // Redirigir a gestor
+      }
+    } catch (err: any) {
+      setError('Error en login rápido de gestor');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const quickLoginEmpresa = async () => {
+    setLoading(true);
+    try {
+      const result = await signIn('credentials', {
+        email: 'empresa.test@lapublica.cat',
+        password: 'Test1234!',
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError('Error en login rápido de empresa');
+      } else {
+        router.push('/empresa'); // Redirigir a empresa
+      }
+    } catch (err: any) {
+      setError('Error en login rápido de empresa');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const quickLoginEmpleado = async () => {
     setLoading(true);
     try {
-      const response = await api.post('/auth/login', {
+      const result = await signIn('credentials', {
         email: 'empleado@lapublica.es',
-        password: 'empleado123456'
+        password: 'empleado123',
+        redirect: false,
       });
 
-      if (response.data.success) {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        router.push('/dashboard');
+      if (result?.error) {
+        setError('Error en login rápido de empleado');
+      } else {
+        router.push('/dashboard'); // Redirigir a dashboard normal
       }
     } catch (err: any) {
       setError('Error en login rápido de empleado');
@@ -141,7 +206,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full border rounded-lg px-4 py-2"
-              placeholder="admin@lapublica.es"
+              placeholder="admin@lapublica.com"
               required
             />
           </div>
@@ -173,27 +238,88 @@ export default function LoginPage() {
 
           <div className="space-y-3 text-sm">
             <div className="bg-purple-50 p-3 rounded-lg">
-              <div className="font-medium text-purple-800">🔐 Administrador</div>
-              <div className="text-purple-600">Email: admin@lapublica.es</div>
-              <div className="text-purple-600">Contraseña: admin123456</div>
+              <div className="font-medium text-purple-800">🔐 Super Admin</div>
+              <div className="text-purple-600">Email: superadmin@lapublica.com</div>
+              <div className="text-purple-600">Contraseña: super123</div>
+              <button
+                onClick={quickLoginSuperAdmin}
+                disabled={loading}
+                className="mt-2 px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 disabled:opacity-50"
+              >
+                Login Rápido
+              </button>
+            </div>
+
+            <div className="bg-blue-50 p-3 rounded-lg">
+              <div className="font-medium text-blue-800">👤 Administrador</div>
+              <div className="text-blue-600">Email: admin@lapublica.com</div>
+              <div className="text-blue-600">Contraseña: admin123</div>
+              <button
+                onClick={quickLoginAdmin}
+                disabled={loading}
+                className="mt-2 px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:opacity-50"
+              >
+                Login Rápido
+              </button>
             </div>
 
             <div className="bg-green-50 p-3 rounded-lg">
-              <div className="font-medium text-green-800">👤 Empleado Público</div>
-              <div className="text-green-600">Email: empleado@lapublica.es</div>
-              <div className="text-green-600">Contraseña: empleado123456</div>
+              <div className="font-medium text-green-800">💼 Gestor Comercial</div>
+              <div className="text-green-600">Email: gestor@lapublica.es</div>
+              <div className="text-green-600">Contraseña: gestor123</div>
+              <button
+                onClick={quickLoginGestor}
+                disabled={loading}
+                className="mt-2 px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 disabled:opacity-50"
+              >
+                Login Rápido
+              </button>
+            </div>
+
+            <div className="bg-orange-50 p-3 rounded-lg">
+              <div className="font-medium text-orange-800">🏢 Empresa</div>
+              <div className="text-orange-600">Email: empresa.test@lapublica.cat</div>
+              <div className="text-orange-600">Contraseña: Test1234!</div>
+              <button
+                onClick={quickLoginEmpresa}
+                disabled={loading}
+                className="mt-2 px-3 py-1 bg-orange-600 text-white text-xs rounded hover:bg-orange-700 disabled:opacity-50"
+              >
+                Login Rápido
+              </button>
+            </div>
+
+            <div className="bg-indigo-50 p-3 rounded-lg">
+              <div className="font-medium text-indigo-800">👨‍💼 Empleado Público</div>
+              <div className="text-indigo-600">Email: empleado@lapublica.es</div>
+              <div className="text-indigo-600">Contraseña: empleado123</div>
+              <button
+                onClick={quickLoginEmpleado}
+                disabled={loading}
+                className="mt-2 px-3 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700 disabled:opacity-50"
+              >
+                Login Rápido
+              </button>
             </div>
           </div>
         </div>
 
         {/* Link a registro */}
-        <div className="mt-6 text-center">
+        <div className="mt-6 text-center space-y-2">
           <p className="text-sm text-gray-600">
             No tens compte?{' '}
             <Link href="/register" className="text-blue-600 hover:underline font-medium">
               Registra't
             </Link>
           </p>
+          <div className="border-t border-gray-200 pt-3">
+            <p className="text-sm text-gray-600">
+              ¿Eres una empresa?{' '}
+              <Link href="/registro-empresa" className="text-green-600 hover:underline font-medium">
+                Registra tu empresa aquí
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>

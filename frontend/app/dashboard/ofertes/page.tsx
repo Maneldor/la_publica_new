@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { PageTemplate } from '../../../components/ui/PageTemplate';
 import { OfferSearchFilters } from '../../../components/ui/OfferSearchFilters';
 import { OfferTabs } from '../../../components/ui/OfferTabs';
@@ -159,6 +159,7 @@ export default function OferterPage() {
   const [activeTab, setActiveTab] = useState('totes');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchTerm, setSearchTerm] = useState('');
+  const [allOffers, setAllOffers] = useState(sampleOffers);
   const [filters, setFilters] = useState({
     category: '',
     company: '',
@@ -166,12 +167,58 @@ export default function OferterPage() {
     validUntil: ''
   });
 
-  const statsData = [
-    { label: 'Ofertes Disponibles', value: '47', trend: '+8%' },
-    { label: 'Noves Aquesta Setmana', value: '12', trend: '+4' },
-    { label: 'Els Meus Favorits', value: '6', trend: '+2' },
+  // Cargar ofertas creadas desde admin
+  useEffect(() => {
+    const createdOfertas = JSON.parse(localStorage.getItem('createdOfertas') || '[]');
+
+    // Convertir ofertas de admin al formato compatible con dashboard
+    const convertedOffers = createdOfertas.map((oferta: any) => ({
+      id: oferta.id,
+      title: oferta.title,
+      description: oferta.description,
+      company: {
+        id: oferta.company?.id || 1,
+        name: oferta.company?.name || 'Empresa',
+        logo: oferta.company?.logo || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=150&h=150&fit=crop',
+        plan: oferta.company?.plan || 'Estàndard'
+      },
+      category: oferta.category,
+      subcategory: oferta.subcategory,
+      originalPrice: oferta.originalPrice || 0,
+      discountPrice: oferta.offerPrice || oferta.originalPrice || 0,
+      discountPercentage: oferta.discountPercentage || 0,
+      isFree: oferta.isFree || false,
+      images: oferta.images || [],
+      validFrom: oferta.validFrom,
+      validUntil: oferta.validUntil,
+      stock: oferta.maxUsage || null,
+      maxPerUser: oferta.maxPerUser || null,
+      includes: oferta.includes || [],
+      instructions: oferta.instructions || [],
+      badges: oferta.badges || [],
+      requirements: oferta.requirements || [],
+      exclusions: oferta.exclusions || [],
+      promoCode: oferta.promoCode,
+      directLink: oferta.directLink,
+      isHighlighted: oferta.isFeatured || false,
+      isFavorite: false,
+      views: 0,
+      saves: 0,
+      createdAt: oferta.createdAt ? new Date(oferta.createdAt).toLocaleDateString('ca-ES') : 'Avui',
+      terms: [...(oferta.requirements || []), ...(oferta.exclusions || [])].join('. ')
+    }));
+
+    // Combinar ofertas de ejemplo con ofertas creadas (las creadas aparecen primero)
+    const combinedOffers = [...convertedOffers, ...sampleOffers];
+    setAllOffers(combinedOffers);
+  }, []);
+
+  const statsData = useMemo(() => [
+    { label: 'Ofertes Disponibles', value: allOffers.length.toString(), trend: '+8%' },
+    { label: 'Noves Aquesta Setmana', value: allOffers.filter(o => o.createdAt === 'Avui' || o.createdAt.includes('fa 1 dia') || o.createdAt.includes('fa 2 dies')).length.toString(), trend: '+4' },
+    { label: 'Els Meus Favorits', value: allOffers.filter(o => o.isFavorite).length.toString(), trend: '+2' },
     { label: 'Ofertes Utilitzades', value: '3', trend: '+1' }
-  ];
+  ], [allOffers]);
 
   // Lista extensible de categorías disponibles
   const availableCategories = [
@@ -190,7 +237,7 @@ export default function OferterPage() {
 
   // Filtrar ofertas basado en búsqueda, filtros y tab activo
   const filteredOffers = useMemo(() => {
-    let filtered = [...sampleOffers];
+    let filtered = [...allOffers];
 
     // Filtrar por término de búsqueda
     if (searchTerm) {
@@ -227,15 +274,15 @@ export default function OferterPage() {
     }
 
     return filtered;
-  }, [searchTerm, filters, activeTab]);
+  }, [searchTerm, filters, activeTab, allOffers]);
 
   // Calcular contadores para pestañas básicas
-  const tabCounts = {
-    totes: sampleOffers.length,
-    destacades: sampleOffers.filter(o => o.isHighlighted).length,
-    favorits: sampleOffers.filter(o => o.isFavorite).length,
-    noves: 3
-  };
+  const tabCounts = useMemo(() => ({
+    totes: allOffers.length,
+    destacades: allOffers.filter(o => o.isHighlighted).length,
+    favorits: allOffers.filter(o => o.isFavorite).length,
+    noves: allOffers.filter(o => o.createdAt === 'Avui' || o.createdAt.includes('fa 1 dia') || o.createdAt.includes('fa 2 dies')).length
+  }), [allOffers]);
 
   return (
     <PageTemplate

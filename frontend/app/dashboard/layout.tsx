@@ -104,6 +104,7 @@ export default function DashboardLayout({
 
   const serveisItems = [
     { href: '/dashboard/empreses', label: 'Empreses i Col·laboradors', icon: '🏢' },
+    { href: '/gestor-empreses', label: 'Gestor Empreses (CRM)', icon: '📈' },
     { href: '/dashboard/ofertes', label: 'Ofertes', icon: '🎁' },
     { href: '/dashboard/assessorament', label: 'Assessorament', icon: '💡' },
     { href: '/dashboard/enllacos', label: "Enllaços d'Interès", icon: '🔗' },

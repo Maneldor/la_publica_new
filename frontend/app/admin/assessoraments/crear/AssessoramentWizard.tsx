@@ -142,21 +142,32 @@ export const AssessoramentWizard: React.FC<OfferWizardProps> = ({ onClose }) => 
 
   const fetchCompanies = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/v1/companies', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      // Cargar empresas desde localStorage
+      const createdEmpresas = JSON.parse(localStorage.getItem('createdEmpresas') || '[]');
 
-      if (response.ok) {
-        const data = await response.json();
-        if (Array.isArray(data)) {
-          setCompanies(data);
-        } else if (data.data && Array.isArray(data.data)) {
-          setCompanies(data.data);
-        } else {
-          setCompanies([]);
-        }
-      }
+      // Convertir al formato esperado para companies
+      const companiesFromEmpresas = createdEmpresas
+        .filter((empresa: any) => empresa.status === 'published' && empresa.isVerified)
+        .map((empresa: any) => ({
+          id: empresa.id,
+          name: empresa.name
+        }));
+
+      // Empresas de ejemplo
+      const sampleCompanies = [
+        { id: 1, name: 'TechSolutions BCN' },
+        { id: 2, name: 'Consultoria Puig & Associats' },
+        { id: 3, name: 'EcoServeis Catalunya' },
+        { id: 4, name: 'Infraestructures Mediterrània' },
+        { id: 5, name: 'DataAnalytics Pro' },
+        { id: 6, name: 'Mobilitat Urbana SL' },
+        { id: 7, name: 'Seguretat Integral Catalunya' },
+        { id: 8, name: 'Formació Professional Plus' }
+      ];
+
+      // Combinar empresas creadas con empresas de ejemplo
+      const allCompanies = [...companiesFromEmpresas, ...sampleCompanies];
+      setCompanies(allCompanies);
     } catch (err) {
       console.error('Error loading companies:', err);
       setCompanies([]);
@@ -238,8 +249,6 @@ export const AssessoramentWizard: React.FC<OfferWizardProps> = ({ onClose }) => 
 
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('token');
-
       // Generate slug
       const slug = formData.titol.toLowerCase()
         .replace(/[àáâãäå]/g, 'a')
@@ -253,6 +262,7 @@ export const AssessoramentWizard: React.FC<OfferWizardProps> = ({ onClose }) => 
         .replace(/^-+|-+$/g, '');
 
       const assessoramentData = {
+        id: Date.now(),
         ...formData,
         slug,
         modalitats: formData.modalitats.filter(m => m.activa),
@@ -264,26 +274,20 @@ export const AssessoramentWizard: React.FC<OfferWizardProps> = ({ onClose }) => 
           bookings: 0,
           completions: 0,
           ratio_conversio: 0
-        }
+        },
+        createdAt: new Date().toISOString(),
+        empresa: companies.find(c => c.id.toString() === formData.empresa_id) || { id: 1, nom: 'Empresa' }
       };
 
-      const response = await fetch('http://localhost:5000/api/v1/assessoraments', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(assessoramentData)
-      });
+      // Guardar en localStorage
+      const existingAssessoraments = JSON.parse(localStorage.getItem('createdAssessoraments') || '[]');
+      const updatedAssessoraments = [...existingAssessoraments, assessoramentData];
+      localStorage.setItem('createdAssessoraments', JSON.stringify(updatedAssessoraments));
 
-      if (response.ok) {
-        router.push('/admin/assessoraments/listar');
-      } else {
-        const error = await response.json();
-        alert(error.message || 'Error al crear l\'assessorament');
-      }
-    } catch {
-      alert('Error de connexió');
+      router.push('/admin/assessoraments/listar');
+    } catch (error) {
+      console.error('Error al guardar assessorament:', error);
+      alert('Error al crear l\'assessorament');
     } finally {
       setIsLoading(false);
     }

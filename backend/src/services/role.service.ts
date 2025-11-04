@@ -279,6 +279,15 @@ export class RoleService {
         PermissionType.CREATE_COMMENT
       ],
 
+      [UserRole.COMPANY_MANAGER]: [
+        PermissionType.CREATE_COMPANY_PROFILE,
+        PermissionType.EDIT_COMPANY_PROFILE,
+        PermissionType.MANAGE_COMPANY_SERVICES,
+        PermissionType.CREATE_POST,
+        PermissionType.CREATE_COMMENT,
+        PermissionType.CREATE_ANNOUNCEMENT
+      ],
+
       [UserRole.EMPRESA]: [
         PermissionType.CREATE_COMPANY_PROFILE,
         PermissionType.EDIT_COMPANY_PROFILE,

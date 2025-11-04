@@ -8,84 +8,90 @@ datasource db {
 }
 
 model User {
-  id                     String         @id @default(cuid())
-  email                  String         @unique
+  id                     String                @id @default(cuid())
+  email                  String                @unique
   password               String
-  primaryRole            UserRole       @default(EMPLEADO_PUBLICO)
-  isActive               Boolean        @default(true)
-  isEmailVerified        Boolean        @default(false)
+  primaryRole            UserRole              @default(EMPLEADO_PUBLICO)
+  isActive               Boolean               @default(true)
+  isEmailVerified        Boolean               @default(false)
   emailVerificationToken String?
   passwordResetToken     String?
   passwordResetExpires   DateTime?
   refreshToken           String?
   lastLogin              DateTime?
-  createdAt              DateTime       @default(now())
-  updatedAt              DateTime       @updatedAt
-
-  // Relaciones existentes
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
   announcements          Announcement[]
+  announcementReports    AnnouncementReport[]  @relation("AnnouncementReports")
+  certificates           Certificate[]         @relation("UserCertificates")
   company                Company?
-  employee               Employee?
-  publicAdministration   PublicAdministration?
-  groupMemberships       GroupMember[]
-  interestLinks          InterestLink[]
-  posts                  Post[]
   contents               Content[]
+  createdCourses         Course[]              @relation("CreatedCourses")
+  courseProgress         CourseProgress[]      @relation("UserCourseProgress")
+  courseRatings          CourseRating[]        @relation("UserCourseRatings")
+  courseReviews          CourseReview[]        @relation("UserCourseReviews")
+  courseWishlists        CourseWishlist[]      @relation("UserWishlists")
+  employee               Employee?
+  enrollments            Enrollment[]          @relation("UserEnrollments")
+  forumReplyReports      ForumReplyReport[]    @relation("ForumReplyReports")
+  forumTopicReports      ForumTopicReport[]    @relation("ForumTopicReports")
+  groupMemberships       GroupMember[]
+  groupPostReports       GroupPostReport[]     @relation("GroupPostReports")
+  interestLinks          InterestLink[]
+  lessonProgress         LessonProgress[]      @relation("UserLessonProgress")
+  posts                  Post[]
+  commentReports         PostCommentReport[]   @relation("CommentReports")
+  postReports            PostReport[]          @relation("PostReports")
+  publicAdministration   PublicAdministration?
   reports                Report[]
-  postReports            PostReport[] @relation("PostReports")
-  commentReports         PostCommentReport[] @relation("CommentReports")
-  groupPostReports       GroupPostReport[] @relation("GroupPostReports")
-  forumTopicReports      ForumTopicReport[] @relation("ForumTopicReports")
-  forumReplyReports      ForumReplyReport[] @relation("ForumReplyReports")
-  announcementReports    AnnouncementReport[] @relation("AnnouncementReports")
-
-  // Nuevas relaciones para roles múltiples
   additionalRoles        UserAdditionalRole[]
   permissions            UserPermission[]
 
-  // Nuevas relaciones para el sistema de formación
-  createdCourses         Course[]           @relation("CreatedCourses")
-  enrollments            Enrollment[]       @relation("UserEnrollments")
-  courseProgress         CourseProgress[]   @relation("UserCourseProgress")
-  lessonProgress         LessonProgress[]   @relation("UserLessonProgress")
-  courseRatings          CourseRating[]     @relation("UserCourseRatings")
-  courseReviews          CourseReview[]     @relation("UserCourseReviews")
-  certificates           Certificate[]      @relation("UserCertificates")
-  courseWishlists        CourseWishlist[]   @relation("UserWishlists")
+  // Relaciones CRM (solo para gestores de empresas)
+  assignedLeads      CompanyLead[]    @relation("LeadAssignments")
+  managedCompanies   Company[]        @relation("CompanyAccountManager")
+  interactions       Interaction[]    @relation("InteractionCreator")
+  notifications      Notification[]   @relation("UserNotifications")
+
+  // Relaciones Missatgeria
+  createdConversations  Conversation[]  @relation("ConversationCreator")
+  conversationParticipants ConversationParticipant[] @relation("UserConversations")
+  sentMessages          Message[]       @relation("SentMessages")
+  readMessages          MessageRead[]   @relation("ReadMessages")
+
+  // Relaciones Agenda/Calendari
+  organizedEvents       Event[]         @relation("OrganizedEvents")
+  eventAttendances      EventAttendee[] @relation("EventAttendances")
 
   @@index([email])
   @@index([primaryRole])
   @@index([isActive])
 }
 
-// Tabla para roles adicionales (un usuario puede tener múltiples roles)
 model UserAdditionalRole {
   id        String   @id @default(cuid())
   userId    String
   role      UserRole
-  groupId   String?  // Para roles específicos de grupo
+  groupId   String?
   createdAt DateTime @default(now())
-  createdBy String   // Usuario que asignó el rol
-
+  createdBy String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, role, groupId]) // Un usuario no puede tener el mismo rol múltiples veces en el mismo grupo
+  @@unique([userId, role, groupId])
   @@index([userId])
   @@index([role])
 }
 
-// Tabla para permisos específicos
 model UserPermission {
-  id         String           @id @default(cuid())
+  id         String         @id @default(cuid())
   userId     String
   permission PermissionType
-  resource   String?          // Recurso específico (ej: groupId, forumId)
-  granted    Boolean          @default(true)
-  createdAt  DateTime         @default(now())
-  createdBy  String           // Usuario que otorgó el permiso
-  expiresAt  DateTime?        // Permisos temporales
-
-  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resource   String?
+  granted    Boolean        @default(true)
+  createdAt  DateTime       @default(now())
+  createdBy  String
+  expiresAt  DateTime?
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, permission, resource])
   @@index([userId])
@@ -93,121 +99,130 @@ model UserPermission {
 }
 
 model Employee {
-  id                    String                    @id @default(cuid())
-  userId                String                    @unique
-  firstName             String
-  lastName              String
-  nick                  String?
-  dni                   String?                   @unique
-  jobTitle              String?
-  department            String?
-  organization          String?
-  community             String                    // Comunidad Autónoma
-  administrationType    AdministrationType        // Local, Autonómica, Central
-  province              String?
-  city                  String?
-
-  // Datos de perfil ampliado
-  avatar                String?
-  generalInfo           String?                   // Información general
-  skills                String?                   // Habilidades (JSON array)
-  workExperience        String?                   // Experiencia laboral (JSON array)
-  socialNetworks        String?                   // Redes sociales (JSON object)
-  bio                   String?                   // Biografía
-
-  // Configuración de privacidad (JSON object con cada campo y su nivel de privacidad)
-  privacySettings       String?                   // {avatar: 'public', bio: 'private', etc}
-
-  // Campos para roles de grupo
-  canBeGroupAdmin       Boolean                   @default(false)  // Puede ser administrador de grupos
-  canBeGroupModerator   Boolean                   @default(false)  // Puede ser moderador de grupos
-  canBeContentManager   Boolean                   @default(false)  // Puede ser gestor de contenido
-
-  // Campos personalizados dinámicos
-  customFields          Json?                     // Valores de campos personalizados {fieldId: value, ...}
-  customFieldsPrivacy   Json?                     // Configuración de privacidad de campos custom {fieldId: 'public'|'private', ...}
-
-  isActive              Boolean                   @default(true)
-  createdAt             DateTime                  @default(now())
-  updatedAt             DateTime                  @updatedAt
-  user                  User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                  String             @id @default(cuid())
+  userId              String             @unique
+  firstName           String
+  lastName            String
+  nick                String?
+  dni                 String?            @unique
+  jobTitle            String?
+  department          String?
+  organization        String?
+  community           String
+  administrationType  AdministrationType
+  province            String?
+  city                String?
+  avatar              String?
+  generalInfo         String?
+  skills              String?
+  workExperience      String?
+  socialNetworks      String?
+  bio                 String?
+  privacySettings     String?
+  canBeGroupAdmin     Boolean            @default(false)
+  canBeGroupModerator Boolean            @default(false)
+  canBeContentManager Boolean            @default(false)
+  customFields        Json?
+  customFieldsPrivacy Json?
+  isActive            Boolean            @default(true)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([community])
   @@index([administrationType])
 }
 
 model Company {
-  id             String            @id @default(cuid())
-  userId         String            @unique
-  name           String
-  description    String?
-  sector         String
-  size           String            @default("pequeña")
-  cif            String?           @unique
-  address        String?
-  phone          String?
-  email          String
-  website        String?
-  socialMedia    String?
-  logo           String?
-  certifications String?
-  foundedYear    Int?
-  employeeCount  Int?
-  annualRevenue  Float?
-  configuration  String?
+  id                  String            @id @default(cuid())
+  userId              String            @unique
+  name                String
+  description         String?
+  sector              String
+  size                String            @default("pequeña")
+  cif                 String?           @unique
+  address             String?
+  phone               String?
+  email               String
+  website             String?
+  socialMedia         String?
+  logo                String?
+  certifications      String?
+  foundedYear         Int?
+  employeeCount       Int?
+  annualRevenue       Float?
+  configuration       String?
+  customFields        Json?
+  customFieldsPrivacy Json?
+  isVerified          Boolean           @default(false)
+  isActive            Boolean           @default(true)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
 
-  // Campos personalizados dinámicos
-  customFields          Json?             // Valores de campos personalizados
-  customFieldsPrivacy   Json?             // Configuración de privacidad
+  // Plan limits fields
+  planType            String            @default("BASIC") // BASIC, STANDARD, PREMIUM, EMPRESARIAL
+  maxMembers          Int               @default(1)
+  maxStorage          BigInt            @default(1073741824) // 1GB in bytes
+  maxDocuments        Int               @default(10)
+  maxOffers           Int               @default(3)
 
-  isVerified     Boolean           @default(false)
-  isActive       Boolean           @default(true)
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
-  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  advisories     CompanyAdvisory[]
-  products       CompanyProduct[]
-  profile        CompanyProfile?
-  ratings        CompanyRating[]
-  services       CompanyService[]
+  user                User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  advisories          CompanyAdvisory[]
+  products            CompanyProduct[]
+  profile             CompanyProfile?
+  ratings             CompanyRating[]
+  services            CompanyService[]
+
+  // Nuevas relaciones CRM
+  contacts            Contact[]
+  interactions        Interaction[]
+  convertedFromLead   CompanyLead?      @relation("LeadConversion")
+
+  // Información comercial
+  accountManagerId    String?
+  accountManager      User?             @relation("CompanyAccountManager", fields: [accountManagerId], references: [id])
+  notifications       Notification[]    @relation("CompanyNotifications")
+  events              Event[]           @relation("CompanyEvents")
+
+  // Plan limits relations
+  subscription        Subscription?
+  storage             CompanyStorage?
+  documents           Document[]
+  customFeatures      CustomFeature[]
+  planChangeLogs      PlanChangeLog[]
 
   @@index([sector])
   @@index([size])
   @@index([isVerified])
   @@index([isActive])
+  @@index([accountManagerId])
+  @@index([planType])
 }
 
 model PublicAdministration {
-  id                    String                    @id @default(cuid())
-  userId                String                    @unique
-  name                  String                    // Nombre de la administración
-  administrationType    AdministrationType        // Local, Autonómica, Central
-  community             String?                   // Comunidad Autónoma (para local y autonómica)
-  province              String?                   // Provincia (para local)
-  city                  String?                   // Ciudad (para local)
-  address               String?                   // Dirección
-  phone                 String?                   // Teléfono
-  email                 String                    // Email oficial
-  website               String?                   // Sitio web oficial
-  description           String?                   // Descripción de servicios
-
-  // Información específica
-  citizenServices       String?                   // Servicios al ciudadano (JSON array)
-  departments           String?                   // Departamentos (JSON array)
-  publicHours           String?                   // Horarios de atención al público
-  contactInfo           String?                   // Información de contacto adicional (JSON)
-
-  // Campos personalizados dinámicos
-  customFields          Json?                     // Valores de campos personalizados
-  customFieldsPrivacy   Json?                     // Configuración de privacidad
-
-  // Estado y verificación
-  isVerified            Boolean                   @default(false)  // Verificado por admin
-  isActive              Boolean                   @default(true)
-
-  createdAt             DateTime                  @default(now())
-  updatedAt             DateTime                  @updatedAt
-  user                  User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                  String             @id @default(cuid())
+  userId              String             @unique
+  name                String
+  administrationType  AdministrationType
+  community           String?
+  province            String?
+  city                String?
+  address             String?
+  phone               String?
+  email               String
+  website             String?
+  description         String?
+  citizenServices     String?
+  departments         String?
+  publicHours         String?
+  contactInfo         String?
+  customFields        Json?
+  customFieldsPrivacy Json?
+  isVerified          Boolean            @default(false)
+  isActive            Boolean            @default(true)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([administrationType])
   @@index([community])
@@ -216,14 +231,14 @@ model PublicAdministration {
 }
 
 model Category {
-  id          String             @id @default(cuid())
-  name        String             @unique
-  slug        String             @unique
-  description String?
-  color       String             @default("#3B82F6")
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
-  contents    ContenidoMaestro[] @relation("CategoryContents")
+  id           String             @id @default(cuid())
+  name         String             @unique
+  slug         String             @unique
+  description  String?
+  color        String             @default("#3B82F6")
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  contents     ContenidoMaestro[] @relation("CategoryContents")
   contentPosts Content[]
 }
 
@@ -366,15 +381,15 @@ model PostComment {
 }
 
 model PostReport {
-  id          String       @id @default(cuid())
-  postId      String
-  reportedBy  String
-  reason      String
-  status      ReportStatus @default(PENDING)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  post        Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
-  reporter    User         @relation("PostReports", fields: [reportedBy], references: [id])
+  id         String       @id @default(cuid())
+  postId     String
+  reportedBy String
+  reason     String
+  status     ReportStatus @default(PENDING)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  post       Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  reporter   User         @relation("PostReports", fields: [reportedBy], references: [id])
 
   @@index([postId])
   @@index([reportedBy])
@@ -412,8 +427,8 @@ model GroupMember {
   status   String    @default("active")
   joinedAt DateTime  @default(now())
   leftAt   DateTime?
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   group    Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([groupId, userId])
   @@index([status])
@@ -421,19 +436,19 @@ model GroupMember {
 }
 
 model GroupPost {
-  id          String    @id @default(cuid())
+  id          String            @id @default(cuid())
   groupId     String
   userId      String
   title       String
   content     String
-  type        String    @default("texto")
+  type        String            @default("texto")
   tags        String?
   multimedia  String?
-  isPublished Boolean   @default(true)
+  isPublished Boolean           @default(true)
   publishedAt DateTime?
-  isPinned    Boolean   @default(false)
-  isActive    Boolean   @default(true)
-  order       Int       @default(0)
+  isPinned    Boolean           @default(false)
+  isActive    Boolean           @default(true)
+  order       Int               @default(0)
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
   group       Group             @relation(fields: [groupId], references: [id], onDelete: Cascade)
@@ -471,17 +486,17 @@ model Forum {
 }
 
 model ForumTopic {
-  id           String       @id @default(cuid())
+  id           String             @id @default(cuid())
   forumId      String
   userId       String
   title        String
   content      String
-  type         String       @default("discusion")
+  type         String             @default("discusion")
   tags         String?
-  isPinned     Boolean      @default(false)
-  isLocked     Boolean      @default(false)
-  isActive     Boolean      @default(true)
-  lastActivity DateTime     @default(now())
+  isPinned     Boolean            @default(false)
+  isLocked     Boolean            @default(false)
+  isActive     Boolean            @default(true)
+  lastActivity DateTime           @default(now())
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
   replies      ForumReply[]
@@ -497,12 +512,12 @@ model ForumTopic {
 }
 
 model ForumReply {
-  id        String       @id @default(cuid())
+  id        String             @id @default(cuid())
   topicId   String
   userId    String
   content   String
   replyToId String?
-  isActive  Boolean      @default(true)
+  isActive  Boolean            @default(true)
   createdAt DateTime           @default(now())
   updatedAt DateTime           @updatedAt
   replyTo   ForumReply?        @relation("ReplyToReply", fields: [replyToId], references: [id])
@@ -516,23 +531,24 @@ model ForumReply {
 }
 
 model Announcement {
-  id            String             @id @default(cuid())
+  id            String               @id @default(cuid())
   userId        String
   title         String
   content       String
   type          String
-  priority      String             @default("media")
-  scope         String             @default("global")
+  scope         String               @default("global")
   targets       String?
-  startDate     DateTime           @default(now())
+  startDate     DateTime             @default(now())
   expiresAt     DateTime?
   configuration String?
-  isPinned      Boolean            @default(false)
-  isRead        Boolean            @default(false)
-  isActive      Boolean            @default(true)
+  isPinned      Boolean              @default(false)
+  isRead        Boolean              @default(false)
+  isActive      Boolean              @default(true)
   comunidadSlug String?
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  priority      Int                  @default(5)
+  status        String               @default("approved")
   user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   reads         AnnouncementRead[]
   reports       AnnouncementReport[]
@@ -542,6 +558,7 @@ model Announcement {
   @@index([expiresAt])
   @@index([priority])
   @@index([scope])
+  @@index([status])
   @@index([isActive])
 }
 
@@ -602,8 +619,8 @@ model CompanyService {
   comunidadSlug    String?
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
-  companyProfile   CompanyProfile? @relation(fields: [companyProfileId], references: [id], onDelete: Cascade)
   company          Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyProfile   CompanyProfile? @relation(fields: [companyProfileId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
   @@index([companyProfileId])
@@ -631,8 +648,8 @@ model CompanyProduct {
   comunidadSlug    String?
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
-  companyProfile   CompanyProfile? @relation(fields: [companyProfileId], references: [id], onDelete: Cascade)
   company          Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyProfile   CompanyProfile? @relation(fields: [companyProfileId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
   @@index([companyProfileId])
@@ -662,8 +679,8 @@ model CompanyAdvisory {
   comunidadSlug    String?
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
-  companyProfile   CompanyProfile? @relation(fields: [companyProfileId], references: [id], onDelete: Cascade)
   company          Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyProfile   CompanyProfile? @relation(fields: [companyProfileId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
   @@index([companyProfileId])
@@ -707,21 +724,21 @@ model InterestLink {
 }
 
 model Content {
-  id          String        @id @default(cuid())
-  title       String
-  slug        String        @unique
-  excerpt     String
-  content     String
-  status      ContentStatus @default(DRAFT)
-  pinned      Boolean       @default(false)
-  categoryId  String?
-  category    Category?     @relation(fields: [categoryId], references: [id])
-  authorId    String
-  author      User          @relation(fields: [authorId], references: [id])
-  tags        Tag[]
-  reports     Report[]
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id         String        @id @default(cuid())
+  title      String
+  slug       String        @unique
+  excerpt    String
+  content    String
+  status     ContentStatus @default(DRAFT)
+  pinned     Boolean       @default(false)
+  categoryId String?
+  authorId   String
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  author     User          @relation(fields: [authorId], references: [id])
+  category   Category?     @relation(fields: [categoryId], references: [id])
+  reports    Report[]
+  tags       Tag[]         @relation("ContentToTag")
 
   @@index([authorId])
   @@index([categoryId])
@@ -732,21 +749,21 @@ model Tag {
   id        String    @id @default(cuid())
   name      String    @unique
   slug      String    @unique
-  contents  Content[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  contents  Content[] @relation("ContentToTag")
 }
 
 model Report {
-  id          String       @id @default(cuid())
-  contentId   String
-  content     Content      @relation(fields: [contentId], references: [id], onDelete: Cascade)
-  reportedBy  String
-  reporter    User         @relation(fields: [reportedBy], references: [id])
-  reason      String
-  status      ReportStatus @default(PENDING)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id         String       @id @default(cuid())
+  contentId  String
+  reportedBy String
+  reason     String
+  status     ReportStatus @default(PENDING)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  content    Content      @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  reporter   User         @relation(fields: [reportedBy], references: [id])
 
   @@index([contentId])
   @@index([reportedBy])
@@ -759,75 +776,70 @@ model InappropriateWord {
   createdAt DateTime @default(now())
 }
 
-// Reportes para comentarios (blog y posts)
 model PostCommentReport {
-  id          String       @id @default(cuid())
-  commentId   String
-  reportedBy  String
-  reason      String
-  status      ReportStatus @default(PENDING)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  comment     PostComment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
-  reporter    User         @relation("CommentReports", fields: [reportedBy], references: [id])
+  id         String       @id @default(cuid())
+  commentId  String
+  reportedBy String
+  reason     String
+  status     ReportStatus @default(PENDING)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  comment    PostComment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  reporter   User         @relation("CommentReports", fields: [reportedBy], references: [id])
 
   @@index([commentId])
   @@index([reportedBy])
   @@index([status])
 }
 
-// Reportes para posts en grupos
 model GroupPostReport {
-  id          String       @id @default(cuid())
-  postId      String
-  reportedBy  String
-  reason      String
-  status      ReportStatus @default(PENDING)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  post        GroupPost    @relation(fields: [postId], references: [id], onDelete: Cascade)
-  reporter    User         @relation("GroupPostReports", fields: [reportedBy], references: [id])
+  id         String       @id @default(cuid())
+  postId     String
+  reportedBy String
+  reason     String
+  status     ReportStatus @default(PENDING)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  post       GroupPost    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  reporter   User         @relation("GroupPostReports", fields: [reportedBy], references: [id])
 
   @@index([postId])
   @@index([reportedBy])
   @@index([status])
 }
 
-// Reportes para topics de foros
 model ForumTopicReport {
-  id          String       @id @default(cuid())
-  topicId     String
-  reportedBy  String
-  reason      String
-  status      ReportStatus @default(PENDING)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  topic       ForumTopic   @relation(fields: [topicId], references: [id], onDelete: Cascade)
-  reporter    User         @relation("ForumTopicReports", fields: [reportedBy], references: [id])
+  id         String       @id @default(cuid())
+  topicId    String
+  reportedBy String
+  reason     String
+  status     ReportStatus @default(PENDING)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  reporter   User         @relation("ForumTopicReports", fields: [reportedBy], references: [id])
+  topic      ForumTopic   @relation(fields: [topicId], references: [id], onDelete: Cascade)
 
   @@index([topicId])
   @@index([reportedBy])
   @@index([status])
 }
 
-// Reportes para respuestas de foros
 model ForumReplyReport {
-  id          String       @id @default(cuid())
-  replyId     String
-  reportedBy  String
-  reason      String
-  status      ReportStatus @default(PENDING)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  reply       ForumReply   @relation(fields: [replyId], references: [id], onDelete: Cascade)
-  reporter    User         @relation("ForumReplyReports", fields: [reportedBy], references: [id])
+  id         String       @id @default(cuid())
+  replyId    String
+  reportedBy String
+  reason     String
+  status     ReportStatus @default(PENDING)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  reply      ForumReply   @relation(fields: [replyId], references: [id], onDelete: Cascade)
+  reporter   User         @relation("ForumReplyReports", fields: [reportedBy], references: [id])
 
   @@index([replyId])
   @@index([reportedBy])
   @@index([status])
 }
 
-// Reportes para anuncios
 model AnnouncementReport {
   id             String       @id @default(cuid())
   announcementId String
@@ -842,6 +854,439 @@ model AnnouncementReport {
   @@index([announcementId])
   @@index([reportedBy])
   @@index([status])
+}
+
+model CustomField {
+  id                String          @id @default(cuid())
+  name              String
+  fieldType         CustomFieldType
+  userType          UserRole
+  required          Boolean         @default(false)
+  isPublicByDefault Boolean         @default(false)
+  allowUserPrivacy  Boolean         @default(true)
+  options           Json?
+  validation        Json?
+  placeholder       String?
+  description       String?
+  order             Int             @default(0)
+  isActive          Boolean         @default(true)
+  createdBy         String
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@unique([name, userType])
+  @@index([userType])
+  @@index([isActive])
+}
+
+model Course {
+  id                 String               @id @default(cuid())
+  title              String
+  description        String
+  shortDescription   String?
+  slug               String               @unique
+  instructor         String
+  institution        String
+  instructorEmail    String?
+  institutionLogo    String?
+  category           CourseCategory
+  subcategory        String?
+  tags               String?
+  level              CourseLevel
+  mode               CourseMode
+  duration           Int
+  language           String               @default("ca")
+  price              Float
+  originalPrice      Float?
+  discount           Int?
+  currency           String               @default("EUR")
+  startDate          DateTime?
+  endDate            DateTime?
+  enrollmentDeadline DateTime?
+  availableSlots     Int?
+  totalSlots         Int?
+  status             CourseStatus         @default(DRAFT)
+  isHighlighted      Boolean              @default(false)
+  isFeatured         Boolean              @default(false)
+  isNew              Boolean              @default(true)
+  coverImage         String?
+  promoVideo         String?
+  materials          String?
+  viewsCount         Int                  @default(0)
+  enrollmentCount    Int                  @default(0)
+  completionRate     Float?
+  averageRating      Float?
+  totalRatings       Int                  @default(0)
+  creatorId          String
+  comunidadSlug      String?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  certificates       Certificate[]
+  creator            User                 @relation("CreatedCourses", fields: [creatorId], references: [id])
+  announcements      CourseAnnouncement[]
+  modules            CourseModule[]
+  progress           CourseProgress[]
+  ratings            CourseRating[]
+  reviews            CourseReview[]
+  wishlists          CourseWishlist[]     @relation("CourseWishlists")
+  enrollments        Enrollment[]
+
+  @@index([category])
+  @@index([level])
+  @@index([mode])
+  @@index([status])
+  @@index([isHighlighted])
+  @@index([isFeatured])
+  @@index([startDate])
+  @@index([creatorId])
+  @@index([comunidadSlug])
+}
+
+model CourseModule {
+  id          String   @id @default(cuid())
+  courseId    String
+  title       String
+  description String?
+  order       Int      @default(0)
+  duration    Int?
+  isRequired  Boolean  @default(true)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons     Lesson[]
+
+  @@index([courseId])
+  @@index([order])
+}
+
+model Lesson {
+  id         String           @id @default(cuid())
+  moduleId   String
+  title      String
+  content    String?
+  type       String           @default("text")
+  order      Int              @default(0)
+  duration   Int?
+  videoUrl   String?
+  materials  String?
+  isRequired Boolean          @default(true)
+  isActive   Boolean          @default(true)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  module     CourseModule     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  progress   LessonProgress[]
+
+  @@index([moduleId])
+  @@index([order])
+}
+
+model Enrollment {
+  id              String           @id @default(cuid())
+  courseId        String
+  userId          String
+  status          EnrollmentStatus @default(PENDING)
+  enrolledAt      DateTime         @default(now())
+  completedAt     DateTime?
+  droppedAt       DateTime?
+  lastAccessedAt  DateTime?
+  paymentAmount   Float?
+  paymentMethod   String?
+  paymentDate     DateTime?
+  transactionId   String?
+  progressPercent Float            @default(0)
+  currentModuleId String?
+  currentLessonId String?
+  enrollmentData  Json?
+  course          Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user            User             @relation("UserEnrollments", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, userId])
+  @@index([userId])
+  @@index([status])
+  @@index([enrolledAt])
+}
+
+model CourseProgress {
+  id               String    @id @default(cuid())
+  courseId         String
+  userId           String
+  progressPercent  Float     @default(0)
+  completedModules Int       @default(0)
+  totalModules     Int       @default(0)
+  completedLessons Int       @default(0)
+  totalLessons     Int       @default(0)
+  timeSpent        Int       @default(0)
+  lastAccessedAt   DateTime  @default(now())
+  completedAt      DateTime?
+  course           Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user             User      @relation("UserCourseProgress", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, userId])
+  @@index([userId])
+  @@index([progressPercent])
+}
+
+model LessonProgress {
+  id           String    @id @default(cuid())
+  lessonId     String
+  userId       String
+  isCompleted  Boolean   @default(false)
+  timeSpent    Int       @default(0)
+  completedAt  DateTime?
+  lastAccessed DateTime  @default(now())
+  lesson       Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  user         User      @relation("UserLessonProgress", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([lessonId, userId])
+  @@index([userId])
+  @@index([isCompleted])
+}
+
+model CourseRating {
+  id        String   @id @default(cuid())
+  courseId  String
+  userId    String
+  rating    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user      User     @relation("UserCourseRatings", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, userId])
+  @@index([courseId])
+  @@index([rating])
+}
+
+model CourseReview {
+  id         String   @id @default(cuid())
+  courseId   String
+  userId     String
+  rating     Int
+  title      String?
+  comment    String
+  isPublic   Boolean  @default(true)
+  isVerified Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user       User     @relation("UserCourseReviews", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, userId])
+  @@index([courseId])
+  @@index([rating])
+  @@index([isPublic])
+}
+
+model Certificate {
+  id               String    @id @default(cuid())
+  courseId         String
+  userId           String
+  certificateId    String    @unique
+  issuedAt         DateTime  @default(now())
+  expiresAt        DateTime?
+  isValid          Boolean   @default(true)
+  recipientName    String
+  courseName       String
+  institution      String
+  instructor       String
+  completionDate   DateTime
+  grade            String?
+  verificationUrl  String?
+  digitalSignature String?
+  course           Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user             User      @relation("UserCertificates", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, userId])
+  @@index([certificateId])
+  @@index([userId])
+  @@index([isValid])
+}
+
+model CourseAnnouncement {
+  id        String   @id @default(cuid())
+  courseId  String
+  title     String
+  content   String
+  type      String   @default("info")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([courseId])
+  @@index([type])
+  @@index([isActive])
+}
+
+model CourseWishlist {
+  id       String   @id @default(cuid())
+  courseId String
+  userId   String
+  addedAt  DateTime @default(now())
+  course   Course   @relation("CourseWishlists", fields: [courseId], references: [id], onDelete: Cascade)
+  user     User     @relation("UserWishlists", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, userId])
+  @@index([userId])
+}
+
+// ============================================================================
+// MODELOS CRM - GESTOR D'EMPRESES
+// ============================================================================
+
+model CompanyLead {
+  id              String   @id @default(cuid())
+  companyName     String
+  cif             String?  @unique
+  sector          String?
+  website         String?
+  employees       Int?     // Nombre aproximat d'empleats
+
+  // Informació comercial
+  source          String   // "web_form", "referral", "cold_call", "event", "other"
+  priority        String   // "high", "medium", "low"
+  status          String   // "new", "contacted", "negotiating", "converted", "lost"
+  lostReason      String?  // Si status = "lost"
+  estimatedValue  Float?   // Valor estimat anual
+
+  // Assignació
+  assignedToId    String?
+  assignedTo      User?    @relation("LeadAssignments", fields: [assignedToId], references: [id])
+
+  // Relacions
+  contacts        Contact[]
+  interactions    Interaction[]
+  notifications   Notification[]
+  events          Event[]
+  notes           String?  @db.Text
+
+  // Conversió
+  convertedToCompanyId String? @unique
+  convertedToCompany   Company? @relation("LeadConversion", fields: [convertedToCompanyId], references: [id])
+  convertedAt          DateTime?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([assignedToId])
+  @@index([status])
+  @@index([priority])
+}
+
+model Contact {
+  id              String   @id @default(cuid())
+  name            String
+  position        String?  // Càrrec: CEO, Director RRHH, etc.
+  phone           String?
+  email           String?
+  linkedin        String?
+  isPrimary       Boolean  @default(false)
+
+  // Pot estar vinculat a Lead O Company
+  companyLeadId   String?
+  companyLead     CompanyLead? @relation(fields: [companyLeadId], references: [id], onDelete: Cascade)
+
+  companyId       String?
+  company         Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  interactions    Interaction[]
+  events          Event[]
+  notes           String?  @db.Text
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([companyLeadId])
+  @@index([companyId])
+}
+
+model Interaction {
+  id              String   @id @default(cuid())
+  type            String   // "call", "email", "meeting", "note", "whatsapp"
+  subject         String?
+  content         String   @db.Text
+  outcome         String?  // "positive", "neutral", "negative", "no_answer", "scheduled_followup"
+
+  // Següent acció
+  nextAction      String?
+  nextActionDate  DateTime?
+  nextActionCompleted Boolean @default(false)
+
+  // Relacions (pot ser Lead O Company)
+  companyLeadId   String?
+  companyLead     CompanyLead? @relation(fields: [companyLeadId], references: [id], onDelete: Cascade)
+
+  companyId       String?
+  company         Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  contactId       String?
+  contact         Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+
+  // Qui ho va fer
+  createdById     String
+  createdBy       User     @relation("InteractionCreator", fields: [createdById], references: [id])
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([companyLeadId])
+  @@index([companyId])
+  @@index([createdById])
+  @@index([nextActionDate])
+}
+
+// ============================================================================
+// NOTIFICACIONES CRM
+// ============================================================================
+
+model Notification {
+  id            String               @id @default(cuid())
+
+  // Usuario que recibe la notificación
+  userId        String
+  user          User                 @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+
+  // Tipo y prioridad
+  type          NotificationType
+  priority      NotificationPriority @default(MEDIUM)
+
+  // Contenido
+  title         String
+  message       String               @db.Text
+
+  // Acción relacionada (opcional)
+  actionType    String?              // "call", "email", "meeting", "follow_up"
+  actionUrl     String?              // URL a la que navegar al hacer clic
+
+  // Lead relacionado (opcional)
+  leadId        String?
+  lead          CompanyLead?         @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  // Empresa relacionada (opcional)
+  companyId     String?
+  company       Company?             @relation("CompanyNotifications", fields: [companyId], references: [id], onDelete: Cascade)
+
+  // Fecha de vencimiento (para recordatorios)
+  dueDate       DateTime?
+
+  // Estado
+  isRead        Boolean              @default(false)
+  readAt        DateTime?
+
+  // Metadatos adicionales
+  metadata      Json?
+
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  @@index([userId])
+  @@index([type])
+  @@index([priority])
+  @@index([isRead])
+  @@index([dueDate])
+  @@index([leadId])
+  @@index([companyId])
 }
 
 enum ContentStatus {
@@ -865,6 +1310,7 @@ enum UserRole {
   GESTOR_CONTENIDO
   GESTOR_EMPRESAS
   GESTOR_ADMINISTRACIONES
+  COMPANY_MANAGER
   EMPRESA
   ADMINISTRACION_PUBLICA
 }
@@ -876,22 +1322,17 @@ enum AdministrationType {
 }
 
 enum PermissionType {
-  // Permisos generales del sistema
   MANAGE_USERS
   MANAGE_ROLES
   MANAGE_PERMISSIONS
   VIEW_ADMIN_DASHBOARD
   MANAGE_SYSTEM_CONFIG
-
-  // Permisos de contenido
   CREATE_CONTENT
   EDIT_CONTENT
   DELETE_CONTENT
   PUBLISH_CONTENT
   MODERATE_CONTENT
   PIN_CONTENT
-
-  // Permisos de posts y comentarios
   CREATE_POST
   EDIT_POST
   DELETE_POST
@@ -901,16 +1342,12 @@ enum PermissionType {
   EDIT_COMMENT
   DELETE_COMMENT
   MODERATE_COMMENT
-
-  // Permisos de grupos
   CREATE_GROUP
   EDIT_GROUP
   DELETE_GROUP
   MANAGE_GROUP_MEMBERS
   MODERATE_GROUP_CONTENT
   PIN_GROUP_CONTENT
-
-  // Permisos de foros
   CREATE_FORUM
   EDIT_FORUM
   DELETE_FORUM
@@ -920,39 +1357,28 @@ enum PermissionType {
   MODERATE_FORUM
   PIN_FORUM_TOPIC
   LOCK_FORUM_TOPIC
-
-  // Permisos de anuncios
   CREATE_ANNOUNCEMENT
   EDIT_ANNOUNCEMENT
   DELETE_ANNOUNCEMENT
   PUBLISH_ANNOUNCEMENT
   PIN_ANNOUNCEMENT
-
-  // Permisos de empresas
   MANAGE_COMPANIES
   CREATE_COMPANY_PROFILE
   EDIT_COMPANY_PROFILE
   MANAGE_COMPANY_SERVICES
-
-  // Permisos de administraciones públicas
   MANAGE_PUBLIC_ADMINISTRATIONS
   CREATE_ADMIN_PROFILE
   EDIT_ADMIN_PROFILE
-
-  // Permisos de reportes y moderación
   VIEW_REPORTS
   HANDLE_REPORTS
   VIEW_MODERATION_STATS
   BULK_MODERATE
-
-  // Permisos especiales
   IMPERSONATE_USER
   VIEW_AUDIT_LOGS
   MANAGE_TRANSLATIONS
   MANAGE_COMMUNITIES
 }
 
-// Enum para tipos de campos personalizados
 enum CustomFieldType {
   TEXT
   NUMBER
@@ -966,47 +1392,18 @@ enum CustomFieldType {
   FILE
 }
 
-// Tabla para definir campos personalizados
-model CustomField {
-  id                String          @id @default(cuid())
-  name              String          // Nombre del campo (ej: "Certificaciones")
-  fieldType         CustomFieldType // Tipo de campo
-  userType          UserRole        // Para qué tipo de usuario aplica
-  required          Boolean         @default(false)  // ¿Es obligatorio?
-  isPublicByDefault Boolean         @default(false)  // ¿Es público por defecto?
-  allowUserPrivacy  Boolean         @default(true)   // ¿El usuario puede cambiar privacidad?
-  options           Json?           // Opciones para campos SELECT/MULTISELECT
-  validation        Json?           // Reglas de validación (min, max, regex, etc.)
-  placeholder       String?         // Texto de ayuda
-  description       String?         // Descripción del campo
-  order             Int             @default(0)      // Orden de aparición
-  isActive          Boolean         @default(true)
-  createdBy         String          // Admin que creó el campo
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
-
-  @@unique([name, userType])
-  @@index([userType])
-  @@index([isActive])
-}
-
-// ==================== SISTEMA DE FORMACIÓN ====================
-
-// Enum para niveles de curso
 enum CourseLevel {
   PRINCIPIANT
   INTERMEDI
-  AVANÇAT
+  // AVANÇAT
 }
 
-// Enum para modalidades
 enum CourseMode {
   ONLINE
   PRESENCIAL
   HIBRID
 }
 
-// Enum para categorías de curso
 enum CourseCategory {
   TECNOLOGIA
   DISSENY
@@ -1021,7 +1418,6 @@ enum CourseCategory {
   DESENVOLUPAMENT_PERSONAL
 }
 
-// Enum para estado del curso
 enum CourseStatus {
   DRAFT
   PUBLISHED
@@ -1029,7 +1425,6 @@ enum CourseStatus {
   COMPLETED
 }
 
-// Enum para estado de inscripción
 enum EnrollmentStatus {
   PENDING
   CONFIRMED
@@ -1038,305 +1433,515 @@ enum EnrollmentStatus {
   DROPPED_OUT
 }
 
-// Modelo principal del curso
-model Course {
-  id               String         @id @default(cuid())
-  title            String
-  description      String
-  shortDescription String?
-  slug             String         @unique
-
-  // Información del instructor/institución
-  instructor       String
-  institution      String
-  instructorEmail  String?
-  institutionLogo  String?
-
-  // Categorización
-  category         CourseCategory
-  subcategory      String?
-  tags             String?
-
-  // Características del curso
-  level            CourseLevel
-  mode             CourseMode
-  duration         Int
-  language         String         @default("ca")
-
-  // Precios y disponibilidad
-  price            Float
-  originalPrice    Float?
-  discount         Int?
-  currency         String         @default("EUR")
-
-  // Fechas y plazas
-  startDate        DateTime?
-  endDate          DateTime?
-  enrollmentDeadline DateTime?
-  availableSlots   Int?
-  totalSlots       Int?
-
-  // Estado y configuración
-  status           CourseStatus   @default(DRAFT)
-  isHighlighted    Boolean        @default(false)
-  isFeatured       Boolean        @default(false)
-  isNew            Boolean        @default(true)
-
-  // Multimedia y recursos
-  coverImage       String?
-  promoVideo       String?
-  materials        String?
-
-  // Métricas
-  viewsCount       Int            @default(0)
-  enrollmentCount  Int            @default(0)
-  completionRate   Float?
-  averageRating    Float?
-  totalRatings     Int            @default(0)
-
-  // Metadatos
-  creatorId        String
-  comunidadSlug    String?
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-
-  // Relaciones
-  creator          User           @relation("CreatedCourses", fields: [creatorId], references: [id])
-  modules          CourseModule[]
-  enrollments      Enrollment[]
-  ratings          CourseRating[]
-  reviews          CourseReview[]
-  progress         CourseProgress[]
-  certificates     Certificate[]
-  announcements    CourseAnnouncement[]
-  wishlists        CourseWishlist[] @relation("CourseWishlists")
-
-  @@index([category])
-  @@index([level])
-  @@index([mode])
-  @@index([status])
-  @@index([isHighlighted])
-  @@index([isFeatured])
-  @@index([startDate])
-  @@index([creatorId])
-  @@index([comunidadSlug])
+enum NotificationType {
+  REMINDER
+  ALERT
+  SUCCESS
+  INFO
 }
 
-// Módulos del curso
-model CourseModule {
-  id          String       @id @default(cuid())
-  courseId    String
-  title       String
-  description String?
-  order       Int          @default(0)
-  duration    Int?
-  isRequired  Boolean      @default(true)
-  isActive    Boolean      @default(true)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-
-  course      Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  lessons     Lesson[]
-
-  @@index([courseId])
-  @@index([order])
+enum NotificationPriority {
+  HIGH
+  MEDIUM
+  LOW
 }
 
-// Lecciones dentro de módulos
-model Lesson {
-  id          String          @id @default(cuid())
-  moduleId    String
-  title       String
-  content     String?
-  type        String          @default("text")
-  order       Int             @default(0)
-  duration    Int?
-  videoUrl    String?
-  materials   String?
-  isRequired  Boolean         @default(true)
-  isActive    Boolean         @default(true)
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+// ============================================================================
+// SISTEMA DE MISSATGERIA
+// ============================================================================
 
-  module      CourseModule    @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  progress    LessonProgress[]
-
-  @@index([moduleId])
-  @@index([order])
-}
-
-// Inscripciones a cursos
-model Enrollment {
-  id              String           @id @default(cuid())
-  courseId        String
-  userId          String
-  status          EnrollmentStatus @default(PENDING)
-  enrolledAt      DateTime         @default(now())
-  completedAt     DateTime?
-  droppedAt       DateTime?
-  lastAccessedAt  DateTime?
-
-  // Información de pago
-  paymentAmount   Float?
-  paymentMethod   String?
-  paymentDate     DateTime?
-  transactionId   String?
-
-  // Progreso
-  progressPercent Float            @default(0)
-  currentModuleId String?
-  currentLessonId String?
-
-  // Metadatos
-  enrollmentData  Json?
-
-  course          Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  user            User             @relation("UserEnrollments", fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([courseId, userId])
-  @@index([userId])
-  @@index([status])
-  @@index([enrolledAt])
-}
-
-// Progreso del curso por usuario
-model CourseProgress {
+model Conversation {
   id              String    @id @default(cuid())
-  courseId        String
-  userId          String
-  progressPercent Float     @default(0)
-  completedModules Int      @default(0)
-  totalModules    Int       @default(0)
-  completedLessons Int      @default(0)
-  totalLessons    Int       @default(0)
-  timeSpent       Int       @default(0)
-  lastAccessedAt  DateTime  @default(now())
-  completedAt     DateTime?
+  name            String?   // Nom del grup o null per converses individuals
+  type            ConversationType @default(INDIVIDUAL)
+  description     String?
+  avatar          String?
+  isGroup         Boolean   @default(false)
 
-  course          Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  user            User      @relation("UserCourseProgress", fields: [userId], references: [id], onDelete: Cascade)
+  // Configuració
+  isArchived      Boolean   @default(false)
+  isMuted         Boolean   @default(false)
+  isPinned        Boolean   @default(false)
 
-  @@unique([courseId, userId])
-  @@index([userId])
-  @@index([progressPercent])
-}
+  // Metadades
+  lastMessageAt   DateTime?
+  createdById     String
+  createdBy       User      @relation("ConversationCreator", fields: [createdById], references: [id])
 
-// Progreso de lecciones individuales
-model LessonProgress {
-  id          String    @id @default(cuid())
-  lessonId    String
-  userId      String
-  isCompleted Boolean   @default(false)
-  timeSpent   Int       @default(0)
-  completedAt DateTime?
-  lastAccessed DateTime @default(now())
+  // Relacions
+  participants    ConversationParticipant[]
+  messages        Message[]
 
-  lesson      Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  user        User      @relation("UserLessonProgress", fields: [userId], references: [id], onDelete: Cascade)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
-  @@unique([lessonId, userId])
-  @@index([userId])
-  @@index([isCompleted])
-}
-
-// Calificaciones de cursos
-model CourseRating {
-  id        String   @id @default(cuid())
-  courseId  String
-  userId    String
-  rating    Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  user      User     @relation("UserCourseRatings", fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([courseId, userId])
-  @@index([courseId])
-  @@index([rating])
-}
-
-// Reseñas de cursos
-model CourseReview {
-  id        String   @id @default(cuid())
-  courseId  String
-  userId    String
-  rating    Int
-  title     String?
-  comment   String
-  isPublic  Boolean  @default(true)
-  isVerified Boolean @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  user      User     @relation("UserCourseReviews", fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([courseId, userId])
-  @@index([courseId])
-  @@index([rating])
-  @@index([isPublic])
-}
-
-// Certificados
-model Certificate {
-  id            String    @id @default(cuid())
-  courseId      String
-  userId        String
-  certificateId String    @unique
-  issuedAt      DateTime  @default(now())
-  expiresAt     DateTime?
-  isValid       Boolean   @default(true)
-
-  // Datos del certificado
-  recipientName String
-  courseName    String
-  institution   String
-  instructor    String
-  completionDate DateTime
-  grade         String?
-
-  // Verificación
-  verificationUrl String?
-  digitalSignature String?
-
-  course        Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  user          User      @relation("UserCertificates", fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([courseId, userId])
-  @@index([certificateId])
-  @@index([userId])
-  @@index([isValid])
-}
-
-// Anuncios específicos de cursos
-model CourseAnnouncement {
-  id        String   @id @default(cuid())
-  courseId  String
-  title     String
-  content   String
-  type      String   @default("info")
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-
-  @@index([courseId])
   @@index([type])
+  @@index([isArchived])
+  @@index([lastMessageAt])
+}
+
+model ConversationParticipant {
+  id             String       @id @default(cuid())
+  conversationId String
+  userId         String
+  role           ParticipantRole @default(MEMBER)
+
+  // Configuració per participant
+  isArchived     Boolean      @default(false)
+  isMuted        Boolean      @default(false)
+  isPinned       Boolean      @default(false)
+
+  // Metadades de lectura
+  lastReadAt     DateTime?
+  unreadCount    Int          @default(0)
+
+  joinedAt       DateTime     @default(now())
+  leftAt         DateTime?
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User         @relation("UserConversations", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+  @@index([conversationId])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  senderId       String
+  content        String       @db.Text
+  type           MessageType  @default(TEXT)
+
+  // Resposta a missatge
+  replyToId      String?
+  replyTo        Message?     @relation("MessageReplies", fields: [replyToId], references: [id])
+  replies        Message[]    @relation("MessageReplies")
+
+  // Fitxers adjunts
+  attachments    MessageAttachment[]
+
+  // Estat del missatge
+  status         MessageStatus @default(SENT)
+  isEdited       Boolean      @default(false)
+  editedAt       DateTime?
+
+  // Metadades
+  metadata       Json?
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id])
+  reads          MessageRead[]
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([createdAt])
+  @@index([replyToId])
+}
+
+model MessageAttachment {
+  id        String      @id @default(cuid())
+  messageId String
+  fileName  String
+  fileUrl   String
+  fileType  String
+  fileSize  Int
+  mimeType  String?
+
+  message   Message     @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime    @default(now())
+
+  @@index([messageId])
+}
+
+model MessageRead {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  readAt    DateTime @default(now())
+
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User     @relation("ReadMessages", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@index([messageId])
+  @@index([userId])
+}
+
+// ============================================================================
+// SISTEMA D'AGENDA/CALENDARI
+// ============================================================================
+
+model Event {
+  id           String      @id @default(cuid())
+  title        String
+  description  String?     @db.Text
+  type         EventType   @default(MEETING)
+
+  // Dates i hora
+  startDate    DateTime
+  endDate      DateTime
+  isAllDay     Boolean     @default(false)
+  timezone     String      @default("Europe/Madrid")
+
+  // Ubicació
+  location     String?
+  onlineLink   String?     // Per reunions virtuals
+
+  // Estat
+  status       EventStatus @default(CONFIRMED)
+  visibility   EventVisibility @default(PRIVATE)
+
+  // Recordatoris
+  reminders    EventReminder[]
+
+  // Recurrència
+  isRecurring  Boolean     @default(false)
+  recurrenceRule String?   // RRULE format
+  parentEventId String?    // Per events recurrents
+  parentEvent   Event?     @relation("RecurringEvents", fields: [parentEventId], references: [id])
+  childEvents   Event[]    @relation("RecurringEvents")
+
+  // Relacions CRM
+  leadId       String?
+  lead         CompanyLead? @relation(fields: [leadId], references: [id])
+  companyId    String?
+  company      Company?    @relation("CompanyEvents", fields: [companyId], references: [id])
+  contactId    String?
+  contact      Contact?    @relation(fields: [contactId], references: [id])
+
+  // Organitzador
+  organizerId  String
+  organizer    User        @relation("OrganizedEvents", fields: [organizerId], references: [id])
+
+  // Participants
+  attendees    EventAttendee[]
+
+  // Metadades
+  metadata     Json?
+
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([organizerId])
+  @@index([startDate])
+  @@index([endDate])
+  @@index([type])
+  @@index([status])
+  @@index([leadId])
+  @@index([companyId])
+}
+
+model EventAttendee {
+  id         String           @id @default(cuid())
+  eventId    String
+  userId     String?          // Pot ser null per convidats externs
+  email      String?          // Per convidats externs
+  name       String?          // Per convidats externs
+  response   AttendeeResponse @default(PENDING)
+  isRequired Boolean          @default(true)
+
+  respondedAt DateTime?
+
+  event      Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user       User?            @relation("EventAttendances", fields: [userId], references: [id])
+
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  @@unique([eventId, userId])
+  @@unique([eventId, email])
+  @@index([eventId])
+  @@index([userId])
+  @@index([response])
+}
+
+model EventReminder {
+  id           String        @id @default(cuid())
+  eventId      String
+  type         ReminderType  @default(NOTIFICATION)
+  triggerTime  Int           // minuts abans de l'event
+  isTriggered  Boolean       @default(false)
+  triggeredAt  DateTime?
+
+  event        Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  createdAt    DateTime      @default(now())
+
+  @@index([eventId])
+  @@index([isTriggered])
+}
+
+// ============================================================================
+// SISTEMA DE LÍMITES DE PLANES
+// ============================================================================
+
+model Subscription {
+  id                String   @id @default(cuid())
+  companyId         String   @unique
+  planType          String   // BASIC, STANDARD, PREMIUM, EMPRESARIAL
+  status            String   @default("ACTIVE") // ACTIVE, SUSPENDED, CANCELLED
+  startDate         DateTime @default(now())
+  endDate           DateTime?
+  billingCycle      String   @default("MONTHLY") // MONTHLY, ANNUAL
+  price             Float?
+  currency          String   @default("EUR")
+  autoRenew         Boolean  @default(true)
+
+  // Límites específicos del plan
+  maxMembers        Int
+  maxStorage        BigInt   // en bytes
+  maxDocuments      Int
+  maxOffers         Int
+  hasAdvancedReports Boolean @default(false)
+  hasPrioritySupport Boolean @default(false)
+  hasApiAccess      Boolean @default(false)
+  hasCustomBranding Boolean @default(false)
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  company           Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([planType])
+  @@index([status])
+  @@index([endDate])
+}
+
+model CompanyStorage {
+  id                String   @id @default(cuid())
+  companyId         String   @unique
+  usedBytes         BigInt   @default(0)
+  maxBytes          BigInt
+  documentsCount    Int      @default(0)
+  lastCalculatedAt  DateTime @default(now())
+
+  // Desglose por tipo de archivo
+  documentsBytes    BigInt   @default(0)
+  imagesBytes       BigInt   @default(0)
+  videosBytes       BigInt   @default(0)
+  otherBytes        BigInt   @default(0)
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  company           Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([lastCalculatedAt])
+}
+
+model Document {
+  id                String   @id @default(cuid())
+  companyId         String
+  name              String
+  originalName      String
+  mimeType          String
+  size              BigInt
+  url               String?
+  path              String?
+  category          String   @default("GENERAL") // GENERAL, CONTRACTS, REPORTS, IMAGES, etc.
+  description       String?
+  tags              String?  // JSON array of tags
+
+  // Metadatos
+  isShared          Boolean  @default(false)
+  sharedWith        String?  // JSON array of user IDs
+  permissions       String?  // JSON object with permissions
+
+  // Versionado
+  version           Int      @default(1)
+  parentId          String?  // Para versiones
+  isLatestVersion   Boolean  @default(true)
+
+  // Control de acceso
+  createdById       String
+  lastModifiedById  String?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  company           Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  parent            Document?         @relation("DocumentVersions", fields: [parentId], references: [id])
+  versions          Document[]        @relation("DocumentVersions")
+  documentVersions  DocumentVersion[]
+  exports           DocumentExport[]
+
+  @@index([companyId])
+  @@index([category])
+  @@index([createdById])
+  @@index([parentId])
+  @@index([isLatestVersion])
+  @@index([createdAt])
+}
+
+model DocumentVersion {
+  id                String   @id @default(cuid())
+  documentId        String
+  version           Int
+  changes           String   @db.Text // Descripción de los cambios
+  size              BigInt
+  url               String?
+  path              String?
+
+  createdById       String
+  createdAt         DateTime @default(now())
+
+  document          Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, version])
+  @@index([documentId])
+  @@index([version])
+  @@index([createdAt])
+}
+
+model DocumentExport {
+  id                String   @id @default(cuid())
+  documentId        String
+  format            String   // PDF, DOCX, ZIP, etc.
+  status            String   @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
+  downloadUrl       String?
+  expiresAt         DateTime? // Cuándo expira el enlace de descarga
+
+  requestedById     String
+  completedAt       DateTime?
+  errorMessage      String?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  document          Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+  @@index([status])
+  @@index([requestedById])
+  @@index([expiresAt])
+}
+
+model CustomFeature {
+  id                String   @id @default(cuid())
+  companyId         String
+  featureName       String   // Nombre de la característica personalizada
+  featureType       String   // INTEGRATION, CUSTOM_FIELD, WORKFLOW, etc.
+  description       String?
+  configuration     Json?    // Configuración específica de la característica
+  isActive          Boolean  @default(true)
+
+  // Límites específicos
+  usageLimit        Int?     // Límite de uso (si aplica)
+  currentUsage      Int      @default(0)
+
+  // Precios
+  monthlyPrice      Float?
+  annualPrice       Float?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  company           Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([featureType])
   @@index([isActive])
 }
 
-// Lista de deseos de cursos
-model CourseWishlist {
-  id        String   @id @default(cuid())
-  courseId  String
-  userId    String
-  addedAt   DateTime @default(now())
+model PlanChangeLog {
+  id                String   @id @default(cuid())
+  companyId         String
+  fromPlan          String   // Plan anterior
+  toPlan            String   // Nuevo plan
+  reason            String?  // Motivo del cambio
 
-  course    Course   @relation("CourseWishlists", fields: [courseId], references: [id], onDelete: Cascade)
-  user      User     @relation("UserWishlists", fields: [userId], references: [id], onDelete: Cascade)
+  // Cambios en límites
+  changesApplied    Json     // Objeto con los cambios aplicados
 
-  @@unique([courseId, userId])
-  @@index([userId])
+  // Información del cambio
+  effectiveDate     DateTime @default(now())
+  requestedById     String   // Usuario que solicitó el cambio
+  processedAt       DateTime @default(now())
+
+  // Facturación
+  prorationAmount   Float?   // Importe de prorrateo
+  nextBillingDate   DateTime?
+
+  createdAt         DateTime @default(now())
+
+  company           Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([effectiveDate])
+  @@index([fromPlan])
+  @@index([toPlan])
+}
+
+enum ConversationType {
+  INDIVIDUAL
+  GROUP
+  ADMIN_CHANNEL
+  COMPANY_CHANNEL
+}
+
+enum ParticipantRole {
+  ADMIN
+  MODERATOR
+  MEMBER
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  DOCUMENT
+  AUDIO
+  VIDEO
+  SYSTEM
+}
+
+enum MessageStatus {
+  SENDING
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+enum EventType {
+  MEETING
+  CALL
+  PRESENTATION
+  TRAINING
+  FOLLOW_UP
+  DEADLINE
+  REMINDER
+  OTHER
+}
+
+enum EventStatus {
+  CONFIRMED
+  TENTATIVE
+  CANCELLED
+  COMPLETED
+}
+
+enum EventVisibility {
+  PRIVATE
+  PUBLIC
+  CONFIDENTIAL
+}
+
+enum AttendeeResponse {
+  PENDING
+  ACCEPTED
+  DECLINED
+  TENTATIVE
+}
+
+enum ReminderType {
+  NOTIFICATION
+  EMAIL
+  SMS
 }

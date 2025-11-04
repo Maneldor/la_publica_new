@@ -14,6 +14,11 @@ import roleRoutes from './role.routes';
 import adminRoutes from './admin.routes';
 import cacheRoutes from './cache.routes';
 import coursesRoutes from './courses.routes';
+import crmRoutes from './crm.routes';
+// conversations-simple.routes disabled due to TS errors - using conversations.js instead
+const conversationsRoutes = require('./conversations.js');
+const empresaMessagesRoutes = require('./empresa/messages.js');
+import eventsRoutes from './events.routes';
 
 const router = Router();
 
@@ -32,6 +37,10 @@ router.use('/roles', roleRoutes);
 router.use('/admin', adminRoutes);
 router.use('/cache', cacheRoutes);
 router.use('/courses', coursesRoutes);
+router.use('/crm', crmRoutes);
+router.use('/conversations', conversationsRoutes);
+router.use('/empresa/messages', empresaMessagesRoutes);
+router.use('/events', eventsRoutes);
 
 router.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

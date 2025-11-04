@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { PageTemplate } from '../../../components/ui/PageTemplate';
 import { ForumSearchFilters } from '../../../components/ui/ForumSearchFilters';
 import { ForumTabs } from '../../../components/ui/ForumTabs';
@@ -13,6 +13,39 @@ import { useForumFilters } from './hooks/useForumFilters';
 
 export default function ForumsPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [allPosts, setAllPosts] = useState<Post[]>(samplePosts);
+
+  // Cargar foros creados desde localStorage
+  useEffect(() => {
+    const createdForums = JSON.parse(localStorage.getItem('createdForums') || '[]');
+
+    // Convertir los foros creados al formato Post
+    const convertedForums: Post[] = createdForums
+      .filter((forum: any) => forum.status === 'published') // Solo mostrar los publicados
+      .map((forum: any) => ({
+        id: forum.id,
+        title: forum.title,
+        content: forum.description,
+        author: forum.author,
+        authorAvatar: forum.authorAvatar,
+        category: forum.category,
+        tags: forum.tags || [forum.category],
+        coverImage: forum.coverImageUrl || 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=400&h=200&fit=crop',
+        createdAt: forum.createdAt,
+        lastActivity: 'fa pocs minuts',
+        commentsCount: forum.commentsCount || 0,
+        votesUp: forum.votesUp || 0,
+        votesDown: forum.votesDown || 0,
+        isFollowing: forum.isFollowing || false,
+        isPinned: forum.isPinned || false,
+        hasAttachments: forum.hasAttachments || false,
+        attachments: forum.attachments || []
+      }));
+
+    // Combinar foros de ejemplo con foros creados
+    const combinedPosts = [...convertedForums, ...samplePosts];
+    setAllPosts(combinedPosts);
+  }, []);
 
   const {
     activeTab,
@@ -23,7 +56,7 @@ export default function ForumsPage() {
     setFilters,
     filteredPosts,
     tabCounts
-  } = useForumFilters(samplePosts);
+  } = useForumFilters(allPosts);
 
   return (
     <PageTemplate

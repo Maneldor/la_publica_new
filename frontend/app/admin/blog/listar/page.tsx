@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { FileText, CheckCircle, Clock, Calendar } from 'lucide-react';
+import StatCard from '@/components/ui/StatCard';
 
 interface Post {
   id: number;
@@ -159,22 +161,30 @@ export default function ListarBlogPage() {
 
       {/* Estadísticas */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
-          <div className="text-sm text-gray-600">Total posts</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-2xl font-bold text-green-600">{stats.publicados}</div>
-          <div className="text-sm text-gray-600">Posts publicados</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-2xl font-bold text-yellow-600">{stats.borradores}</div>
-          <div className="text-sm text-gray-600">Borradores</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-2xl font-bold text-blue-600">{stats.hoy}</div>
-          <div className="text-sm text-gray-600">Creados hoy</div>
-        </div>
+        <StatCard
+          title="Total Posts"
+          value={stats.total}
+          icon={<FileText className="w-10 h-10" />}
+          color="blue"
+        />
+        <StatCard
+          title="Posts Publicados"
+          value={stats.publicados}
+          icon={<CheckCircle className="w-10 h-10" />}
+          color="green"
+        />
+        <StatCard
+          title="Borradores"
+          value={stats.borradores}
+          icon={<Clock className="w-10 h-10" />}
+          color="yellow"
+        />
+        <StatCard
+          title="Creados Hoy"
+          value={stats.hoy}
+          icon={<Calendar className="w-10 h-10" />}
+          color="purple"
+        />
       </div>
 
       {/* Filtros */}

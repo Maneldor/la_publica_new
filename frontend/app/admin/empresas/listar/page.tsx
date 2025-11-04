@@ -3,35 +3,23 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Building2, CheckCircle, Activity, Clock } from 'lucide-react';
+import StatCard from '@/components/ui/StatCard';
+import { useEmpresas, Empresa } from '@/hooks/useEmpresas';
+import { apiDelete, apiPut } from '@/lib/api-client';
 
-interface Company {
-  id: number;
-  name: string;
-  description: string;
-  category: string;
-  logoUrl?: string;
-  website?: string;
-  isVerified: boolean;
-  createdAt: string;
-  sector?: string;
-  status?: 'active' | 'pending' | 'suspended';
-}
 
 export default function ListarEmpresasPage() {
   const router = useRouter();
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [filteredCompanies, setFilteredCompanies] = useState<Company[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [filteredCompanies, setFilteredCompanies] = useState<Empresa[]>([]);
 
   // Filtros
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
 
-  useEffect(() => {
-    fetchCompanies();
-  }, []);
+  // Usar el hook para obtener empresas del backend
+  const { data: companies = [], isLoading, error, refetch } = useEmpresas();
 
   useEffect(() => {
     let filtered = companies;
@@ -41,14 +29,13 @@ export default function ListarEmpresasPage() {
       filtered = filtered.filter(company =>
         company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         company.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        company.category.toLowerCase().includes(searchTerm.toLowerCase())
+        company.sector.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
     // Filtrar por categoría/sector
     if (selectedCategory !== 'all') {
       filtered = filtered.filter(company =>
-        company.category === selectedCategory ||
         company.sector === selectedCategory
       );
     }
@@ -61,9 +48,9 @@ export default function ListarEmpresasPage() {
         } else if (selectedStatus === 'pending') {
           return !company.isVerified;
         } else if (selectedStatus === 'active') {
-          return company.status === 'active' || !company.status;
+          return company.isActive;
         } else if (selectedStatus === 'suspended') {
-          return company.status === 'suspended';
+          return !company.isActive;
         }
         return true;
       });
@@ -72,64 +59,42 @@ export default function ListarEmpresasPage() {
     setFilteredCompanies(filtered);
   }, [companies, searchTerm, selectedCategory, selectedStatus]);
 
-  const fetchCompanies = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/v1/companies', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Datos recibidos:', data);
-
-        if (Array.isArray(data)) {
-          setCompanies(data);
-          setFilteredCompanies(data);
-        } else if (data.data && Array.isArray(data.data)) {
-          setCompanies(data.data);
-          setFilteredCompanies(data.data);
-        } else {
-          console.error('Los datos no son un array:', data);
-          setCompanies([]);
-          setFilteredCompanies([]);
-        }
-      } else {
-        setError('Error al cargar las empresas');
-        setCompanies([]);
-        setFilteredCompanies([]);
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      setError('Error de conexión');
-      setCompanies([]);
-      setFilteredCompanies([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     if (!confirm('¿Estás seguro de eliminar esta empresa?')) return;
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/v1/companies/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      await apiDelete(`/companies/${id}`);
+      // Refrescar la lista después de eliminar
+      refetch();
+    } catch (error) {
+      console.error('Error al eliminar empresa:', error);
+      alert('Error al eliminar la empresa: ' + (error as any)?.message);
+    }
+  };
 
-      if (response.ok) {
-        setCompanies(companies.filter(c => c.id !== id));
-      } else {
-        alert('Error al eliminar la empresa');
-      }
-    } catch {
-      alert('Error de conexión');
+  const handleToggleVerification = async (id: string, currentStatus: boolean) => {
+    try {
+      await apiPut(`/companies/${id}`, {
+        isVerified: !currentStatus
+      });
+      // Refrescar la lista después de actualizar
+      refetch();
+    } catch (error) {
+      console.error('Error al cambiar verificación:', error);
+      alert('Error al cambiar el estado de verificación: ' + (error as any)?.message);
+    }
+  };
+
+  const handleToggleActive = async (id: string, currentStatus: boolean) => {
+    try {
+      await apiPut(`/companies/${id}`, {
+        isActive: !currentStatus
+      });
+      // Refrescar la lista después de actualizar
+      refetch();
+    } catch (error) {
+      console.error('Error al cambiar estado activo:', error);
+      alert('Error al cambiar el estado activo: ' + (error as any)?.message);
     }
   };
 
@@ -137,15 +102,13 @@ export default function ListarEmpresasPage() {
   const getStats = () => {
     const total = companies.length;
     const verificadas = companies.filter(c => c.isVerified).length;
-    const activas = companies.filter(c =>
-      c.status === 'active' || (!c.status && c.isVerified)
-    ).length;
+    const activas = companies.filter(c => c.isActive).length;
     const pendientes = companies.filter(c => !c.isVerified).length;
 
     return { total, verificadas, activas, pendientes };
   };
 
-  const getCategoryIcon = (category: string) => {
+  const getCategoryIcon = (sector: string) => {
     const icons: Record<string, string> = {
       'tecnologia': '💻',
       'salud': '🏥',
@@ -161,10 +124,10 @@ export default function ListarEmpresasPage() {
       'energia': '⚡',
       'otros': '🏢'
     };
-    return icons[category.toLowerCase()] || '🏢';
+    return icons[sector.toLowerCase()] || '🏢';
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-gray-500">Cargando empresas...</div>
@@ -192,22 +155,30 @@ export default function ListarEmpresasPage() {
 
       {/* Estadísticas */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
-          <div className="text-sm text-gray-600">Total empresas</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-2xl font-bold text-green-600">{stats.verificadas}</div>
-          <div className="text-sm text-gray-600">Empresas verificadas</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-2xl font-bold text-blue-600">{stats.activas}</div>
-          <div className="text-sm text-gray-600">Empresas activas</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-2xl font-bold text-orange-600">{stats.pendientes}</div>
-          <div className="text-sm text-gray-600">Pendientes verificación</div>
-        </div>
+        <StatCard
+          title="Total Empresas"
+          value={stats.total}
+          icon={<Building2 className="w-10 h-10" />}
+          color="blue"
+        />
+        <StatCard
+          title="Empresas Verificadas"
+          value={stats.verificadas}
+          icon={<CheckCircle className="w-10 h-10" />}
+          color="green"
+        />
+        <StatCard
+          title="Empresas Activas"
+          value={stats.activas}
+          icon={<Activity className="w-10 h-10" />}
+          color="purple"
+        />
+        <StatCard
+          title="Pendientes Verificación"
+          value={stats.pendientes}
+          icon={<Clock className="w-10 h-10" />}
+          color="orange"
+        />
       </div>
 
       {/* Filtros */}
@@ -286,7 +257,7 @@ export default function ListarEmpresasPage() {
 
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-          {error}
+          Error al cargar empresas: {(error as any)?.message || 'Error desconocido'}
         </div>
       )}
 
@@ -312,15 +283,15 @@ export default function ListarEmpresasPage() {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      {company.logoUrl ? (
+                      {company.logo ? (
                         <img
-                          src={company.logoUrl}
+                          src={company.logo}
                           alt={company.name}
                           className="w-12 h-12 object-contain rounded-lg border border-gray-200"
                         />
                       ) : (
                         <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-2xl">
-                          {getCategoryIcon(company.category)}
+                          {getCategoryIcon(company.sector)}
                         </div>
                       )}
 
@@ -347,7 +318,7 @@ export default function ListarEmpresasPage() {
 
                         <div className="flex items-center gap-4 text-sm text-gray-500">
                           <span className="flex items-center gap-1">
-                            {getCategoryIcon(company.category)} {company.category}
+                            {getCategoryIcon(company.sector)} {company.sector}
                           </span>
                           <span>📅 {new Date(company.createdAt).toLocaleDateString('es-ES')}</span>
                           {company.website && (
@@ -378,6 +349,26 @@ export default function ListarEmpresasPage() {
                     >
                       Editar
                     </Link>
+                    <button
+                      onClick={() => handleToggleVerification(company.id, company.isVerified)}
+                      className={`px-3 py-1 text-sm rounded transition-colors ${
+                        company.isVerified
+                          ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                          : 'bg-green-100 text-green-700 hover:bg-green-200'
+                      }`}
+                    >
+                      {company.isVerified ? 'Desverificar' : 'Verificar'}
+                    </button>
+                    <button
+                      onClick={() => handleToggleActive(company.id, company.isActive)}
+                      className={`px-3 py-1 text-sm rounded transition-colors ${
+                        company.isActive
+                          ? 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+                          : 'bg-green-100 text-green-700 hover:bg-green-200'
+                      }`}
+                    >
+                      {company.isActive ? 'Desactivar' : 'Activar'}
+                    </button>
                     <button
                       onClick={() => handleDelete(company.id)}
                       className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"

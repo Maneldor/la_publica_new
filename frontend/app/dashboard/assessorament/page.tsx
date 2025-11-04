@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { PageTemplate } from '../../../components/ui/PageTemplate';
 import { AssessmentSearchFilters } from '../../../components/ui/AssessmentSearchFilters';
 import { AssessmentTabs } from '../../../components/ui/AssessmentTabs';
@@ -157,6 +157,7 @@ export default function AssessoramentPage() {
   const [activeTab, setActiveTab] = useState('tots');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchTerm, setSearchTerm] = useState('');
+  const [allAssessments, setAllAssessments] = useState(sampleAssessments);
   const [filters, setFilters] = useState({
     type: '',
     category: '',
@@ -164,12 +165,49 @@ export default function AssessoramentPage() {
     duration: ''
   });
 
-  const statsData = [
-    { label: 'Assessoraments Disponibles', value: '24', trend: '+6' },
+  // Cargar assessoraments creados desde admin
+  useEffect(() => {
+    const createdAssessoraments = JSON.parse(localStorage.getItem('createdAssessoraments') || '[]');
+
+    // Convertir assessoraments de admin al formato compatible con dashboard
+    const convertedAssessments = createdAssessoraments
+      .filter((assessorament: any) => assessorament.status === 'publicat')
+      .map((assessorament: any) => ({
+        id: assessorament.id,
+        slug: assessorament.slug,
+        title: assessorament.titol,
+        description: assessorament.descripcio,
+        company: {
+          id: assessorament.empresa?.id || 1,
+          name: assessorament.empresa?.nom || assessorament.empresa?.name || 'Empresa',
+          logo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop',
+          plan: 'Estàndard'
+        },
+        type: assessorament.categoria || 'General',
+        category: assessorament.categoria || 'General',
+        duration: assessorament.modalitats?.[0]?.config?.durada || 60,
+        mode: assessorament.modalitats?.[0]?.tipus || 'presencial',
+        images: [assessorament.imagen || 'https://images.unsplash.com/photo-1551434678-e076c223a692?w=400&h=250&fit=crop'],
+        availableSlots: assessorament.modalitats?.[0]?.config?.places_disponibles || 10,
+        isHighlighted: false,
+        isFavorite: false,
+        totalBooked: 0,
+        rating: 5.0,
+        createdAt: assessorament.createdAt ? new Date(assessorament.createdAt).toLocaleDateString('ca-ES') : 'Avui',
+        requirements: assessorament.que_inclou?.join(', ') || 'Documentació bàsica'
+      }));
+
+    // Combinar assessoraments de ejemplo con creados (creados aparecen primero)
+    const combinedAssessments = [...convertedAssessments, ...sampleAssessments];
+    setAllAssessments(combinedAssessments);
+  }, []);
+
+  const statsData = useMemo(() => [
+    { label: 'Assessoraments Disponibles', value: allAssessments.length.toString(), trend: '+6' },
     { label: 'Consultes Realitzades', value: '18', trend: '+3' },
-    { label: 'Els Meus Favorits', value: '5', trend: '+2' },
+    { label: 'Els Meus Favorits', value: allAssessments.filter(a => a.isFavorite).length.toString(), trend: '+2' },
     { label: 'Empreses Col·laboradores', value: '12', trend: '+1' }
-  ];
+  ], [allAssessments]);
 
   // Lista extensible de tipos de assessoraments
   const availableTypes = [
@@ -200,7 +238,7 @@ export default function AssessoramentPage() {
 
   // Filtrar assessoraments basado en búsqueda, filtros y tab activo
   const filteredAssessments = useMemo(() => {
-    let filtered = [...sampleAssessments];
+    let filtered = [...allAssessments];
 
     // Filtrar por término de búsqueda
     if (searchTerm) {
@@ -250,15 +288,15 @@ export default function AssessoramentPage() {
     }
 
     return filtered;
-  }, [searchTerm, filters, activeTab]);
+  }, [searchTerm, filters, activeTab, allAssessments]);
 
   // Calcular contadores para pestañas
-  const tabCounts = {
-    tots: sampleAssessments.length,
-    destacats: sampleAssessments.filter(a => a.isHighlighted).length,
-    favorits: sampleAssessments.filter(a => a.isFavorite).length,
-    nous: 3
-  };
+  const tabCounts = useMemo(() => ({
+    tots: allAssessments.length,
+    destacats: allAssessments.filter(a => a.isHighlighted).length,
+    favorits: allAssessments.filter(a => a.isFavorite).length,
+    nous: allAssessments.filter(a => a.createdAt === 'Avui' || a.createdAt.includes('fa 1 dia') || a.createdAt.includes('fa 2 dies')).length
+  }), [allAssessments]);
 
   return (
     <PageTemplate

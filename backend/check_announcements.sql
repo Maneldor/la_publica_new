@@ -1,0 +1,1 @@
+SELECT id, title, priority, scope, "userId", "createdAt" FROM "Announcement" ORDER BY "createdAt" DESC LIMIT 5;

@@ -87,8 +87,8 @@ export function ForumPostCard({ post, viewMode }: ForumPostCardProps) {
         }}>
           {/* Cover image */}
           <div style={{
-            width: '120px',
-            height: '80px',
+            width: '140px',
+            height: '90px',
             borderRadius: '8px',
             backgroundImage: `url(${post.coverImage})`,
             backgroundSize: 'cover',
@@ -234,7 +234,7 @@ export function ForumPostCard({ post, viewMode }: ForumPostCardProps) {
         cursor: 'pointer',
         transition: 'all 0.2s ease-in-out',
         transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
-        height: '350px',
+        height: '380px',
         display: 'flex',
         flexDirection: 'column',
         position: 'relative'
@@ -245,11 +245,12 @@ export function ForumPostCard({ post, viewMode }: ForumPostCardProps) {
 
       {/* Cover Image - Altura fija */}
       <div style={{
-        height: '180px',
+        height: '200px',
         backgroundImage: `url(${post.coverImage})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        position: 'relative'
+        position: 'relative',
+        flexShrink: 0
       }}>
         {/* Overlay */}
         <div style={{

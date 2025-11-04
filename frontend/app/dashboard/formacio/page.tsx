@@ -207,17 +207,47 @@ export default function FormacioPage() {
     const loadCourses = async () => {
       try {
         setLoading(true);
-        // Por ahora usar datos mock directamente para mostrar las imágenes
-        setCourses(sampleCourses as Course[]);
-        setError('');
 
-        // TODO: Uncomment when API courses include featuredImage
-        // const response = await coursesService.getCourses({
-        //   status: 'PUBLISHED',
-        //   limit: 100
-        // });
-        // setCourses(response.data);
-      } catch {
+        // Cargar cursos desde localStorage
+        const createdCourses = JSON.parse(localStorage.getItem('courses') || '[]');
+
+        // Convertir cursos de admin al formato compatible con dashboard
+        const convertedCourses = createdCourses
+          .filter((course: any) => course.status === 'PUBLISHED')
+          .map((course: any) => ({
+            id: course.id,
+            title: course.title,
+            description: course.description,
+            instructor: course.instructor || course.selectedInstructor?.name || 'Instructor',
+            institution: course.selectedInstructor?.institution || 'Institut de Formació',
+            logo: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=150&h=150&fit=crop',
+            featuredImage: course.coverImage || 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=400&h=240&fit=crop',
+            instructorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face',
+            category: course.category,
+            duration: Math.round(course.duration || 0),
+            level: course.level,
+            mode: course.mode || course.modalities?.[0] || 'online',
+            price: course.price || 0,
+            originalPrice: course.price || 0,
+            startDate: course.startDate,
+            endDate: course.endDate,
+            availableSlots: course.availableSlots || course.capacity || 25,
+            totalSlots: course.capacity || 25,
+            isHighlighted: course.isHighlighted || false,
+            isFavorite: false,
+            enrolled: 0,
+            rating: 5.0,
+            createdAt: course.createdAt ? new Date(course.createdAt).toLocaleDateString('ca-ES') : 'Avui',
+            // Campos adicionales para compatibilidad
+            averageRating: 5.0,
+            isFeatured: course.isFeatured || false
+          }));
+
+        // Combinar cursos creados con datos de ejemplo (creados aparecen primero)
+        const allCourses = [...convertedCourses, ...sampleCourses];
+        setCourses(allCourses as Course[]);
+        setError('');
+      } catch (err) {
         console.error('Error loading courses:', err);
         setError('Error al cargar los cursos');
         // Fallback a datos mock si hay error

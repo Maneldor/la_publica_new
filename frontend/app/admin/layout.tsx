@@ -2,37 +2,34 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { CalendarProvider } from '@/lib/context/CalendarContext';
+import { canAccessAdmin } from '@/lib/permissions';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [user, setUser] = useState<any>(null);
+  const { data: session, status } = useSession();
   const [menuOpen, setMenuOpen] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const userData = localStorage.getItem('user');
-    
-    if (!token || !userData) {
+    if (status === 'loading') return; // Esperando a que cargue la sesión
+
+    if (!session) {
       router.push('/login');
       return;
     }
 
-    const parsedUser = JSON.parse(userData);
-    if (parsedUser.primaryRole !== 'ADMIN') {
+    // Verificar si el usuario puede acceder al admin
+    if (!canAccessAdmin(session.user)) {
       router.push('/login');
       return;
     }
-
-    setUser(parsedUser);
-  }, [router]);
+  }, [session, status, router]);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    router.push('/login');
+    signOut({ callbackUrl: '/login' });
   };
 
   const menuItems = [
@@ -46,12 +43,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { title: 'Ofertas VIP', icon: '🎁', path: '/admin/ofertas/listar' },
     { title: 'Assessoraments', icon: '💡', path: '/admin/assessoraments/listar' },
     { title: 'Formació', icon: '🎓', path: '/admin/formacio/listar' },
+    { title: 'Missatges', icon: '💬', path: '/admin/missatges' },
     { title: 'Calendario', icon: '📅', path: '/admin/calendario/listar' },
     { title: 'Usuarios', icon: '👤', path: '/admin/usuarios/listar' },
     { title: 'Plataforma', icon: '⚙️', path: '/admin/plataforma/configuracion' },
   ];
 
-  if (!user) {
+  if (status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p>Cargando...</p>
@@ -59,10 +57,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
+  if (!session || !canAccessAdmin(session.user)) {
+    return null; // Se redirigirá al login
+  }
+
   return (
     <CalendarProvider>
       <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 fixed top-0 left-0 right-0 z-10">
+        <header className="bg-white border-b border-gray-200 fixed top-0 left-0 right-0 z-10">
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-4">
             <button onClick={() => setMenuOpen(!menuOpen)} className="text-gray-600 hover:text-gray-900">
@@ -72,7 +74,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded font-medium">Admin</span>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-600">{user.email}</span>
+            <span className="text-sm text-gray-600">{session.user.email}</span>
             <button onClick={handleLogout} className="px-4 py-2 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200">
               Cerrar Sesión
             </button>

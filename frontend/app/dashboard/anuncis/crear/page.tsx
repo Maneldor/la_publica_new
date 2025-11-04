@@ -1,17 +1,23 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { useCreateAnunci } from './hooks/useCreateAnunci';
+import { useCreateAnuncio } from '@/hooks/useAnuncios';
+import { toast } from 'sonner';
 import { ProgressIndicator } from './components/ProgressIndicator';
 import { Step1BasicInfo } from './components/steps/Step1BasicInfo';
 import { Step2Details } from './components/steps/Step2Details';
 import { Step3Location } from './components/steps/Step3Location';
-import { Step4Images } from './components/steps/Step4Images';
-import { Step5Review } from './components/steps/Step5Review';
+import { Step4Contact } from './components/steps/Step4Contact';
+import { Step5Images } from './components/steps/Step5ImagesNew';
+import { Step6Review } from './components/steps/Step6Review';
 
 export default function CrearAnunciPage() {
   const router = useRouter();
+  const [isPublishing, setIsPublishing] = useState(false);
+
   const {
     currentStep,
     formData,
@@ -21,21 +27,109 @@ export default function CrearAnunciPage() {
     prevStep,
   } = useCreateAnunci();
 
-  const handlePublish = () => {
-    // Aquí iría la lógica de envío al backend
-    console.log('Publicando anuncio:', formData);
+  // Hook per crear anuncis al backend
+  const createAnuncioMutation = useCreateAnuncio();
 
-    // Simular éxito
-    alert('✅ Anunci publicat correctament!');
+  const handlePublish = async () => {
+    setIsPublishing(true);
 
-    // Redirigir a la lista de anuncios
-    router.push('/dashboard/anuncis');
+    try {
+      // Convertir imágenes a Base64
+      const convertImageToBase64 = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = error => reject(error);
+        });
+      };
+
+      console.log('📸 Procesando imágenes - Portada:', !!formData.coverImage, 'Galería:', formData.galleryImages.length);
+
+      // Convertir imagen de portada
+      if (!formData.coverImage) {
+        throw new Error('Imatge de portada obligatòria');
+      }
+
+      const coverImageBase64 = await convertImageToBase64(formData.coverImage);
+
+      // Convertir imágenes de galería
+      const galleryPromises = formData.galleryImages.map(convertImageToBase64);
+      const galleryImagesBase64 = await Promise.all(galleryPromises);
+
+      // Combinar: [portada, ...galería]
+      const allImages = [coverImageBase64, ...galleryImagesBase64];
+
+      console.log('✅ Imágenes convertidas - Portada: 1, Galería:', galleryImagesBase64.length, 'Total:', allImages.length);
+
+      // Mapear dades del formulari al format del backend
+      const apiData = {
+        title: formData.title,
+        content: `${formData.description}\n\n**Detalls:**\n- Tipus: ${formData.type === 'oferta' ? 'Oferta' : 'Demanda'}\n- Categoria: ${formData.category}${formData.price ? `\n- Preu: ${formData.price}€ (${formData.priceType})` : ''}\n- Estat: ${formData.condition === 'nou' ? 'Nou' : formData.condition === 'com_nou' ? 'Com nou' : 'Usat'}\n- Ubicació: ${formData.city}, ${formData.province}${formData.postalCode ? ` (${formData.postalCode})` : ''}`,
+        type: formData.type === 'oferta' ? 'general' : 'urgente',
+        priority: 'media', // Prioritat mitjana per defecte per usuaris
+        scope: 'global',
+        targets: [],
+        startDate: new Date(), // Data d'inici immediata
+        expiresAt: undefined, // Sense caducitat per defecte
+        status: 'pending_review', // ESTAT DE MODERACIÓ
+        configuration: {
+          marketplace: {
+            category: formData.category,
+            adType: formData.type,
+            price: formData.price,
+            priceType: formData.priceType,
+            condition: formData.condition,
+            location: {
+              province: formData.province,
+              city: formData.city,
+              postalCode: formData.postalCode
+            },
+            delivery: {
+              pickup: formData.pickupAvailable,
+              shipping: formData.shippingAvailable,
+              shippingIncluded: formData.shippingIncluded
+            },
+            contact: {
+              name: formData.contactName,
+              phone: formData.contactPhone,
+              email: formData.contactEmail,
+              preferredSchedule: formData.contactSchedule
+            },
+            coverImage: coverImageBase64,           // ✅ IMAGEN DE PORTADA
+            galleryImages: galleryImagesBase64,     // ✅ GALERÍA ADICIONAL
+            images: allImages,                      // ✅ TODAS LAS IMÁGENES (LEGACY)
+            mainImageIndex: 0                       // ✅ PORTADA SIEMPRE ES LA PRIMERA
+          }
+        }
+      };
+
+      console.log('📤 Enviant anunci per revisió:', apiData);
+
+      createAnuncioMutation.mutate(apiData, {
+        onSuccess: () => {
+          toast.success('📤 Anunci enviat per revisió! Un administrador el revisarà aviat.');
+          router.push('/dashboard/anuncis');
+        },
+        onError: (error: any) => {
+          console.error('❌ Error enviant anunci:', error);
+          toast.error(error.message || 'Error al enviar l\'anunci per revisió');
+          setIsPublishing(false);
+        }
+      });
+
+    } catch (error) {
+      console.error('❌ Error preparant anunci:', error);
+      toast.error('Error al preparar l\'anunci');
+      setIsPublishing(false);
+    }
   };
 
   const steps = [
     'Informació',
     'Detalls',
     'Ubicació',
+    'Contacte',
     'Imatges',
     'Revisió'
   ];
@@ -68,7 +162,7 @@ export default function CrearAnunciPage() {
         );
       case 4:
         return (
-          <Step4Images
+          <Step4Contact
             formData={formData}
             errors={errors}
             updateField={updateField}
@@ -76,10 +170,19 @@ export default function CrearAnunciPage() {
         );
       case 5:
         return (
-          <Step5Review
+          <Step5Images
+            formData={formData}
+            errors={errors}
+            updateField={updateField}
+          />
+        );
+      case 6:
+        return (
+          <Step6Review
             formData={formData}
             errors={errors}
             onPublish={handlePublish}
+            isPublishing={isPublishing || createAnuncioMutation.isPending}
           />
         );
       // Más steps después
@@ -121,7 +224,7 @@ export default function CrearAnunciPage() {
         {/* Progress Indicator */}
         <ProgressIndicator
           currentStep={currentStep}
-          totalSteps={5}
+          totalSteps={6}
           steps={steps}
         />
 
@@ -147,7 +250,7 @@ export default function CrearAnunciPage() {
             Anterior
           </button>
 
-          {currentStep < 5 && (
+          {currentStep < 6 && (
             <button
               onClick={nextStep}
               className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all"

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { authenticateToken } from '../middleware/auth.middleware';
 import { cache, cacheList, invalidateCache } from '../middleware/cache.middleware';
 import {
+  registerCompany,
   createCompany,
   listCompanies,
   getCompany,
@@ -18,6 +19,9 @@ import {
 } from '../modules/companies/companies.controller';
 
 const router = Router();
+
+// Registro de empresa (sin autenticación)
+router.post('/register', invalidateCache('companies:*'), registerCompany);
 
 // Perfil de empresa
 router.post('/', authenticateToken, invalidateCache('companies:*'), createCompany);

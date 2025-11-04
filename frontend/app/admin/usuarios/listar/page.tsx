@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Users, UserCheck, UserX, Calendar } from 'lucide-react';
+import StatCard from '@/components/ui/StatCard';
 
 interface User {
   id: string;
@@ -140,6 +142,20 @@ export default function ListarUsuariosPage() {
     return matchesFilter && matchesSearch;
   });
 
+  // Calcular estadísticas
+  const getStats = () => {
+    const total = users.length;
+    const activos = users.filter(u => u.isActive).length;
+    const inactivos = users.filter(u => !u.isActive).length;
+    const hoy = users.filter(u => {
+      const userDate = new Date(u.createdAt).toDateString();
+      const today = new Date().toDateString();
+      return userDate === today;
+    }).length;
+
+    return { total, activos, inactivos, hoy };
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -148,10 +164,16 @@ export default function ListarUsuariosPage() {
     );
   }
 
+  const stats = getStats();
+
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Usuarios</h1>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">👤 Gestión de Usuarios</h1>
+          <p className="text-gray-600">Administra los usuarios y perfiles de la plataforma</p>
+        </div>
         <button
           onClick={() => router.push('/admin/usuarios/crear')}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
@@ -160,8 +182,36 @@ export default function ListarUsuariosPage() {
         </button>
       </div>
 
+      {/* Estadísticas */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <StatCard
+          title="Total Usuarios"
+          value={stats.total}
+          icon={<Users className="w-10 h-10" />}
+          color="blue"
+        />
+        <StatCard
+          title="Usuarios Activos"
+          value={stats.activos}
+          icon={<UserCheck className="w-10 h-10" />}
+          color="green"
+        />
+        <StatCard
+          title="Usuarios Inactivos"
+          value={stats.inactivos}
+          icon={<UserX className="w-10 h-10" />}
+          color="red"
+        />
+        <StatCard
+          title="Registrados Hoy"
+          value={stats.hoy}
+          icon={<Calendar className="w-10 h-10" />}
+          color="purple"
+        />
+      </div>
+
       {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
           {error}
         </div>
       )}

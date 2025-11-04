@@ -3,6 +3,48 @@ import { CompaniesService } from './companies.service';
 
 const companiesService = new CompaniesService();
 
+// Registro simple de empresa (solo nombre, email, password)
+export const registerCompany = async (req: Request, res: Response) => {
+  try {
+    const { name, email, password } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        error: 'Nombre, email y contraseña son requeridos'
+      });
+    }
+
+    // Crear empresa básica para registro
+    const empresaData = {
+      name,
+      email,
+      description: `Empresa ${name}`, // Descripción por defecto
+      sector: 'otros', // Sector por defecto
+      size: 'pequeña' as const, // Tamaño por defecto
+      isVerified: false, // Pendiente de verificación
+      isActive: false, // Inactiva hasta verificación
+      configuration: {
+        status: 'pending' as const
+      }
+    };
+
+    const empresa = await companiesService.registerCompany(empresaData, password);
+
+    res.status(201).json({
+      success: true,
+      data: empresa,
+      mensaje: 'Empresa registrada exitosamente. Pendiente de verificación por administrador.'
+    });
+  } catch (error: any) {
+    console.error('Error registrando empresa:', error);
+    res.status(error.message.includes('existe') ? 409 : 500).json({
+      success: false,
+      error: error.message
+    });
+  }
+};
+
 // Perfil de empresa
 export const createCompany = async (req: Request, res: Response) => {
   try {

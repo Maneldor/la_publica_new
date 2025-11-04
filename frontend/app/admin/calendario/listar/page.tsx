@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { Calendar, Globe, BookOpen, Video } from 'lucide-react';
 import { CalendarEvent } from '@/lib/types/calendar';
 import { useCalendar } from '@/lib/hooks/useCalendar';
+import StatCard from '@/components/ui/StatCard';
 
 export default function CalendarioListarPage() {
   const { events, loading, getEventStats, deleteEvent } = useCalendar();
@@ -19,17 +21,14 @@ export default function CalendarioListarPage() {
   useEffect(() => {
     let filtered = events;
 
-    // Filtrar por categoría
     if (selectedCategory !== 'all') {
       filtered = filtered.filter(event => event.categoria === selectedCategory);
     }
 
-    // Filtrar por propietario
     if (selectedOwner !== 'all') {
       filtered = filtered.filter(event => event.tenantType === selectedOwner);
     }
 
-    // Filtrar por búsqueda
     if (searchTerm) {
       filtered = filtered.filter(event =>
         event.titol.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -100,6 +99,34 @@ export default function CalendarioListarPage() {
         </Link>
       </div>
 
+      {/* Estadísticas */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <StatCard
+          title="Total Eventos"
+          value={getEventStats().total}
+          icon={<Calendar className="w-10 h-10" />}
+          color="blue"
+        />
+        <StatCard
+          title="Eventos Plataforma"
+          value={getEventStats().byTenant.plataforma || 0}
+          icon={<Globe className="w-10 h-10" />}
+          color="green"
+        />
+        <StatCard
+          title="Cursos"
+          value={getEventStats().byCategory.curs || 0}
+          icon={<BookOpen className="w-10 h-10" />}
+          color="purple"
+        />
+        <StatCard
+          title="Webinars"
+          value={getEventStats().byCategory.webinar || 0}
+          icon={<Video className="w-10 h-10" />}
+          color="yellow"
+        />
+      </div>
+
       {/* Filtros */}
       <div className="bg-white p-6 rounded-lg border border-gray-200">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -162,26 +189,6 @@ export default function CalendarioListarPage() {
               Limpiar filtros
             </button>
           </div>
-        </div>
-      </div>
-
-      {/* Estadísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-2xl font-bold text-gray-900">{getEventStats().total}</div>
-          <div className="text-sm text-gray-600">Total eventos</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-2xl font-bold text-blue-600">{getEventStats().byTenant.plataforma || 0}</div>
-          <div className="text-sm text-gray-600">Eventos plataforma</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-2xl font-bold text-green-600">{getEventStats().byCategory.curs || 0}</div>
-          <div className="text-sm text-gray-600">Cursos</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-2xl font-bold text-purple-600">{getEventStats().byCategory.webinar || 0}</div>
-          <div className="text-sm text-gray-600">Webinars</div>
         </div>
       </div>
 

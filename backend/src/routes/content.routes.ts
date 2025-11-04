@@ -13,7 +13,7 @@ router.post('/', authenticateToken, invalidateCacheMiddleware('GET:/api/v1/conte
     const userId = (req as any).user?.id;
 
     // Solo admin puede anclar posts
-    const isPinned = (req as any).user?.role === 'ADMIN' ? (pinned || false) : false;
+    const isPinned = (req as any).user?.primaryRole === 'ADMIN' ? (pinned || false) : false;
 
     const newContent = await prisma.content.create({
       data: {
@@ -146,7 +146,7 @@ router.put('/:id', authenticateToken, invalidateCacheMiddleware('GET:/api/v1/con
 
     // Verificar que el usuario es el autor o es admin
     const isAuthor = existingContent.authorId === userId;
-    const isAdminUser = (req as any).user?.role === 'ADMIN';
+    const isAdminUser = (req as any).user?.primaryRole === 'ADMIN';
 
     if (!isAuthor && !isAdminUser) {
       return res.status(403).json({ message: 'No tienes permisos para editar este contenido' });
@@ -208,7 +208,7 @@ router.delete('/:id', authenticateToken, invalidateCacheMiddleware('GET:/api/v1/
 
     // Verificar que el usuario es el autor o es admin
     const isAuthor = existingContent.authorId === userId;
-    const isAdminUser = (req as any).user?.role === 'ADMIN';
+    const isAdminUser = (req as any).user?.primaryRole === 'ADMIN';
 
     if (!isAuthor && !isAdminUser) {
       return res.status(403).json({ message: 'No tienes permisos para eliminar este contenido' });

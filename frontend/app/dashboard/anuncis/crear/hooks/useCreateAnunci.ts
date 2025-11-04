@@ -23,9 +23,15 @@ export interface AnunciFormData {
   shippingAvailable: boolean;
   shippingIncluded: boolean;
 
-  // Step 4
-  images: File[];
-  mainImageIndex: number;
+  // Step 4 - Contacte
+  contactName: string;
+  contactPhone: string;
+  contactEmail: string;
+  contactSchedule: string;
+
+  // Step 5 - Imágenes
+  coverImage: File | null;     // Imagen de portada (obligatoria)
+  galleryImages: File[];       // Galería de imágenes adicionales (opcional)
 }
 
 const initialFormData: AnunciFormData = {
@@ -43,8 +49,12 @@ const initialFormData: AnunciFormData = {
   pickupAvailable: true,
   shippingAvailable: false,
   shippingIncluded: false,
-  images: [],
-  mainImageIndex: 0,
+  contactName: '',
+  contactPhone: '',
+  contactEmail: '',
+  contactSchedule: '',
+  coverImage: null,
+  galleryImages: [],
 };
 
 export const useCreateAnunci = () => {
@@ -94,8 +104,15 @@ export const useCreateAnunci = () => {
     }
 
     if (step === 4) {
-      if (formData.images.length === 0) {
-        newErrors.images = 'Has d\'afegir almenys una imatge del producte';
+      // Validació opcional de l'email només si s'ha introduït
+      if (formData.contactEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contactEmail)) {
+        newErrors.contactEmail = "L'email no té un format vàlid";
+      }
+    }
+
+    if (step === 5) {
+      if (!formData.coverImage) {
+        newErrors.coverImage = 'Has d\'afegir una imatge de portada';
       }
     }
 
@@ -107,7 +124,7 @@ export const useCreateAnunci = () => {
 
   const nextStep = () => {
     if (validateStep(currentStep)) {
-      setCurrentStep(prev => Math.min(prev + 1, 5));
+      setCurrentStep(prev => Math.min(prev + 1, 6));
     }
   };
 

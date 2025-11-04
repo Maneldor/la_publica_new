@@ -1,0 +1,1 @@
+SELECT id, email, "primaryRole", "isActive", "createdAt" FROM "User" ORDER BY "createdAt" DESC LIMIT 5;

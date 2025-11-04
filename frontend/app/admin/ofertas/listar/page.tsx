@@ -2,54 +2,103 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { Megaphone, CheckCircle, Star, Clock } from 'lucide-react';
+import StatCard from '@/components/ui/StatCard';
 
-interface Offer {
+interface Announcement {
   id: number;
   title: string;
-  description: string;
-  category: string;
-  originalPrice: number;
-  discountPrice: number;
-  discountPercentage: number;
-  stock?: number;
-  validUntil: string;
-  status: string;
-  imageUrl?: string;
-  company: {
-    name: string;
-  };
+  content: string;
+  type: string;
+  priority: string;
+  targetAudience: string;
+  isPinned: boolean;
+  expiresAt?: string;
   createdAt: string;
+  category?: string;
+  status?: 'active' | 'pending' | 'archived';
 }
 
 export default function ListarOfertasPage() {
   const router = useRouter();
-  const [offers, setOffers] = useState<Offer[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [filteredAnnouncements, setFilteredAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [filter, setFilter] = useState('ALL');
+
+  // Filtros
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedStatus, setSelectedStatus] = useState<string>('all');
 
   useEffect(() => {
-    fetchOffers();
+    fetchAnnouncements();
   }, []);
 
-  const fetchOffers = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/v1/offers', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+  useEffect(() => {
+    let filtered = announcements;
 
-      if (response.ok) {
-        const data = await response.json();
-        setOffers(data);
-      } else {
-        setError('Error al cargar las ofertas');
-      }
-    } catch {
-      setError('Error de conexión');
+    // Filtrar por búsqueda
+    if (searchTerm) {
+      filtered = filtered.filter(announcement =>
+        announcement.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        announcement.content.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Filtrar por categoría
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(announcement =>
+        announcement.category === selectedCategory ||
+        announcement.type === selectedCategory
+      );
+    }
+
+    // Filtrar por estado
+    if (selectedStatus !== 'all') {
+      filtered = filtered.filter(announcement => {
+        if (selectedStatus === 'active') {
+          return !announcement.expiresAt || new Date(announcement.expiresAt) > new Date();
+        } else if (selectedStatus === 'pending') {
+          return announcement.status === 'pending';
+        } else if (selectedStatus === 'archived') {
+          return announcement.expiresAt && new Date(announcement.expiresAt) <= new Date();
+        }
+        return true;
+      });
+    }
+
+    setFilteredAnnouncements(filtered);
+  }, [announcements, searchTerm, selectedCategory, selectedStatus]);
+
+  const fetchAnnouncements = async () => {
+    try {
+      // Cargar ofertas desde localStorage
+      const createdOfertas = JSON.parse(localStorage.getItem('createdOfertas') || '[]');
+
+      // Convertir al formato esperado por la interfaz Announcement
+      const convertedAnnouncements: Announcement[] = createdOfertas.map((oferta: any) => ({
+        id: oferta.id,
+        title: oferta.title,
+        content: oferta.description,
+        type: oferta.type?.toUpperCase() || 'OFERTA',
+        priority: oferta.priority?.toUpperCase() || 'NORMAL',
+        targetAudience: 'ALL',
+        isPinned: oferta.isPinned || false,
+        expiresAt: oferta.expiresAt,
+        createdAt: oferta.createdAt || new Date().toISOString(),
+        category: oferta.category,
+        status: oferta.status === 'published' ? 'active' : oferta.status === 'draft' ? 'pending' : 'archived'
+      }));
+
+      setAnnouncements(convertedAnnouncements);
+      setFilteredAnnouncements(convertedAnnouncements);
+    } catch (error) {
+      console.error('Error al cargar ofertas desde localStorage:', error);
+      setError('Error al cargar las ofertas');
+      setAnnouncements([]);
+      setFilteredAnnouncements([]);
     } finally {
       setLoading(false);
     }
@@ -59,58 +108,64 @@ export default function ListarOfertasPage() {
     if (!confirm('¿Estás seguro de eliminar esta oferta?')) return;
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/v1/offers/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      // Eliminar desde localStorage
+      const createdOfertas = JSON.parse(localStorage.getItem('createdOfertas') || '[]');
+      const updatedOfertas = createdOfertas.filter((oferta: any) => oferta.id !== id);
+      localStorage.setItem('createdOfertas', JSON.stringify(updatedOfertas));
 
-      if (response.ok) {
-        setOffers(offers.filter(o => o.id !== id));
-      } else {
-        alert('Error al eliminar la oferta');
-      }
-    } catch {
-      alert('Error de conexión');
+      // Actualizar el estado local
+      setAnnouncements(announcements.filter(a => a.id !== id));
+      setFilteredAnnouncements(filteredAnnouncements.filter(a => a.id !== id));
+    } catch (error) {
+      console.error('Error al eliminar oferta:', error);
+      alert('Error al eliminar la oferta');
     }
   };
 
-  // Aplicar filtros y búsqueda
-  let filteredOffers = offers;
-
-  // Filtrar por estado
-  if (filter !== 'ALL') {
-    filteredOffers = filteredOffers.filter(o => o.status === filter);
-  }
-
-  // Filtrar por búsqueda
-  if (searchTerm) {
-    filteredOffers = filteredOffers.filter(o =>
-      o.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      o.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      o.company.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }
-
   // Calcular estadísticas
   const getStats = () => {
-    const total = offers.length;
-    const activas = offers.filter(o => o.status === 'PUBLISHED').length;
-    const borradores = offers.filter(o => o.status === 'DRAFT').length;
-    const caducadas = offers.filter(o => {
-      const expireDate = new Date(o.validUntil);
-      return expireDate < new Date() || o.status === 'EXPIRED';
-    }).length;
+    const total = announcements.length;
+    const activos = announcements.filter(a =>
+      !a.expiresAt || new Date(a.expiresAt) > new Date()
+    ).length;
+    const destacados = announcements.filter(a => a.isPinned).length;
+    const pendientes = announcements.filter(a =>
+      a.status === 'pending' || a.priority === 'LOW'
+    ).length;
 
-    return { total, activas, borradores, caducadas };
+    return { total, activos, destacados, pendientes };
+  };
+
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case 'OFERTA': return '📤';
+      case 'DEMANDA': return '📥';
+      case 'INFO': return 'ℹ️';
+      case 'WARNING': return '⚠️';
+      case 'URGENT': return '🚨';
+      case 'NEWS': return '📰';
+      case 'EVENT': return '📅';
+      default: return '📋';
+    }
+  };
+
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'OFERTA': return 'bg-green-100 text-green-800';
+      case 'DEMANDA': return 'bg-blue-100 text-blue-800';
+      case 'INFO': return 'bg-blue-100 text-blue-800';
+      case 'WARNING': return 'bg-yellow-100 text-yellow-800';
+      case 'URGENT': return 'bg-red-100 text-red-800';
+      case 'NEWS': return 'bg-green-100 text-green-800';
+      case 'EVENT': return 'bg-purple-100 text-purple-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <p className="text-gray-600">Cargando ofertas...</p>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-gray-500">Cargando ofertas...</div>
       </div>
     );
   }
@@ -122,47 +177,48 @@ export default function ListarOfertasPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">🎁 Gestión de Ofertas VIP</h1>
-          <p className="text-gray-600">Administra las ofertas y promociones de la plataforma</p>
+          <h1 className="text-2xl font-bold text-gray-900">📤 Gestión de Ofertas</h1>
+          <p className="text-gray-600">Administra las ofertas de la plataforma</p>
         </div>
-        <button
-          onClick={() => router.push('/admin/ofertas/crear')}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+        <Link
+          href="/admin/ofertas/crear"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
         >
           + Crear Oferta
-        </button>
+        </Link>
       </div>
 
       {/* Estadísticas */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
-          <div className="text-sm text-gray-600">Total ofertas</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-2xl font-bold text-green-600">{stats.activas}</div>
-          <div className="text-sm text-gray-600">Ofertas activas</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-2xl font-bold text-yellow-600">{stats.borradores}</div>
-          <div className="text-sm text-gray-600">Borradores</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-2xl font-bold text-red-600">{stats.caducadas}</div>
-          <div className="text-sm text-gray-600">Caducadas</div>
-        </div>
+        <StatCard
+          title="Total Ofertas"
+          value={stats.total}
+          icon={<Megaphone className="w-10 h-10" />}
+          color="blue"
+        />
+        <StatCard
+          title="Ofertas Activas"
+          value={stats.activos}
+          icon={<CheckCircle className="w-10 h-10" />}
+          color="green"
+        />
+        <StatCard
+          title="Ofertas Destacadas"
+          value={stats.destacados}
+          icon={<Star className="w-10 h-10" />}
+          color="yellow"
+        />
+        <StatCard
+          title="Pendientes Revisión"
+          value={stats.pendientes}
+          icon={<Clock className="w-10 h-10" />}
+          color="orange"
+        />
       </div>
-
-      {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-          {error}
-        </div>
-      )}
 
       {/* Filtros */}
       <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          {/* Búsqueda */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Buscar
@@ -171,133 +227,145 @@ export default function ListarOfertasPage() {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Título, descripción o empresa..."
+              placeholder="Título o descripción..."
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
-          {/* Botón limpiar filtros */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Categoría
+            </label>
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">Todas las categorías</option>
+              <option value="tecnologia">💻 Tecnología</option>
+              <option value="vehicles">🚗 Vehículos</option>
+              <option value="immobiliaria">🏠 Inmobiliaria</option>
+              <option value="moda">👔 Moda</option>
+              <option value="esports">⚽ Deportes</option>
+              <option value="llar">🏡 Hogar</option>
+              <option value="serveis">🔧 Servicios</option>
+              <option value="altres">📦 Otros</option>
+              <option value="OFERTA">📤 Ofertas</option>
+              <option value="DEMANDA">📥 Demandas</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Estado
+            </label>
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">Todos los estados</option>
+              <option value="active">✅ Activo</option>
+              <option value="pending">⏳ Pendiente</option>
+              <option value="archived">📁 Archivado</option>
+            </select>
+          </div>
+
           <div className="flex items-end">
             <button
               onClick={() => {
                 setSearchTerm('');
-                setFilter('ALL');
+                setSelectedCategory('all');
+                setSelectedStatus('all');
               }}
-              className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+              className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
             >
               Limpiar filtros
             </button>
           </div>
         </div>
-
-        <div className="mb-4">
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Filtrar por estado</h3>
-          <div className="flex gap-2">
-            {['ALL', 'PUBLISHED', 'DRAFT', 'EXPIRED'].map(status => (
-              <button
-                key={status}
-                onClick={() => setFilter(status)}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  filter === status
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                {status === 'ALL' ? '📋 Todas' :
-                 status === 'PUBLISHED' ? '✅ Publicadas' :
-                 status === 'DRAFT' ? '📝 Borradores' : '⏰ Caducadas'}
-                <span className="ml-2 px-2 py-0.5 bg-white bg-opacity-20 rounded-full text-xs">
-                  {status === 'ALL' ? stats.total :
-                   status === 'PUBLISHED' ? stats.activas :
-                   status === 'DRAFT' ? stats.borradores : stats.caducadas}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Contador de resultados */}
-        <div className="text-sm text-gray-600">
-          Mostrando {filteredOffers.length} de {offers.length} ofertas
-        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredOffers.length === 0 ? (
-          <div className="col-span-full text-center py-12 bg-white rounded-lg shadow">
-            <p className="text-gray-500">No hay ofertas {filter !== 'ALL' ? 'en este estado' : 'creadas aún'}</p>
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+          {error}
+        </div>
+      )}
+
+      {/* Lista de ofertas */}
+      <div className="bg-white rounded-lg border border-gray-200">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900">
+            Ofertas ({filteredAnnouncements.length})
+          </h2>
+        </div>
+
+        {filteredAnnouncements.length === 0 ? (
+          <div className="p-8 text-center text-gray-500">
+            {announcements.length === 0
+              ? "No hay ofertas creadas aún"
+              : "No hay ofertas que coincidan con los filtros seleccionados."
+            }
           </div>
         ) : (
-          filteredOffers.map((offer) => (
-            <div key={offer.id} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow overflow-hidden">
-              {offer.imageUrl && (
-                <div className="relative">
-                  <img
-                    src={offer.imageUrl}
-                    alt={offer.title}
-                    className="w-full h-48 object-cover"
-                  />
-                  <div className="absolute top-2 right-2">
-                    <span className="px-3 py-1 bg-red-500 text-white font-bold rounded-full text-sm">
-                      -{offer.discountPercentage}%
-                    </span>
+          <div className="divide-y divide-gray-200">
+            {filteredAnnouncements.map((announcement) => (
+              <div key={announcement.id} className="p-6 hover:bg-gray-50">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      {announcement.isPinned && <span className="text-xl">📌</span>}
+                      <span className="text-2xl">{getTypeIcon(announcement.type)}</span>
+                      <h3 className="text-lg font-medium text-gray-900">
+                        {announcement.title}
+                      </h3>
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getTypeColor(announcement.type)}`}>
+                        {announcement.type}
+                      </span>
+                      {announcement.priority === 'HIGH' && (
+                        <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
+                          Alta prioridad
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                      {announcement.content}
+                    </p>
+
+                    <div className="flex items-center gap-4 text-sm text-gray-500">
+                      <span>📅 {new Date(announcement.createdAt).toLocaleDateString('es-ES')}</span>
+                      <span>👥 {announcement.targetAudience === 'ALL' ? 'Todos' : announcement.targetAudience}</span>
+                      {announcement.expiresAt && (
+                        <span>⏰ Expira: {new Date(announcement.expiresAt).toLocaleDateString('es-ES')}</span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
-              
-              <div className="p-4">
-                <div className="flex items-start justify-between mb-2">
-                  <h3 className="text-lg font-semibold text-gray-900 flex-1">{offer.title}</h3>
-                  <span className={`px-2 py-1 text-xs font-medium rounded ml-2 ${
-                    offer.status === 'PUBLISHED' ? 'bg-green-100 text-green-800' :
-                    offer.status === 'DRAFT' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
-                    {offer.status === 'PUBLISHED' ? 'Activa' :
-                     offer.status === 'DRAFT' ? 'Borrador' : 'Caducada'}
-                  </span>
-                </div>
 
-                <p className="text-sm text-gray-500 mb-2">🏢 {offer.company.name}</p>
-                <p className="text-sm text-gray-600 mb-3 line-clamp-2">{offer.description}</p>
-
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-sm text-gray-400 line-through">{offer.originalPrice}€</span>
-                  <span className="text-xl font-bold text-blue-600">{offer.discountPrice}€</span>
-                </div>
-
-                {offer.stock !== null && (
-                  <p className="text-xs text-gray-500 mb-2">
-                    📦 Stock: {offer.stock} unidades
-                  </p>
-                )}
-
-                <p className="text-xs text-gray-500 mb-3">
-                  ⏰ Válida hasta: {new Date(offer.validUntil).toLocaleDateString('es-ES')}
-                </p>
-
-                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                  <span className="text-xs text-gray-400">
-                    {offer.category}
-                  </span>
-                  <div className="space-x-2">
+                  <div className="flex items-center gap-2 ml-4">
                     <button
-                      onClick={() => router.push(`/admin/ofertas/editar/${offer.id}`)}
-                      className="text-sm text-blue-600 hover:text-blue-800"
+                      onClick={() => router.push(`/admin/ofertas/${announcement.id}`)}
+                      className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+                    >
+                      Ver
+                    </button>
+                    <button
+                      onClick={() => router.push(`/admin/ofertas/editar/${announcement.id}`)}
+                      className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
                     >
                       Editar
                     </button>
                     <button
-                      onClick={() => handleDelete(offer.id)}
-                      className="text-sm text-red-600 hover:text-red-800"
+                      onClick={() => handleDelete(announcement.id)}
+                      className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
                     >
                       Eliminar
                     </button>
                   </div>
                 </div>
               </div>
-            </div>
-          ))
+            ))}
+          </div>
         )}
       </div>
     </div>

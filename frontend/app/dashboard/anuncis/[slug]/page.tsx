@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useGuardats } from '@/hooks/useGuardats';
+import { useAnuncio } from '@/hooks/useAnuncios';
 import { Heart } from 'lucide-react';
 import { Anunci, getMockAnunci, relatedAds } from './data/anunciDetailData';
 import { useImageGallery } from './hooks/useImageGallery';
@@ -24,6 +25,9 @@ export default function AnunciSinglePage({ params }: { params: { slug: string } 
   const [showReportModal, setShowReportModal] = useState(false);
   const [isFavorited, setIsFavorited] = useState(false);
 
+  // Intentar obtener el anuncio real del backend
+  const { data: backendAnuncio, isLoading: isLoadingAnuncio, error } = useAnuncio(params.slug);
+
   // Hook para gestionar guardats
   const usuariId = 'jordi-garcia'; // En producción, obtener del contexto de auth
   const { isGuardat, isLoading: isLoadingGuardat, handleToggleGuardar } = useGuardats(
@@ -40,12 +44,70 @@ export default function AnunciSinglePage({ params }: { params: { slug: string } 
     }
   }, [anunci?.id]);
 
-  // Datos de prueba
+  // Cargar anuncio del backend o fallback a mock
   useEffect(() => {
-    const mockAnunci = getMockAnunci(params.slug);
-    setAnunci(mockAnunci);
-    setIsFavorited(mockAnunci.isFavorite);
-  }, [params.slug]);
+    if (backendAnuncio) {
+      // Convertir anuncio del backend al formato de detalle
+      const marketplace = backendAnuncio.configuration?.marketplace;
+
+      const convertedAnuncio: Anunci = {
+        id: backendAnuncio.id,
+        slug: params.slug,
+        title: backendAnuncio.title,
+        description: backendAnuncio.content,
+        type: marketplace?.adType || 'oferta',
+        category: marketplace?.category || 'general',
+        price: marketplace?.price || 0,
+        priceType: marketplace?.priceType === 'fix' ? 'fix' : marketplace?.priceType === 'negociable' ? 'negociable' : 'gratuït',
+        location: marketplace?.location ? `${marketplace.location.city}, ${marketplace.location.province}` : 'La Pública',
+        images: [
+          marketplace?.coverImage || marketplace?.images?.[0] || 'https://via.placeholder.com/800x600?text=Sense+imatge',
+          ...(marketplace?.galleryImages || marketplace?.images?.slice(1) || [])
+        ].filter(Boolean),
+        author: backendAnuncio.author?.email || 'Usuari',
+        authorAvatar: backendAnuncio.author?.image || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150',
+        authorDepartment: backendAnuncio.community?.nombre || 'Comunitat',
+        authorRating: 5.0,
+        authorReviews: 0,
+        authorMemberSince: 'Membre',
+        authorVerified: true,
+        authorSalesCompleted: 0,
+        authorActiveAds: 1,
+        authorResponseTime: '1 hora',
+        contactPhone: marketplace?.contact?.phone || '900 123 456',
+        contactEmail: marketplace?.contact?.email || backendAnuncio.author?.email || 'contacte@lapublica.cat',
+        status: 'actiu' as const,
+        createdAt: new Date(backendAnuncio.createdAt).toLocaleDateString('ca'),
+        expiresAt: backendAnuncio.expiresAt ? new Date(backendAnuncio.expiresAt).toLocaleDateString('ca') : 'Sense caducitat',
+        views: backendAnuncio.views || 0,
+        favorites: backendAnuncio.reactions || 0,
+        isFavorite: false,
+        specifications: {
+          'Estat': marketplace?.condition === 'nou' ? 'Nou' : marketplace?.condition === 'usat' ? 'Usat' : 'Com nou',
+          'Categoria': marketplace?.category || 'General',
+          'Ubicació': marketplace?.location ? `${marketplace.location.city}, ${marketplace.location.province}` : 'La Pública',
+          'Codi Postal': marketplace?.location?.postalCode || '',
+          'Recollida': marketplace?.delivery?.pickup ? 'Disponible' : 'No disponible',
+          'Enviament': marketplace?.delivery?.shipping ? 'Disponible' : 'No disponible',
+          'Enviament inclòs': marketplace?.delivery?.shippingIncluded ? 'Sí' : 'No'
+        },
+        shippingAvailable: marketplace?.delivery?.shipping || false,
+        handPickup: marketplace?.delivery?.pickup || false
+      };
+
+      console.log('🔍 Anunci carregat del backend:', convertedAnuncio);
+      console.log('📸 Imatges - Portada:', !!marketplace?.coverImage, 'Galería:', marketplace?.galleryImages?.length || 0, 'Legacy:', marketplace?.images?.length || 0);
+
+      setAnunci(convertedAnuncio);
+      setIsFavorited(false);
+    } else if (error || (!isLoadingAnuncio && !backendAnuncio)) {
+      // Si no es encuentra en el backend, usar datos mock como fallback
+      console.log('⚠️ Anunci no trobat al backend, usant mock data');
+      const mockAnunci = getMockAnunci(params.slug);
+      setAnunci(mockAnunci);
+      setIsFavorited(mockAnunci.isFavorite);
+    }
+  }, [backendAnuncio, error, isLoadingAnuncio, params.slug]);
 
   // Hook para manejo de galería
   const {
@@ -102,7 +164,7 @@ export default function AnunciSinglePage({ params }: { params: { slug: string } 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4">
-        {!anunci && (
+        {(isLoadingAnuncio || !anunci) && (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
             <p className="mt-4 text-gray-600">Carregant anunci...</p>

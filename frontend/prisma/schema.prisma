@@ -1,0 +1,233 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== MODELOS PRINCIPALES ====================
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String?
+  image         String?
+  role          UserRole @default(USER)
+  communityId   String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relaciones
+  community     Comunidad? @relation(fields: [communityId], references: [id])
+  anunciosCreados Anuncio[] @relation("AnunciosCreados")
+  comentariosCreados AnuncioComment[] @relation("ComentariosCreados")
+
+  @@index([email])
+  @@index([role])
+  @@index([communityId])
+}
+
+model Comunidad {
+  id          String   @id @default(cuid())
+  nombre      String
+  descripcion String?
+  activa      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relaciones
+  usuarios    User[]
+  anuncios    Anuncio[]
+
+  @@index([activa])
+}
+
+model Anuncio {
+  id            String   @id @default(cuid())
+  title         String   // Título del anuncio
+  content       String   @db.Text // Contenido principal
+  summary       String?  // Resumen opcional
+  type          AnuncioType
+  priority      Int      @default(5) // 1-10, donde 10 es más alta
+  status        AnuncioStatus @default(DRAFT)
+
+  // Audiencia y targeting
+  audience      AudienceType
+  targetCommunities String[] // Array de IDs de comunidades
+  targetRoles   String[] // Array de roles objetivo
+
+  // Programación
+  publishAt     DateTime? // Cuando publicar
+  expiresAt     DateTime? // Cuando expira
+
+  // Notificaciones
+  sendNotification Boolean @default(false)
+  notificationChannels NotificationChannel[]
+
+  // Contenido adicional
+  imageUrl      String? // URL de imagen
+  attachmentUrl String? // URL de archivo adjunto
+  externalUrl   String? // URL externa
+
+  // Metadatos
+  tags          String[] // Tags para categorización
+  isSticky      Boolean @default(false) // Anuncio fijado
+  allowComments Boolean @default(true)
+  slug          String? // URL slug generado automáticamente
+
+  // Métricas
+  views         Int @default(0)
+  reactions     Int @default(0)
+  commentsCount Int @default(0)
+  sharesCount   Int @default(0)
+
+  // Multi-tenant
+  communityId   String?
+  community     Comunidad? @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  // Auditoría
+  authorId      String
+  author        User     @relation("AnunciosCreados", fields: [authorId], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime? // Soft delete
+
+  // Relaciones
+  comments      AnuncioComment[]
+  metrics       AnuncioMetrics[]
+
+  @@index([communityId, status, publishAt])
+  @@index([type, audience])
+  @@index([authorId])
+  @@index([deletedAt])
+  @@index([slug])
+  @@index([publishAt, expiresAt])
+}
+
+// ==================== ENUMS ====================
+
+enum UserRole {
+  USER
+  MODERATOR
+  COMMUNITY_MANAGER
+  ADMIN
+  SUPER_ADMIN
+  COMPANY
+}
+
+enum AnuncioType {
+  GENERAL       // general
+  URGENT        // urgent
+  EVENT         // event
+  MAINTENANCE   // maintenance
+  NEWS          // news
+  ALERT         // alert
+  PROMOTION     // promotion
+  REGULATION    // regulation
+}
+
+enum AnuncioStatus {
+  DRAFT         // draft
+  PENDING       // pending
+  PUBLISHED     // published
+  ARCHIVED      // archived
+  EXPIRED       // expired
+}
+
+enum AudienceType {
+  ALL           // all
+  EMPLOYEES     // employees
+  COMPANIES     // companies
+  SPECIFIC      // specific
+  COMMUNITY     // community
+}
+
+enum NotificationChannel {
+  PLATFORM      // platform
+  EMAIL         // email
+  SMS           // sms
+  PUSH          // push
+  ALL_CHANNELS  // all_channels
+}
+
+// ==================== MODELOS RELACIONADOS ====================
+
+model AnuncioComment {
+  id            String   @id @default(cuid())
+  content       String   @db.Text
+  isPrivate     Boolean  @default(false)
+  attachmentUrl String?
+
+  // Jerarquía de comentarios
+  parentId      String?
+  parent        AnuncioComment? @relation("CommentReplies", fields: [parentId], references: [id])
+  replies       AnuncioComment[] @relation("CommentReplies")
+
+  // Relaciones
+  anuncioId     String
+  anuncio       Anuncio  @relation(fields: [anuncioId], references: [id], onDelete: Cascade)
+
+  authorId      String
+  author        User     @relation("ComentariosCreados", fields: [authorId], references: [id])
+
+  // Moderación
+  status        CommentStatus @default(PENDING)
+  moderatedBy   String?
+  moderatedAt   DateTime?
+  moderationReason String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+
+  @@index([anuncioId, status])
+  @@index([authorId])
+  @@index([parentId])
+}
+
+model AnuncioMetrics {
+  id                String   @id @default(cuid())
+  anuncioId         String   @unique
+  anuncio           Anuncio  @relation(fields: [anuncioId], references: [id], onDelete: Cascade)
+
+  // Métricas básicas
+  views             Int      @default(0)
+  clicks            Int      @default(0)
+  reactions         Int      @default(0)
+  comments          Int      @default(0)
+  shares            Int      @default(0)
+
+  // Métricas por canal
+  emailOpens        Int      @default(0)
+  emailClicks       Int      @default(0)
+  pushOpens         Int      @default(0)
+
+  // Engagement
+  engagementRate    Float    @default(0)
+
+  // Timestamps
+  lastViewedAt      DateTime?
+  lastInteractionAt DateTime?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([engagementRate])
+  @@index([lastViewedAt])
+}
+
+enum CommentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  HIDDEN
+}

@@ -1,17 +1,89 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageTemplate } from '../../../components/ui/PageTemplate';
 import { AnunciSearchFilters } from '../../../components/ui/AnunciSearchFilters';
 import { AnunciTabs } from '../../../components/ui/AnunciTabs';
 import { AnunciCard } from '../../../components/ui/AnunciCard';
 import { ViewToggle } from '../../../components/ui/ViewToggle';
-import { sampleAnuncis } from '../../../lib/data/anuncisData';
-import { useAnuncis } from './hooks/useAnuncis';
+import { Anunci } from '../../../lib/data/anuncisData';
+import { useAnuncis as useLocalAnuncis } from './hooks/useAnuncis';
 import { useAnunciView } from './hooks/useAnunciView';
+import { useAnuncios } from '../../../hooks/useAnuncios';
 
 export default function AnuncisPage() {
   const router = useRouter();
+
+  // Obtenir anuncis REALS del backend (només aprovats)
+  const { data: anunciosResponse, isLoading, error } = useAnuncios({
+    status: 'approved'
+  });
+
+  // Convertir anuncis del backend al format local
+  const [allAnuncis, setAllAnuncis] = useState<Anunci[]>([]);
+
+  useEffect(() => {
+    console.log('📊 Resposta anuncis del backend:', anunciosResponse);
+
+    if (anunciosResponse?.data && Array.isArray(anunciosResponse.data)) {
+      const convertedAnuncis: Anunci[] = anunciosResponse.data.map((anuncio: any) => {
+        // Log per depurar el configuration
+        console.log('🔍 Anunci del backend:', {
+          title: anuncio.title,
+          configuration: anuncio.configuration,
+          marketplace: anuncio.configuration?.marketplace
+        });
+
+        // Extreure el preu i tipus de configuration.marketplace
+        const marketplace = anuncio.configuration?.marketplace;
+        const price = marketplace?.price || 0;
+        const priceType = marketplace?.priceType || 'gratuït';
+
+        // Determinar el tipus de preu correcte
+        let finalPriceType: 'fix' | 'negociable' | 'gratuït';
+        if (price > 0) {
+          finalPriceType = priceType === 'negociable' ? 'negociable' : 'fix';
+        } else {
+          finalPriceType = 'gratuït';
+        }
+
+        return {
+          id: anuncio.id,
+          title: anuncio.title,
+          description: anuncio.content || anuncio.summary || '',
+          type: anuncio.type === 'urgente' || anuncio.type === 'demanda' ? 'demanda' : 'oferta',
+          category: marketplace?.category || anuncio.type || 'general',
+          price: price,
+          priceType: finalPriceType,
+          location: marketplace?.location?.city || anuncio.comunidad || 'La Pública',
+          images: [
+            marketplace?.coverImage || marketplace?.images?.[0] || 'https://via.placeholder.com/300x200?text=Sense+imatge',
+            ...(marketplace?.galleryImages || marketplace?.images?.slice(1) || [])
+          ].filter(Boolean),
+          author: anuncio.author?.name || anuncio.author?.email || 'Usuari',
+          authorAvatar: anuncio.author?.image || '',
+          authorDepartment: anuncio.community?.nombre || 'Comunitat',
+          contactPhone: marketplace?.contact?.phone || '',
+          contactEmail: marketplace?.contact?.email || anuncio.author?.email || '',
+          status: anuncio.status === 'published' ? 'actiu' : 'inactiu' as const,
+          createdAt: new Date(anuncio.createdAt).toLocaleDateString('ca'),
+          expiresAt: anuncio.expiresAt ? new Date(anuncio.expiresAt).toLocaleDateString('ca') : 'Sense caducitat',
+          views: anuncio.views || 0,
+          favorites: anuncio.reactions || 0,
+          isFavorite: false
+        };
+      });
+
+      console.log(`✅ Convertits ${convertedAnuncis.length} anuncis del backend`);
+      console.log('💰 Preus dels anuncis:', convertedAnuncis.map(a => ({
+        title: a.title,
+        price: a.price,
+        priceType: a.priceType
+      })));
+      setAllAnuncis(convertedAnuncis);
+    }
+  }, [anunciosResponse]);
 
   // Hooks customizados per gestionar lògica d'anuncis
   const {
@@ -23,18 +95,60 @@ export default function AnuncisPage() {
     activeTab,
     setActiveTab,
     tabCounts
-  } = useAnuncis(sampleAnuncis);
+  } = useLocalAnuncis(allAnuncis);
 
   // Hook per gestionar vista grid/lista
   const { viewMode, setViewMode } = useAnunciView();
 
   // Dades d'estadístiques per al PageTemplate
   const statsData = [
-    { label: 'Total Anuncis', value: '234', trend: '+15%' },
+    { label: 'Total Anuncis', value: allAnuncis.length.toString(), trend: '+15%' },
     { label: 'Els Meus Anuncis', value: '3', trend: '+1' },
     { label: 'Nous Avui', value: '8', trend: '+2' },
     { label: 'Visualitzacions', value: '1.5K', trend: '+28%' }
   ];
+
+  // Mostrar loading mentre carrega
+  if (isLoading) {
+    return (
+      <PageTemplate
+        title="Anuncis"
+        subtitle="Carregant anuncis..."
+        statsData={[
+          { label: 'Total Anuncis', value: '...', trend: '' },
+          { label: 'Els Meus Anuncis', value: '...', trend: '' },
+          { label: 'Nous Avui', value: '...', trend: '' },
+          { label: 'Visualitzacions', value: '...', trend: '' }
+        ]}
+      >
+        <div style={{ textAlign: 'center', padding: '60px' }}>
+          <div style={{ fontSize: '24px', marginBottom: '16px' }}>⏳</div>
+          <p>Carregant anuncis...</p>
+        </div>
+      </PageTemplate>
+    );
+  }
+
+  // Mostrar error si n'hi ha
+  if (error) {
+    return (
+      <PageTemplate
+        title="Anuncis"
+        subtitle="Error carregant anuncis"
+        statsData={[
+          { label: 'Total Anuncis', value: '0', trend: '' },
+          { label: 'Els Meus Anuncis', value: '0', trend: '' },
+          { label: 'Nous Avui', value: '0', trend: '' },
+          { label: 'Visualitzacions', value: '0', trend: '' }
+        ]}
+      >
+        <div style={{ textAlign: 'center', padding: '60px' }}>
+          <div style={{ fontSize: '24px', marginBottom: '16px', color: '#ef4444' }}>⚠️</div>
+          <p>Error carregant els anuncis. Si us plau, refresca la pàgina.</p>
+        </div>
+      </PageTemplate>
+    );
+  }
 
   return (
     <PageTemplate
