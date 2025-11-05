@@ -1,2 +1,10 @@
 *.tar.gz
 backup_*
+
+# Environment variables
+.env
+.env.*
+backend/.env
+frontend/.env
+*.env.local
+*.env.backup
