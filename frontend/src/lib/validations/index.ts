@@ -18,7 +18,6 @@ export {
   dateSchema as commonDateSchema,
   priceSchema as commonPriceSchema,
   slugSchema as commonSlugSchema,
-  ValidationResult,
   validateData,
   getFieldErrors
 } from './common';

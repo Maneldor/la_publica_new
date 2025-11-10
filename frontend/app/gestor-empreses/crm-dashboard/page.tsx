@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import {
   ChartBarIcon,
-  TrendingUpIcon,
+  ArrowTrendingUpIcon,
   CurrencyEuroIcon,
   UsersIcon,
   CalendarIcon,
@@ -197,7 +197,7 @@ export default function CRMDashboardPage() {
                   {dashboard?.conversionRate?.toFixed(1) || 0}%
                 </div>
                 <div className="ml-3 flex items-baseline text-sm font-semibold text-green-600">
-                  <TrendingUpIcon className="h-4 w-4 mr-1" />
+                  <ArrowTrendingUpIcon className="h-4 w-4 mr-1" />
                   +2.1%
                 </div>
               </div>
@@ -321,7 +321,7 @@ export default function CRMDashboardPage() {
             >
               <div className="flex-shrink-0">
                 <div className="p-2 bg-red-50 rounded-lg group-hover:bg-red-100 transition-colors">
-                  <TrendingUpIcon className="h-6 w-6 text-red-600" />
+                  <ArrowTrendingUpIcon className="h-6 w-6 text-red-600" />
                 </div>
               </div>
               <div className="flex-1 min-w-0">

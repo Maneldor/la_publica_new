@@ -48,20 +48,20 @@ model User {
   permissions            UserPermission[]
 
   // Relaciones CRM (solo para gestores de empresas)
-  assignedLeads      CompanyLead[]    @relation("LeadAssignments")
-  managedCompanies   Company[]        @relation("CompanyAccountManager")
-  interactions       Interaction[]    @relation("InteractionCreator")
-  notifications      Notification[]   @relation("UserNotifications")
+  assignedLeads    CompanyLead[]  @relation("LeadAssignments")
+  managedCompanies Company[]      @relation("CompanyAccountManager")
+  interactions     Interaction[]  @relation("InteractionCreator")
+  notifications    Notification[] @relation("UserNotifications")
 
   // Relaciones Missatgeria
-  createdConversations  Conversation[]  @relation("ConversationCreator")
+  createdConversations     Conversation[]            @relation("ConversationCreator")
   conversationParticipants ConversationParticipant[] @relation("UserConversations")
-  sentMessages          Message[]       @relation("SentMessages")
-  readMessages          MessageRead[]   @relation("ReadMessages")
+  sentMessages             Message[]                 @relation("SentMessages")
+  readMessages             MessageRead[]             @relation("ReadMessages")
 
   // Relaciones Agenda/Calendari
-  organizedEvents       Event[]         @relation("OrganizedEvents")
-  eventAttendances      EventAttendee[] @relation("EventAttendances")
+  organizedEvents  Event[]         @relation("OrganizedEvents")
+  eventAttendances EventAttendee[] @relation("EventAttendances")
 
   @@index([email])
   @@index([primaryRole])
@@ -134,13 +134,13 @@ model Employee {
 }
 
 model Company {
-  id                  String            @id @default(cuid())
-  userId              String            @unique
+  id                  String   @id @default(cuid())
+  userId              String   @unique
   name                String
   description         String?
   sector              String
-  size                String            @default("pequeña")
-  cif                 String?           @unique
+  size                String   @default("pequeña")
+  cif                 String?  @unique
   address             String?
   phone               String?
   email               String
@@ -154,42 +154,42 @@ model Company {
   configuration       String?
   customFields        Json?
   customFieldsPrivacy Json?
-  isVerified          Boolean           @default(false)
-  isActive            Boolean           @default(true)
-  createdAt           DateTime          @default(now())
-  updatedAt           DateTime          @updatedAt
+  isVerified          Boolean  @default(false)
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   // Plan limits fields
-  planType            String            @default("BASIC") // BASIC, STANDARD, PREMIUM, EMPRESARIAL
-  maxMembers          Int               @default(1)
-  maxStorage          BigInt            @default(1073741824) // 1GB in bytes
-  maxDocuments        Int               @default(10)
-  maxOffers           Int               @default(3)
+  planType     String @default("BASIC") // BASIC, STANDARD, PREMIUM, EMPRESARIAL
+  maxMembers   Int    @default(1)
+  maxStorage   BigInt @default(1073741824) // 1GB in bytes
+  maxDocuments Int    @default(10)
+  maxOffers    Int    @default(3)
 
-  user                User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  advisories          CompanyAdvisory[]
-  products            CompanyProduct[]
-  profile             CompanyProfile?
-  ratings             CompanyRating[]
-  services            CompanyService[]
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  advisories CompanyAdvisory[]
+  products   CompanyProduct[]
+  profile    CompanyProfile?
+  ratings    CompanyRating[]
+  services   CompanyService[]
 
   // Nuevas relaciones CRM
-  contacts            Contact[]
-  interactions        Interaction[]
-  convertedFromLead   CompanyLead?      @relation("LeadConversion")
+  contacts          Contact[]
+  interactions      Interaction[]
+  convertedFromLead CompanyLead?  @relation("LeadConversion")
 
   // Información comercial
-  accountManagerId    String?
-  accountManager      User?             @relation("CompanyAccountManager", fields: [accountManagerId], references: [id])
-  notifications       Notification[]    @relation("CompanyNotifications")
-  events              Event[]           @relation("CompanyEvents")
+  accountManagerId String?
+  accountManager   User?          @relation("CompanyAccountManager", fields: [accountManagerId], references: [id])
+  notifications    Notification[] @relation("CompanyNotifications")
+  events           Event[]        @relation("CompanyEvents")
 
   // Plan limits relations
-  subscription        Subscription?
-  storage             CompanyStorage?
-  documents           Document[]
-  customFeatures      CustomFeature[]
-  planChangeLogs      PlanChangeLog[]
+  subscription   Subscription?
+  storage        CompanyStorage?
+  documents      Document[]
+  customFeatures CustomFeature[]
+  planChangeLogs PlanChangeLog[]
 
   @@index([sector])
   @@index([size])
@@ -1136,38 +1136,38 @@ model CourseWishlist {
 // ============================================================================
 
 model CompanyLead {
-  id              String   @id @default(cuid())
-  companyName     String
-  cif             String?  @unique
-  sector          String?
-  website         String?
-  employees       Int?     // Nombre aproximat d'empleats
+  id          String  @id @default(cuid())
+  companyName String
+  cif         String? @unique
+  sector      String?
+  website     String?
+  employees   Int? // Nombre aproximat d'empleats
 
   // Informació comercial
-  source          String   // "web_form", "referral", "cold_call", "event", "other"
-  priority        String   // "high", "medium", "low"
-  status          String   // "new", "contacted", "negotiating", "converted", "lost"
-  lostReason      String?  // Si status = "lost"
-  estimatedValue  Float?   // Valor estimat anual
+  source         String // "web_form", "referral", "cold_call", "event", "other"
+  priority       String // "high", "medium", "low"
+  status         String // "new", "contacted", "negotiating", "converted", "lost"
+  lostReason     String? // Si status = "lost"
+  estimatedValue Float? // Valor estimat anual
 
   // Assignació
-  assignedToId    String?
-  assignedTo      User?    @relation("LeadAssignments", fields: [assignedToId], references: [id])
+  assignedToId String?
+  assignedTo   User?   @relation("LeadAssignments", fields: [assignedToId], references: [id])
 
   // Relacions
-  contacts        Contact[]
-  interactions    Interaction[]
-  notifications   Notification[]
-  events          Event[]
-  notes           String?  @db.Text
+  contacts      Contact[]
+  interactions  Interaction[]
+  notifications Notification[]
+  events        Event[]
+  notes         String?        @db.Text
 
   // Conversió
-  convertedToCompanyId String? @unique
-  convertedToCompany   Company? @relation("LeadConversion", fields: [convertedToCompanyId], references: [id])
+  convertedToCompanyId String?   @unique
+  convertedToCompany   Company?  @relation("LeadConversion", fields: [convertedToCompanyId], references: [id])
   convertedAt          DateTime?
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([assignedToId])
   @@index([status])
@@ -1175,60 +1175,60 @@ model CompanyLead {
 }
 
 model Contact {
-  id              String   @id @default(cuid())
-  name            String
-  position        String?  // Càrrec: CEO, Director RRHH, etc.
-  phone           String?
-  email           String?
-  linkedin        String?
-  isPrimary       Boolean  @default(false)
+  id        String  @id @default(cuid())
+  name      String
+  position  String? // Càrrec: CEO, Director RRHH, etc.
+  phone     String?
+  email     String?
+  linkedin  String?
+  isPrimary Boolean @default(false)
 
   // Pot estar vinculat a Lead O Company
-  companyLeadId   String?
-  companyLead     CompanyLead? @relation(fields: [companyLeadId], references: [id], onDelete: Cascade)
+  companyLeadId String?
+  companyLead   CompanyLead? @relation(fields: [companyLeadId], references: [id], onDelete: Cascade)
 
-  companyId       String?
-  company         Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  interactions    Interaction[]
-  events          Event[]
-  notes           String?  @db.Text
+  interactions Interaction[]
+  events       Event[]
+  notes        String?       @db.Text
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([companyLeadId])
   @@index([companyId])
 }
 
 model Interaction {
-  id              String   @id @default(cuid())
-  type            String   // "call", "email", "meeting", "note", "whatsapp"
-  subject         String?
-  content         String   @db.Text
-  outcome         String?  // "positive", "neutral", "negative", "no_answer", "scheduled_followup"
+  id      String  @id @default(cuid())
+  type    String // "call", "email", "meeting", "note", "whatsapp"
+  subject String?
+  content String  @db.Text
+  outcome String? // "positive", "neutral", "negative", "no_answer", "scheduled_followup"
 
   // Següent acció
-  nextAction      String?
-  nextActionDate  DateTime?
-  nextActionCompleted Boolean @default(false)
+  nextAction          String?
+  nextActionDate      DateTime?
+  nextActionCompleted Boolean   @default(false)
 
   // Relacions (pot ser Lead O Company)
-  companyLeadId   String?
-  companyLead     CompanyLead? @relation(fields: [companyLeadId], references: [id], onDelete: Cascade)
+  companyLeadId String?
+  companyLead   CompanyLead? @relation(fields: [companyLeadId], references: [id], onDelete: Cascade)
 
-  companyId       String?
-  company         Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  contactId       String?
-  contact         Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  contactId String?
+  contact   Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
 
   // Qui ho va fer
-  createdById     String
-  createdBy       User     @relation("InteractionCreator", fields: [createdById], references: [id])
+  createdById String
+  createdBy   User   @relation("InteractionCreator", fields: [createdById], references: [id])
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([companyLeadId])
   @@index([companyId])
@@ -1241,44 +1241,44 @@ model Interaction {
 // ============================================================================
 
 model Notification {
-  id            String               @id @default(cuid())
+  id String @id @default(cuid())
 
   // Usuario que recibe la notificación
-  userId        String
-  user          User                 @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
 
   // Tipo y prioridad
-  type          NotificationType
-  priority      NotificationPriority @default(MEDIUM)
+  type     NotificationType
+  priority NotificationPriority @default(MEDIUM)
 
   // Contenido
-  title         String
-  message       String               @db.Text
+  title   String
+  message String @db.Text
 
   // Acción relacionada (opcional)
-  actionType    String?              // "call", "email", "meeting", "follow_up"
-  actionUrl     String?              // URL a la que navegar al hacer clic
+  actionType String? // "call", "email", "meeting", "follow_up"
+  actionUrl  String? // URL a la que navegar al hacer clic
 
   // Lead relacionado (opcional)
-  leadId        String?
-  lead          CompanyLead?         @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  leadId String?
+  lead   CompanyLead? @relation(fields: [leadId], references: [id], onDelete: Cascade)
 
   // Empresa relacionada (opcional)
-  companyId     String?
-  company       Company?             @relation("CompanyNotifications", fields: [companyId], references: [id], onDelete: Cascade)
+  companyId String?
+  company   Company? @relation("CompanyNotifications", fields: [companyId], references: [id], onDelete: Cascade)
 
   // Fecha de vencimiento (para recordatorios)
-  dueDate       DateTime?
+  dueDate DateTime?
 
   // Estado
-  isRead        Boolean              @default(false)
-  readAt        DateTime?
+  isRead Boolean   @default(false)
+  readAt DateTime?
 
   // Metadatos adicionales
-  metadata      Json?
+  metadata Json?
 
-  createdAt     DateTime             @default(now())
-  updatedAt     DateTime             @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@index([type])
@@ -1451,29 +1451,29 @@ enum NotificationPriority {
 // ============================================================================
 
 model Conversation {
-  id              String    @id @default(cuid())
-  name            String?   // Nom del grup o null per converses individuals
-  type            ConversationType @default(INDIVIDUAL)
-  description     String?
-  avatar          String?
-  isGroup         Boolean   @default(false)
+  id          String           @id @default(cuid())
+  name        String? // Nom del grup o null per converses individuals
+  type        ConversationType @default(INDIVIDUAL)
+  description String?
+  avatar      String?
+  isGroup     Boolean          @default(false)
 
   // Configuració
-  isArchived      Boolean   @default(false)
-  isMuted         Boolean   @default(false)
-  isPinned        Boolean   @default(false)
+  isArchived Boolean @default(false)
+  isMuted    Boolean @default(false)
+  isPinned   Boolean @default(false)
 
   // Metadades
-  lastMessageAt   DateTime?
-  createdById     String
-  createdBy       User      @relation("ConversationCreator", fields: [createdById], references: [id])
+  lastMessageAt DateTime?
+  createdById   String
+  createdBy     User      @relation("ConversationCreator", fields: [createdById], references: [id])
 
   // Relacions
-  participants    ConversationParticipant[]
-  messages        Message[]
+  participants ConversationParticipant[]
+  messages     Message[]
 
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([type])
   @@index([isArchived])
@@ -1481,25 +1481,25 @@ model Conversation {
 }
 
 model ConversationParticipant {
-  id             String       @id @default(cuid())
+  id             String          @id @default(cuid())
   conversationId String
   userId         String
   role           ParticipantRole @default(MEMBER)
 
   // Configuració per participant
-  isArchived     Boolean      @default(false)
-  isMuted        Boolean      @default(false)
-  isPinned       Boolean      @default(false)
+  isArchived Boolean @default(false)
+  isMuted    Boolean @default(false)
+  isPinned   Boolean @default(false)
 
   // Metadades de lectura
-  lastReadAt     DateTime?
-  unreadCount    Int          @default(0)
+  lastReadAt  DateTime?
+  unreadCount Int       @default(0)
 
-  joinedAt       DateTime     @default(now())
-  leftAt         DateTime?
+  joinedAt DateTime  @default(now())
+  leftAt   DateTime?
 
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  user           User         @relation("UserConversations", fields: [userId], references: [id], onDelete: Cascade)
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation("UserConversations", fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([conversationId, userId])
   @@index([userId])
@@ -1507,34 +1507,34 @@ model ConversationParticipant {
 }
 
 model Message {
-  id             String       @id @default(cuid())
+  id             String      @id @default(cuid())
   conversationId String
   senderId       String
-  content        String       @db.Text
-  type           MessageType  @default(TEXT)
+  content        String      @db.Text
+  type           MessageType @default(TEXT)
 
   // Resposta a missatge
-  replyToId      String?
-  replyTo        Message?     @relation("MessageReplies", fields: [replyToId], references: [id])
-  replies        Message[]    @relation("MessageReplies")
+  replyToId String?
+  replyTo   Message?  @relation("MessageReplies", fields: [replyToId], references: [id])
+  replies   Message[] @relation("MessageReplies")
 
   // Fitxers adjunts
-  attachments    MessageAttachment[]
+  attachments MessageAttachment[]
 
   // Estat del missatge
-  status         MessageStatus @default(SENT)
-  isEdited       Boolean      @default(false)
-  editedAt       DateTime?
+  status   MessageStatus @default(SENT)
+  isEdited Boolean       @default(false)
+  editedAt DateTime?
 
   // Metadades
-  metadata       Json?
+  metadata Json?
 
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sender         User         @relation("SentMessages", fields: [senderId], references: [id])
-  reads          MessageRead[]
+  conversation Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User          @relation("SentMessages", fields: [senderId], references: [id])
+  reads        MessageRead[]
 
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([conversationId])
   @@index([senderId])
@@ -1543,7 +1543,7 @@ model Message {
 }
 
 model MessageAttachment {
-  id        String      @id @default(cuid())
+  id        String  @id @default(cuid())
   messageId String
   fileName  String
   fileUrl   String
@@ -1551,9 +1551,9 @@ model MessageAttachment {
   fileSize  Int
   mimeType  String?
 
-  message   Message     @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime    @default(now())
+  createdAt DateTime @default(now())
 
   @@index([messageId])
 }
@@ -1564,8 +1564,8 @@ model MessageRead {
   userId    String
   readAt    DateTime @default(now())
 
-  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  user      User     @relation("ReadMessages", fields: [userId], references: [id], onDelete: Cascade)
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation("ReadMessages", fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([messageId, userId])
   @@index([messageId])
@@ -1577,55 +1577,55 @@ model MessageRead {
 // ============================================================================
 
 model Event {
-  id           String      @id @default(cuid())
-  title        String
-  description  String?     @db.Text
-  type         EventType   @default(MEETING)
+  id          String    @id @default(cuid())
+  title       String
+  description String?   @db.Text
+  type        EventType @default(MEETING)
 
   // Dates i hora
-  startDate    DateTime
-  endDate      DateTime
-  isAllDay     Boolean     @default(false)
-  timezone     String      @default("Europe/Madrid")
+  startDate DateTime
+  endDate   DateTime
+  isAllDay  Boolean  @default(false)
+  timezone  String   @default("Europe/Madrid")
 
   // Ubicació
-  location     String?
-  onlineLink   String?     // Per reunions virtuals
+  location   String?
+  onlineLink String? // Per reunions virtuals
 
   // Estat
-  status       EventStatus @default(CONFIRMED)
-  visibility   EventVisibility @default(PRIVATE)
+  status     EventStatus     @default(CONFIRMED)
+  visibility EventVisibility @default(PRIVATE)
 
   // Recordatoris
-  reminders    EventReminder[]
+  reminders EventReminder[]
 
   // Recurrència
-  isRecurring  Boolean     @default(false)
-  recurrenceRule String?   // RRULE format
-  parentEventId String?    // Per events recurrents
-  parentEvent   Event?     @relation("RecurringEvents", fields: [parentEventId], references: [id])
-  childEvents   Event[]    @relation("RecurringEvents")
+  isRecurring    Boolean @default(false)
+  recurrenceRule String? // RRULE format
+  parentEventId  String? // Per events recurrents
+  parentEvent    Event?  @relation("RecurringEvents", fields: [parentEventId], references: [id])
+  childEvents    Event[] @relation("RecurringEvents")
 
   // Relacions CRM
-  leadId       String?
-  lead         CompanyLead? @relation(fields: [leadId], references: [id])
-  companyId    String?
-  company      Company?    @relation("CompanyEvents", fields: [companyId], references: [id])
-  contactId    String?
-  contact      Contact?    @relation(fields: [contactId], references: [id])
+  leadId    String?
+  lead      CompanyLead? @relation(fields: [leadId], references: [id])
+  companyId String?
+  company   Company?     @relation("CompanyEvents", fields: [companyId], references: [id])
+  contactId String?
+  contact   Contact?     @relation(fields: [contactId], references: [id])
 
   // Organitzador
-  organizerId  String
-  organizer    User        @relation("OrganizedEvents", fields: [organizerId], references: [id])
+  organizerId String
+  organizer   User   @relation("OrganizedEvents", fields: [organizerId], references: [id])
 
   // Participants
-  attendees    EventAttendee[]
+  attendees EventAttendee[]
 
   // Metadades
-  metadata     Json?
+  metadata Json?
 
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([organizerId])
   @@index([startDate])
@@ -1639,19 +1639,19 @@ model Event {
 model EventAttendee {
   id         String           @id @default(cuid())
   eventId    String
-  userId     String?          // Pot ser null per convidats externs
-  email      String?          // Per convidats externs
-  name       String?          // Per convidats externs
+  userId     String? // Pot ser null per convidats externs
+  email      String? // Per convidats externs
+  name       String? // Per convidats externs
   response   AttendeeResponse @default(PENDING)
   isRequired Boolean          @default(true)
 
   respondedAt DateTime?
 
-  event      Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  user       User?            @relation("EventAttendances", fields: [userId], references: [id])
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User? @relation("EventAttendances", fields: [userId], references: [id])
 
-  createdAt  DateTime         @default(now())
-  updatedAt  DateTime         @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([eventId, userId])
   @@unique([eventId, email])
@@ -1661,16 +1661,16 @@ model EventAttendee {
 }
 
 model EventReminder {
-  id           String        @id @default(cuid())
-  eventId      String
-  type         ReminderType  @default(NOTIFICATION)
-  triggerTime  Int           // minuts abans de l'event
-  isTriggered  Boolean       @default(false)
-  triggeredAt  DateTime?
+  id          String       @id @default(cuid())
+  eventId     String
+  type        ReminderType @default(NOTIFICATION)
+  triggerTime Int // minuts abans de l'event
+  isTriggered Boolean      @default(false)
+  triggeredAt DateTime?
 
-  event        Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
-  createdAt    DateTime      @default(now())
+  createdAt DateTime @default(now())
 
   @@index([eventId])
   @@index([isTriggered])
@@ -1681,31 +1681,31 @@ model EventReminder {
 // ============================================================================
 
 model Subscription {
-  id                String   @id @default(cuid())
-  companyId         String   @unique
-  planType          String   // BASIC, STANDARD, PREMIUM, EMPRESARIAL
-  status            String   @default("ACTIVE") // ACTIVE, SUSPENDED, CANCELLED
-  startDate         DateTime @default(now())
-  endDate           DateTime?
-  billingCycle      String   @default("MONTHLY") // MONTHLY, ANNUAL
-  price             Float?
-  currency          String   @default("EUR")
-  autoRenew         Boolean  @default(true)
+  id           String    @id @default(cuid())
+  companyId    String    @unique
+  planType     String // BASIC, STANDARD, PREMIUM, EMPRESARIAL
+  status       String    @default("ACTIVE") // ACTIVE, SUSPENDED, CANCELLED
+  startDate    DateTime  @default(now())
+  endDate      DateTime?
+  billingCycle String    @default("MONTHLY") // MONTHLY, ANNUAL
+  price        Float?
+  currency     String    @default("EUR")
+  autoRenew    Boolean   @default(true)
 
   // Límites específicos del plan
-  maxMembers        Int
-  maxStorage        BigInt   // en bytes
-  maxDocuments      Int
-  maxOffers         Int
+  maxMembers         Int
+  maxStorage         BigInt // en bytes
+  maxDocuments       Int
+  maxOffers          Int
   hasAdvancedReports Boolean @default(false)
   hasPrioritySupport Boolean @default(false)
-  hasApiAccess      Boolean @default(false)
-  hasCustomBranding Boolean @default(false)
+  hasApiAccess       Boolean @default(false)
+  hasCustomBranding  Boolean @default(false)
 
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  company           Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
   @@index([planType])
@@ -1714,63 +1714,63 @@ model Subscription {
 }
 
 model CompanyStorage {
-  id                String   @id @default(cuid())
-  companyId         String   @unique
-  usedBytes         BigInt   @default(0)
-  maxBytes          BigInt
-  documentsCount    Int      @default(0)
-  lastCalculatedAt  DateTime @default(now())
+  id               String   @id @default(cuid())
+  companyId        String   @unique
+  usedBytes        BigInt   @default(0)
+  maxBytes         BigInt
+  documentsCount   Int      @default(0)
+  lastCalculatedAt DateTime @default(now())
 
   // Desglose por tipo de archivo
-  documentsBytes    BigInt   @default(0)
-  imagesBytes       BigInt   @default(0)
-  videosBytes       BigInt   @default(0)
-  otherBytes        BigInt   @default(0)
+  documentsBytes BigInt @default(0)
+  imagesBytes    BigInt @default(0)
+  videosBytes    BigInt @default(0)
+  otherBytes     BigInt @default(0)
 
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  company           Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
   @@index([lastCalculatedAt])
 }
 
 model Document {
-  id                String   @id @default(cuid())
-  companyId         String
-  name              String
-  originalName      String
-  mimeType          String
-  size              BigInt
-  url               String?
-  path              String?
-  category          String   @default("GENERAL") // GENERAL, CONTRACTS, REPORTS, IMAGES, etc.
-  description       String?
-  tags              String?  // JSON array of tags
+  id           String  @id @default(cuid())
+  companyId    String
+  name         String
+  originalName String
+  mimeType     String
+  size         BigInt
+  url          String?
+  path         String?
+  category     String  @default("GENERAL") // GENERAL, CONTRACTS, REPORTS, IMAGES, etc.
+  description  String?
+  tags         String? // JSON array of tags
 
   // Metadatos
-  isShared          Boolean  @default(false)
-  sharedWith        String?  // JSON array of user IDs
-  permissions       String?  // JSON object with permissions
+  isShared    Boolean @default(false)
+  sharedWith  String? // JSON array of user IDs
+  permissions String? // JSON object with permissions
 
   // Versionado
-  version           Int      @default(1)
-  parentId          String?  // Para versiones
-  isLatestVersion   Boolean  @default(true)
+  version         Int     @default(1)
+  parentId        String? // Para versiones
+  isLatestVersion Boolean @default(true)
 
   // Control de acceso
-  createdById       String
-  lastModifiedById  String?
+  createdById      String
+  lastModifiedById String?
 
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  company           Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  parent            Document?         @relation("DocumentVersions", fields: [parentId], references: [id])
-  versions          Document[]        @relation("DocumentVersions")
-  documentVersions  DocumentVersion[]
-  exports           DocumentExport[]
+  company          Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  parent           Document?         @relation("DocumentVersions", fields: [parentId], references: [id])
+  versions         Document[]        @relation("DocumentVersions")
+  documentVersions DocumentVersion[]
+  exports          DocumentExport[]
 
   @@index([companyId])
   @@index([category])
@@ -1781,18 +1781,18 @@ model Document {
 }
 
 model DocumentVersion {
-  id                String   @id @default(cuid())
-  documentId        String
-  version           Int
-  changes           String   @db.Text // Descripción de los cambios
-  size              BigInt
-  url               String?
-  path              String?
+  id         String  @id @default(cuid())
+  documentId String
+  version    Int
+  changes    String  @db.Text // Descripción de los cambios
+  size       BigInt
+  url        String?
+  path       String?
 
-  createdById       String
-  createdAt         DateTime @default(now())
+  createdById String
+  createdAt   DateTime @default(now())
 
-  document          Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
   @@unique([documentId, version])
   @@index([documentId])
@@ -1801,21 +1801,21 @@ model DocumentVersion {
 }
 
 model DocumentExport {
-  id                String   @id @default(cuid())
-  documentId        String
-  format            String   // PDF, DOCX, ZIP, etc.
-  status            String   @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
-  downloadUrl       String?
-  expiresAt         DateTime? // Cuándo expira el enlace de descarga
+  id          String    @id @default(cuid())
+  documentId  String
+  format      String // PDF, DOCX, ZIP, etc.
+  status      String    @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
+  downloadUrl String?
+  expiresAt   DateTime? // Cuándo expira el enlace de descarga
 
-  requestedById     String
-  completedAt       DateTime?
-  errorMessage      String?
+  requestedById String
+  completedAt   DateTime?
+  errorMessage  String?
 
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  document          Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
   @@index([documentId])
   @@index([status])
@@ -1824,26 +1824,26 @@ model DocumentExport {
 }
 
 model CustomFeature {
-  id                String   @id @default(cuid())
-  companyId         String
-  featureName       String   // Nombre de la característica personalizada
-  featureType       String   // INTEGRATION, CUSTOM_FIELD, WORKFLOW, etc.
-  description       String?
-  configuration     Json?    // Configuración específica de la característica
-  isActive          Boolean  @default(true)
+  id            String  @id @default(cuid())
+  companyId     String
+  featureName   String // Nombre de la característica personalizada
+  featureType   String // INTEGRATION, CUSTOM_FIELD, WORKFLOW, etc.
+  description   String?
+  configuration Json? // Configuración específica de la característica
+  isActive      Boolean @default(true)
 
   // Límites específicos
-  usageLimit        Int?     // Límite de uso (si aplica)
-  currentUsage      Int      @default(0)
+  usageLimit   Int? // Límite de uso (si aplica)
+  currentUsage Int  @default(0)
 
   // Precios
-  monthlyPrice      Float?
-  annualPrice       Float?
+  monthlyPrice Float?
+  annualPrice  Float?
 
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  company           Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
   @@index([featureType])
@@ -1851,32 +1851,76 @@ model CustomFeature {
 }
 
 model PlanChangeLog {
-  id                String   @id @default(cuid())
-  companyId         String
-  fromPlan          String   // Plan anterior
-  toPlan            String   // Nuevo plan
-  reason            String?  // Motivo del cambio
+  id        String  @id @default(cuid())
+  companyId String
+  fromPlan  String // Plan anterior
+  toPlan    String // Nuevo plan
+  reason    String? // Motivo del cambio
 
   // Cambios en límites
-  changesApplied    Json     // Objeto con los cambios aplicados
+  changesApplied Json // Objeto con los cambios aplicados
 
   // Información del cambio
-  effectiveDate     DateTime @default(now())
-  requestedById     String   // Usuario que solicitó el cambio
-  processedAt       DateTime @default(now())
+  effectiveDate DateTime @default(now())
+  requestedById String // Usuario que solicitó el cambio
+  processedAt   DateTime @default(now())
 
   // Facturación
-  prorationAmount   Float?   // Importe de prorrateo
-  nextBillingDate   DateTime?
+  prorationAmount Float? // Importe de prorrateo
+  nextBillingDate DateTime?
 
-  createdAt         DateTime @default(now())
+  createdAt DateTime @default(now())
 
-  company           Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
   @@index([effectiveDate])
   @@index([fromPlan])
   @@index([toPlan])
+}
+
+// ============================================
+// SISTEMA DE BILLING - PLANES CONFIGURABLES
+// Añadido: 2025-11-10
+// ============================================
+
+model PlanConfig {
+  id String @id @default(cuid())
+
+  // Identificador único del plan (BASIC, STANDARD, PREMIUM, EMPRESARIAL)
+  planType String @unique
+
+  // Información del plan
+  nombre      String // "Pla Bàsic"
+  nombreCorto String // "Bàsic"
+  descripcion String // Descripción completa
+
+  // Precios
+  precioMensual Float // 39.00
+  precioAnual   Float? // 390.00 (opcional)
+
+  // Configuración en JSON
+  limitesJSON     String // {"maxUsuarios": 1, "maxStorage": 5, ...}
+  caracteristicas String // ["Perfil bàsic", "1 membre", ...]
+
+  // Apariencia
+  color String // "#3B82F6"
+  icono String // "⚡"
+
+  // Configuración
+  orden     Int     @default(0)
+  destacado Boolean @default(false)
+  activo    Boolean @default(true)
+  visible   Boolean @default(true)
+  esSistema Boolean @default(false) // No se puede eliminar
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([planType])
+  @@index([activo, visible])
+  @@index([orden])
+  @@map("plan_configs")
 }
 
 enum ConversationType {
