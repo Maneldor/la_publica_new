@@ -4,6 +4,8 @@ import GitHubProvider from "next-auth/providers/github"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { UserRole } from '@/lib/permissions'
 import jwt from 'jsonwebtoken'
+import { prismaClient } from '@/lib/prisma'
+import * as bcrypt from 'bcryptjs'
 // import { PrismaClient } from '@prisma/client'
 
 // const prisma = new PrismaClient()
@@ -69,187 +71,106 @@ export const authOptions: NextAuthOptions = {
         }
       },
       async authorize(credentials) {
+        console.log('🔵 [AUTHORIZE] Iniciando autenticación');
+        console.log('🔵 [AUTHORIZE] Email recibido:', credentials?.email);
+
+        // Validación básica
         if (!credentials?.email || !credentials?.password) {
-          return null
+          console.log('🔴 [AUTHORIZE] Credenciales incompletas');
+          return null;
         }
 
         try {
-          // Validar contra el backend
-          const res = await fetch('http://localhost:5000/api/v1/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email: credentials.email,
-              password: credentials.password
-            }),
+          console.log('🔵 [AUTHORIZE] Consultando Prisma para:', credentials.email);
+
+          // Buscar usuario en la base de datos
+          const user = await prismaClient.user.findUnique({
+            where: {
+              email: credentials.email
+            },
+            include: {
+              ownedCompany: true,
+              memberCompany: true
+            }
           });
 
-          if (res.ok) {
-            const data = await res.json();
+          console.log('🔵 [AUTHORIZE] Usuario encontrado:', !!user);
 
-            if (data.success && data.data) {
-              // Guardar tokens en localStorage para persistencia
-              if (typeof window !== 'undefined') {
-                localStorage.setItem('lapublica_token', data.data.token);
-                localStorage.setItem('lapublica_refresh_token', data.data.refreshToken || '');
-              }
-
-              // Mapear roles del backend al frontend
-              let frontendRole = data.data.role;
-              if (data.data.role === 'EMPRESA') {
-                frontendRole = UserRole.COMPANY;
-              } else if (data.data.role === 'GESTOR_EMPRESAS') {
-                frontendRole = UserRole.COMPANY_MANAGER;
-              } else if (data.data.role === 'EMPLEADO') {
-                frontendRole = UserRole.PUBLIC_EMPLOYEE;
-              } else if (data.data.role === 'ADMIN') {
-                frontendRole = UserRole.ADMIN;
-              }
-
-              return {
-                id: data.data.id,
-                email: data.data.email,
-                name: data.data.name || data.data.email,
-                role: frontendRole,
-                communityId: data.data.communityId,
-                isActive: data.data.isActive !== false,
-                backendToken: data.data.token, // JWT del backend
-                backendRefreshToken: data.data.refreshToken // Refresh token del backend
-              };
-            }
-          } else {
-            console.error('Backend auth falló:', res.status, res.statusText);
-            // NO retornar null aquí - continuar al fallback
+          // Si no existe el usuario
+          if (!user) {
+            console.log('❌ Usuario no encontrado:', credentials.email);
+            return null;
           }
-        } catch (error) {
-          console.error('Error conectando con backend:', error);
-        }
 
-        // Fallback a usuarios mock para desarrollo (SIEMPRE se ejecuta si backend falla)
-        console.log('🔄 Usando fallback de usuarios mock para desarrollo');
-        const mockUsers = [
-          {
-            id: "1",
-            email: "superadmin@lapublica.com",
-            name: "Super Administrador",
-            password: "super123",
-            role: UserRole.SUPER_ADMIN,
-            communityId: undefined,
-            isActive: true
-          },
-          {
-            id: "2",
-            email: "admin@lapublica.com",
-            name: "Administrador",
-            password: "admin123",
-            role: UserRole.ADMIN,
-            communityId: undefined,
-            isActive: true
-          },
-          {
-            id: "3",
-            email: "manager@barcelona.com",
-            name: "Community Manager Barcelona",
-            password: "manager123",
-            role: UserRole.COMMUNITY_MANAGER,
-            communityId: "barcelona",
-            isActive: true
-          },
-          {
-            id: "4",
-            email: "moderator@barcelona.com",
-            name: "Moderador Barcelona",
-            password: "mod123",
-            role: UserRole.MODERATOR,
-            communityId: "barcelona",
-            isActive: true
-          },
-          {
-            id: "5",
-            email: "user@lapublica.com",
-            name: "Usuario Normal",
-            password: "user123",
-            role: UserRole.USER,
-            communityId: undefined,
-            isActive: true
-          },
-          // Gestores reales del backend para testing
-          {
-            id: "cmhdlcjmz0000hwn5cy1l5shi",
-            email: "gestor@lapublica.es",
-            name: "Gestor Comercial",
-            password: "gestor123",
-            role: UserRole.COMPANY_MANAGER,
-            communityId: undefined,
-            isActive: true
-          },
-          {
-            id: "cmhdmyx6z0000hwyqojppwc9i",
-            email: "gestor1@lapublica.es",
-            name: "Marc García",
-            password: "gestor123",
-            role: UserRole.COMPANY_MANAGER,
-            communityId: undefined,
-            isActive: true
-          },
-          {
-            id: "cmhdmyxu30002hwyqd9y784x4",
-            email: "gestor2@lapublica.es",
-            name: "Laura Martínez",
-            password: "gestor123",
-            role: UserRole.COMPANY_MANAGER,
-            communityId: undefined,
-            isActive: true
-          },
-          {
-            id: "cmhdmyxyf0004hwyqofwk74zj",
-            email: "gestor3@lapublica.es",
-            name: "Joan Sánchez",
-            password: "gestor123",
-            role: UserRole.COMPANY_MANAGER,
-            communityId: undefined,
-            isActive: true
-          },
-          // Usuarios de empresa
-          {
-            id: "empresa1",
-            email: "empresa@lapublica.es",
-            name: "Tech Solutions BCN",
-            password: "empresa123",
-            role: UserRole.COMPANY,
-            communityId: undefined,
-            isActive: true
-          },
-          // Empleados públicos
-          {
-            id: "empleado1",
-            email: "empleado@lapublica.es",
-            name: "Maria García - Empleado Público",
-            password: "empleado123",
-            role: UserRole.PUBLIC_EMPLOYEE,
-            communityId: "barcelona",
-            isActive: true
+          console.log('🔵 [AUTHORIZE] Datos del usuario:');
+          console.log('  - ID:', user.id);
+          console.log('  - Email:', user.email);
+          console.log('  - Name:', user.name);
+          console.log('  - UserType:', user.userType);
+          console.log('  - Tiene password:', !!user.password);
+
+          // Si el usuario no tiene password (OAuth only)
+          if (!user.password) {
+            console.log('❌ Usuario sin contraseña (OAuth only):', credentials.email);
+            return null;
           }
-        ];
 
-        const user = mockUsers.find(u =>
-          u.email === credentials.email && u.password === credentials.password
-        );
+          console.log('🔵 [AUTHORIZE] Verificando contraseña con bcrypt...');
 
-        if (user && user.isActive) {
-          console.log('✅ Usuario mock encontrado:', user.email);
+          // Validar contraseña con bcrypt
+          const isValidPassword = await bcrypt.compare(
+            credentials.password,
+            user.password
+          );
+
+          console.log('🔵 [AUTHORIZE] Resultado bcrypt:', isValidPassword);
+
+          if (!isValidPassword) {
+            console.log('❌ Contraseña incorrecta para:', credentials.email);
+            return null;
+          }
+
+          // Usuario autenticado correctamente
+          console.log('✅ Usuario autenticado:', user.email);
+
+          // Determinar el rol basado en userType
+          let role = 'USER';
+          switch (user.userType) {
+            case 'ADMIN':
+              role = 'ADMIN';
+              break;
+            case 'ACCOUNT_MANAGER':
+              role = 'COMPANY_MANAGER';
+              break;
+            case 'COMPANY_OWNER':
+              role = 'COMPANY';
+              break;
+            case 'COMPANY_MEMBER':
+              role = 'COMPANY';
+              break;
+            case 'EMPLOYEE':
+              role = 'PUBLIC_EMPLOYEE';
+              break;
+            default:
+              role = 'USER';
+          }
+
+          console.log('🔵 [AUTHORIZE] Rol asignado:', role);
+
+          // Retornar usuario en formato compatible con NextAuth
           return {
             id: user.id,
             email: user.email,
             name: user.name,
-            role: user.role,
-            communityId: user.communityId,
-            isActive: user.isActive
-          }
-        }
+            role: role,
+            image: user.image
+          };
 
-        console.log('❌ Credenciales no coinciden con usuarios mock');
-        return null;
+        } catch (error) {
+          console.error('🔴 [AUTHORIZE] Error crítico:', error);
+          console.error('🔴 [AUTHORIZE] Stack:', error instanceof Error ? error.stack : 'No stack');
+          return null;
+        }
       }
     })
   ],

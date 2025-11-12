@@ -18,6 +18,7 @@ datasource db {
 model User {
   id            String   @id @default(cuid())
   email         String   @unique
+  password      String?  // Nullable para permitir OAuth
   name          String?
   image         String?
   role          UserRole @default(USER)
@@ -25,6 +26,22 @@ model User {
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  // Tipo de usuario
+  userType        UserType @default(EMPLOYEE)
+
+  // Si es COMPANY_OWNER
+  ownedCompanyId  String?  @unique
+  ownedCompany    Company? @relation("CompanyOwner", fields: [ownedCompanyId], references: [id])
+
+  // Si es COMPANY_MEMBER
+  memberCompanyId String?
+  memberCompany   Company? @relation("CompanyMembers", fields: [memberCompanyId], references: [id])
+  companyRole     CompanyRole?
+  cargo           String?
+
+  // Si es ACCOUNT_MANAGER
+  managedCompanies Company[] @relation("AccountManager")
 
   // Relaciones
   community     Comunidad? @relation(fields: [communityId], references: [id])
@@ -34,6 +51,9 @@ model User {
   @@index([email])
   @@index([role])
   @@index([communityId])
+  @@index([userType])
+  @@index([ownedCompanyId])
+  @@index([memberCompanyId])
 }
 
 model Comunidad {
@@ -230,4 +250,150 @@ enum CommentStatus {
   APPROVED
   REJECTED
   HIDDEN
+}
+
+// ==================== COMPANY & SUBSCRIPTION MODELS ====================
+
+model Company {
+  id              String   @id @default(cuid())
+
+  // Información básica
+  name            String
+  cif             String   @unique
+  email           String
+  phone           String?
+  address         String?
+  logo            String?
+  description     String?
+  website         String?
+
+  // Plan actual
+  currentPlanId   String?
+  currentPlan     PlanConfig? @relation("CompanyCurrentPlan", fields: [currentPlanId], references: [id])
+
+  // Gestor La Pública asignado
+  accountManagerId String?
+  accountManager   User?    @relation("AccountManager", fields: [accountManagerId], references: [id])
+
+  // Estado
+  isActive        Boolean  @default(true)
+
+  // Relaciones
+  owner           User?    @relation("CompanyOwner")
+  teamMembers     User[]   @relation("CompanyMembers")
+  subscriptions   Subscription[]
+
+  // Timestamps
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([cif])
+  @@index([currentPlanId])
+  @@index([accountManagerId])
+  @@map("companies")
+}
+
+model PlanConfig {
+  id String @id @default(cuid())
+
+  // Identificador único del plan
+  planType String @unique
+
+  // Información del plan
+  nombre      String
+  nombreCorto String
+  descripcion String
+
+  // Precios
+  precioMensual Float
+  precioAnual   Float?
+
+  // Configuración en JSON
+  limitesJSON     String
+  caracteristicas String
+
+  // Apariencia
+  color String
+  icono String
+
+  // Configuración
+  orden     Int     @default(0)
+  destacado Boolean @default(false)
+  activo    Boolean @default(true)
+  visible   Boolean @default(true)
+  esSistema Boolean @default(false)
+
+  // Relaciones con empresas y suscripciones
+  companies       Company[] @relation("CompanyCurrentPlan")
+  subscriptions   Subscription[] @relation("SubscriptionPlan")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([planType])
+  @@index([activo, visible])
+  @@index([orden])
+  @@map("plan_configs")
+}
+
+model Subscription {
+  id              String   @id @default(cuid())
+
+  // Relaciones
+  companyId       String
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  planId          String
+  plan            PlanConfig @relation("SubscriptionPlan", fields: [planId], references: [id])
+
+  // Estado
+  status          SubscriptionStatus @default(ACTIVE)
+
+  // Snapshot de precios (guardados por si el plan cambia)
+  precioMensual   Float
+  precioAnual     Float?
+
+  // Snapshot de límites
+  limites         Json
+
+  // Fechas
+  startDate       DateTime @default(now())
+  endDate         DateTime?
+  cancelledAt     DateTime?
+
+  // Configuración
+  isAutoRenew     Boolean  @default(true)
+  extras          Json?
+
+  // Timestamps
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([planId])
+  @@index([status])
+  @@index([endDate])
+  @@map("subscriptions")
+}
+
+// ==================== COMPANY & SUBSCRIPTION ENUMS ====================
+
+enum UserType {
+  EMPLOYEE          // Empleado público
+  COMPANY_OWNER     // Gestor Principal empresa
+  COMPANY_MEMBER    // Miembro equipo empresa
+  ACCOUNT_MANAGER   // Gestor La Pública
+  ADMIN             // Admin plataforma
+}
+
+enum CompanyRole {
+  OWNER             // Propietario
+  MEMBER            // Miembro
+}
+
+enum SubscriptionStatus {
+  ACTIVE            // Activa
+  CANCELLED         // Cancelada pero válida hasta endDate
+  EXPIRED           // Expirada
+  PENDING           // Pendiente de activación
 }

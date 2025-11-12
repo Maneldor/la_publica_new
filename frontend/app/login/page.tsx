@@ -48,7 +48,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const result = await signIn('credentials', {
-        email: 'admin@lapublica.com',
+        email: 'admin@lapublica.cat',
         password: 'admin123',
         redirect: false,
       });
@@ -65,33 +65,13 @@ export default function LoginPage() {
     }
   };
 
-  const quickLoginSuperAdmin = async () => {
-    setLoading(true);
-    try {
-      const result = await signIn('credentials', {
-        email: 'superadmin@lapublica.com',
-        password: 'super123',
-        redirect: false,
-      });
-
-      if (result?.error) {
-        setError('Error en login rápido de super admin');
-      } else {
-        router.push('/admin');
-      }
-    } catch (err: any) {
-      setError('Error en login rápido de super admin');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const quickLoginGestor = async () => {
     setLoading(true);
     try {
       const result = await signIn('credentials', {
-        email: 'gestor@lapublica.es',
-        password: 'gestor123',
+        email: 'maria.garcia@lapublica.cat',
+        password: 'gestora123',
         redirect: false,
       });
 
@@ -111,8 +91,8 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const result = await signIn('credentials', {
-        email: 'empresa.test@lapublica.cat',
-        password: 'Test1234!',
+        email: 'joan.perez@empresadeprova.cat',
+        password: 'owner123',
         redirect: false,
       });
 
@@ -128,12 +108,33 @@ export default function LoginPage() {
     }
   };
 
+  const quickLoginMiembro = async () => {
+    setLoading(true);
+    try {
+      const result = await signIn('credentials', {
+        email: 'anna.marti@empresadeprova.cat',
+        password: 'member123',
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError('Error en login rápido de miembro');
+      } else {
+        router.push('/empresa'); // Redirigir a empresa
+      }
+    } catch (err: any) {
+      setError('Error en login rápido de miembro');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const quickLoginEmpleado = async () => {
     setLoading(true);
     try {
       const result = await signIn('credentials', {
-        email: 'empleado@lapublica.es',
-        password: 'empleado123',
+        email: 'laura.garcia@generalitat.cat',
+        password: 'empleat123',
         redirect: false,
       });
 
@@ -206,7 +207,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full border rounded-lg px-4 py-2"
-              placeholder="admin@lapublica.com"
+              placeholder="admin@lapublica.cat"
               required
             />
           </div>
@@ -237,12 +238,13 @@ export default function LoginPage() {
           <p className="text-sm font-medium text-gray-700 text-center mb-4">Usuarios de Prueba</p>
 
           <div className="space-y-3 text-sm">
+
             <div className="bg-purple-50 p-3 rounded-lg">
-              <div className="font-medium text-purple-800">🔐 Super Admin</div>
-              <div className="text-purple-600">Email: superadmin@lapublica.com</div>
-              <div className="text-purple-600">Contraseña: super123</div>
+              <div className="font-medium text-purple-800">👤 Administrador</div>
+              <div className="text-purple-600">Email: admin@lapublica.cat</div>
+              <div className="text-purple-600">Contraseña: admin123</div>
               <button
-                onClick={quickLoginSuperAdmin}
+                onClick={quickLoginAdmin}
                 disabled={loading}
                 className="mt-2 px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 disabled:opacity-50"
               >
@@ -250,25 +252,25 @@ export default function LoginPage() {
               </button>
             </div>
 
-            <div className="bg-blue-50 p-3 rounded-lg">
-              <div className="font-medium text-blue-800">👤 Administrador</div>
-              <div className="text-blue-600">Email: admin@lapublica.com</div>
-              <div className="text-blue-600">Contraseña: admin123</div>
+            <div className="bg-indigo-50 p-3 rounded-lg">
+              <div className="font-medium text-indigo-800">🤝 Gestor La Pública</div>
+              <div className="text-indigo-600">Email: maria.garcia@lapublica.cat</div>
+              <div className="text-indigo-600">Contraseña: gestora123</div>
               <button
-                onClick={quickLoginAdmin}
+                onClick={quickLoginGestor}
                 disabled={loading}
-                className="mt-2 px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:opacity-50"
+                className="mt-2 px-3 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700 disabled:opacity-50"
               >
                 Login Rápido
               </button>
             </div>
 
             <div className="bg-green-50 p-3 rounded-lg">
-              <div className="font-medium text-green-800">💼 Gestor Comercial</div>
-              <div className="text-green-600">Email: gestor@lapublica.es</div>
-              <div className="text-green-600">Contraseña: gestor123</div>
+              <div className="font-medium text-green-800">🏢 Gestor Principal Empresa</div>
+              <div className="text-green-600">Email: joan.perez@empresadeprova.cat</div>
+              <div className="text-green-600">Contraseña: owner123</div>
               <button
-                onClick={quickLoginGestor}
+                onClick={quickLoginEmpresa}
                 disabled={loading}
                 className="mt-2 px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 disabled:opacity-50"
               >
@@ -276,27 +278,27 @@ export default function LoginPage() {
               </button>
             </div>
 
-            <div className="bg-orange-50 p-3 rounded-lg">
-              <div className="font-medium text-orange-800">🏢 Empresa</div>
-              <div className="text-orange-600">Email: empresa.test@lapublica.cat</div>
-              <div className="text-orange-600">Contraseña: Test1234!</div>
+            <div className="bg-teal-50 p-3 rounded-lg">
+              <div className="font-medium text-teal-800">👥 Miembro Empresa</div>
+              <div className="text-teal-600">Email: anna.marti@empresadeprova.cat</div>
+              <div className="text-teal-600">Contraseña: member123</div>
               <button
-                onClick={quickLoginEmpresa}
+                onClick={quickLoginMiembro}
                 disabled={loading}
-                className="mt-2 px-3 py-1 bg-orange-600 text-white text-xs rounded hover:bg-orange-700 disabled:opacity-50"
+                className="mt-2 px-3 py-1 bg-teal-600 text-white text-xs rounded hover:bg-teal-700 disabled:opacity-50"
               >
                 Login Rápido
               </button>
             </div>
 
-            <div className="bg-indigo-50 p-3 rounded-lg">
-              <div className="font-medium text-indigo-800">👨‍💼 Empleado Público</div>
-              <div className="text-indigo-600">Email: empleado@lapublica.es</div>
-              <div className="text-indigo-600">Contraseña: empleado123</div>
+            <div className="bg-blue-50 p-3 rounded-lg">
+              <div className="font-medium text-blue-800">👨‍💼 Empleado Público</div>
+              <div className="text-blue-600">Email: laura.garcia@generalitat.cat</div>
+              <div className="text-blue-600">Contraseña: empleat123</div>
               <button
                 onClick={quickLoginEmpleado}
                 disabled={loading}
-                className="mt-2 px-3 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700 disabled:opacity-50"
+                className="mt-2 px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:opacity-50"
               >
                 Login Rápido
               </button>

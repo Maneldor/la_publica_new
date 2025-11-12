@@ -5,13 +5,71 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { CalendarProvider } from '@/lib/context/CalendarContext';
-import { canAccessAdmin } from '@/lib/permissions';
+
+const menuSections = [
+  {
+    title: 'General',
+    items: [
+      { title: 'Dashboard', icon: '📊', path: '/admin', exact: true },
+    ]
+  },
+  {
+    title: 'Gestió Comercial',
+    items: [
+      { title: 'Plans', icon: '📦', path: '/admin/plans' },
+      { title: 'Pressupostos', icon: '📄', path: '/admin/pressupostos' },
+      { title: 'Facturació', icon: '💰', path: '/admin/facturacio' },
+      { title: 'Extras', icon: '⭐', path: '/admin/extras' },
+      { title: 'Empreses', icon: '🏢', path: '/admin/empresas/listar' },
+    ]
+  },
+  {
+    title: 'Contingut',
+    items: [
+      { title: 'Blog', icon: '📝', path: '/admin/blog/listar' },
+      { title: 'Posts', icon: '📄', path: '/admin/posts/listar' },
+      { title: 'Grups', icon: '👥', path: '/admin/grupos/listar' },
+      { title: 'Fòrums', icon: '🏛️', path: '/admin/foros/listar' },
+      { title: 'Anuncis', icon: '📢', path: '/admin/anuncios/listar' },
+      { title: 'Ofertes VIP', icon: '🎁', path: '/admin/ofertas/listar' },
+    ]
+  },
+  {
+    title: 'Serveis',
+    items: [
+      { title: 'Assessoraments', icon: '💡', path: '/admin/assessoraments/listar' },
+      { title: 'Formació', icon: '🎓', path: '/admin/formacio/listar' },
+    ]
+  },
+  {
+    title: 'Comunicació',
+    items: [
+      { title: 'Missatges', icon: '💬', path: '/admin/missatges' },
+      { title: 'Calendari', icon: '📅', path: '/admin/calendario/listar' },
+    ]
+  },
+  {
+    title: 'Sistema',
+    items: [
+      { title: 'Usuaris', icon: '👤', path: '/admin/usuarios/listar' },
+      { title: 'Plataforma', icon: '⚙️', path: '/admin/plataforma/configuracion' },
+    ]
+  }
+];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const [menuOpen, setMenuOpen] = useState(true);
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    'General': true,
+    'Gestió Comercial': true, // Abierta por defecto
+    'Contingut': false,
+    'Serveis': false,
+    'Comunicació': false,
+    'Sistema': false,
+  });
 
   useEffect(() => {
     if (status === 'loading') return; // Esperando a que cargue la sesión
@@ -21,8 +79,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       return;
     }
 
-    // Verificar si el usuario puede acceder al admin
-    if (!canAccessAdmin(session.user)) {
+    // Verificar que tenga el rol correcto
+    const userRole = session.user.role;
+    if (userRole !== 'ADMIN' &&
+        userRole !== 'SUPER_ADMIN') {
       router.push('/login');
       return;
     }
@@ -32,22 +92,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     signOut({ callbackUrl: '/login' });
   };
 
-  const menuItems = [
-    { title: 'Dashboard', icon: '📊', path: '/admin', exact: true },
-    { title: 'Blog', icon: '📝', path: '/admin/blog/listar' },
-    { title: 'Posts', icon: '📄', path: '/admin/posts/listar' },
-    { title: 'Grupos', icon: '👥', path: '/admin/grupos/listar' },
-    { title: 'Foros', icon: '🏛️', path: '/admin/foros/listar' },
-    { title: 'Anuncios', icon: '📢', path: '/admin/anuncios/listar' },
-    { title: 'Empresas', icon: '🏢', path: '/admin/empresas/listar' },
-    { title: 'Ofertas VIP', icon: '🎁', path: '/admin/ofertas/listar' },
-    { title: 'Assessoraments', icon: '💡', path: '/admin/assessoraments/listar' },
-    { title: 'Formació', icon: '🎓', path: '/admin/formacio/listar' },
-    { title: 'Missatges', icon: '💬', path: '/admin/missatges' },
-    { title: 'Calendario', icon: '📅', path: '/admin/calendario/listar' },
-    { title: 'Usuarios', icon: '👤', path: '/admin/usuarios/listar' },
-    { title: 'Plataforma', icon: '⚙️', path: '/admin/plataforma/configuracion' },
-  ];
+  const toggleSection = (sectionTitle: string) => {
+    setOpenSections(prev => ({
+      ...prev,
+      [sectionTitle]: !prev[sectionTitle]
+    }));
+  };
 
   if (status === 'loading') {
     return (
@@ -57,8 +107,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
-  if (!session || !canAccessAdmin(session.user)) {
+  if (!session) {
     return null; // Se redirigirá al login
+  }
+
+  const userRole = session.user.role;
+  if (userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN') {
+    return null;
   }
 
   return (
@@ -86,19 +141,45 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <aside className={`${menuOpen ? 'w-64' : 'w-0'} bg-white border-r border-gray-200 fixed left-0 top-16 bottom-0 overflow-y-auto transition-all duration-300`}>
           {menuOpen && (
             <nav className="p-4">
-              {menuItems.map((item, idx) => (
-                <Link 
-                  key={idx} 
-                  href={item.path} 
-                  className={`flex items-center gap-2 px-4 py-2 rounded mb-1 transition-colors ${
-                    pathname === item.path || (item.exact && pathname === item.path) || (!item.exact && pathname.startsWith(item.path.split('/listar')[0]))
-                      ? 'bg-blue-50 text-blue-700 font-medium' 
-                      : 'text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  <span>{item.icon}</span>
-                  <span>{item.title}</span>
-                </Link>
+              {menuSections.map((section, sectionIndex) => (
+                <div key={sectionIndex} className="mb-4">
+                  <button
+                    onClick={() => toggleSection(section.title)}
+                    className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider hover:bg-gray-50 rounded-md transition-colors"
+                  >
+                    <span>{section.title}</span>
+                    <span className="text-base transition-transform duration-200" style={{
+                      transform: openSections[section.title] ? 'rotate(90deg)' : 'rotate(0deg)'
+                    }}>
+                      ▶
+                    </span>
+                  </button>
+                  
+                  {openSections[section.title] && (
+                    <nav className="mt-2 space-y-1">
+                      {section.items.map((item, itemIndex) => {
+                        const isActive = (item as { exact?: boolean }).exact
+                          ? pathname === item.path
+                          : pathname.startsWith(item.path);
+                        
+                        return (
+                          <Link
+                            key={itemIndex}
+                            href={item.path}
+                            className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                              isActive
+                                ? 'bg-blue-50 text-blue-700'
+                                : 'text-gray-700 hover:bg-gray-50'
+                            }`}
+                          >
+                            <span className="mr-3 text-lg">{item.icon}</span>
+                            {item.title}
+                          </Link>
+                        );
+                      })}
+                    </nav>
+                  )}
+                </div>
               ))}
             </nav>
           )}
