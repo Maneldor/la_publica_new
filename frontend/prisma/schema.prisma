@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,40 +7,30 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ==================== MODELOS PRINCIPALES ====================
-
 model User {
-  id            String   @id @default(cuid())
-  email         String   @unique
-  password      String?  // Nullable para permitir OAuth
-  name          String?
-  image         String?
-  role          UserRole @default(USER)
-  communityId   String?
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  // Tipo de usuario
-  userType        UserType @default(EMPLOYEE)
-
-  // Si es COMPANY_OWNER
-  ownedCompanyId  String?  @unique
-  ownedCompany    Company? @relation("CompanyOwner", fields: [ownedCompanyId], references: [id])
-
-  // Si es COMPANY_MEMBER
-  memberCompanyId String?
-  memberCompany   Company? @relation("CompanyMembers", fields: [memberCompanyId], references: [id])
-  companyRole     CompanyRole?
-  cargo           String?
-
-  // Si es ACCOUNT_MANAGER
-  managedCompanies Company[] @relation("AccountManager")
-
-  // Relaciones
-  community     Comunidad? @relation(fields: [communityId], references: [id])
-  anunciosCreados Anuncio[] @relation("AnunciosCreados")
+  id                 String           @id @default(cuid())
+  email              String           @unique
+  name               String?
+  image              String?
+  role               UserRole         @default(USER)
+  communityId        String?
+  isActive           Boolean          @default(true)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  userType           UserType         @default(EMPLOYEE)
+  ownedCompanyId     String?          @unique
+  memberCompanyId    String?
+  companyRole        CompanyRole?
+  cargo              String?
+  password           String?
+  anunciosCreados    Anuncio[]        @relation("AnunciosCreados")
   comentariosCreados AnuncioComment[] @relation("ComentariosCreados")
+  community          Comunidad?       @relation(fields: [communityId], references: [id])
+  memberCompany      Company?         @relation("CompanyMembers", fields: [memberCompanyId], references: [id])
+  ownedCompany       Company?         @relation("CompanyOwner", fields: [ownedCompanyId], references: [id])
+  managedCompanies   Company[]        @relation("AccountManager")
+  invoicesCreated    Invoice[]        @relation("InvoicesCreated")
+  paymentsProcessed  Payment[]        @relation("PaymentsProcessed")
 
   @@index([email])
   @@index([role])
@@ -57,73 +41,53 @@ model User {
 }
 
 model Comunidad {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   nombre      String
   descripcion String?
-  activa      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relaciones
-  usuarios    User[]
+  activa      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   anuncios    Anuncio[]
+  usuarios    User[]
 
   @@index([activa])
 }
 
 model Anuncio {
-  id            String   @id @default(cuid())
-  title         String   // Título del anuncio
-  content       String   @db.Text // Contenido principal
-  summary       String?  // Resumen opcional
-  type          AnuncioType
-  priority      Int      @default(5) // 1-10, donde 10 es más alta
-  status        AnuncioStatus @default(DRAFT)
-
-  // Audiencia y targeting
-  audience      AudienceType
-  targetCommunities String[] // Array de IDs de comunidades
-  targetRoles   String[] // Array de roles objetivo
-
-  // Programación
-  publishAt     DateTime? // Cuando publicar
-  expiresAt     DateTime? // Cuando expira
-
-  // Notificaciones
-  sendNotification Boolean @default(false)
+  id                   String                @id @default(cuid())
+  title                String
+  content              String
+  summary              String?
+  type                 AnuncioType
+  priority             Int                   @default(5)
+  status               AnuncioStatus         @default(DRAFT)
+  audience             AudienceType
+  targetCommunities    String[]
+  targetRoles          String[]
+  publishAt            DateTime?
+  expiresAt            DateTime?
+  sendNotification     Boolean               @default(false)
   notificationChannels NotificationChannel[]
-
-  // Contenido adicional
-  imageUrl      String? // URL de imagen
-  attachmentUrl String? // URL de archivo adjunto
-  externalUrl   String? // URL externa
-
-  // Metadatos
-  tags          String[] // Tags para categorización
-  isSticky      Boolean @default(false) // Anuncio fijado
-  allowComments Boolean @default(true)
-  slug          String? // URL slug generado automáticamente
-
-  // Métricas
-  views         Int @default(0)
-  reactions     Int @default(0)
-  commentsCount Int @default(0)
-  sharesCount   Int @default(0)
-
-  // Multi-tenant
-  communityId   String?
-  community     Comunidad? @relation(fields: [communityId], references: [id], onDelete: Cascade)
-
-  // Auditoría
-  authorId      String
-  author        User     @relation("AnunciosCreados", fields: [authorId], references: [id])
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  deletedAt     DateTime? // Soft delete
-
-  // Relaciones
-  comments      AnuncioComment[]
-  metrics       AnuncioMetrics[]
+  imageUrl             String?
+  attachmentUrl        String?
+  externalUrl          String?
+  tags                 String[]
+  isSticky             Boolean               @default(false)
+  allowComments        Boolean               @default(true)
+  slug                 String?
+  views                Int                   @default(0)
+  reactions            Int                   @default(0)
+  commentsCount        Int                   @default(0)
+  sharesCount          Int                   @default(0)
+  communityId          String?
+  authorId             String
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  deletedAt            DateTime?
+  author               User                  @relation("AnunciosCreados", fields: [authorId], references: [id])
+  community            Comunidad?            @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  comments             AnuncioComment[]
+  metrics              AnuncioMetrics?
 
   @@index([communityId, status, publishAt])
   @@index([type, audience])
@@ -133,7 +97,272 @@ model Anuncio {
   @@index([publishAt, expiresAt])
 }
 
-// ==================== ENUMS ====================
+model AnuncioComment {
+  id               String           @id @default(cuid())
+  content          String
+  isPrivate        Boolean          @default(false)
+  attachmentUrl    String?
+  parentId         String?
+  anuncioId        String
+  authorId         String
+  status           CommentStatus    @default(PENDING)
+  moderatedBy      String?
+  moderatedAt      DateTime?
+  moderationReason String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  deletedAt        DateTime?
+  anuncio          Anuncio          @relation(fields: [anuncioId], references: [id], onDelete: Cascade)
+  author           User             @relation("ComentariosCreados", fields: [authorId], references: [id])
+  parent           AnuncioComment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies          AnuncioComment[] @relation("CommentReplies")
+
+  @@index([anuncioId, status])
+  @@index([authorId])
+  @@index([parentId])
+}
+
+model AnuncioMetrics {
+  id                String    @id @default(cuid())
+  anuncioId         String    @unique
+  views             Int       @default(0)
+  clicks            Int       @default(0)
+  reactions         Int       @default(0)
+  comments          Int       @default(0)
+  shares            Int       @default(0)
+  emailOpens        Int       @default(0)
+  emailClicks       Int       @default(0)
+  pushOpens         Int       @default(0)
+  engagementRate    Float     @default(0)
+  lastViewedAt      DateTime?
+  lastInteractionAt DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  anuncio           Anuncio   @relation(fields: [anuncioId], references: [id], onDelete: Cascade)
+
+  @@index([engagementRate])
+  @@index([lastViewedAt])
+}
+
+model Company {
+  id               String         @id @default(cuid())
+  name             String
+  cif              String         @unique
+  email            String
+  phone            String?
+  address          String?
+  logo             String?
+  description      String?
+  website          String?
+  currentPlanId    String?
+  accountManagerId String?
+  isActive         Boolean        @default(true)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  teamMembers      User[]         @relation("CompanyMembers")
+  owner            User?          @relation("CompanyOwner")
+  accountManager   User?          @relation("AccountManager", fields: [accountManagerId], references: [id])
+  currentPlan      PlanConfig?    @relation("CompanyCurrentPlan", fields: [currentPlanId], references: [id])
+  invoices         Invoice[]
+  subscriptions    Subscription[]
+  budgets          Budget[]
+
+  @@index([cif])
+  @@index([currentPlanId])
+  @@index([accountManagerId])
+  @@map("companies")
+}
+
+model PlanConfig {
+  id              String         @id @default(cuid())
+  planType        String         @unique
+  nombre          String
+  nombreCorto     String
+  descripcion     String
+  precioMensual   Float
+  precioAnual     Float?
+
+  // IVA España
+  priceIncludesVAT Boolean  @default(true)
+  displayNote      String?  @default("IVA incluido")
+  limitesJSON     String
+  caracteristicas String
+  color           String
+  icono           String
+  orden           Int            @default(0)
+  destacado       Boolean        @default(false)
+  activo          Boolean        @default(true)
+  visible         Boolean        @default(true)
+  esSistema       Boolean        @default(false)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  companies       Company[]      @relation("CompanyCurrentPlan")
+  subscriptions   Subscription[] @relation("SubscriptionPlan")
+  budgetItems     BudgetItem[]
+  invoiceItems    InvoiceItem[]
+
+  @@index([planType])
+  @@index([activo, visible])
+  @@index([orden])
+  @@map("plan_configs")
+}
+
+model Subscription {
+  id            String             @id @default(cuid())
+  companyId     String
+  planId        String
+  status        SubscriptionStatus @default(ACTIVE)
+  precioMensual Float
+  precioAnual   Float?
+  limites       Json
+  startDate     DateTime           @default(now())
+  endDate       DateTime?
+  cancelledAt   DateTime?
+  isAutoRenew   Boolean            @default(true)
+  extras        Json?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  invoices      Invoice[]
+  company       Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  plan          PlanConfig         @relation("SubscriptionPlan", fields: [planId], references: [id])
+
+  @@index([companyId])
+  @@index([planId])
+  @@index([status])
+  @@index([endDate])
+  @@map("subscriptions")
+}
+
+model Invoice {
+  id               String        @id @default(cuid())
+  invoiceNumber    String        @unique
+  invoiceSeries    String        @default("A")
+  companyId        String
+  subscriptionId   String?
+  status           InvoiceStatus @default(DRAFT)
+  issueDate        DateTime      @default(now())
+  dueDate          DateTime
+  paidDate         DateTime?
+  periodStart      DateTime?
+  periodEnd        DateTime?
+  issuerName       String        @default("La Pública Servicios Digitales S.L.")
+  issuerCif        String        @default("B12345678")
+  issuerAddress    String        @default("Calle Ejemplo 123, 08001 Barcelona")
+  issuerEmail      String        @default("facturacion@lapublica.es")
+  issuerPhone      String?       @default("933123456")
+  clientName       String
+  clientCif        String
+  clientEmail      String
+  clientAddress    String
+  clientPhone      String?
+  clientCity       String?
+  clientPostalCode String?
+  clientCountry    String        @default("España")
+  concept          String
+  notes            String?
+  subtotalAmount   Int
+  taxAmount        Int
+  totalAmount      Int
+  taxRate          Float         @default(21.0)
+  taxType          String        @default("IVA")
+  discountPercent  Float?
+  discountAmount   Int?
+  paidAmount       Int           @default(0)
+  pendingAmount    Int
+  legalText        String        @default("Esta factura se emite conforme a la Ley 37/1992 del IVA y RD 1619/2012 de facturas")
+  retentionPercent Float?
+  retentionAmount  Int?
+  pdfUrl           String?
+  xmlUrl           String?
+
+  // Para indicar si los precios incluyen IVA (España)
+  pricesIncludeVAT Boolean       @default(true)
+  invoiceType      InvoiceType   @default(REGULAR)
+
+  createdById      String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  items            InvoiceItem[]
+  company          Company       @relation(fields: [companyId], references: [id])
+  createdBy        User?         @relation("InvoicesCreated", fields: [createdById], references: [id])
+  subscription     Subscription? @relation(fields: [subscriptionId], references: [id])
+  payments         Payment[]
+  budgets          Budget[]
+
+  @@index([companyId, status])
+  @@index([invoiceNumber])
+  @@index([dueDate])
+  @@index([issueDate])
+  @@index([clientCif])
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id              String   @id @default(cuid())
+  invoiceId       String
+  description     String
+  concept         String?
+  quantity        Float    @default(1.0)
+  unitPrice       Int
+  discountPercent Float?
+  discountAmount  Int?
+  subtotalAmount  Int
+  taxRate         Float    @default(21.0)
+  taxAmount       Int
+  totalAmount     Int
+  order           Int      @default(0)
+  notes           String?
+
+  // Nuevos campos
+  itemType        InvoiceItemType @default(CUSTOM)
+  extraId         String?
+  extra           Extra?          @relation(fields: [extraId], references: [id], onDelete: SetNull)
+  planId          String?
+  plan            PlanConfig?     @relation(fields: [planId], references: [id], onDelete: SetNull)
+
+  // Para prorrateos
+  isProrated      Boolean         @default(false)
+  proratedDays    Int?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  invoice         Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@index([order])
+  @@map("invoice_items")
+}
+
+model Payment {
+  id             String        @id @default(cuid())
+  invoiceId      String
+  paymentNumber  String        @unique
+  reference      String?
+  externalId     String?
+  method         PaymentMethod
+  status         PaymentStatus @default(PENDING)
+  amount         Int
+  feeAmount      Int?
+  netAmount      Int
+  paymentDate    DateTime      @default(now())
+  processedDate  DateTime?
+  settledDate    DateTime?
+  paymentDetails Json?
+  description    String?
+  notes          String?
+  processedById  String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  invoice        Invoice       @relation(fields: [invoiceId], references: [id])
+  processedBy    User?         @relation("PaymentsProcessed", fields: [processedById], references: [id])
+
+  @@index([invoiceId])
+  @@index([paymentNumber])
+  @@index([method])
+  @@index([status])
+  @@index([paymentDate])
+  @@map("payments")
+}
 
 enum UserRole {
   USER
@@ -145,104 +374,38 @@ enum UserRole {
 }
 
 enum AnuncioType {
-  GENERAL       // general
-  URGENT        // urgent
-  EVENT         // event
-  MAINTENANCE   // maintenance
-  NEWS          // news
-  ALERT         // alert
-  PROMOTION     // promotion
-  REGULATION    // regulation
+  GENERAL
+  URGENT
+  EVENT
+  MAINTENANCE
+  NEWS
+  ALERT
+  PROMOTION
+  REGULATION
 }
 
 enum AnuncioStatus {
-  DRAFT         // draft
-  PENDING       // pending
-  PUBLISHED     // published
-  ARCHIVED      // archived
-  EXPIRED       // expired
+  DRAFT
+  PENDING
+  PUBLISHED
+  ARCHIVED
+  EXPIRED
 }
 
 enum AudienceType {
-  ALL           // all
-  EMPLOYEES     // employees
-  COMPANIES     // companies
-  SPECIFIC      // specific
-  COMMUNITY     // community
+  ALL
+  EMPLOYEES
+  COMPANIES
+  SPECIFIC
+  COMMUNITY
 }
 
 enum NotificationChannel {
-  PLATFORM      // platform
-  EMAIL         // email
-  SMS           // sms
-  PUSH          // push
-  ALL_CHANNELS  // all_channels
-}
-
-// ==================== MODELOS RELACIONADOS ====================
-
-model AnuncioComment {
-  id            String   @id @default(cuid())
-  content       String   @db.Text
-  isPrivate     Boolean  @default(false)
-  attachmentUrl String?
-
-  // Jerarquía de comentarios
-  parentId      String?
-  parent        AnuncioComment? @relation("CommentReplies", fields: [parentId], references: [id])
-  replies       AnuncioComment[] @relation("CommentReplies")
-
-  // Relaciones
-  anuncioId     String
-  anuncio       Anuncio  @relation(fields: [anuncioId], references: [id], onDelete: Cascade)
-
-  authorId      String
-  author        User     @relation("ComentariosCreados", fields: [authorId], references: [id])
-
-  // Moderación
-  status        CommentStatus @default(PENDING)
-  moderatedBy   String?
-  moderatedAt   DateTime?
-  moderationReason String?
-
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  deletedAt     DateTime?
-
-  @@index([anuncioId, status])
-  @@index([authorId])
-  @@index([parentId])
-}
-
-model AnuncioMetrics {
-  id                String   @id @default(cuid())
-  anuncioId         String   @unique
-  anuncio           Anuncio  @relation(fields: [anuncioId], references: [id], onDelete: Cascade)
-
-  // Métricas básicas
-  views             Int      @default(0)
-  clicks            Int      @default(0)
-  reactions         Int      @default(0)
-  comments          Int      @default(0)
-  shares            Int      @default(0)
-
-  // Métricas por canal
-  emailOpens        Int      @default(0)
-  emailClicks       Int      @default(0)
-  pushOpens         Int      @default(0)
-
-  // Engagement
-  engagementRate    Float    @default(0)
-
-  // Timestamps
-  lastViewedAt      DateTime?
-  lastInteractionAt DateTime?
-
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  @@index([engagementRate])
-  @@index([lastViewedAt])
+  PLATFORM
+  EMAIL
+  SMS
+  PUSH
+  ALL_CHANNELS
 }
 
 enum CommentStatus {
@@ -252,148 +415,251 @@ enum CommentStatus {
   HIDDEN
 }
 
-// ==================== COMPANY & SUBSCRIPTION MODELS ====================
-
-model Company {
-  id              String   @id @default(cuid())
-
-  // Información básica
-  name            String
-  cif             String   @unique
-  email           String
-  phone           String?
-  address         String?
-  logo            String?
-  description     String?
-  website         String?
-
-  // Plan actual
-  currentPlanId   String?
-  currentPlan     PlanConfig? @relation("CompanyCurrentPlan", fields: [currentPlanId], references: [id])
-
-  // Gestor La Pública asignado
-  accountManagerId String?
-  accountManager   User?    @relation("AccountManager", fields: [accountManagerId], references: [id])
-
-  // Estado
-  isActive        Boolean  @default(true)
-
-  // Relaciones
-  owner           User?    @relation("CompanyOwner")
-  teamMembers     User[]   @relation("CompanyMembers")
-  subscriptions   Subscription[]
-
-  // Timestamps
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  @@index([cif])
-  @@index([currentPlanId])
-  @@index([accountManagerId])
-  @@map("companies")
-}
-
-model PlanConfig {
-  id String @id @default(cuid())
-
-  // Identificador único del plan
-  planType String @unique
-
-  // Información del plan
-  nombre      String
-  nombreCorto String
-  descripcion String
-
-  // Precios
-  precioMensual Float
-  precioAnual   Float?
-
-  // Configuración en JSON
-  limitesJSON     String
-  caracteristicas String
-
-  // Apariencia
-  color String
-  icono String
-
-  // Configuración
-  orden     Int     @default(0)
-  destacado Boolean @default(false)
-  activo    Boolean @default(true)
-  visible   Boolean @default(true)
-  esSistema Boolean @default(false)
-
-  // Relaciones con empresas y suscripciones
-  companies       Company[] @relation("CompanyCurrentPlan")
-  subscriptions   Subscription[] @relation("SubscriptionPlan")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([planType])
-  @@index([activo, visible])
-  @@index([orden])
-  @@map("plan_configs")
-}
-
-model Subscription {
-  id              String   @id @default(cuid())
-
-  // Relaciones
-  companyId       String
-  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  planId          String
-  plan            PlanConfig @relation("SubscriptionPlan", fields: [planId], references: [id])
-
-  // Estado
-  status          SubscriptionStatus @default(ACTIVE)
-
-  // Snapshot de precios (guardados por si el plan cambia)
-  precioMensual   Float
-  precioAnual     Float?
-
-  // Snapshot de límites
-  limites         Json
-
-  // Fechas
-  startDate       DateTime @default(now())
-  endDate         DateTime?
-  cancelledAt     DateTime?
-
-  // Configuración
-  isAutoRenew     Boolean  @default(true)
-  extras          Json?
-
-  // Timestamps
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  @@index([companyId])
-  @@index([planId])
-  @@index([status])
-  @@index([endDate])
-  @@map("subscriptions")
-}
-
-// ==================== COMPANY & SUBSCRIPTION ENUMS ====================
-
 enum UserType {
-  EMPLOYEE          // Empleado público
-  COMPANY_OWNER     // Gestor Principal empresa
-  COMPANY_MEMBER    // Miembro equipo empresa
-  ACCOUNT_MANAGER   // Gestor La Pública
-  ADMIN             // Admin plataforma
+  EMPLOYEE
+  COMPANY_OWNER
+  COMPANY_MEMBER
+  ACCOUNT_MANAGER
+  ADMIN
 }
 
 enum CompanyRole {
-  OWNER             // Propietario
-  MEMBER            // Miembro
+  OWNER
+  MEMBER
 }
 
 enum SubscriptionStatus {
-  ACTIVE            // Activa
-  CANCELLED         // Cancelada pero válida hasta endDate
-  EXPIRED           // Expirada
-  PENDING           // Pendiente de activación
+  ACTIVE
+  CANCELLED
+  EXPIRED
+  PENDING
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum PaymentMethod {
+  BANK_TRANSFER
+  CREDIT_CARD
+  DEBIT_CARD
+  PAYPAL
+  CASH
+  CHECK
+  SEPA_DIRECT_DEBIT
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+// ============================================
+// ENUMS ADICIONALES PARA EXTRAS Y PRESUPUESTOS
+// ============================================
+
+enum ExtraCategory {
+  WEB_MAINTENANCE    // Mantenimiento web
+  BRANDING           // Branding y diseño
+  MARKETING          // Marketing digital
+  SEO                // SEO y posicionamiento
+  CONTENT            // Creación de contenido
+  CONSULTING         // Consultoría
+  TRAINING           // Formación
+  DEVELOPMENT        // Desarrollo custom
+  SUPPORT            // Soporte técnico
+  OTHER              // Otros servicios
+}
+
+enum PriceType {
+  FIXED              // Precio fijo (pago único)
+  MONTHLY            // Mensual recurrente
+  ANNUAL             // Anual recurrente
+  HOURLY             // Por horas
+  CUSTOM             // A medida (negociable)
+}
+
+enum BudgetStatus {
+  DRAFT              // Borrador
+  SENT               // Enviado al cliente
+  APPROVED           // Aprobado por el cliente
+  REJECTED           // Rechazado
+  EXPIRED            // Caducado
+  INVOICED           // Convertido en factura
+}
+
+enum BudgetItemType {
+  PLAN               // Plan de suscripción
+  EXTRA              // Servicio extra
+  CUSTOM             // Concepto personalizado
+  DISCOUNT           // Descuento
+}
+
+enum BillingCycle {
+  MONTHLY            // Mensual
+  ANNUAL             // Anual
+  ONE_TIME           // Pago único
+}
+
+enum InvoiceItemType {
+  PLAN               // Plan de suscripción
+  EXTRA              // Servicio extra
+  UPGRADE            // Upgrade de plan
+  PRORATED           // Ajuste prorrateado
+  DISCOUNT           // Descuento
+  CUSTOM             // Concepto personalizado
+}
+
+enum InvoiceType {
+  REGULAR            // Factura regular
+  PROFORMA           // Factura proforma
+  RECURRING          // Factura recurrente automática
+  UPGRADE            // Por upgrade de plan
+  ADJUSTMENT         // Ajuste o prorrateo
+  REFUND             // Factura de reembolso
+}
+
+// ============================================
+// CATÁLOGO DE EXTRAS
+// ============================================
+
+model Extra {
+  id          String         @id @default(cuid())
+  name        String         // "Mantenimiento Web Mensual"
+  slug        String         @unique
+  description String         @db.Text
+  category    ExtraCategory
+
+  // Precios (IVA INCLUIDO en España)
+  basePrice        Decimal   @db.Decimal(10, 2)
+  priceIncludesVAT Boolean   @default(true)  // true para España
+  priceType        PriceType
+
+  // Nota de precio para mostrar
+  displayNote String?        @default("IVA incluido")
+
+  // Configuración
+  active      Boolean        @default(true)
+  featured    Boolean        @default(false)
+  requiresApproval Boolean    @default(false)
+
+  // Metadata
+  icon        String?
+  image       String?
+  details     Json?          // Detalles específicos
+
+  // Orden para mostrar
+  order       Int            @default(0)
+
+  // Relaciones
+  budgetItems BudgetItem[]
+  invoiceItems InvoiceItem[]
+
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([category])
+  @@index([active])
+  @@index([slug])
+  @@map("extras")
+}
+
+// ============================================
+// SISTEMA DE PRESUPUESTOS
+// ============================================
+
+model Budget {
+  id              String        @id @default(cuid())
+  budgetNumber    String        @unique // PRE-2025-001
+
+  // Relaciones
+  companyId       String
+  company         Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  // Fechas
+  issueDate       DateTime      @default(now())
+  validUntil      DateTime      // Fecha de caducidad
+  approvedAt      DateTime?
+  rejectedAt      DateTime?
+
+  // Estado
+  status          BudgetStatus  @default(DRAFT)
+
+  // Importes
+  subtotal        Decimal       @db.Decimal(10, 2)
+  taxRate         Decimal       @db.Decimal(5, 2) @default(21.00)
+  taxAmount       Decimal       @db.Decimal(10, 2)
+  discountAmount  Decimal?      @db.Decimal(10, 2)
+  total           Decimal       @db.Decimal(10, 2)
+
+  // Datos del cliente
+  clientName      String
+  clientEmail     String
+  clientPhone     String?
+  clientNIF       String?
+
+  // Items
+  items           BudgetItem[]
+
+  // Factura generada (si se aprueba)
+  invoiceId       String?       @unique
+  invoice         Invoice?      @relation(fields: [invoiceId], references: [id])
+
+  // Notas
+  notes           String?       @db.Text
+  internalNotes   String?       @db.Text
+  terms           String?       @db.Text // Condiciones
+
+  // Metadatos
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  createdBy       String?
+
+  @@index([companyId])
+  @@index([status])
+  @@index([budgetNumber])
+  @@map("budgets")
+}
+
+model BudgetItem {
+  id            String          @id @default(cuid())
+  budgetId      String
+  budget        Budget          @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+
+  // Orden
+  order         Int             @default(0)
+
+  // Tipo de item
+  itemType      BudgetItemType
+
+  // Referencias opcionales
+  planId        String?
+  plan          PlanConfig?     @relation(fields: [planId], references: [id], onDelete: SetNull)
+  extraId       String?
+  extra         Extra?          @relation(fields: [extraId], references: [id], onDelete: SetNull)
+
+  // Descripción
+  description   String          @db.Text
+
+  // Cantidades y precios
+  quantity      Decimal         @db.Decimal(10, 2) @default(1)
+  unitPrice     Decimal         @db.Decimal(10, 2)
+  discountPercent Decimal?      @db.Decimal(5, 2)
+  subtotal      Decimal         @db.Decimal(10, 2)
+
+  // Para servicios recurrentes
+  billingCycle  BillingCycle?
+
+  createdAt     DateTime        @default(now())
+
+  @@index([budgetId])
+  @@map("budget_items")
 }

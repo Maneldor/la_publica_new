@@ -13,12 +13,28 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    // Obtener todos los planes de la base de datos ordenados por 'orden'
+    // Obtener todos los planes activos de la base de datos ordenados por 'orden'
     const planes = await prisma.planConfig.findMany({
+      where: { activo: true, visible: true },
+      select: {
+        id: true,
+        nombre: true,
+        nombreCorto: true,
+        descripcion: true,
+        precioMensual: true,
+        precioAnual: true,
+        caracteristicas: true,
+        color: true,
+        icono: true,
+        destacado: true,
+      },
       orderBy: { orden: 'asc' }
     });
 
-    return NextResponse.json(planes);
+    return NextResponse.json({
+      success: true,
+      plans: planes
+    });
 
   } catch (error) {
     console.error('Error al obtener planes:', error);

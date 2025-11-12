@@ -1,64 +1,61 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
+import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { prismaClient } from '@/lib/prisma';
 
+/**
+ * GET /api/admin/companies
+ * Obtener todas las empresas para el wizard de presupuestos
+ */
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-
-    if (!session?.user) {
+    if (!session || !session.user) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'No autorizado. Inicia sesión requerida.' },
         { status: 401 }
       );
     }
 
-    // Mock empresas para desarrollo
-    const mockCompanies = [
-      {
-        id: 'comp_1',
-        name: 'Ajuntament de Barcelona',
-        email: 'contacte@barcelona.cat',
-        subscriptionPlan: 'PREMIUM',
-        hasCustomPlan: false,
-        status: 'active',
-        createdAt: new Date('2024-01-15'),
-        memberCount: 8,
-        usedStorage: 45
+    // Verificar rol de admin
+    const user = await prismaClient.user.findUnique({
+      where: { email: session.user.email! },
+      select: { userType: true, isActive: true }
+    });
+
+    if (!user || user.userType !== 'ADMIN') {
+      return NextResponse.json(
+        { error: 'No autorizado. Solo administradores.' },
+        { status: 403 }
+      );
+    }
+
+    // Obtener todas las empresas activas
+    const companies = await prismaClient.company.findMany({
+      where: { isActive: true },
+      select: {
+        id: true,
+        name: true,
+        cif: true,
+        email: true,
+        phone: true,
+        address: true,
+        website: true,
+        isActive: true,
+        createdAt: true,
       },
-      {
-        id: 'comp_2',
-        name: 'Generalitat de Catalunya',
-        email: 'info@gencat.cat',
-        subscriptionPlan: 'EMPRESARIAL',
-        hasCustomPlan: true,
-        status: 'active',
-        createdAt: new Date('2024-02-10'),
-        memberCount: 25,
-        usedStorage: 120
-      },
-      {
-        id: 'comp_3',
-        name: 'Diputació de Girona',
-        email: 'diputacio@ddgi.cat',
-        subscriptionPlan: 'STANDARD',
-        hasCustomPlan: false,
-        status: 'active',
-        createdAt: new Date('2024-03-05'),
-        memberCount: 3,
-        usedStorage: 12
-      }
-    ];
+      orderBy: { name: 'asc' },
+    });
 
     return NextResponse.json({
       success: true,
-      data: mockCompanies
+      companies,
     });
 
   } catch (error) {
-    console.error('Error fetching companies:', error);
+    console.error('❌ Error fetching companies:', error);
     return NextResponse.json(
-      { error: 'Internal Server Error' },
+      { error: 'Error al obtener empresas' },
       { status: 500 }
     );
   }
