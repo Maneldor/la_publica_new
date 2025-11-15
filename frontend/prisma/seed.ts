@@ -421,6 +421,486 @@ async function seedBudgets() {
   console.log(`   📋 ${budget3.budgetNumber} - ${budget3.status} (${budget3.clientName})`);
 }
 
+// ============================================
+// SEED: OFFER CATEGORIES - CATEGORÍAS DE OFERTAS
+// ============================================
+
+async function seedOfferCategories() {
+  console.log('📦 Creando categorías de ofertas...');
+
+  const categories = [
+    {
+      name: 'Tecnología',
+      slug: 'tecnologia',
+      description: 'Servicios tecnológicos, desarrollo de software, infraestructura IT',
+      icon: '💻',
+      color: '#3B82F6',
+      isActive: true
+    },
+    {
+      name: 'Marketing Digital',
+      slug: 'marketing-digital',
+      description: 'Marketing online, redes sociales, publicidad digital, SEO',
+      icon: '📱',
+      color: '#EF4444',
+      isActive: true
+    },
+    {
+      name: 'Consultoría',
+      slug: 'consultoria',
+      description: 'Consultoría estratégica, transformación digital, gestión',
+      icon: '💡',
+      color: '#10B981',
+      isActive: true
+    },
+    {
+      name: 'Formación',
+      slug: 'formacion',
+      description: 'Cursos, talleres, capacitación profesional',
+      icon: '🎓',
+      color: '#8B5CF6',
+      isActive: true
+    },
+    {
+      name: 'Diseño y Creatividad',
+      slug: 'diseno-creatividad',
+      description: 'Diseño gráfico, branding, diseño web, creatividad',
+      icon: '🎨',
+      color: '#F59E0B',
+      isActive: true
+    },
+    {
+      name: 'Servicios Profesionales',
+      slug: 'servicios-profesionales',
+      description: 'Legal, contabilidad, auditoría, recursos humanos',
+      icon: '⚖️',
+      color: '#6366F1',
+      isActive: true
+    },
+    {
+      name: 'Sostenibilidad',
+      slug: 'sostenibilidad',
+      description: 'Servicios ambientales, sostenibilidad, economía circular',
+      icon: '🌱',
+      color: '#059669',
+      isActive: true
+    },
+    {
+      name: 'Salud y Bienestar',
+      slug: 'salud-bienestar',
+      description: 'Servicios de salud, bienestar laboral, prevención',
+      icon: '🏥',
+      color: '#DC2626',
+      isActive: true
+    },
+    {
+      name: 'Eventos y Comunicación',
+      slug: 'eventos-comunicacion',
+      description: 'Organización de eventos, comunicación corporativa, relaciones públicas',
+      icon: '🎪',
+      color: '#7C3AED',
+      isActive: true
+    }
+  ];
+
+  for (const category of categories) {
+    await prisma.offerCategory.upsert({
+      where: { slug: category.slug },
+      update: {},
+      create: category,
+    });
+  }
+
+  console.log(`✅ ${categories.length} categorías de ofertas creadas`);
+  return categories;
+}
+
+// ============================================
+// SEED: OFFERS - OFERTAS DE EJEMPLO
+// ============================================
+
+async function seedOffers() {
+  console.log('📋 Creando ofertas de ejemplo...');
+
+  // Obtener datos necesarios
+  const company = await prisma.company.findFirst({
+    where: { name: 'Empresa de Prova SL' }
+  });
+
+  const categories = await prisma.offerCategory.findMany({
+    where: { isActive: true }
+  });
+
+  if (!company || categories.length === 0) {
+    console.log('❌ No se encontró empresa o categorías para crear ofertas');
+    return;
+  }
+
+  const techCategory = categories.find(c => c.slug === 'tecnologia');
+  const marketingCategory = categories.find(c => c.slug === 'marketing-digital');
+  const consultingCategory = categories.find(c => c.slug === 'consultoria');
+  const designCategory = categories.find(c => c.slug === 'diseno-creatividad');
+  const formationCategory = categories.find(c => c.slug === 'formacion');
+
+  const offers = [
+    // Tecnología
+    {
+      title: 'Desenvolupament d\'Aplicació Mòbil',
+      slug: 'desenvolupament-aplicacio-mobil',
+      shortDescription: 'Aplicació mòbil nativa per iOS i Android amb backend inclòs',
+      description: `Oferim el desenvolupament complet d'una aplicació mòbil nativa per a iOS i Android.
+
+**Inclou:**
+- Disseny UX/UI personalitzat
+- Desenvolupament nativa (Swift/Kotlin)
+- Backend amb API REST
+- Base de dades
+- Integració amb serveis de tercers
+- Testing i quality assurance
+- Publicació a stores
+- 3 mesos de manteniment inclòs
+
+**Procés de treball:**
+1. Anàlisi de requisits i planning
+2. Prototipatge i disseny
+3. Desenvolupament iteratiu
+4. Testing i optimització
+5. Desplegament i formació
+
+Comptem amb un equip expert en tecnologies mòbils amb més de 5 anys d'experiència.`,
+      price: 8500.00,
+      originalPrice: 12000.00,
+      currency: 'EUR',
+      priceType: 'FIXED',
+      companyId: company.id,
+      categoryId: techCategory?.id || categories[0].id,
+      status: 'PUBLISHED',
+      publishedAt: new Date('2024-11-01'),
+      priority: 5,
+      featured: true,
+      featuredUntil: new Date('2024-12-31'),
+      contactMethod: 'EMAIL',
+      contactEmail: 'projectes@empresadeprova.cat',
+      contactPhone: '+34 933 123 456',
+      requirements: `- Briefing detallat del projecte
+- Wireframes o mockups (opcional)
+- Contingut del projecte (textos, imatges)
+- Especificacions tècniques
+- Timeline desitjat`,
+      benefits: `- Aplicació moderna i performant
+- Codi natiu optimitzat
+- Suport multiplataforma
+- Backend escalable
+- Documentació completa
+- Formació inclosa`,
+      duration: '8-12 setmanes',
+      location: 'Barcelona (híbrid)',
+      remote: true,
+      tags: ['aplicacions', 'iOS', 'Android', 'backend', 'API', 'UX/UI'],
+      seoTitle: 'Desenvolupament Aplicació Mòbil iOS Android Barcelona',
+      seoDescription: 'Desenvolupament d\'aplicacions mòbils natives per iOS i Android. Equip expert, backend inclòs i 3 mesos de manteniment.',
+      seoKeywords: ['aplicació mòbil', 'iOS', 'Android', 'desenvolupament', 'Barcelona', 'app']
+    },
+
+    // Marketing Digital
+    {
+      title: 'Campanya de Marketing Digital Integral',
+      slug: 'campanya-marketing-digital-integral',
+      shortDescription: 'Estratègia completa de marketing digital per augmentar la visibilitat online',
+      description: `Campanya integral de marketing digital de 6 mesos per augmentar la visibilitat i conversions.
+
+**Serveis inclosos:**
+- Auditoria digital inicial
+- Estratègia de contingut
+- Gestió de xarxes socials (Facebook, LinkedIn, Instagram)
+- Campanyes de Google Ads i Facebook Ads
+- Email marketing automatitzat
+- SEO on-page i link building
+- Anàlisi i reporting mensual
+
+**Objectius:**
+- Augmentar el tràfic web en un 150%
+- Millorar la conversió en un 30%
+- Incrementar els seguidors en xarxes socials
+- Posicionar paraules clau estratègiques
+
+**Metodologia:**
+Utilitzem eines professionals com Google Analytics, SEMrush, Hootsuite i HubSpot per garantir resultats mesurables.`,
+      price: 2400.00,
+      currency: 'EUR',
+      priceType: 'MONTHLY',
+      companyId: company.id,
+      categoryId: marketingCategory?.id || categories[1].id,
+      status: 'PUBLISHED',
+      publishedAt: new Date('2024-10-15'),
+      priority: 4,
+      featured: true,
+      featuredUntil: new Date('2024-12-31'),
+      contactMethod: 'FORM',
+      contactForm: 'https://empresadeprova.cat/contacte-marketing',
+      requirements: `- Accés a Google Analytics i Search Console
+- Accés a xarxes socials empresarials
+- Materials gràfics de la marca
+- Objectius comercials definits
+- Pressupost per publicitat (mínim 500€/mes)`,
+      benefits: `- ROI mesurable i transparent
+- Increment de leads qualificats
+- Millor posicionament online
+- Automatització de processos
+- Reporting detallat mensual`,
+      duration: '6 mesos (renovable)',
+      location: 'Remot',
+      remote: true,
+      tags: ['marketing digital', 'SEO', 'Google Ads', 'xarxes socials', 'conversió'],
+      seoTitle: 'Campanya Marketing Digital Barcelona - ROI Garantit',
+      seoDescription: 'Campanya marketing digital integral. SEO, SEM, xarxes socials i email marketing. Resultats mesurables en 6 mesos.',
+      seoKeywords: ['marketing digital', 'Barcelona', 'SEO', 'Google Ads', 'xarxes socials']
+    },
+
+    // Consultoría
+    {
+      title: 'Consultoria en Transformació Digital',
+      slug: 'consultoria-transformacio-digital',
+      shortDescription: 'Acompanyament integral en processos de transformació digital empresarial',
+      description: `Servei de consultoria especialitzat en transformació digital per modernitzar processos i sistemes empresarials.
+
+**Àrees d'expertesa:**
+- Digitalització de processos
+- Implementació de CRM/ERP
+- Automatització de workflows
+- Cultura digital i change management
+- Ciberseguretat i compliment RGPD
+- Estratègia de dades i analytics
+
+**Metodologia:**
+1. **Diagnòstic inicial** (2 setmanes)
+2. **Roadmap de transformació** (1 setmana)
+3. **Implementació fases** (3-6 mesos)
+4. **Formació i acompanyament** (ongoing)
+5. **Seguiment i optimització** (3 mesos)
+
+Equip multidisciplinari amb certificacions en metodologies àgils, gestió del canvi i tecnologies emergents.`,
+      price: 180.00,
+      currency: 'EUR',
+      priceType: 'HOURLY',
+      companyId: company.id,
+      categoryId: consultingCategory?.id || categories[2].id,
+      status: 'PUBLISHED',
+      publishedAt: new Date('2024-11-10'),
+      priority: 3,
+      featured: false,
+      contactMethod: 'EMAIL',
+      contactEmail: 'consultoria@empresadeprova.cat',
+      contactPhone: '+34 933 123 457',
+      requirements: `- Reunió inicial de diagnòstic
+- Accés a documentació de processos actuals
+- Participació d'stakeholders clau
+- Compromís amb el procés de canvi`,
+      benefits: `- Processos optimitzats i eficients
+- Reducció de costos operatius
+- Millor experiència client/usuari
+- Equip format i capacitat
+- ROI mesurable a mitjà termini`,
+      duration: 'Variable (3-12 mesos)',
+      location: 'Cliente / Híbrid',
+      remote: true,
+      tags: ['transformació digital', 'consultoria', 'processos', 'CRM', 'automatització'],
+      internalNotes: 'Projecte estratègic amb alt valor afegit. Prioritat per a clients enterprise.',
+      seoTitle: 'Consultoria Transformació Digital Barcelona - Experts',
+      seoDescription: 'Consultoria especialitzada en transformació digital. Digitalització processos, CRM/ERP, automatització. Resultats garantits.',
+      seoKeywords: ['consultoria', 'transformació digital', 'Barcelona', 'processos', 'automatització']
+    },
+
+    // Diseño
+    {
+      title: 'Redisseny Web i Identitat Corporativa',
+      slug: 'redisseny-web-identitat-corporativa',
+      shortDescription: 'Renovació completa de web corporatiu i identitat visual de marca',
+      description: `Servei integral de redisseny web i renovació de identitat corporativa per empreses que volen modernitzar la seva imatge.
+
+**Pakatge complet inclou:**
+
+**Identitat Corporativa:**
+- Redisseny de logotip
+- Manual de marca complet
+- Paleta de colors corporatius
+- Tipografies oficials
+- Aplicacions de marca (targetes, papeleria)
+
+**Diseño Web:**
+- Web responsive (mòbil, tablet, desktop)
+- UX/UI modern i intuïtiu
+- Optimització SEO
+- Integració CMS (WordPress/Drupal)
+- Formularis de contacte
+- Integració xarxes socials
+- Certificat SSL i seguretat
+
+**Procés de treball:**
+1. Brief i recerca de mercat
+2. Propostes conceptuals
+3. Desenvolupament identitat
+4. Disseny web i prototips
+5. Desenvolupament i testing
+6. Formació i entrega
+
+Garantim una imatge coherent i professional que millori la percepció de marca.`,
+      price: 3200.00,
+      currency: 'EUR',
+      priceType: 'FIXED',
+      companyId: company.id,
+      categoryId: designCategory?.id || categories[4].id,
+      status: 'PUBLISHED',
+      publishedAt: new Date('2024-10-25'),
+      expiresAt: new Date('2025-01-25'),
+      priority: 4,
+      featured: true,
+      featuredUntil: new Date('2025-01-15'),
+      contactMethod: 'WHATSAPP',
+      contactPhone: '+34 666 123 456',
+      contactEmail: 'disseny@empresadeprova.cat',
+      requirements: `- Materials gràfics existents
+- Brief detallat de l'empresa
+- Contingut del web (textos, imatges)
+- Exemples de webs que agradin
+- Dominio i hosting actuals`,
+      benefits: `- Imatge professional i moderna
+- Web optimitzat per conversió
+- Millor posicionament Google
+- Adaptació tous dispositius
+- Manual d'ús complet
+- 1 any de manteniment inclòs`,
+      duration: '6-8 setmanes',
+      location: 'Barcelona',
+      remote: false,
+      tags: ['disseny web', 'identitat corporativa', 'responsive', 'WordPress', 'UX/UI', 'SEO'],
+      seoTitle: 'Redisseny Web Barcelona - Identitat Corporativa Professional',
+      seoDescription: 'Redisseny web responsive i identitat corporativa. WordPress, SEO optimitzat, 1 any manteniment inclòs. Pressupost sense compromís.',
+      seoKeywords: ['redisseny web', 'identitat corporativa', 'Barcelona', 'responsive', 'WordPress']
+    },
+
+    // Formación
+    {
+      title: 'Curs de Digitalització per a Empreses',
+      slug: 'curs-digitalitzacio-empreses',
+      shortDescription: 'Formació pràctica en eines digitals i transformació digital empresarial',
+      description: `Curs intensiu de digitalització empresarial dirigit a directius i empleats que volen impulsar la transformació digital de l'empresa.
+
+**Programa formatiu (20 hores):**
+
+**Mòdul 1: Fonaments Digitals (5h)**
+- Què és la transformació digital
+- Tendències tecnològiques actuals
+- Casos d'èxit empresarials
+- Planificació estratègica digital
+
+**Mòdul 2: Eines Essencials (8h)**
+- Gestors de contingut (WordPress, Drupal)
+- CRM i gestió de clients (HubSpot, Salesforce)
+- Marketing digital (Google Ads, Facebook)
+- Anàlisis web (Google Analytics)
+- Automatització (Zapier, Make)
+
+**Mòdul 3: Implementació Pràctica (5h)**
+- Workshop pràctic amb casos reals
+- Planificació del roadmap digital
+- Mesurament i KPIs
+- Presentació de projectes
+
+**Mòdul 4: Seguiment (2h)**
+- Sessió de seguiment al mes
+- Resolució de dubtes
+- Optimitzacions
+
+**Metodologia:**
+- 60% pràctic, 40% teòric
+- Casos reals d'empresa
+- Materials descargables
+- Certificat de participació`,
+      price: 450.00,
+      currency: 'EUR',
+      priceType: 'FIXED',
+      companyId: company.id,
+      categoryId: formationCategory?.id || categories[3].id,
+      status: 'PUBLISHED',
+      publishedAt: new Date('2024-11-05'),
+      priority: 2,
+      featured: false,
+      contactMethod: 'EMAIL',
+      contactEmail: 'formacio@empresadeprova.cat',
+      requirements: `- Ordinador portàtil
+- Coneixements bàsics d'informàtica
+- Ganes d'aprendre i participar
+- Màxim 12 participants per grup`,
+      benefits: `- Coneixements digitals aplicables
+- Certificat oficial de participació
+- Materials i recursos per sempre
+- Xarxa de contactes professionals
+- Seguiment personalitzat post-curs`,
+      duration: '4 setmanes (5h/setmana)',
+      location: 'Barcelona / Online',
+      remote: true,
+      tags: ['formació', 'digitalització', 'transformació digital', 'CRM', 'marketing digital'],
+      seoTitle: 'Curs Digitalització Empreses Barcelona - Certificat Oficial',
+      seoDescription: 'Curs digitalització empresarial. 20h formació pràctica, certificat oficial. WordPress, CRM, marketing digital, analytics.',
+      seoKeywords: ['curs digitalització', 'formació empreses', 'Barcelona', 'transformació digital']
+    },
+
+    // Borrador
+    {
+      title: 'Auditoria de Seguretat Informàtica',
+      slug: 'auditoria-seguretat-informatica',
+      shortDescription: 'Anàlisi completa de vulnerabilitats i recomanacions de seguretat',
+      description: `Auditoria exhaustiva de seguretat informàtica per identificar vulnerabilitats i millorar la postura de ciberseguretat.
+
+**Serveis inclosos:**
+- Anàlisis de vulnerabilitats de xarxa
+- Test de penetració ètic
+- Revisió de configuracions de seguretat
+- Compliment normatiu (ISO 27001, RGPD)
+- Pla de contingència i backup
+- Formació en conscienciació de seguretat
+
+Encara estem definint el preu final amb el client...`,
+      price: 2800.00,
+      currency: 'EUR',
+      priceType: 'FIXED',
+      companyId: company.id,
+      categoryId: techCategory?.id || categories[0].id,
+      status: 'DRAFT',
+      priority: 1,
+      featured: false,
+      contactMethod: 'EMAIL',
+      contactEmail: 'seguretat@empresadeprova.cat',
+      duration: 'TBD',
+      location: 'Client',
+      remote: false,
+      tags: ['seguretat', 'auditoria', 'ciberseguretat', 'compliance', 'RGPD'],
+      internalNotes: 'Projecte en desenvolupament. Pendent de confirmar scope final amb client. Revisar preus competència.',
+      seoTitle: 'Auditoria Seguretat Informàtica Barcelona',
+      seoDescription: 'Auditoria seguretat informàtica professional. Test penetració, compliance RGPD, ISO 27001. Experts en ciberseguretat.',
+      seoKeywords: ['auditoria seguretat', 'ciberseguretat', 'Barcelona', 'test penetració', 'RGPD']
+    }
+  ];
+
+  for (const offer of offers) {
+    await prisma.offer.upsert({
+      where: { slug: offer.slug },
+      update: {},
+      create: {
+        ...offer,
+        images: [], // Array vacío por defecto
+        views: Math.floor(Math.random() * 500), // Views aleatorias para datos más realistas
+        clicks: Math.floor(Math.random() * 50),
+        applications: Math.floor(Math.random() * 15)
+      },
+    });
+  }
+
+  console.log(`✅ ${offers.length} ofertas de ejemplo creadas`);
+  return offers;
+}
+
 async function main() {
   console.log('🌱 Iniciando seed...');
 
@@ -945,6 +1425,17 @@ SmartLinks amb tracking`
   await seedBudgets();
 
   // ============================================
+  // 10. OFERTAS Y CATEGORÍAS
+  // ============================================
+  console.log('\n📦 Inicializando ofertas y categorías...');
+
+  // Crear categorías de ofertas
+  await seedOfferCategories();
+
+  // Crear ofertas de ejemplo
+  await seedOffers();
+
+  // ============================================
   // RESUMEN
   // ============================================
   console.log('\n🎉 Seed completat amb èxit!\n');
@@ -952,6 +1443,8 @@ SmartLinks amb tracking`
   console.log('  ✅ 4 Plans de La Pública (Pioneres, Estàndard, Estratègic, Enterprise)');
   console.log('  ✅ 14 Extras (serveis addicionals)');
   console.log('  ✅ 3 Presupuestos d\'exemple');
+  console.log('  ✅ 9 Categorías de ofertas');
+  console.log('  ✅ 6 Ofertas de ejemplo (5 publicadas, 1 borrador)');
   console.log('  ✅ 1 Empresa: Empresa de Prova SL');
   console.log('  ✅ 1 Gestor Principal:', companyOwner.email, '(password: owner123)');
   console.log('  ✅ 2 Membres:', member1.email, member2.email, '(password: member123)');
