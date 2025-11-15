@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { signOut } from 'next-auth/react';
-import LimitsWidget from '@/app/components/LimitsWidget';
 
 interface EmpresaSidebarProps {
   plan: 'BÀSIC' | 'ESTÀNDARD' | 'PREMIUM' | 'EMPRESARIAL';
@@ -76,6 +75,12 @@ export default function EmpresaSidebar({
         { label: 'Pla', path: '/empresa/pla' },
         ...(plan !== 'BÀSIC' ? [{ label: 'Equip', path: '/empresa/equip' }] : [])
       ]
+    },
+    {
+      id: 'facturacio',
+      label: 'Facturació',
+      icon: '📄',
+      path: '/empresa/facturacio'
     },
     ...(plan !== 'BÀSIC' ? [{
       id: 'agents',
@@ -191,8 +196,6 @@ export default function EmpresaSidebar({
         ))}
       </nav>
 
-      {/* Widget de límites */}
-      <LimitsWidget />
 
       {/* Footer con fondo oscuro */}
       <div className="p-4 border-t border-slate-700 bg-slate-900">

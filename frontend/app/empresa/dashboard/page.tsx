@@ -1,5 +1,7 @@
 'use client';
 
+import LimitsCard from '@/app/components/LimitsCard';
+
 export default function EmpresaDashboardPage() {
   return (
     <div className="space-y-8">
@@ -8,7 +10,8 @@ export default function EmpresaDashboardPage() {
         <p className="text-gray-600 mt-2">Benvingut al teu espai de gestió</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
+        {/* Cards de métricas básicas */}
         <div className="bg-white p-6 rounded-lg shadow border">
           <div className="flex items-center justify-between">
             <div>
@@ -47,6 +50,11 @@ export default function EmpresaDashboardPage() {
             </div>
             <span className="text-4xl">💬</span>
           </div>
+        </div>
+
+        {/* Card de límites - ocupa 2 columnas en desktop */}
+        <div className="md:col-span-2">
+          <LimitsCard />
         </div>
       </div>
 
