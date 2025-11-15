@@ -116,7 +116,53 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       });
     }
 
+    // 3. Get next invoice number
+    const lastInvoice = await prisma.invoice.findFirst({
+      orderBy: { invoiceNumber: 'desc' }
+    });
+
+    const nextInvoiceNumber = `FP${String((lastInvoice?.invoiceNumber.replace('FP', '') || 0) + 1).padStart(6, '0')}`;
+
+    // 4. Create invoice
+    const invoice = await prisma.invoice.create({
+      data: {
+        invoiceNumber: nextInvoiceNumber,
+        companyId: company.id,
+        planConfigId: newPlan.id,
+        amount: session.amount_total! / 100, // Convert from cents
+        currency: session.currency!.toUpperCase(),
+        status: 'PAID',
+        issueDate: new Date(),
+        dueDate: new Date(), // Paid immediately
+        paidAt: new Date(),
+        description: `Actualización a plan ${newPlan.tier}`,
+        details: {
+          planName: newPlan.tier,
+          planPrice: newPlan.monthlyPrice,
+          upgradeType: metadata.upgradeType || 'plan_upgrade',
+          prorationAmount: session.amount_total! / 100
+        }
+      }
+    });
+
+    // 5. Create payment record
+    await prisma.payment.create({
+      data: {
+        companyId: company.id,
+        invoiceId: invoice.id,
+        amount: session.amount_total! / 100,
+        currency: session.currency!.toUpperCase(),
+        method: 'STRIPE',
+        status: 'COMPLETED',
+        transactionId: session.payment_intent as string,
+        stripePaymentId: session.payment_intent as string,
+        stripeSessionId: session.id,
+        processedAt: new Date()
+      }
+    });
+
     console.log(`✅ Company ${company.name} upgraded to ${newPlan.tier}`);
+    console.log(`📧 Invoice ${nextInvoiceNumber} created for €${session.amount_total! / 100}`);
 
   } catch (error) {
     console.error('Error updating subscription:', error);

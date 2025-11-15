@@ -36,6 +36,8 @@ model User {
   sentNotifications  Notification[]   @relation("NotificationSender")
   notifications      Notification[]   @relation("UserNotifications")
   paymentsProcessed  Payment[]        @relation("PaymentsProcessed")
+  offersApproved     Offer[]          @relation("OfferApprovals")
+  offersRejected     Offer[]          @relation("OfferRejections")
 
   @@index([email])
   @@index([role])
@@ -549,48 +551,58 @@ model OfferCategory {
 }
 
 model Offer {
-  id               String        @id @default(cuid())
+  id               String      @id @default(cuid())
   title            String
-  slug             String        @unique
+  slug             String      @unique
   shortDescription String?
   description      String
-  images           String[]      @default([])
-  price            Decimal?      @db.Decimal(10, 2)
-  originalPrice    Decimal?      @db.Decimal(10, 2)
-  currency         String        @default("EUR")
-  priceType        PriceType     @default(FIXED)
+  images           String[]    @default([])
+  price            Decimal?    @db.Decimal(10, 2)
+  originalPrice    Decimal?    @db.Decimal(10, 2)
+  currency         String      @default("EUR")
+  priceType        PriceType   @default(FIXED)
   companyId        String
   categoryId       String
-  status           OfferStatus   @default(DRAFT)
+  status           OfferStatus @default(DRAFT)
   publishedAt      DateTime?
   expiresAt        DateTime?
-  priority         Int           @default(0)
-  featured         Boolean       @default(false)
-  featuredUntil    DateTime?
-  contactMethod    ContactMethod @default(EMAIL)
-  contactEmail     String?
-  contactPhone     String?
-  contactForm      String?
-  externalUrl      String?
-  requirements     String?
-  benefits         String?
-  duration         String?
-  location         String?
-  remote           Boolean       @default(false)
-  tags             String[]      @default([])
-  views            Int           @default(0)
-  clicks           Int           @default(0)
-  applications     Int           @default(0)
-  shares           Int           @default(0)
-  lastViewedAt     DateTime?
-  seoTitle         String?
-  seoDescription   String?
-  seoKeywords      String[]      @default([])
-  internalNotes    String?
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
-  company          Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  category         OfferCategory @relation(fields: [categoryId], references: [id])
+
+  // Campos de aprobación
+  approvedAt     DateTime?
+  approvedBy     String? // userId del admin que aprobó
+  approvedByUser User?         @relation("OfferApprovals", fields: [approvedBy], references: [id])
+  rejectedAt     DateTime?
+  rejectedBy     String? // userId del admin que rechazó
+  rejectedByUser User?         @relation("OfferRejections", fields: [rejectedBy], references: [id])
+  rejectedReason String? // Motivo del rechazo
+  submittedAt    DateTime? // Fecha envío para aprobación
+  priority       Int           @default(0)
+  featured       Boolean       @default(false)
+  featuredUntil  DateTime?
+  contactMethod  ContactMethod @default(EMAIL)
+  contactEmail   String?
+  contactPhone   String?
+  contactForm    String?
+  externalUrl    String?
+  requirements   String?
+  benefits       String?
+  duration       String?
+  location       String?
+  remote         Boolean       @default(false)
+  tags           String[]      @default([])
+  views          Int           @default(0)
+  clicks         Int           @default(0)
+  applications   Int           @default(0)
+  shares         Int           @default(0)
+  lastViewedAt   DateTime?
+  seoTitle       String?
+  seoDescription String?
+  seoKeywords    String[]      @default([])
+  internalNotes  String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  company        Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  category       OfferCategory @relation(fields: [categoryId], references: [id])
 
   @@index([companyId, status])
   @@index([categoryId, status])
@@ -808,11 +820,13 @@ enum PlanTier {
 }
 
 enum OfferStatus {
-  DRAFT
-  PUBLISHED
-  PAUSED
-  EXPIRED
-  ARCHIVED
+  DRAFT // Borrador - empresa está creando
+  PENDING // Pendiente revisión - esperando aprobación admin
+  PUBLISHED // Publicada - visible para empleados
+  REJECTED // Rechazada - admin rechazó
+  PAUSED // Pausada - empresa pausó temporalmente
+  EXPIRED // Caducada - pasó fecha validUntil
+  ARCHIVED // Archivada - empresa la archivó
 }
 
 enum ContactMethod {

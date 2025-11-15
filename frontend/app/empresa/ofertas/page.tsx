@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Package, Plus, Search, Filter, Edit, Trash2, Eye, EyeOff, Star, MoreVertical } from 'lucide-react';
+import { Package, Plus, Search, Filter, Edit, Trash2, Eye, EyeOff, Star, MoreVertical, Clock, CheckCircle, XCircle, Pause, Archive, AlertCircle } from 'lucide-react';
 
 interface Offer {
   id: string;
@@ -25,8 +25,12 @@ interface Offer {
 
 interface Stats {
   total: number;
-  published: number;
   draft: number;
+  pending: number;
+  published: number;
+  rejected: number;
+  paused: number;
+  expired: number;
   featured: number;
 }
 
@@ -118,8 +122,86 @@ export default function OfertasPage() {
     }
   };
 
+  const getStatusInfo = (status: string) => {
+    switch (status) {
+      case 'DRAFT':
+        return {
+          label: 'Esborrany',
+          icon: EyeOff,
+          color: 'bg-gray-100 text-gray-700 hover:bg-gray-200',
+          canEdit: true
+        };
+      case 'PENDING':
+        return {
+          label: 'Pendent',
+          icon: Clock,
+          color: 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200',
+          canEdit: false
+        };
+      case 'PUBLISHED':
+        return {
+          label: 'Publicada',
+          icon: CheckCircle,
+          color: 'bg-green-100 text-green-700 hover:bg-green-200',
+          canEdit: true
+        };
+      case 'REJECTED':
+        return {
+          label: 'Rebutjada',
+          icon: XCircle,
+          color: 'bg-red-100 text-red-700 hover:bg-red-200',
+          canEdit: true
+        };
+      case 'PAUSED':
+        return {
+          label: 'Pausada',
+          icon: Pause,
+          color: 'bg-orange-100 text-orange-700 hover:bg-orange-200',
+          canEdit: true
+        };
+      case 'EXPIRED':
+        return {
+          label: 'Caducada',
+          icon: AlertCircle,
+          color: 'bg-purple-100 text-purple-700 hover:bg-purple-200',
+          canEdit: true
+        };
+      default:
+        return {
+          label: 'Desconegut',
+          icon: EyeOff,
+          color: 'bg-gray-100 text-gray-700',
+          canEdit: false
+        };
+    }
+  };
+
   const toggleStatus = async (id: string, currentStatus: string) => {
-    const newStatus = currentStatus === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED';
+    let newStatus: string;
+
+    // Define status transitions
+    switch (currentStatus) {
+      case 'DRAFT':
+        newStatus = 'PENDING';
+        break;
+      case 'PENDING':
+        alert('Les ofertes pendents només poden ser aprovades per l\'administrador');
+        return;
+      case 'PUBLISHED':
+        newStatus = 'PAUSED';
+        break;
+      case 'REJECTED':
+        newStatus = 'DRAFT';
+        break;
+      case 'PAUSED':
+        newStatus = 'PUBLISHED';
+        break;
+      case 'EXPIRED':
+        newStatus = 'DRAFT';
+        break;
+      default:
+        return;
+    }
 
     try {
       const response = await fetch(`/api/empresa/ofertas/${id}`, {
@@ -174,37 +256,69 @@ export default function OfertasPage() {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <div className="flex items-center gap-3 mb-2">
-              <Package className="w-5 h-5 text-blue-600" />
-              <span className="text-sm text-gray-600 font-medium">Total Ofertes</span>
+        <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-8">
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Package className="w-4 h-4 text-blue-600" />
+              <span className="text-xs text-gray-600 font-medium">Total</span>
             </div>
-            <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
+            <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <div className="flex items-center gap-3 mb-2">
-              <Eye className="w-5 h-5 text-green-600" />
-              <span className="text-sm text-gray-600 font-medium">Publicades</span>
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <EyeOff className="w-4 h-4 text-gray-500" />
+              <span className="text-xs text-gray-600 font-medium">Esborranys</span>
             </div>
-            <p className="text-3xl font-bold text-green-600">{stats.published}</p>
+            <p className="text-2xl font-bold text-gray-600">{stats.draft}</p>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <div className="flex items-center gap-3 mb-2">
-              <EyeOff className="w-5 h-5 text-gray-400" />
-              <span className="text-sm text-gray-600 font-medium">Esborranys</span>
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Clock className="w-4 h-4 text-yellow-600" />
+              <span className="text-xs text-gray-600 font-medium">Pendents</span>
             </div>
-            <p className="text-3xl font-bold text-gray-600">{stats.draft}</p>
+            <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <div className="flex items-center gap-3 mb-2">
-              <Star className="w-5 h-5 text-yellow-500" />
-              <span className="text-sm text-gray-600 font-medium">Destacades</span>
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <CheckCircle className="w-4 h-4 text-green-600" />
+              <span className="text-xs text-gray-600 font-medium">Publicades</span>
             </div>
-            <p className="text-3xl font-bold text-yellow-600">{stats.featured}</p>
+            <p className="text-2xl font-bold text-green-600">{stats.published}</p>
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <XCircle className="w-4 h-4 text-red-600" />
+              <span className="text-xs text-gray-600 font-medium">Rebutjades</span>
+            </div>
+            <p className="text-2xl font-bold text-red-600">{stats.rejected}</p>
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Pause className="w-4 h-4 text-orange-600" />
+              <span className="text-xs text-gray-600 font-medium">Pausades</span>
+            </div>
+            <p className="text-2xl font-bold text-orange-600">{stats.paused}</p>
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <AlertCircle className="w-4 h-4 text-purple-600" />
+              <span className="text-xs text-gray-600 font-medium">Caducades</span>
+            </div>
+            <p className="text-2xl font-bold text-purple-600">{stats.expired}</p>
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Star className="w-4 h-4 text-yellow-500" />
+              <span className="text-xs text-gray-600 font-medium">Destacades</span>
+            </div>
+            <p className="text-2xl font-bold text-yellow-600">{stats.featured}</p>
           </div>
         </div>
       )}
@@ -245,8 +359,12 @@ export default function OfertasPage() {
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="">Tots els estats</option>
-            <option value="PUBLISHED">Publicades</option>
             <option value="DRAFT">Esborranys</option>
+            <option value="PENDING">Pendents de revisió</option>
+            <option value="PUBLISHED">Publicades</option>
+            <option value="REJECTED">Rebutjades</option>
+            <option value="PAUSED">Pausades</option>
+            <option value="EXPIRED">Caducades</option>
           </select>
         </div>
       </div>
@@ -319,26 +437,22 @@ export default function OfertasPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <button
-                        onClick={() => toggleStatus(offer.id, offer.status)}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                          offer.status === 'PUBLISHED'
-                            ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        }`}
-                      >
-                        {offer.status === 'PUBLISHED' ? (
-                          <>
-                            <Eye className="w-3.5 h-3.5" />
-                            Publicada
-                          </>
-                        ) : (
-                          <>
-                            <EyeOff className="w-3.5 h-3.5" />
-                            Esborrany
-                          </>
-                        )}
-                      </button>
+                      {(() => {
+                        const statusInfo = getStatusInfo(offer.status);
+                        const IconComponent = statusInfo.icon;
+                        return (
+                          <button
+                            onClick={() => toggleStatus(offer.id, offer.status)}
+                            disabled={!statusInfo.canEdit}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium transition-colors ${statusInfo.color} ${
+                              !statusInfo.canEdit ? 'cursor-not-allowed opacity-75' : ''
+                            }`}
+                          >
+                            <IconComponent className="w-3.5 h-3.5" />
+                            {statusInfo.label}
+                          </button>
+                        );
+                      })()}
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-600">

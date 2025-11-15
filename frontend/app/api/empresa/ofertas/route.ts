@@ -79,14 +79,26 @@ export async function GET(request: NextRequest) {
       take: limit
     });
 
-    // Get stats
+    // Get comprehensive stats
     const stats = {
       total,
+      draft: await prismaClient.offer.count({
+        where: { companyId: company.id, status: 'DRAFT' }
+      }),
+      pending: await prismaClient.offer.count({
+        where: { companyId: company.id, status: 'PENDING' }
+      }),
       published: await prismaClient.offer.count({
         where: { companyId: company.id, status: 'PUBLISHED' }
       }),
-      draft: await prismaClient.offer.count({
-        where: { companyId: company.id, status: 'DRAFT' }
+      rejected: await prismaClient.offer.count({
+        where: { companyId: company.id, status: 'REJECTED' }
+      }),
+      paused: await prismaClient.offer.count({
+        where: { companyId: company.id, status: 'PAUSED' }
+      }),
+      expired: await prismaClient.offer.count({
+        where: { companyId: company.id, status: 'EXPIRED' }
       }),
       featured: await prismaClient.offer.count({
         where: { companyId: company.id, featured: true }
@@ -245,7 +257,7 @@ export async function POST(request: NextRequest) {
       counter++;
     }
 
-    // Create offer
+    // Create offer with proper status handling
     const offer = await prismaClient.offer.create({
       data: {
         companyId: company.id,
@@ -258,16 +270,21 @@ export async function POST(request: NextRequest) {
         originalPrice: originalPrice ? parseFloat(originalPrice) : null,
         currency,
         priceType: priceType || 'FIXED',
+
+        // Status handling
         status: status.toUpperCase(),
+        publishedAt: status.toUpperCase() === 'PUBLISHED' ? new Date() : null,
+        submittedAt: body.submittedAt || (status.toUpperCase() === 'PENDING' ? new Date() : null),
+
         priority,
         featured,
         featuredUntil: featuredUntil ? new Date(featuredUntil) : null,
-        publishedAt: status.toUpperCase() === 'PUBLISHED' ? new Date() : null,
-        contactMethod: contactMethod.toUpperCase(),
+        contactMethod: contactMethod ? contactMethod.toUpperCase() : 'EMAIL',
         contactEmail,
         contactPhone,
         contactForm,
         externalUrl,
+        expiresAt: body.expiresAt ? new Date(body.expiresAt) : null,
         requirements,
         benefits,
         duration,

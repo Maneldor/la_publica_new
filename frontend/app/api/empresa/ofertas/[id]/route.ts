@@ -208,11 +208,29 @@ export async function PUT(
     if (seoKeywords !== undefined) updateData.seoKeywords = seoKeywords;
     if (internalNotes !== undefined) updateData.internalNotes = internalNotes;
 
+    // Handle status changes with proper timestamps
     if (status !== undefined) {
-      updateData.status = status.toUpperCase();
-      // Set publishedAt when publishing for the first time
-      if (status.toUpperCase() === 'PUBLISHED' && !existingOffer.publishedAt) {
+      const newStatus = status.toUpperCase();
+      const currentStatus = existingOffer.status;
+
+      updateData.status = newStatus;
+
+      // Handle status-specific timestamp updates
+      if (newStatus === 'PUBLISHED' && !existingOffer.publishedAt) {
         updateData.publishedAt = new Date();
+      }
+
+      if (newStatus === 'PENDING' && currentStatus !== 'PENDING') {
+        updateData.submittedAt = new Date();
+      }
+
+      // Handle explicit submittedAt and expiresAt from body
+      if (body.submittedAt !== undefined) {
+        updateData.submittedAt = body.submittedAt ? new Date(body.submittedAt) : null;
+      }
+
+      if (body.expiresAt !== undefined) {
+        updateData.expiresAt = body.expiresAt ? new Date(body.expiresAt) : null;
       }
     }
 
