@@ -1,0 +1,405 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { Package, Plus, Search, Filter, Edit, Trash2, Eye, EyeOff, Star, MoreVertical } from 'lucide-react';
+
+interface Offer {
+  id: string;
+  title: string;
+  slug: string;
+  shortDescription: string;
+  price: number | null;
+  originalPrice: number | null;
+  category: {
+    id: string;
+    name: string;
+    icon: string;
+    color: string;
+  };
+  status: string;
+  featured: boolean;
+  createdAt: string;
+  publishedAt: string | null;
+}
+
+interface Stats {
+  total: number;
+  published: number;
+  draft: number;
+  featured: number;
+}
+
+interface ApiResponse {
+  success: boolean;
+  data: {
+    offers: Offer[];
+    stats: Stats;
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  };
+}
+
+export default function OfertasPage() {
+  const [offers, setOffers] = useState<Offer[]>([]);
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Filters
+  const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  useEffect(() => {
+    fetchOffers();
+  }, [search, categoryFilter, statusFilter, page]);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('/api/ofertas/categories');
+      if (response.ok) {
+        const data = await response.json();
+        setCategories(data.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
+
+  const fetchOffers = async () => {
+    try {
+      setIsLoading(true);
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: '10',
+        ...(search && { search }),
+        ...(categoryFilter && { categoryId: categoryFilter }),
+        ...(statusFilter && { status: statusFilter })
+      });
+
+      const response = await fetch(`/api/empresa/ofertas?${params}`);
+      if (response.ok) {
+        const data: ApiResponse = await response.json();
+        setOffers(data.data.offers);
+        setStats(data.data.stats);
+        setTotalPages(data.data.pagination.totalPages);
+      }
+    } catch (error) {
+      console.error('Error fetching offers:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Estàs segur que vols eliminar aquesta oferta?')) return;
+
+    try {
+      const response = await fetch(`/api/empresa/ofertas/${id}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        fetchOffers(); // Reload
+      }
+    } catch (error) {
+      console.error('Error deleting offer:', error);
+    }
+  };
+
+  const toggleStatus = async (id: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED';
+
+    try {
+      const response = await fetch(`/api/empresa/ofertas/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      if (response.ok) {
+        fetchOffers(); // Reload
+      }
+    } catch (error) {
+      console.error('Error toggling offer status:', error);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('ca-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
+
+  const formatPrice = (price: number | null, originalPrice: number | null) => {
+    if (!price) return '-';
+
+    if (originalPrice && originalPrice > price) {
+      const discount = Math.round((1 - price / originalPrice) * 100);
+      return `€${price} (-${discount}%)`;
+    }
+
+    return `€${price}`;
+  };
+
+  return (
+    <div className="p-8">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Ofertes</h1>
+          <p className="text-gray-600 mt-1">Gestiona les ofertes de la teva empresa</p>
+        </div>
+        <Link
+          href="/empresa/ofertas/crear"
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+        >
+          <Plus className="w-5 h-5" />
+          Crear nova oferta
+        </Link>
+      </div>
+
+      {/* Stats Cards */}
+      {stats && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center gap-3 mb-2">
+              <Package className="w-5 h-5 text-blue-600" />
+              <span className="text-sm text-gray-600 font-medium">Total Ofertes</span>
+            </div>
+            <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center gap-3 mb-2">
+              <Eye className="w-5 h-5 text-green-600" />
+              <span className="text-sm text-gray-600 font-medium">Publicades</span>
+            </div>
+            <p className="text-3xl font-bold text-green-600">{stats.published}</p>
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center gap-3 mb-2">
+              <EyeOff className="w-5 h-5 text-gray-400" />
+              <span className="text-sm text-gray-600 font-medium">Esborranys</span>
+            </div>
+            <p className="text-3xl font-bold text-gray-600">{stats.draft}</p>
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center gap-3 mb-2">
+              <Star className="w-5 h-5 text-yellow-500" />
+              <span className="text-sm text-gray-600 font-medium">Destacades</span>
+            </div>
+            <p className="text-3xl font-bold text-yellow-600">{stats.featured}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Filters */}
+      <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Cercar ofertes..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+
+          {/* Category Filter */}
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="">Totes les categories</option>
+            {categories.map(cat => (
+              <option key={cat.id} value={cat.id}>
+                {cat.icon} {cat.name}
+              </option>
+            ))}
+          </select>
+
+          {/* Status Filter */}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="">Tots els estats</option>
+            <option value="PUBLISHED">Publicades</option>
+            <option value="DRAFT">Esborranys</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Offers Table */}
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        {isLoading ? (
+          <div className="p-12 text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <p className="mt-4 text-gray-600">Carregant ofertes...</p>
+          </div>
+        ) : offers.length === 0 ? (
+          <div className="p-12 text-center">
+            <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No hi ha ofertes</h3>
+            <p className="text-gray-600 mb-6">Comença creant la teva primera oferta</p>
+            <Link
+              href="/empresa/ofertas/crear"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            >
+              <Plus className="w-5 h-5" />
+              Crear primera oferta
+            </Link>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Oferta</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Categoria</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Preu</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Estat</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Data</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Accions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {offers.map(offer => (
+                  <tr key={offer.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-start gap-3">
+                        {offer.featured && (
+                          <Star className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-gray-900 truncate">{offer.title}</p>
+                          {offer.shortDescription && (
+                            <p className="text-sm text-gray-500 truncate mt-0.5">
+                              {offer.shortDescription}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium"
+                        style={{
+                          backgroundColor: `${offer.category.color}20`,
+                          color: offer.category.color
+                        }}
+                      >
+                        {offer.category.icon} {offer.category.name}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm font-medium text-gray-900">
+                        {formatPrice(offer.price, offer.originalPrice)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <button
+                        onClick={() => toggleStatus(offer.id, offer.status)}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                          offer.status === 'PUBLISHED'
+                            ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      >
+                        {offer.status === 'PUBLISHED' ? (
+                          <>
+                            <Eye className="w-3.5 h-3.5" />
+                            Publicada
+                          </>
+                        ) : (
+                          <>
+                            <EyeOff className="w-3.5 h-3.5" />
+                            Esborrany
+                          </>
+                        )}
+                      </button>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-600">
+                        <p>Creada: {formatDate(offer.createdAt)}</p>
+                        {offer.publishedAt && (
+                          <p className="text-xs text-gray-400 mt-1">
+                            Publicada: {formatDate(offer.publishedAt)}
+                          </p>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href={`/empresa/ofertas/${offer.id}`}
+                          className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Editar"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Link>
+                        <button
+                          onClick={() => handleDelete(offer.id)}
+                          className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Eliminar"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+            <p className="text-sm text-gray-600">
+              Pàgina {page} de {totalPages}
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Anterior
+              </button>
+              <button
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Següent
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

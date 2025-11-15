@@ -77,6 +77,12 @@ export default function EmpresaSidebar({
       ]
     },
     {
+      id: 'ofertes',
+      label: 'Ofertes',
+      icon: '🏷️',
+      path: '/empresa/ofertas'
+    },
+    {
       id: 'facturacio',
       label: 'Facturació',
       icon: '📄',
