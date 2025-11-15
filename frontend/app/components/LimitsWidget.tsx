@@ -25,17 +25,47 @@ export default function LimitsWidget() {
       const response = await fetch('/api/empresa/limits');
       if (response.ok) {
         const data = await response.json();
+
+        // Validar que data tiene la estructura esperada
+        if (!data || typeof data !== 'object') {
+          console.error('Invalid data format from API');
+          return;
+        }
+
         const limitsArray = [
-          { name: 'ofertas', used: data.ofertas.used, max: data.ofertas.max, label: 'Ofertes' },
-          { name: 'extras', used: data.extras.used, max: data.extras.max, label: 'Extres' },
-          { name: 'empleados', used: data.empleados.used, max: data.empleados.max, label: 'Empleats' },
-          { name: 'usuaris', used: data.usuaris.used, max: data.usuaris.max, label: 'Usuaris' }
+          {
+            name: 'activeOffers',
+            used: data.data?.limits?.activeOffers?.current || 0,
+            max: data.data?.limits?.activeOffers?.limit || 0,
+            label: 'Ofertes Actives'
+          },
+          {
+            name: 'featuredOffers',
+            used: data.data?.limits?.featuredOffers?.current || 0,
+            max: data.data?.limits?.featuredOffers?.limit || 0,
+            label: 'Ofertes Destacades'
+          },
+          {
+            name: 'teamMembers',
+            used: data.data?.limits?.teamMembers?.current || 0,
+            max: data.data?.limits?.teamMembers?.limit || 0,
+            label: 'Membres Equip'
+          },
+          {
+            name: 'storage',
+            used: data.data?.limits?.storage?.current || 0,
+            max: data.data?.limits?.storage?.limit || 0,
+            label: 'Emmagatzematge'
+          }
         ];
+
         setLimits(limitsArray);
 
         // Check if any limit exceeded
         const exceeded = limitsArray.some(limit => limit.used > limit.max);
         setHasExceeded(exceeded);
+      } else {
+        console.error('API response not OK:', response.status);
       }
     } catch (error) {
       console.error('Error fetching limits:', error);
