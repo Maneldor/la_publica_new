@@ -1,244 +1,203 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
-import { PrismaClient } from '@prisma/client';
+import { authOptions } from '../../../../../lib/auth';
+import { prismaClient } from '../../../../../lib/prisma';
 
-const prisma = new PrismaClient();
-
-// POST - Calcular prorrateo para cambio de plan
+/**
+ * POST /api/empresa/plan/calculate-proration
+ * Calcular prorrateo para preview antes de upgrade
+ */
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+
+    if (!session?.user?.email) {
+      return NextResponse.json(
+        { error: 'No autorizado' },
+        { status: 401 }
+      );
     }
 
-    const { currentPlan, newPlan, billingCycle = 'MONTHLY' } = await request.json();
+    const body = await request.json();
+    const { newPlanId } = body;
 
-    // Validar planes
-    if (!currentPlan || !newPlan) {
+    if (!newPlanId) {
       return NextResponse.json(
-        { error: 'Plans actuals i nous són obligatoris' },
+        { error: 'newPlanId es requerido' },
         { status: 400 }
       );
     }
 
-    // Obtenir informació de l'empresa per obtenir la data de subscripció
-    const userWithCompany = await prisma.user.findUnique({
-      where: { email: session.user.email! },
-      include: { company: true }
+    // Buscar usuario y empresa
+    const user = await prismaClient.user.findUnique({
+      where: { email: session.user.email },
+      include: {
+        ownedCompany: {
+          include: {
+            currentPlan: true,
+            subscriptions: {
+              where: { status: 'ACTIVE' },
+              orderBy: { createdAt: 'desc' },
+              take: 1
+            }
+          }
+        }
+      }
     });
 
-    if (!userWithCompany?.company) {
+    if (!user?.ownedCompany) {
       return NextResponse.json(
-        { error: 'Empresa no trobada' },
+        { error: 'Empresa no encontrada' },
         { status: 404 }
       );
     }
 
-    const company = userWithCompany.company;
+    const company = user.ownedCompany;
+    const currentSubscription = company.subscriptions[0];
 
-    // Obtener información de los planes desde la base de datos
-    const [currentPlanData, newPlanData] = await Promise.all([
-      prisma.planConfig.findUnique({ where: { planType: currentPlan } }),
-      prisma.planConfig.findUnique({ where: { planType: newPlan } })
-    ]);
+    // Verificar que el nuevo plan existe
+    const newPlan = await prismaClient.planConfig.findUnique({
+      where: { id: newPlanId }
+    });
 
-    if (!currentPlanData || !newPlanData) {
+    if (!newPlan || !newPlan.isActive) {
       return NextResponse.json(
-        { error: 'Plans no trobats' },
+        { error: 'Plan no encontrado o no disponible' },
         { status: 404 }
       );
     }
 
-    // Calcular días restantes en el período actual
-    const now = new Date();
-    const currentDate = now.getDate();
-    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-    const daysRemaining = daysInMonth - currentDate;
-    const daysUsed = currentDate;
-
-    // Obtener precios según el ciclo de facturación
-    const currentPrice = billingCycle === 'YEARLY'
-      ? (currentPlanData.precioAnual || currentPlanData.precioMensual * 12) / 12
-      : currentPlanData.precioMensual;
-
-    const newPrice = billingCycle === 'YEARLY'
-      ? (newPlanData.precioAnual || newPlanData.precioMensual * 12) / 12
-      : newPlanData.precioMensual;
-
-    // Calcular el crédito por los días no utilizados del plan actual
-    const dailyCurrentPrice = currentPrice / daysInMonth;
-    const creditAmount = dailyCurrentPrice * daysRemaining;
-
-    // Calcular el costo del nuevo plan por los días restantes
-    const dailyNewPrice = newPrice / daysInMonth;
-    const chargeAmount = dailyNewPrice * daysRemaining;
-
-    // Calcular el ajuste total
-    const adjustmentAmount = chargeAmount - creditAmount;
-
-    // Determinar tipo de cambio
-    const changeType = newPrice > currentPrice ? 'UPGRADE' :
-                       newPrice < currentPrice ? 'DOWNGRADE' : 'LATERAL';
-
-    // Calcular fecha de próxima facturación
-    const nextBillingDate = new Date(now);
-    if (billingCycle === 'MONTHLY') {
-      nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
-    } else {
-      nextBillingDate.setFullYear(nextBillingDate.getFullYear() + 1);
+    // Validar que no es el mismo plan
+    if (company.currentPlanId === newPlanId) {
+      return NextResponse.json(
+        { error: 'Ya tienes este plan activo' },
+        { status: 400 }
+      );
     }
 
-    // Preparar comparación de características
-    const currentLimits = JSON.parse(currentPlanData.limitesJSON);
-    const newLimits = JSON.parse(newPlanData.limitesJSON);
+    // Validar dirección del cambio
+    const tierOrder = ['PIONERES', 'STANDARD', 'STRATEGIC', 'ENTERPRISE'];
+    const currentTierIndex = tierOrder.indexOf(company.currentPlan?.tier || 'PIONERES');
+    const newTierIndex = tierOrder.indexOf(newPlan.tier);
 
-    const featureChanges = {
-      members: {
-        current: currentLimits.maxMembers,
-        new: newLimits.maxMembers,
-        change: newLimits.maxMembers - currentLimits.maxMembers
-      },
-      storage: {
-        current: currentLimits.maxStorage,
-        new: newLimits.maxStorage,
-        change: newLimits.maxStorage - currentLimits.maxStorage
-      },
-      aiAgents: {
-        current: currentLimits.maxAIAgents,
-        new: newLimits.maxAIAgents,
-        change: newLimits.maxAIAgents - currentLimits.maxAIAgents
-      },
-      posts: {
-        current: currentLimits.maxPosts,
-        new: newLimits.maxPosts,
-        change: newLimits.maxPosts - currentLimits.maxPosts
-      },
-      projects: {
-        current: currentLimits.maxProjects,
-        new: newLimits.maxProjects,
-        change: newLimits.maxProjects - currentLimits.maxProjects
+    const isUpgrade = newTierIndex > currentTierIndex;
+    const isDowngrade = newTierIndex < currentTierIndex;
+
+    // Calcular información del plan actual
+    const currentPlanInfo = {
+      id: company.currentPlan?.id,
+      name: company.currentPlan?.name,
+      tier: company.currentPlan?.tier,
+      price: company.currentPlan?.basePrice || 0,
+      precioAnual: currentSubscription?.precioAnual || 0,
+      precioMensual: currentSubscription?.precioMensual || 0
+    };
+
+    // Calcular información del nuevo plan
+    const newPlanFirstYearPrice = newPlan.basePrice * (1 - (newPlan.firstYearDiscount || 0));
+    const newPlanInfo = {
+      id: newPlan.id,
+      name: newPlan.name,
+      tier: newPlan.tier,
+      basePrice: newPlan.basePrice,
+      firstYearPrice: newPlanFirstYearPrice,
+      firstYearDiscount: newPlan.firstYearDiscount,
+      precioMensual: newPlan.precioMensual,
+      precioAnual: newPlanFirstYearPrice
+    };
+
+    // Calcular prorrateo
+    let proration = null;
+    let immediateCharge = 0;
+    let isInTrial = false;
+    let daysRemaining = 0;
+
+    if (currentSubscription) {
+      const now = new Date();
+      const endDate = currentSubscription.endDate ? new Date(currentSubscription.endDate) : new Date();
+      daysRemaining = Math.max(0, Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+
+      // Detectar si está en trial
+      isInTrial = currentSubscription.precioMensual === 0 && daysRemaining > 0;
+
+      if (isInTrial) {
+        // Si está en trial, solo paga el nuevo plan (sin prorrateo)
+        immediateCharge = newPlanFirstYearPrice;
+
+        proration = {
+          type: 'trial',
+          daysRemaining,
+          message: 'Estás en período de prueba. Al cambiar de plan, pagarás el precio completo del nuevo plan.',
+          currentCredit: 0,
+          newCost: newPlanFirstYearPrice,
+          immediateCharge: newPlanFirstYearPrice
+        };
+      } else if (daysRemaining > 0 && currentSubscription.precioAnual > 0) {
+        // Si está pagando, calcular prorrateo
+        const currentDailyRate = (currentSubscription.precioAnual || 0) / 365;
+        const creditAmount = currentDailyRate * daysRemaining;
+
+        const newDailyRate = newPlanFirstYearPrice / 365;
+        const newCost = newDailyRate * daysRemaining;
+
+        immediateCharge = Math.max(0, newCost - creditAmount);
+
+        proration = {
+          type: 'proration',
+          daysRemaining,
+          currentDailyRate: Number(currentDailyRate.toFixed(2)),
+          creditAmount: Number(creditAmount.toFixed(2)),
+          newDailyRate: Number(newDailyRate.toFixed(2)),
+          newCost: Number(newCost.toFixed(2)),
+          immediateCharge: Number(immediateCharge.toFixed(2)),
+          message: `Recibirás un crédito de ${creditAmount.toFixed(2)}€ de tu plan actual y pagarás ${immediateCharge.toFixed(2)}€ por el resto del período.`
+        };
+      } else {
+        // Subscription expirada o sin precio
+        immediateCharge = newPlanFirstYearPrice;
+
+        proration = {
+          type: 'new',
+          message: 'Tu suscripción actual ha expirado. Pagarás el precio completo del nuevo plan.',
+          immediateCharge: newPlanFirstYearPrice
+        };
       }
-    };
+    } else {
+      // Sin subscription actual
+      immediateCharge = newPlanFirstYearPrice;
 
-    // Calcular temps transcorregut des de la subscripció
-    const subscriptionTime = company.subscriptionStartDate
-      ? {
-          startDate: company.subscriptionStartDate,
-          daysActive: Math.floor((now.getTime() - company.subscriptionStartDate.getTime()) / (1000 * 60 * 60 * 24)),
-          monthsActive: Math.floor((now.getTime() - company.subscriptionStartDate.getTime()) / (1000 * 60 * 60 * 24 * 30.44)), // Promig de dies per mes
-          lastChanged: company.planChangedAt
-        }
-      : null;
+      proration = {
+        type: 'new',
+        message: 'Pagarás el precio completo del nuevo plan.',
+        immediateCharge: newPlanFirstYearPrice
+      };
+    }
 
-    // Preparar respuesta con todos los detalles
-    const prorationDetails = {
-      currentPlan: {
-        name: currentPlanData.nombre,
-        price: currentPrice,
-        features: currentLimits
-      },
-      newPlan: {
-        name: newPlanData.nombre,
-        price: newPrice,
-        features: newLimits
-      },
-      billing: {
-        cycle: billingCycle,
-        daysInPeriod: daysInMonth,
-        daysUsed,
+    return NextResponse.json({
+      success: true,
+      data: {
+        currentPlan: currentPlanInfo,
+        newPlan: newPlanInfo,
+        changeType: isUpgrade ? 'upgrade' : (isDowngrade ? 'downgrade' : 'same'),
+        isUpgrade,
+        isDowngrade,
+        isInTrial,
         daysRemaining,
-        percentageUsed: Math.round((daysUsed / daysInMonth) * 100),
-        percentageRemaining: Math.round((daysRemaining / daysInMonth) * 100)
-      },
-      subscription: subscriptionTime,
-      proration: {
-        creditAmount: Math.abs(creditAmount),
-        creditDescription: `Crèdit pels ${daysRemaining} dies no utilitzats del ${currentPlanData.nombre}`,
-        chargeAmount: Math.abs(chargeAmount),
-        chargeDescription: `Cost pels ${daysRemaining} dies del ${newPlanData.nombre}`,
-        adjustmentAmount,
-        adjustmentType: adjustmentAmount > 0 ? 'CHARGE' : adjustmentAmount < 0 ? 'CREDIT' : 'NONE',
-        immediatePayment: adjustmentAmount > 0 ? adjustmentAmount : 0,
-        accountCredit: adjustmentAmount < 0 ? Math.abs(adjustmentAmount) : 0
-      },
-      changeType,
-      featureChanges,
-      effectiveDate: now.toISOString(),
-      nextBillingDate: nextBillingDate.toISOString(),
-      nextBillingAmount: newPrice,
-      warnings: getWarnings(changeType, featureChanges),
-      summary: getSummaryMessage(changeType, adjustmentAmount, daysRemaining, currentPlanData.nombre, newPlanData.nombre)
-    };
-
-    return NextResponse.json(prorationDetails);
+        proration,
+        immediateCharge: Number(immediateCharge.toFixed(2)),
+        allowDowngrade: false, // Por ahora no permitimos downgrades
+        canProceed: isUpgrade || (!isDowngrade && company.currentPlanId !== newPlanId)
+      }
+    });
 
   } catch (error) {
-    console.error('Error calculant prorrateig:', error);
+    console.error('Error calculando prorrateo:', error);
     return NextResponse.json(
-      { error: 'Error al calcular prorrateig' },
+      {
+        error: 'Error al calcular prorrateo',
+        details: error instanceof Error ? error.message : 'Error desconocido'
+      },
       { status: 500 }
     );
-  }
-}
-
-// Función auxiliar para obtener advertencias
-function getWarnings(changeType: string, featureChanges: any): string[] {
-  const warnings = [];
-
-  if (changeType === 'DOWNGRADE') {
-    warnings.push('Aquest és un downgrade. Algunes funcionalitats es reduiran.');
-
-    // Verificar reducciones específicas
-    Object.entries(featureChanges).forEach(([key, value]: [string, any]) => {
-      if (value.change < 0) {
-        const featureName = getFeatureName(key);
-        if (value.new === 0) {
-          warnings.push(`⚠️ Perdràs accés a ${featureName}`);
-        } else {
-          warnings.push(`⚠️ ${featureName} es reduirà de ${value.current} a ${value.new}`);
-        }
-      }
-    });
-  }
-
-  return warnings;
-}
-
-// Función auxiliar para obtener nombres de características
-function getFeatureName(key: string): string {
-  const names: Record<string, string> = {
-    members: 'Membres d\'equip',
-    storage: 'Emmagatzematge',
-    aiAgents: 'Agents IA',
-    posts: 'Posts mensuals',
-    projects: 'Projectes'
-  };
-  return names[key] || key;
-}
-
-// Función auxiliar para generar mensaje de resumen
-function getSummaryMessage(
-  changeType: string,
-  adjustmentAmount: number,
-  daysRemaining: number,
-  currentPlanName: string,
-  newPlanName: string
-): string {
-  if (changeType === 'UPGRADE') {
-    if (adjustmentAmount > 0) {
-      return `Actualitzant de ${currentPlanName} a ${newPlanName}. Pagaràs ${adjustmentAmount.toFixed(2)}€ pels ${daysRemaining} dies restants.`;
-    } else {
-      return `Actualitzant de ${currentPlanName} a ${newPlanName}. No hi ha càrrecs addicionals aquest mes.`;
-    }
-  } else if (changeType === 'DOWNGRADE') {
-    if (adjustmentAmount < 0) {
-      return `Canviant de ${currentPlanName} a ${newPlanName}. Rebràs un crèdit de ${Math.abs(adjustmentAmount).toFixed(2)}€.`;
-    } else {
-      return `Canviant de ${currentPlanName} a ${newPlanName}. El canvi s'aplicarà al proper període de facturació.`;
-    }
-  } else {
-    return `Canviant de ${currentPlanName} a ${newPlanName}. Sense canvis en el cost.`;
   }
 }

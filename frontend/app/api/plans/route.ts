@@ -3,24 +3,119 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { PrismaClient } from '@prisma/client';
 
-// GET - Listar todos los planes (admin)
+// GET - Listar todos los planes disponibles (público)
 export async function GET(request: NextRequest) {
   let prismaClient;
 
   try {
     prismaClient = new PrismaClient();
-    
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
 
-    // Obtener todos los planes de la base de datos ordenados por 'orden'
+    // NO requiere autenticación - endpoint público
     const planes = await prismaClient.planConfig.findMany({
-      orderBy: { orden: 'asc' }
+      where: {
+        isActive: true,
+        isVisible: true
+      },
+      orderBy: {
+        priority: 'desc' // Pioneres primero (priority 100)
+      },
+      select: {
+        id: true,
+        slug: true,
+        tier: true,
+        name: true,
+        nameEs: true,
+        nameEn: true,
+        description: true,
+
+        // Precios
+        basePrice: true,
+        precioMensual: true,
+        precioAnual: true,
+        durationMonths: true,
+        firstYearDiscount: true,
+
+        // Límites
+        maxActiveOffers: true,
+        maxTeamMembers: true,
+        maxFeaturedOffers: true,
+        maxStorage: true,
+
+        // Features
+        features: true,
+        funcionalidades: true,
+
+        // Visualización
+        badge: true,
+        badgeColor: true,
+        isPioneer: true,
+        color: true,
+        icono: true,
+        destacado: true,
+        priority: true,
+
+        // Trial
+        hasFreeTrial: true,
+        trialDurationDays: true,
+
+        // IVA
+        displayNote: true,
+        priceIncludesVAT: true,
+
+        // Backward compatibility
+        planType: true,
+        nombre: true,
+        nombreCorto: true,
+        descripcion: true,
+        limitesJSON: true,
+        caracteristicas: true,
+        orden: true,
+        activo: true,
+        visible: true
+      }
     });
 
-    return NextResponse.json(planes);
+    // Parsear features JSON
+    const plansWithFeatures = planes.map(plan => {
+      let features = {};
+      try {
+        features = typeof plan.features === 'string'
+          ? JSON.parse(plan.features as string)
+          : plan.features || {};
+      } catch (e) {
+        console.error(`Error parsing features for plan ${plan.id}:`, e);
+      }
+
+      // Calcular precio efectivo primer año
+      const firstYearPrice = plan.firstYearDiscount
+        ? plan.basePrice * (1 - plan.firstYearDiscount)
+        : plan.basePrice;
+
+      return {
+        ...plan,
+        features,
+        pricing: {
+          basePrice: plan.basePrice,
+          firstYearPrice,
+          firstYearDiscount: plan.firstYearDiscount,
+          precioMensual: plan.precioMensual,
+          precioAnual: plan.precioAnual,
+          displayNote: plan.displayNote,
+          priceIncludesVAT: plan.priceIncludesVAT
+        },
+        limits: {
+          maxActiveOffers: plan.maxActiveOffers,
+          maxTeamMembers: plan.maxTeamMembers,
+          maxFeaturedOffers: plan.maxFeaturedOffers,
+          maxStorage: plan.maxStorage
+        }
+      };
+    });
+
+    return NextResponse.json({
+      success: true,
+      data: plansWithFeatures
+    });
 
   } catch (error) {
     console.error('Error al obtener planes:', error);

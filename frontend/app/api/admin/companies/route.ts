@@ -47,9 +47,30 @@ export async function GET(request: NextRequest) {
       orderBy: { name: 'asc' },
     });
 
+    // Formatear respuesta para compatibilidad con el frontend
+    const formattedCompanies = companies.map(company => ({
+      id: company.id,
+      name: company.name,
+      description: 'Empresa registrada en la plataforma', // Descripción por defecto
+      sector: 'otros', // Por defecto, ya que no hay campo sector en el modelo
+      size: 'pequeña', // Por defecto, ya que no hay campo size en el modelo
+      email: company.email,
+      phone: company.phone,
+      website: company.website,
+      address: company.address,
+      logo: null, // Por ahora null
+      isVerified: true, // Por defecto, ya que no hay campo isVerified en el modelo
+      isActive: company.isActive,
+      createdAt: company.createdAt.toISOString(),
+      updatedAt: company.createdAt.toISOString(),
+      foundedYear: null,
+      employeeCount: 0,
+      configuration: {}
+    }));
+
     return NextResponse.json({
       success: true,
-      companies,
+      data: formattedCompanies
     });
 
   } catch (error) {

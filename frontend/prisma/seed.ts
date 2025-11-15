@@ -1,4 +1,4 @@
-import { PrismaClient, UserType, CompanyRole, SubscriptionStatus } from '@prisma/client';
+import { PrismaClient, UserType, CompanyRole, SubscriptionStatus, PlanTier } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -425,143 +425,331 @@ async function main() {
   console.log('🌱 Iniciando seed...');
 
   // ============================================
-  // 1. PLANES DEL SISTEMA (ya existen, verificar)
+  // 1. PLANES REALES DE LA PÚBLICA
   // ============================================
-  console.log('📦 Verificando planes del sistema...');
+  console.log('📦 Creando planes reales de La Pública...');
 
-  const planBasic = await prisma.planConfig.upsert({
-    where: { planType: 'BASIC' },
+  const planPioneres = await prisma.planConfig.upsert({
+    where: { slug: 'empreses-pioneres' },
     update: {},
     create: {
-      planType: 'BASIC',
-      nombre: 'Pla Bàsic',
-      nombreCorto: 'Bàsic',
-      descripcion: 'Ideal per a empreses petites que comencen',
-      precioMensual: 29,
-      precioAnual: 290,
-      limitesJSON: JSON.stringify({
-        maxUsuarios: 1,
-        maxStorage: 5,
-        maxDocumentos: 10,
-        maxOfertas: 3
-      }),
-      caracteristicas: JSON.stringify([
-        'Perfil bàsic de l\'empresa',
-        '1 membre',
-        '1 GB d\'emmagatzematge',
-        '10 documents',
-        '3 ofertes actives'
-      ]),
-      color: '#8B7355',
-      icono: '📦',
-      orden: 1,
-      destacado: false,
+      name: 'Empreses Pioneres',
+      nameEs: 'Empresas Pioneras',
+      nameEn: 'Pioneer Companies',
+      slug: 'empreses-pioneres',
+      description: 'Per a empreses pioneres que aposten per la innovació. 6 mesos GRATUÏTS i després 50% de descompte el primer any.',
+      tier: PlanTier.PIONERES,
+      planType: 'PIONERES',
+      nombre: 'Empreses Pioneres',
+      nombreCorto: 'Pioneres',
+      descripcion: 'Per a empreses pioneres que aposten per la innovació. 6 mesos GRATUÏTS i després 50% de descompte el primer any.',
+      basePrice: 500.0,
+      precioMensual: 41.67,
+      precioAnual: 500.0,
+      durationMonths: 12,
+      firstYearDiscount: 50.0,
+      hasFreeTrial: true,
+      trialDurationDays: 180, // 6 meses gratuitos
+      isPioneer: true,
+      isActive: true,
+      isVisible: true,
+      isDefault: false,
+      priority: 1,
+      maxTeamMembers: 10,
+      maxActiveOffers: 50,
+      maxFeaturedOffers: 10,
+      maxStorage: 20,
+      badge: 'PIONEER',
+      badgeColor: '#10B981',
+      color: '#10B981',
+      icono: '🚀',
       activo: true,
       visible: true,
-      esSistema: true
+      esSistema: false,
+      destacado: false,
+      orden: 1,
+      features: JSON.stringify({
+        hosting: true,
+        ssl: true,
+        basicSupport: true,
+        monthlyReports: true,
+        customDomain: true,
+        seoOptimization: false,
+        prioritySupport: false,
+        advancedAnalytics: false,
+        multipleAdmins: true,
+        apiAccess: false
+      }),
+      limitesJSON: JSON.stringify({
+        maxUsuarios: 10,
+        maxStorage: 20,
+        maxDocumentos: 100,
+        maxOfertas: 50
+      }),
+      caracteristicas: JSON.stringify([
+        '6 mesos GRATUÏTS',
+        '50% descompte primer any',
+        'Fins a 10 membres',
+        '20 GB d\'emmagatzematge',
+        '50 ofertes actives',
+        'Suport bàsic'
+      ]),
+      funcionalidades: `Fitxa empresarial completa
+Ofertes editables
+Estadístiques bàsiques
+Newsletter col·laboracions i ofertes
+1 agent IA comercial bàsic
+Suport per email
+Gestor comercial d'administració
+Distintiu permanent "Empreses Pioneres"
+Espai destacat en el directori
+Prioritat de visualització`
     }
   });
 
   const planStandard = await prisma.planConfig.upsert({
-    where: { planType: 'STANDARD' },
+    where: { slug: 'estandard' },
     update: {},
     create: {
+      name: 'Estàndard',
+      nameEs: 'Estándar',
+      nameEn: 'Standard',
+      slug: 'estandard',
+      description: 'El pla ideal per a la majoria d\'empreses. Inclou totes les funcionalitats essencials amb 50% de descompte el primer any.',
+      tier: PlanTier.STANDARD,
       planType: 'STANDARD',
-      nombre: 'Pla Estàndard',
+      nombre: 'Estàndard',
       nombreCorto: 'Estàndard',
-      descripcion: 'Per a empreses en creixement',
-      precioMensual: 79,
-      precioAnual: 790,
-      limitesJSON: JSON.stringify({
-        maxUsuarios: 5,
-        maxStorage: 20,
-        maxDocumentos: 50,
-        maxOfertas: 10
-      }),
-      caracteristicas: JSON.stringify([
-        'Tot el del Pla Bàsic',
-        'Fins a 5 membres',
-        '5 GB d\'emmagatzematge',
-        '50 documents',
-        '10 ofertes actives'
-      ]),
+      descripcion: 'El pla ideal per a la majoria d\'empreses. Inclou totes les funcionalitats essencials amb 50% de descompte el primer any.',
+      basePrice: 500.0,
+      precioMensual: 41.67,
+      precioAnual: 500.0,
+      durationMonths: 12,
+      firstYearDiscount: 50.0,
+      hasFreeTrial: false,
+      isPioneer: false,
+      isActive: true,
+      isVisible: true,
+      isDefault: true,
+      priority: 2,
+      maxTeamMembers: 15,
+      maxActiveOffers: 100,
+      maxFeaturedOffers: 20,
+      maxStorage: 50,
+      badge: 'POPULAR',
+      badgeColor: '#3B82F6',
       color: '#3B82F6',
-      icono: '⚡',
-      orden: 2,
-      destacado: true,
+      icono: '⭐',
       activo: true,
       visible: true,
-      esSistema: true
-    }
-  });
-
-  const planPremium = await prisma.planConfig.upsert({
-    where: { planType: 'PREMIUM' },
-    update: {},
-    create: {
-      planType: 'PREMIUM',
-      nombre: 'Pla Premium',
-      nombreCorto: 'Premium',
-      descripcion: 'Per a empreses consolidades',
-      precioMensual: 149,
-      precioAnual: 1490,
+      esSistema: false,
+      destacado: true,
+      orden: 2,
+      features: JSON.stringify({
+        hosting: true,
+        ssl: true,
+        basicSupport: true,
+        monthlyReports: true,
+        customDomain: true,
+        seoOptimization: true,
+        prioritySupport: false,
+        advancedAnalytics: true,
+        multipleAdmins: true,
+        apiAccess: false
+      }),
       limitesJSON: JSON.stringify({
-        maxUsuarios: 20,
+        maxUsuarios: 15,
         maxStorage: 50,
         maxDocumentos: 200,
-        maxOfertas: 50
+        maxOfertas: 100
       }),
       caracteristicas: JSON.stringify([
-        'Tot el del Pla Estàndard',
-        'Fins a 20 membres',
-        '20 GB d\'emmagatzematge',
-        '200 documents',
-        '50 ofertes actives'
+        '500€/any amb 50% descompte primer any',
+        'Fins a 15 membres',
+        '50 GB d\'emmagatzematge',
+        '100 ofertes actives',
+        'Optimització SEO',
+        'Analítiques avançades'
       ]),
-      color: '#F59E0B',
-      icono: '👑',
-      orden: 3,
-      destacado: false,
-      activo: true,
-      visible: true,
-      esSistema: true
+      funcionalidades: `Fitxa empresarial completa
+Ofertes editables
+Estadístiques bàsiques
+Newsletter col·laboracions i ofertes
+1 agent IA comercial bàsic
+Suport per email
+Gestor comercial d'administració`
     }
   });
 
-  const planEmpresarial = await prisma.planConfig.upsert({
-    where: { planType: 'EMPRESARIAL' },
+  const planStrategic = await prisma.planConfig.upsert({
+    where: { slug: 'estrategic' },
     update: {},
     create: {
-      planType: 'EMPRESARIAL',
-      nombre: 'Pla Empresarial',
-      nombreCorto: 'Empresarial',
-      descripcion: 'Solució personalitzada per a grans empreses',
-      precioMensual: 299,
-      precioAnual: 2990,
+      name: 'Estratègic',
+      nameEs: 'Estratégico',
+      nameEn: 'Strategic',
+      slug: 'estrategic',
+      description: 'Per a empreses que necessiten funcionalitats avançades i suport prioritari. 50% de descompte el primer any.',
+      tier: PlanTier.STRATEGIC,
+      planType: 'PREMIUM',
+      nombre: 'Estratègic',
+      nombreCorto: 'Estratègic',
+      descripcion: 'Per a empreses que necessiten funcionalitats avançades i suport prioritari. 50% de descompte el primer any.',
+      basePrice: 1000.0,
+      precioMensual: 83.33,
+      precioAnual: 1000.0,
+      durationMonths: 12,
+      firstYearDiscount: 50.0,
+      hasFreeTrial: false,
+      isPioneer: false,
+      isActive: true,
+      isVisible: true,
+      isDefault: false,
+      priority: 3,
+      maxTeamMembers: 25,
+      maxActiveOffers: 200,
+      maxFeaturedOffers: 50,
+      maxStorage: 100,
+      badge: 'STRATEGIC',
+      badgeColor: '#8B5CF6',
+      color: '#8B5CF6',
+      icono: '🎯',
+      activo: true,
+      visible: true,
+      esSistema: false,
+      destacado: false,
+      orden: 3,
+      features: JSON.stringify({
+        hosting: true,
+        ssl: true,
+        basicSupport: true,
+        monthlyReports: true,
+        customDomain: true,
+        seoOptimization: true,
+        prioritySupport: true,
+        advancedAnalytics: true,
+        multipleAdmins: true,
+        apiAccess: true,
+        customIntegrations: true,
+        dedicatedManager: false,
+        whiteLabel: false
+      }),
       limitesJSON: JSON.stringify({
-        maxUsuarios: 100,
-        maxStorage: 200,
-        maxDocumentos: 1000,
+        maxUsuarios: 25,
+        maxStorage: 100,
+        maxDocumentos: 500,
         maxOfertas: 200
       }),
       caracteristicas: JSON.stringify([
-        'Tot el del Pla Premium',
-        'Membres il·limitats',
+        '1000€/any amb 50% descompte primer any',
+        'Fins a 25 membres',
         '100 GB d\'emmagatzematge',
-        'Documents il·limitats',
-        'Ofertes il·limitades'
+        '200 ofertes actives',
+        'Suport prioritari',
+        'API access',
+        'Integracions personalitzades'
       ]),
-      color: '#8B5CF6',
-      icono: '🏢',
-      orden: 4,
-      destacado: false,
-      activo: true,
-      visible: true,
-      esSistema: true
+      funcionalidades: `Tot d'ESTÀNDARD, més:
+Posicionament preferent
+1 oferta destacada
+Publicació sectorial
+Informe branding web
+Estadístiques ampliades
+Suport per email i missatgeria interna
+2 agents IA bàsics (Comercial + Marketing)
+Newsletter ampliada (2 publicacions/mes)
+Gestor comercial dedicat`
     }
   });
 
-  console.log('✅ Plans verificats/creats');
+  const planEnterprise = await prisma.planConfig.upsert({
+    where: { slug: 'enterprise' },
+    update: {},
+    create: {
+      name: 'Enterprise',
+      nameEs: 'Empresarial',
+      nameEn: 'Enterprise',
+      slug: 'enterprise',
+      description: 'Solució completa per a grans empreses amb necessitats específiques. Inclou gestor dedicat i personalitzacions.',
+      tier: PlanTier.ENTERPRISE,
+      planType: 'EMPRESARIAL',
+      nombre: 'Enterprise',
+      nombreCorto: 'Enterprise',
+      descripcion: 'Solució completa per a grans empreses amb necessitats específiques. Inclou gestor dedicat i personalitzacions.',
+      basePrice: 2000.0,
+      precioMensual: 166.67,
+      precioAnual: 2000.0,
+      durationMonths: 12,
+      firstYearDiscount: 50.0,
+      hasFreeTrial: false,
+      isPioneer: false,
+      isActive: true,
+      isVisible: true,
+      isDefault: false,
+      priority: 4,
+      maxTeamMembers: -1, // Ilimitado (usamos -1)
+      maxActiveOffers: -1, // Ilimitado (usamos -1)
+      maxFeaturedOffers: -1, // Ilimitado (usamos -1)
+      maxStorage: -1, // Ilimitado (usamos -1)
+      badge: 'ENTERPRISE',
+      badgeColor: '#6366F1',
+      color: '#6366F1',
+      icono: '💎',
+      activo: true,
+      visible: true,
+      esSistema: false,
+      destacado: false,
+      orden: 4,
+      features: JSON.stringify({
+        hosting: true,
+        ssl: true,
+        basicSupport: true,
+        monthlyReports: true,
+        customDomain: true,
+        seoOptimization: true,
+        prioritySupport: true,
+        advancedAnalytics: true,
+        multipleAdmins: true,
+        apiAccess: true,
+        customIntegrations: true,
+        dedicatedManager: true,
+        whiteLabel: true,
+        onPremise: true,
+        sla: true,
+        customTraining: true
+      }),
+      limitesJSON: JSON.stringify({
+        maxUsuarios: 999,
+        maxStorage: 999,
+        maxDocumentos: 9999,
+        maxOfertas: 9999
+      }),
+      caracteristicas: JSON.stringify([
+        '2000€/any amb 50% descompte primer any',
+        'Membres il·limitats',
+        'Emmagatzematge il·limitat',
+        'Ofertes il·limitades',
+        'Gestor dedicat',
+        'White label',
+        'On-premise',
+        'SLA garantit'
+      ]),
+      funcionalidades: `Tot d'ESTRATÈGIC, més:
+3 ofertes destacades
+Posicionament preferent màxim
+Analítiques i informes Pro
+Dashboard Pro
+Integració API
+2 Agents IA Pro (Comercial Pro + Marketing Pro)
+Campanyes exclusives
+Suport prioritari
+Reunió estratègica anual
+Presència editorial garantida
+SmartLinks amb tracking`
+    }
+  });
+
+  console.log('✅ Planes de La Pública creados correctamente');
 
   // ============================================
   // 2. GESTOR LA PÚBLICA (Account Manager)
@@ -686,12 +874,17 @@ async function main() {
       companyId: company.id,
       planId: planStandard.id,
       status: SubscriptionStatus.ACTIVE,
-      precioMensual: planStandard.precioMensual,
-      precioAnual: planStandard.precioAnual,
-      limites: JSON.parse(planStandard.limitesJSON),
+      precioMensual: Math.round(planStandard.basePrice / 12 * 100) / 100,
+      precioAnual: planStandard.basePrice,
       startDate: new Date(),
       endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // +1 año
-      isAutoRenew: true
+      isAutoRenew: true,
+      limites: {
+        maxTeamMembers: 15,
+        maxActiveOffers: 100,
+        maxFeaturedOffers: 20,
+        maxStorage: 50
+      }
     }
   });
 
@@ -756,14 +949,14 @@ async function main() {
   // ============================================
   console.log('\n🎉 Seed completat amb èxit!\n');
   console.log('📊 Resum:');
-  console.log('  ✅ 4 Plans del sistema');
+  console.log('  ✅ 4 Plans de La Pública (Pioneres, Estàndard, Estratègic, Enterprise)');
   console.log('  ✅ 14 Extras (serveis addicionals)');
   console.log('  ✅ 3 Presupuestos d\'exemple');
   console.log('  ✅ 1 Empresa: Empresa de Prova SL');
   console.log('  ✅ 1 Gestor Principal:', companyOwner.email, '(password: owner123)');
   console.log('  ✅ 2 Membres:', member1.email, member2.email, '(password: member123)');
   console.log('  ✅ 1 Gestor La Pública:', accountManager.email, '(password: gestora123)');
-  console.log('  ✅ 1 Subscripció activa (Pla Estàndard)');
+  console.log('  ✅ 1 Subscripció activa (Pla Estàndard - 500€/any, 50% primer any)');
   console.log('  ✅ 1 Empleat públic:', employee.email, '(password: empleat123)');
   console.log('  ✅ 1 Admin:', admin.email, '(password: admin123)');
   console.log('\n🔑 Credencials de prova:');

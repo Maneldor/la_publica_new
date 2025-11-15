@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { Providers } from './providers';
 import DevWarningsFilter from '@/components/DevWarningsFilter';
+import { Toaster } from 'react-hot-toast';
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -36,6 +37,7 @@ export default function RootLayout({
         <DevWarningsFilter />
         <Providers>
           {children}
+          <Toaster position="top-right" />
         </Providers>
       </body>
     </html>

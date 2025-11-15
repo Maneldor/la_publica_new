@@ -47,12 +47,7 @@ export default function ListarUsuariosPage() {
 
   const fetchUsers = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/v1/admin/users', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await fetch('/api/admin/users');
 
       if (response.ok) {
         const result = await response.json();
@@ -73,12 +68,8 @@ export default function ListarUsuariosPage() {
 
   const handleToggleActive = async (id: string, currentStatus: boolean) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/v1/admin/users/${id}/toggle-status`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const response = await fetch(`/api/admin/users/${id}/toggle-status`, {
+        method: 'PATCH'
       });
 
       if (response.ok) {
@@ -100,12 +91,8 @@ export default function ListarUsuariosPage() {
     if (!confirm('¿Estás seguro de eliminar este usuario? Esta acción no se puede deshacer.')) return;
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/v1/admin/users/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const response = await fetch(`/api/admin/users/${id}`, {
+        method: 'DELETE'
       });
 
       if (response.ok) {

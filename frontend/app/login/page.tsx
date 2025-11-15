@@ -27,13 +27,26 @@ export default function LoginPage() {
       if (result?.error) {
         setError('Credenciales incorrectas');
       } else {
-        // Redirigir según el tipo de usuario detectado por el email
-        if (email.includes('empresa')) {
-          router.push('/empresa');
-        } else if (email.includes('gestor')) {
-          router.push('/gestor-empreses');
-        } else {
+        // Obtener sesión para determinar el rol del usuario
+        const response = await fetch('/api/auth/session');
+        const session = await response.json();
+
+        // Redirigir según el rol real del usuario
+        if (session?.user?.role === 'COMPANY' || session?.user?.role === 'EMPRESA') {
+          router.push('/empresa/dashboard');
+        } else if (session?.user?.role === 'COMPANY_MANAGER' || session?.user?.role === 'GESTOR_EMPRESAS') {
+          router.push('/gestor-empreses/dashboard');
+        } else if (session?.user?.role === 'ADMIN') {
           router.push('/admin');
+        } else {
+          // Fallback basado en el email si no hay sesión
+          if (email.includes('@test.cat') || email.includes('empresa')) {
+            router.push('/empresa/dashboard');
+          } else if (email.includes('gestor')) {
+            router.push('/gestor-empreses/dashboard');
+          } else {
+            router.push('/admin');
+          }
         }
       }
     } catch (err: any) {

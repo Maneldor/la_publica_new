@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { Building2, CheckCircle, Activity, Clock } from 'lucide-react';
 import StatCard from '@/components/ui/StatCard';
 import { useEmpresas, Empresa } from '@/hooks/useEmpresas';
-import { apiDelete, apiPut } from '@/lib/api-client';
 
 
 export default function ListarEmpresasPage() {
@@ -63,38 +62,67 @@ export default function ListarEmpresasPage() {
     if (!confirm('¿Estás seguro de eliminar esta empresa?')) return;
 
     try {
-      await apiDelete(`/companies/${id}`);
-      // Refrescar la lista después de eliminar
-      refetch();
+      const response = await fetch(`/api/admin/companies/${id}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          refetch();
+        } else {
+          alert('Error al eliminar la empresa: ' + result.error);
+        }
+      } else {
+        alert('Error al eliminar la empresa');
+      }
     } catch (error) {
       console.error('Error al eliminar empresa:', error);
-      alert('Error al eliminar la empresa: ' + (error as any)?.message);
+      alert('Error de conexión');
     }
   };
 
   const handleToggleVerification = async (id: string, currentStatus: boolean) => {
     try {
-      await apiPut(`/companies/${id}`, {
-        isVerified: !currentStatus
+      const response = await fetch(`/api/admin/companies/${id}/toggle-verification`, {
+        method: 'PATCH'
       });
-      // Refrescar la lista después de actualizar
-      refetch();
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          refetch();
+        } else {
+          alert('Error al cambiar el estado de verificación: ' + result.error);
+        }
+      } else {
+        alert('Error al cambiar el estado de verificación');
+      }
     } catch (error) {
       console.error('Error al cambiar verificación:', error);
-      alert('Error al cambiar el estado de verificación: ' + (error as any)?.message);
+      alert('Error de conexión');
     }
   };
 
   const handleToggleActive = async (id: string, currentStatus: boolean) => {
     try {
-      await apiPut(`/companies/${id}`, {
-        isActive: !currentStatus
+      const response = await fetch(`/api/admin/companies/${id}/toggle-active`, {
+        method: 'PATCH'
       });
-      // Refrescar la lista después de actualizar
-      refetch();
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          refetch();
+        } else {
+          alert('Error al cambiar el estado activo: ' + result.error);
+        }
+      } else {
+        alert('Error al cambiar el estado activo');
+      }
     } catch (error) {
       console.error('Error al cambiar estado activo:', error);
-      alert('Error al cambiar el estado activo: ' + (error as any)?.message);
+      alert('Error de conexión');
     }
   };
 

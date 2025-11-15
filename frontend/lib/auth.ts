@@ -273,11 +273,22 @@ export const authOptions: NextAuthOptions = {
       return false
     },
     async redirect({ url, baseUrl }) {
+      console.log('🔄 Redirect callback:', { url, baseUrl });
+
+      // Si viene con callbackUrl específico, respetarlo
+      if (url.includes('callbackUrl=')) {
+        const callbackUrl = new URL(url).searchParams.get('callbackUrl');
+        if (callbackUrl && callbackUrl.startsWith('/')) {
+          return `${baseUrl}${callbackUrl}`;
+        }
+      }
+
       // Permite redirecciones a rutas relativas o del mismo origen
       if (url.startsWith("/")) return `${baseUrl}${url}`
       // Permite callback URLs en el mismo origen
       else if (new URL(url).origin === baseUrl) return url
-      return baseUrl
+      // Por defecto, ir al dashboard de empresa para usuarios de empresa
+      return `${baseUrl}/empresa/dashboard`;
     },
   },
   pages: {

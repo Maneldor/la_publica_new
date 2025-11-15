@@ -1,201 +1,442 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, PlanTier } from '@prisma/client';
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
-const initialPlans = [
-  {
-    id: 'plan_1',
-    planType: 'STARTER',
-    nombre: 'Pla Starter',
-    nombreCorto: 'Starter',
-    descripcion: 'Perfecte per començar i provar la plataforma',
-    precioMensual: 0,
-    precioAnual: null,
-    limitesJSON: JSON.stringify({
-      maxMembers: 1,
-      maxStorage: 1,
-      maxProjects: 3,
-      maxPosts: 50,
-      maxAIAgents: 0,
-      maxDocuments: 10
-    }),
-    caracteristicas: JSON.stringify([
-      '1 usuari',
-      '1GB emmagatzematge',
-      '3 projectes',
-      '50 posts/mes',
-      'Suport bàsic'
-    ]),
-    color: '#6B7280',
-    icono: '🚀',
-    orden: 1,
-    destacado: false,
-    activo: true,
-    visible: true,
-    esSistema: true
-  },
-  {
-    id: 'plan_2',
-    planType: 'BASIC',
-    nombre: 'Pla Bàsic',
-    nombreCorto: 'Basic',
-    descripcion: 'Ideal per a equips petits',
-    precioMensual: 29,
-    precioAnual: 290,
-    limitesJSON: JSON.stringify({
-      maxMembers: 1,
+async function seedPlans() {
+  console.log('🌱 Seeding plans de La Pública...');
+
+  // ============================================
+  // PLAN 1: EMPRESES PIONERES
+  // ============================================
+  const planPioneres = await prisma.planConfig.upsert({
+    where: { slug: 'empreses-pioneres' },
+    update: {},
+    create: {
+      // Identificadores únicos
+      slug: 'empreses-pioneres',
+      tier: PlanTier.PIONERES,
+      planType: 'PIONERES',
+
+      // Nombres
+      name: 'Empreses Pioneres',
+      nameEs: 'Empresas Pioneras',
+      nameEn: 'Pioneer Companies',
+      nombre: 'Empreses Pioneres',
+      nombreCorto: 'Pioneres',
+      description: 'Pla especial per a empreses pioneres amb 6 mesos gratuïts i avantatges exclusius',
+      descripcion: 'Plan especial para empresas pioneras con 6 meses gratuitos y ventajas exclusivas',
+
+      // Precios
+      basePrice: 0, // Gratis 6 meses
+      precioMensual: 0,
+      precioAnual: 500, // Después de 6 meses, 500€/año con 50% desc
+      durationMonths: 6,
+      firstYearDiscount: 0.5,
+
+      // Límites
+      maxActiveOffers: 5,
+      maxTeamMembers: 1,
+      maxFeaturedOffers: 0,
       maxStorage: 10,
-      maxProjects: 10,
-      maxPosts: 200,
-      maxAIAgents: 1,
-      maxDocuments: 50
-    }),
-    caracteristicas: JSON.stringify([
-      '1 usuari',
-      '10GB emmagatzematge',
-      '10 projectes',
-      '200 posts/mes',
-      '1 agent IA',
-      'Suport per email'
-    ]),
-    color: '#3B82F6',
-    icono: '📦',
-    orden: 2,
-    destacado: false,
-    activo: true,
-    visible: true,
-    esSistema: true
-  },
-  {
-    id: 'plan_3',
-    planType: 'STANDARD',
-    nombre: 'Pla Estàndard',
-    nombreCorto: 'Standard',
-    descripcion: 'Per a equips en creixement',
-    precioMensual: 99,
-    precioAnual: 990,
-    limitesJSON: JSON.stringify({
-      maxMembers: 20,
-      maxStorage: 50,
-      maxProjects: 30,
-      maxPosts: 500,
-      maxAIAgents: 3,
-      maxDocuments: 200
-    }),
-    caracteristicas: JSON.stringify([
-      'Fins a 20 usuaris',
-      '50GB emmagatzematge',
-      '30 projectes',
-      '500 posts/mes',
-      '3 agents IA',
-      'Suport prioritari'
-    ]),
-    color: '#8B5CF6',
-    icono: '⭐',
-    orden: 3,
-    destacado: true,
-    activo: true,
-    visible: true,
-    esSistema: true
-  },
-  {
-    id: 'plan_4',
-    planType: 'PREMIUM',
-    nombre: 'Pla Premium',
-    nombreCorto: 'Premium',
-    descripcion: 'Màxima potència',
-    precioMensual: 299,
-    precioAnual: 2990,
-    limitesJSON: JSON.stringify({
-      maxMembers: 100,
-      maxStorage: 200,
-      maxProjects: 100,
-      maxPosts: 2000,
-      maxAIAgents: 10,
-      maxDocuments: 1000
-    }),
-    caracteristicas: JSON.stringify([
-      'Fins a 100 usuaris',
-      '200GB emmagatzematge',
-      '100 projectes',
-      '2000 posts/mes',
-      '10 agents IA',
-      'Suport 24/7',
-      'API access'
-    ]),
-    color: '#F59E0B',
-    icono: '👑',
-    orden: 4,
-    destacado: false,
-    activo: true,
-    visible: true,
-    esSistema: true
-  },
-  {
-    id: 'plan_5',
-    planType: 'PROFESSIONAL',
-    nombre: 'Pla Professional',
-    nombreCorto: 'Professional',
-    descripcion: 'Solució avançada amb configuració personalitzada',
-    precioMensual: 199,
-    precioAnual: 1990,
-    limitesJSON: JSON.stringify({
-      maxMembers: 50,
-      maxStorage: 100,
-      maxProjects: 50,
-      maxPosts: 1000,
-      maxAIAgents: 5,
-      maxDocuments: 500
-    }),
-    caracteristicas: JSON.stringify([
-      'Fins a 50 usuaris',
-      '100GB emmagatzematge',
-      '50 projectes',
-      '1000 posts/mes',
-      '5 agents IA',
-      'Configuració avançada',
-      'Extras disponibles'
-    ]),
-    color: '#10B981',
-    icono: '💎',
-    orden: 5,
-    destacado: false,
-    activo: true,
-    visible: true,
-    esSistema: true
-  }
-]
 
-async function main() {
-  console.log('🌱 Seeding plans...')
+      // Features JSON
+      features: {
+        offers: {
+          maxActive: 5,
+          editable: true,
+          featured: 0,
+          priority: 'high'
+        },
+        team: {
+          maxMembers: 1,
+          roles: ['owner']
+        },
+        analytics: {
+          level: 'standard',
+          reports: ['basic_stats', 'offer_performance'],
+          segmentation: false
+        },
+        ai: {
+          agents: [
+            { type: 'commercial', level: 'basic' }
+          ]
+        },
+        support: {
+          channels: ['email'],
+          priority: 'normal',
+          dedicatedManager: true
+        },
+        marketing: {
+          newsletter: true,
+          monthlyPublications: 2,
+          blog: false
+        },
+        directory: {
+          badge: 'Empreses Pioneres',
+          featured: true,
+          priority: 100
+        }
+      },
 
-  for (const plan of initialPlans) {
-    const existing = await prisma.planConfig.findUnique({
-      where: { planType: plan.planType }
-    })
+      // Backward compatibility
+      limitesJSON: JSON.stringify({
+        maxMembers: 1,
+        maxStorage: 10,
+        maxProjects: 10,
+        maxPosts: 200
+      }),
+      caracteristicas: 'Ficha empresarial completa, ofertas editables, estadísticas básicas, newsletter, 1 agente IA comercial básico, soporte por email, gestor comercial',
 
-    if (existing) {
-      console.log(`✅ Plan ${plan.planType} already exists, updating...`)
-      await prisma.planConfig.update({
-        where: { planType: plan.planType },
-        data: plan
-      })
-    } else {
-      console.log(`🆕 Creating plan ${plan.planType}...`)
-      await prisma.planConfig.create({
-        data: plan
-      })
+      // Badges
+      badge: 'Empreses Pioneres',
+      badgeColor: '#FFD700',
+      isPioneer: true,
+      isDefault: true,
+
+      // Visibilidad
+      color: '#FFD700',
+      icono: '🌟',
+      isActive: true,
+      isVisible: true,
+      activo: true,
+      visible: true,
+      destacado: true,
+      esSistema: false,
+      priority: 100,
+      orden: 1,
+
+      // Trial
+      hasFreeTrial: true,
+      trialDurationDays: 180,
+
+      // IVA
+      priceIncludesVAT: true,
+      displayNote: '6 mesos gratuïts, després 250€/any (IVA inclòs)'
     }
-  }
+  });
 
-  console.log('✅ Seeding completed!')
+  console.log('✅ Plan Pioneres creado:', planPioneres.id);
+
+  // ============================================
+  // PLAN 2: ESTÀNDARD
+  // ============================================
+  const planEstandard = await prisma.planConfig.upsert({
+    where: { slug: 'estandard' },
+    update: {},
+    create: {
+      // Identificadores únicos
+      slug: 'estandard',
+      tier: PlanTier.STANDARD,
+      planType: 'STANDARD',
+
+      // Nombres
+      name: 'Estàndard',
+      nameEs: 'Estándar',
+      nameEn: 'Standard',
+      nombre: 'Pla Estàndard',
+      nombreCorto: 'Estàndard',
+      description: 'Pla ideal per empreses que volen començar amb totes les funcionalitats bàsiques',
+      descripcion: 'Plan ideal para empresas que quieren empezar con todas las funcionalidades básicas',
+
+      // Precios
+      basePrice: 500,
+      precioMensual: 41.67, // 500/12
+      precioAnual: 500,
+      durationMonths: 12,
+      firstYearDiscount: 0.5,
+
+      // Límites
+      maxActiveOffers: 5,
+      maxTeamMembers: 1,
+      maxFeaturedOffers: 0,
+      maxStorage: 20,
+
+      // Features JSON
+      features: {
+        offers: {
+          maxActive: 5,
+          editable: true,
+          featured: 0,
+          priority: 'normal'
+        },
+        team: {
+          maxMembers: 1,
+          roles: ['owner']
+        },
+        analytics: {
+          level: 'basic',
+          reports: ['basic_stats'],
+          segmentation: false
+        },
+        ai: {
+          agents: [
+            { type: 'commercial', level: 'basic' }
+          ]
+        },
+        support: {
+          channels: ['email'],
+          priority: 'normal',
+          dedicatedManager: true
+        },
+        marketing: {
+          newsletter: true,
+          monthlyPublications: 0,
+          blog: false
+        }
+      },
+
+      // Backward compatibility
+      limitesJSON: JSON.stringify({
+        maxMembers: 1,
+        maxStorage: 20,
+        maxProjects: 20,
+        maxPosts: 500
+      }),
+      caracteristicas: 'Ficha empresarial completa, ofertas editables, estadísticas básicas, newsletter, 1 agente IA comercial básico, soporte por email, gestor comercial',
+
+      // Visibilidad
+      color: '#3B82F6',
+      icono: '📘',
+      isActive: true,
+      isVisible: true,
+      activo: true,
+      visible: true,
+      destacado: false,
+      esSistema: false,
+      priority: 50,
+      orden: 2,
+
+      // IVA
+      priceIncludesVAT: true,
+      displayNote: '250€ primer any, després 500€/any (IVA inclòs)'
+    }
+  });
+
+  console.log('✅ Plan Estàndard creado:', planEstandard.id);
+
+  // ============================================
+  // PLAN 3: ESTRATÈGIC
+  // ============================================
+  const planEstrategic = await prisma.planConfig.upsert({
+    where: { slug: 'estrategic' },
+    update: {},
+    create: {
+      // Identificadores únicos
+      slug: 'estrategic',
+      tier: PlanTier.STRATEGIC,
+      planType: 'STRATEGIC',
+
+      // Nombres
+      name: 'Estratègic',
+      nameEs: 'Estratégico',
+      nameEn: 'Strategic',
+      nombre: 'Pla Estratègic',
+      nombreCorto: 'Estratègic',
+      description: 'Pla avançat amb més ofertes, equip ampli i posicionament preferent',
+      descripcion: 'Plan avanzado con más ofertas, equipo amplio y posicionamiento preferente',
+
+      // Precios
+      basePrice: 1000,
+      precioMensual: 83.33, // 1000/12
+      precioAnual: 1000,
+      durationMonths: 12,
+      firstYearDiscount: 0.5,
+
+      // Límites
+      maxActiveOffers: 10,
+      maxTeamMembers: 3,
+      maxFeaturedOffers: 1,
+      maxStorage: 50,
+
+      // Features JSON
+      features: {
+        offers: {
+          maxActive: 10,
+          editable: true,
+          featured: 1,
+          priority: 'high'
+        },
+        team: {
+          maxMembers: 3,
+          roles: ['owner', 'admin', 'member']
+        },
+        analytics: {
+          level: 'advanced',
+          reports: ['basic_stats', 'offer_performance', 'geographic_analysis'],
+          segmentation: true
+        },
+        ai: {
+          agents: [
+            { type: 'commercial', level: 'basic' },
+            { type: 'marketing', level: 'basic' }
+          ]
+        },
+        support: {
+          channels: ['email', 'internal_messaging'],
+          priority: 'high',
+          dedicatedManager: true
+        },
+        marketing: {
+          newsletter: true,
+          monthlyPublications: 2,
+          blog: true,
+          campaigns: ['sectorial']
+        },
+        branding: {
+          report: true
+        }
+      },
+
+      // Backward compatibility
+      limitesJSON: JSON.stringify({
+        maxMembers: 3,
+        maxStorage: 50,
+        maxProjects: 50,
+        maxPosts: 1000
+      }),
+      caracteristicas: 'Tot el d\'Estàndard + posicionament preferent, 1 oferta destacada, publicació sectorial, informe branding, estadístiques ampliades, 2 agentes IA, newsletter ampliada',
+
+      // Visibilidad
+      color: '#8B5CF6',
+      icono: '🚀',
+      isActive: true,
+      isVisible: true,
+      activo: true,
+      visible: true,
+      destacado: true,
+      esSistema: false,
+      priority: 75,
+      orden: 3,
+
+      // IVA
+      priceIncludesVAT: true,
+      displayNote: '500€ primer any, després 1.000€/any (IVA inclòs)'
+    }
+  });
+
+  console.log('✅ Plan Estratègic creado:', planEstrategic.id);
+
+  // ============================================
+  // PLAN 4: ENTERPRISE
+  // ============================================
+  const planEnterprise = await prisma.planConfig.upsert({
+    where: { slug: 'enterprise' },
+    update: {},
+    create: {
+      // Identificadores únicos
+      slug: 'enterprise',
+      tier: PlanTier.ENTERPRISE,
+      planType: 'ENTERPRISE',
+
+      // Nombres
+      name: 'Enterprise',
+      nameEs: 'Enterprise',
+      nameEn: 'Enterprise',
+      nombre: 'Pla Enterprise',
+      nombreCorto: 'Enterprise',
+      description: 'Solució completa per grans empreses amb ofertes il·limitades i analítiques Pro',
+      descripcion: 'Solución completa para grandes empresas con ofertas ilimitadas y analíticas Pro',
+
+      // Precios
+      basePrice: 2000,
+      precioMensual: 166.67, // 2000/12
+      precioAnual: 2000,
+      durationMonths: 12,
+      firstYearDiscount: 0.5,
+
+      // Límites
+      maxActiveOffers: null, // Ilimitado
+      maxTeamMembers: 5,
+      maxFeaturedOffers: 3,
+      maxStorage: 200,
+
+      // Features JSON
+      features: {
+        offers: {
+          maxActive: null, // Ilimitado
+          editable: true,
+          featured: 3,
+          priority: 'maximum'
+        },
+        team: {
+          maxMembers: 5,
+          roles: ['owner', 'admin', 'manager', 'member']
+        },
+        analytics: {
+          level: 'pro',
+          reports: ['all'],
+          segmentation: true,
+          geographic: true,
+          comparative: true,
+          professional: true
+        },
+        ai: {
+          agents: [
+            { type: 'commercial', level: 'pro' },
+            { type: 'marketing', level: 'pro' }
+          ]
+        },
+        support: {
+          channels: ['email', 'internal_messaging', 'priority'],
+          priority: 'urgent',
+          dedicatedManager: true,
+          annualMeeting: true
+        },
+        marketing: {
+          newsletter: true,
+          monthlyPublications: 'unlimited',
+          blog: true,
+          campaigns: ['exclusive'],
+          editorial: true
+        },
+        integrations: {
+          api: true,
+          smartLinks: true,
+          tracking: true
+        },
+        dashboard: {
+          type: 'pro'
+        }
+      },
+
+      // Backward compatibility
+      limitesJSON: JSON.stringify({
+        maxMembers: 5,
+        maxStorage: 200,
+        maxProjects: 999999,
+        maxPosts: 999999
+      }),
+      caracteristicas: 'Tot el d\'Estratègic + ofertes il·limitades, 3 ofertes destacades, analítiques Pro, Dashboard Pro, integració API, 2 Agents IA Pro, campañes exclusives, suport prioritari',
+
+      // Visibilidad
+      color: '#EF4444',
+      icono: '⚡',
+      isActive: true,
+      isVisible: true,
+      activo: true,
+      visible: true,
+      destacado: true,
+      esSistema: false,
+      priority: 90,
+      orden: 4,
+
+      // IVA
+      priceIncludesVAT: true,
+      displayNote: '1.000€ primer any, després 2.000€/any (IVA inclòs)'
+    }
+  });
+
+  console.log('✅ Plan Enterprise creado:', planEnterprise.id);
+
+  console.log('\n✅ Tots els plans de La Pública creats correctament!\n');
 }
 
-main()
+// Ejecutar
+seedPlans()
   .catch((e) => {
-    console.error('❌ Error seeding:', e)
-    process.exit(1)
+    console.error('❌ Error en seed de plans:', e);
+    process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect()
-  })
+    await prisma.$disconnect();
+  });

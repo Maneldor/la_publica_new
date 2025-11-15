@@ -28,32 +28,31 @@ export default function ListarGruposPage() {
 
   const fetchGroups = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/v1/groups', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await fetch('/api/admin/groups');
 
       if (response.ok) {
         const data = await response.json();
         console.log('Datos recibidos:', data);
-        
+
         if (Array.isArray(data)) {
           setGroups(data);
         } else if (data.data && Array.isArray(data.data)) {
           setGroups(data.data);
         } else {
-          console.error('Los datos no son un array:', data);
+          console.log('Respuesta de la API:', data);
           setGroups([]);
+          if (data.message) {
+            setError(data.message);
+          }
         }
       } else {
-        setError('Error al cargar los grupos');
+        const errorData = await response.json();
+        setError(errorData.error || 'Error al cargar los grupos');
         setGroups([]);
       }
     } catch (err) {
       console.error('Error:', err);
-      setError('Error de conexión');
+      setError('Error de conexión con el servidor');
       setGroups([]);
     } finally {
       setLoading(false);
@@ -64,20 +63,18 @@ export default function ListarGruposPage() {
     if (!confirm('¿Estás seguro de eliminar este grupo?')) return;
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/v1/groups/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const response = await fetch(`/api/admin/groups/${id}`, {
+        method: 'DELETE'
       });
 
       if (response.ok) {
         setGroups(groups.filter(g => g.id !== id));
       } else {
-        alert('Error al eliminar el grupo');
+        const errorData = await response.json();
+        alert(errorData.error || 'Error al eliminar el grupo');
       }
-    } catch {
+    } catch (err) {
+      console.error('Error al eliminar:', err);
       alert('Error de conexión');
     }
   };

@@ -59,17 +59,12 @@ export default function ListarBlogPage() {
 
   const fetchPosts = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/v1/content', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await fetch('/api/admin/content');
 
       if (response.ok) {
         const data = await response.json();
         console.log('Datos recibidos:', data);
-        
+
         if (Array.isArray(data)) {
           setPosts(data);
           setFilteredPosts(data);
@@ -77,18 +72,22 @@ export default function ListarBlogPage() {
           setPosts(data.data);
           setFilteredPosts(data.data);
         } else {
-          console.error('Los datos no son un array:', data);
+          console.log('Respuesta de la API:', data);
           setPosts([]);
           setFilteredPosts([]);
+          if (data.message || data.info) {
+            setError(data.message || data.info);
+          }
         }
       } else {
-        setError('Error al cargar los posts');
+        const errorData = await response.json();
+        setError(errorData.error || 'Error al cargar los posts');
         setPosts([]);
         setFilteredPosts([]);
       }
-    } catch {
-      console.error('Error de conexión');
-      setError('Error de conexión');
+    } catch (err) {
+      console.error('Error de conexión:', err);
+      setError('Error de conexión con el servidor');
       setPosts([]);
       setFilteredPosts([]);
     } finally {
@@ -100,21 +99,19 @@ export default function ListarBlogPage() {
     if (!confirm('¿Estás seguro de eliminar este post?')) return;
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/v1/content/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const response = await fetch(`/api/admin/content/${id}`, {
+        method: 'DELETE'
       });
 
       if (response.ok) {
         setPosts(posts.filter(p => p.id !== id));
         setFilteredPosts(filteredPosts.filter(p => p.id !== id));
       } else {
-        alert('Error al eliminar el post');
+        const errorData = await response.json();
+        alert(errorData.error || 'Error al eliminar el post');
       }
-    } catch {
+    } catch (err) {
+      console.error('Error al eliminar:', err);
       alert('Error de conexión');
     }
   };

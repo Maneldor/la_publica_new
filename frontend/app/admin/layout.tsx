@@ -68,7 +68,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     'Contingut': false,
     'Serveis': false,
     'Comunicació': false,
-    'Sistema': false,
+    'Sistema': true,
   });
 
   useEffect(() => {

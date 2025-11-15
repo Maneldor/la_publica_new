@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { apiGet, apiPost, apiPut, apiDelete, apiClient } from '@/lib/api-client';
+// Ya no usamos el api-client del backend Express
 import type {
   CreateAnnouncementInput,
   UpdateAnnouncementInput,
@@ -82,14 +82,19 @@ const fetchAnuncios = async (filters?: AnnouncementFilters & { page?: number; li
     });
   }
 
-  console.log('📡 Fent GET a:', `/announcements?${params.toString()}`);
+  console.log('📡 Fent GET a:', `/api/admin/announcements?${params.toString()}`);
 
   try {
-    const result = await apiGet<any>(`/announcements?${params.toString()}`);
+    // Usar fetch directo para la API local de Next.js
+    const response = await fetch(`/api/admin/announcements?${params.toString()}`);
+
+    if (!response.ok) {
+      throw new Error(`Error ${response.status}: ${response.statusText}`);
+    }
+
+    const result = await response.json();
 
     console.log('📥 Resposta del backend:', result);
-    console.log('📊 Tipus de resposta:', typeof result);
-    console.log('🔑 Keys de la resposta:', Object.keys(result));
 
     // Si el backend retorna amb estructura success/data
     if (result.success && result.data) {
@@ -138,7 +143,19 @@ const fetchAnuncios = async (filters?: AnnouncementFilters & { page?: number; li
 
 const fetchAnuncio = async (id: string): Promise<Anuncio> => {
   try {
-    return await apiGet<Anuncio>(`/announcements/${id}`);
+    const response = await fetch(`/api/admin/announcements/${id}`);
+
+    if (!response.ok) {
+      throw new Error(`Error ${response.status}: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+
+    if (result.success && result.data) {
+      return result.data;
+    }
+
+    throw new Error('Error al obtener el anuncio');
   } catch (error) {
     console.error('Error fetching anuncio:', error);
     throw error;
@@ -149,10 +166,28 @@ const createAnuncio = async (data: CreateAnnouncementInput): Promise<Anuncio> =>
   console.log('📤 Datos enviados al backend:', JSON.stringify(data, null, 2));
 
   try {
-    console.log('🔄 Iniciando llamada a apiPost...');
-    const result = await apiPost<Anuncio>('/announcements', data);
+    console.log('🔄 Iniciando llamada a Next.js API...');
+    const response = await fetch('/api/admin/announcements', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
+    }
+
+    const result = await response.json();
     console.log('📥 Backend response:', result);
-    return result;
+
+    if (result.success && result.data) {
+      return result.data;
+    }
+
+    throw new Error('Error al crear el anuncio');
   } catch (error) {
     console.error('❌ Error creando anuncio:', error);
     console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack');
@@ -162,7 +197,26 @@ const createAnuncio = async (data: CreateAnnouncementInput): Promise<Anuncio> =>
 
 const updateAnuncio = async ({ id, ...data }: UpdateAnnouncementInput & { id: string }): Promise<Anuncio> => {
   try {
-    return await apiPut<Anuncio>(`/announcements/${id}`, data);
+    const response = await fetch(`/api/admin/announcements/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+
+    if (result.success && result.data) {
+      return result.data;
+    }
+
+    throw new Error('Error al actualizar el anuncio');
   } catch (error) {
     console.error('Error updating anuncio:', error);
     throw error;
@@ -171,7 +225,20 @@ const updateAnuncio = async ({ id, ...data }: UpdateAnnouncementInput & { id: st
 
 const deleteAnuncio = async (id: string): Promise<void> => {
   try {
-    await apiDelete(`/announcements/${id}`);
+    const response = await fetch(`/api/admin/announcements/${id}`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error('Error al eliminar el anuncio');
+    }
   } catch (error) {
     console.error('Error deleting anuncio:', error);
     throw error;
@@ -320,16 +387,27 @@ export function usePendingAnuncios(filters?: { limit?: number; offset?: number }
     queryKey: ['anuncios-pending', filters],
     queryFn: async () => {
       const params = new URLSearchParams();
+      params.append('status', 'pending');
       if (filters?.limit) params.append('limit', String(filters.limit));
       if (filters?.offset) params.append('offset', String(filters.offset));
 
-      const result = await apiGet(`/announcements/pending/list?${params.toString()}`);
+      const response = await fetch(`/api/admin/announcements?${params.toString()}`);
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error('Error al obtener anuncios pendientes');
+      }
 
       // Asegurar estructura consistente
       return {
-        data: result.data || result.announcements || [],
+        data: result.data || [],
         pagination: result.pagination || {
-          total: result.total || 0,
+          total: result.data?.length || 0,
           page: 1,
           limit: filters?.limit || 20,
           totalPages: 1
@@ -346,17 +424,26 @@ export function useApproveAnuncio() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const result = await apiClient(`/announcements/${id}/approve`, {
+      const response = await fetch(`/api/admin/announcements/${id}/approve`, {
         method: 'PATCH',
-        body: {}
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({})
       });
 
-      if (!result.ok) {
-        const error = await result.json();
-        throw new Error(error.error || 'Error al aprobar el anuncio');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al aprobar el anuncio');
       }
 
-      return result.json();
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error('Error al aprobar el anuncio');
+      }
+
+      return result.data;
     },
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['anuncios'] });
@@ -376,17 +463,26 @@ export function useRejectAnuncio() {
 
   return useMutation({
     mutationFn: async ({ id, reason }: { id: string; reason?: string }) => {
-      const result = await apiClient(`/announcements/${id}/reject`, {
+      const response = await fetch(`/api/admin/announcements/${id}/reject`, {
         method: 'PATCH',
-        body: { reason }
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ reason })
       });
 
-      if (!result.ok) {
-        const error = await result.json();
-        throw new Error(error.error || 'Error al rechazar el anuncio');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al rechazar el anuncio');
       }
 
-      return result.json();
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error('Error al rechazar el anuncio');
+      }
+
+      return result.data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['anuncios'] });

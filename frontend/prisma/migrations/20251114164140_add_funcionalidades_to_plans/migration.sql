@@ -1,0 +1,7 @@
+-- AlterTable
+ALTER TABLE "plan_configs" ADD COLUMN     "funcionalidades" TEXT,
+ALTER COLUMN "basePrice" DROP DEFAULT,
+ALTER COLUMN "features" DROP DEFAULT,
+ALTER COLUMN "name" DROP DEFAULT,
+ALTER COLUMN "slug" DROP DEFAULT,
+ALTER COLUMN "tier" DROP DEFAULT;

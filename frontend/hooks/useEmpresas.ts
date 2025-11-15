@@ -65,20 +65,48 @@ export const useEmpresas = (filters?: {
   return useQuery({
     queryKey: ['empresas', filters],
     queryFn: async () => {
-      const params = new URLSearchParams();
+      // Usar la API local de Next.js en lugar del backend Express
+      const response = await fetch('/api/admin/companies');
 
-      if (filters?.sector) params.append('sector', filters.sector);
-      if (filters?.size) params.append('tamaño', filters.size);
-      if (filters?.verified !== undefined) params.append('verificada', filters.verified.toString());
-      if (filters?.active !== undefined) params.append('activa', filters.active.toString());
-      if (filters?.search) params.append('busqueda', filters.search);
-      if (filters?.limit) params.append('limit', filters.limit.toString());
-      if (filters?.offset) params.append('offset', filters.offset.toString());
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
 
-      const queryString = params.toString();
-      const endpoint = queryString ? `/companies?${queryString}` : '/companies';
+      const result = await response.json();
 
-      return apiGet(endpoint, { requireAuth: true });
+      if (!result.success) {
+        throw new Error('Error al obtener empresas');
+      }
+
+      let companies = result.data || [];
+
+      // Aplicar filtros del lado del cliente (temporalmente)
+      if (filters?.sector && filters.sector !== 'all') {
+        companies = companies.filter((c: Empresa) => c.sector === filters.sector);
+      }
+
+      if (filters?.verified !== undefined) {
+        companies = companies.filter((c: Empresa) => c.isVerified === filters.verified);
+      }
+
+      if (filters?.active !== undefined) {
+        companies = companies.filter((c: Empresa) => c.isActive === filters.active);
+      }
+
+      if (filters?.search) {
+        const searchLower = filters.search.toLowerCase();
+        companies = companies.filter((c: Empresa) =>
+          c.name.toLowerCase().includes(searchLower) ||
+          c.email.toLowerCase().includes(searchLower) ||
+          c.description.toLowerCase().includes(searchLower)
+        );
+      }
+
+      if (filters?.limit) {
+        companies = companies.slice(0, filters.limit);
+      }
+
+      return companies;
     },
     staleTime: 5 * 60 * 1000, // 5 minutos
   });
