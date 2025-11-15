@@ -89,37 +89,37 @@ export default function UpgradeModal({
   };
 
   const handleConfirm = async () => {
-    try {
-      setLoading(true);
+    if (!preview) return;
 
-      const response = await fetch('/api/empresa/plan/upgrade', {
+    setLoading(true);
+
+    try {
+      // 1. Crear Stripe Checkout Session
+      const response = await fetch('/api/stripe/create-checkout-session', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          newPlanId: newPlan.id
+          planId: newPlan.id,
+          prorationAmount: preview?.immediateCharge || newPlan.basePrice
         })
       });
 
-      const data = await response.json();
-
-      if (data.success) {
-        toast.success('Pla actualitzat correctament!');
-        onConfirm();
-        onClose();
-
-        // Recargar página después de 1 segundo
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
-      } else {
-        toast.error(data.error || 'Error al actualitzar el pla');
+      if (!response.ok) {
+        throw new Error('Error al crear sesión de pago');
       }
+
+      const { url } = await response.json();
+
+      // 2. Redirigir a Stripe Checkout
+      if (url) {
+        window.location.href = url;
+      } else {
+        throw new Error('No se recibió URL de checkout');
+      }
+
     } catch (error) {
-      console.error('Error upgrading:', error);
-      toast.error('Error al actualitzar el pla');
-    } finally {
+      console.error('Error:', error);
+      toast.error('Error al procesar el pago. Intenta de nuevo.');
       setLoading(false);
     }
   };
