@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { signOut } from 'next-auth/react';
+import LimitsWidget from '@/app/components/LimitsWidget';
 
 interface EmpresaSidebarProps {
   plan: 'BÀSIC' | 'ESTÀNDARD' | 'PREMIUM' | 'EMPRESARIAL';
@@ -189,6 +190,9 @@ export default function EmpresaSidebar({
           </div>
         ))}
       </nav>
+
+      {/* Widget de límites */}
+      <LimitsWidget />
 
       {/* Footer con fondo oscuro */}
       <div className="p-4 border-t border-slate-700 bg-slate-900">
