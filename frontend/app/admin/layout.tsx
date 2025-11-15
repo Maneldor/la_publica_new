@@ -32,6 +32,7 @@ const menuSections = [
       { title: 'Fòrums', icon: '🏛️', path: '/admin/foros/listar' },
       { title: 'Anuncis', icon: '📢', path: '/admin/anuncios/listar' },
       { title: 'Ofertes VIP', icon: '🎁', path: '/admin/ofertas/listar' },
+      { title: 'Ofertes Pendents', icon: '⏳', path: '/admin/ofertas/pendents' },
     ]
   },
   {
