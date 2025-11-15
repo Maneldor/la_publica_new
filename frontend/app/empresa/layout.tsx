@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { UserRole } from '@/lib/permissions';
 import EmpresaLayout from '@/components/empresa/EmpresaLayout';
+import { NotificationProvider } from '@/app/contexts/NotificationContext';
+import { Toaster } from 'react-hot-toast';
 
 export default function EmpresaRootLayout({
   children,
@@ -54,14 +56,17 @@ export default function EmpresaRootLayout({
   };
 
   return (
-    <EmpresaLayout
-      empresaNom={empresaData.empresaNom}
-      empresaLogo={empresaData.empresaLogo}
-      plan={empresaData.plan}
-      notificacionsCount={empresaData.notificacionsCount}
-      missatgesCount={empresaData.missatgesCount}
-    >
-      {children}
-    </EmpresaLayout>
+    <NotificationProvider>
+      <EmpresaLayout
+        empresaNom={empresaData.empresaNom}
+        empresaLogo={empresaData.empresaLogo}
+        plan={empresaData.plan}
+        notificacionsCount={empresaData.notificacionsCount}
+        missatgesCount={empresaData.missatgesCount}
+      >
+        {children}
+      </EmpresaLayout>
+      <Toaster position="top-right" />
+    </NotificationProvider>
   );
 }

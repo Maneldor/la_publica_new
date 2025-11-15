@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { Bell, MessageSquare, ChevronDown } from 'lucide-react';
+import NotificationBadge from '@/app/components/NotificationBadge';
+import NotificationCenter from '@/app/components/NotificationCenter';
 
 interface EmpresaHeaderProps {
   empresaNom: string;
@@ -20,6 +22,7 @@ export default function EmpresaHeader({
 }: EmpresaHeaderProps) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showMessages, setShowMessages] = useState(false);
+  const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
 
   const getPlanBadge = () => {
     const styles = {
@@ -78,65 +81,15 @@ export default function EmpresaHeader({
         {/* Derecha - Plan Badge, Notificaciones, Mensajes y Avatar */}
         <div className="flex items-center justify-center gap-4 px-6">
           {getPlanBadge()}
-          {/* Notificaciones */}
-          <div className="relative">
-            <button
-              onClick={() => setShowNotifications(!showNotifications)}
-              className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <Bell className="w-5 h-5" />
-              {notificacionsCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                  {notificacionsCount > 9 ? '9+' : notificacionsCount}
-                </span>
-              )}
-            </button>
+          {/* Notificaciones dinámicas */}
+          <NotificationBadge
+            onClick={() => setNotificationCenterOpen(true)}
+          />
 
-            {showNotifications && (
-              <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-                <div className="px-4 py-2 border-b border-gray-100">
-                  <h3 className="font-semibold text-gray-900">Notificacions</h3>
-                </div>
-                <div className="max-h-64 overflow-y-auto">
-                  <div className="px-4 py-3 hover:bg-gray-50 cursor-pointer">
-                    <div className="flex items-start gap-3">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">Nou empleat públic interessat</p>
-                        <p className="text-xs text-gray-500 mt-1">Maria García ha vist el vostre perfil</p>
-                        <p className="text-xs text-gray-400 mt-1">Fa 5 minuts</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="px-4 py-3 hover:bg-gray-50 cursor-pointer">
-                    <div className="flex items-start gap-3">
-                      <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">Agent IA ha generat un informe</p>
-                        <p className="text-xs text-gray-500 mt-1">Anàlisi de tendències del sector</p>
-                        <p className="text-xs text-gray-400 mt-1">Fa 2 hores</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="px-4 py-3 hover:bg-gray-50 cursor-pointer">
-                    <div className="flex items-start gap-3">
-                      <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2"></div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">Recordatori de reunió</p>
-                        <p className="text-xs text-gray-500 mt-1">Demà a les 10:00 amb l'equip de desenvolupament</p>
-                        <p className="text-xs text-gray-400 mt-1">Fa 4 hores</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="px-4 py-2 border-t border-gray-100">
-                  <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                    Veure totes les notificacions
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+          <NotificationCenter
+            isOpen={notificationCenterOpen}
+            onClose={() => setNotificationCenterOpen(false)}
+          />
 
           {/* Mensajes */}
           <div className="relative">
