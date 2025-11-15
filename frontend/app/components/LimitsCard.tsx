@@ -2,20 +2,19 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { TrendingUp, AlertCircle } from 'lucide-react';
+import { Package, Star, Users, User, ChevronRight, AlertCircle } from 'lucide-react';
 
 interface Limit {
   name: string;
   used: number;
   max: number;
   label: string;
+  icon: any;
 }
 
 export default function LimitsCard() {
   const [limits, setLimits] = useState<Limit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [hasExceeded, setHasExceeded] = useState(false);
-  const [hasWarning, setHasWarning] = useState(false);
 
   useEffect(() => {
     fetchLimits();
@@ -27,7 +26,6 @@ export default function LimitsCard() {
       if (response.ok) {
         const data = await response.json();
 
-        // Validar que data tiene la estructura esperada
         if (!data || typeof data !== 'object') {
           console.error('Invalid data format from API');
           return;
@@ -38,41 +36,33 @@ export default function LimitsCard() {
             name: 'activeOffers',
             used: data.data?.limits?.activeOffers?.current || 0,
             max: data.data?.limits?.activeOffers?.limit || 0,
-            label: 'Ofertes Actives'
+            label: 'Ofertes Actives',
+            icon: Package
           },
           {
             name: 'featuredOffers',
             used: data.data?.limits?.featuredOffers?.current || 0,
             max: data.data?.limits?.featuredOffers?.limit || 0,
-            label: 'Ofertes Destacades'
+            label: 'Ofertes Destacades',
+            icon: Star
           },
           {
             name: 'teamMembers',
             used: data.data?.limits?.teamMembers?.current || 0,
             max: data.data?.limits?.teamMembers?.limit || 0,
-            label: 'Membres Equip'
+            label: 'Membres Equip',
+            icon: Users
           },
           {
             name: 'storage',
             used: data.data?.limits?.storage?.current || 0,
             max: data.data?.limits?.storage?.limit || 0,
-            label: 'Emmagatzematge'
+            label: 'Emmagatzematge',
+            icon: User
           }
         ];
 
         setLimits(limitsArray);
-
-        // Check status
-        const exceeded = limitsArray.some(limit => limit.used > limit.max);
-        const warning = limitsArray.some(limit => {
-          const percentage = (limit.used / limit.max) * 100;
-          return percentage >= 80 && limit.used <= limit.max;
-        });
-
-        setHasExceeded(exceeded);
-        setHasWarning(warning);
-      } else {
-        console.error('API response not OK:', response.status);
       }
     } catch (error) {
       console.error('Error fetching limits:', error);
@@ -85,7 +75,7 @@ export default function LimitsCard() {
     const percentage = (used / max) * 100;
     if (used > max) return 'bg-red-500';
     if (percentage >= 80) return 'bg-yellow-500';
-    return 'bg-green-500';
+    return 'bg-blue-500';
   };
 
   const getProgressPercentage = (used: number, max: number) => {
@@ -93,101 +83,103 @@ export default function LimitsCard() {
     return Math.min(percentage, 100);
   };
 
-  const getStatusIcon = () => {
-    if (hasExceeded) {
-      return <AlertCircle className="w-5 h-5 text-red-500" />;
-    }
-    if (hasWarning) {
-      return <AlertCircle className="w-5 h-5 text-yellow-500" />;
-    }
-    return <TrendingUp className="w-5 h-5 text-green-500" />;
-  };
-
-  const getStatusText = () => {
-    if (hasExceeded) return 'Límit superat';
-    if (hasWarning) return 'A prop del límit';
-    return 'Tot correcte';
-  };
-
-  const getStatusColor = () => {
-    if (hasExceeded) return 'text-red-600';
-    if (hasWarning) return 'text-yellow-600';
-    return 'text-green-600';
+  const getTextColor = (used: number, max: number) => {
+    const percentage = (used / max) * 100;
+    if (used > max) return 'text-red-600';
+    if (percentage >= 80) return 'text-yellow-600';
+    return 'text-gray-600';
   };
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg border shadow p-6">
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
         <div className="animate-pulse">
-          <div className="h-5 bg-gray-200 rounded w-1/2 mb-4"></div>
-          <div className="space-y-3">
-            <div className="h-3 bg-gray-200 rounded"></div>
-            <div className="h-3 bg-gray-200 rounded"></div>
-            <div className="h-3 bg-gray-200 rounded"></div>
+          <div className="h-5 bg-gray-200 rounded w-48 mb-4"></div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="h-20 bg-gray-200 rounded"></div>
+            ))}
           </div>
         </div>
       </div>
     );
   }
 
+  // Calculate overall status
+  const hasExceeded = limits.some(limit => limit.used > limit.max);
+  const hasWarning = limits.some(limit => {
+    const percentage = (limit.used / limit.max) * 100;
+    return percentage >= 80 && limit.used <= limit.max;
+  });
+
   return (
-    <div className="bg-white rounded-lg border shadow p-6 hover:shadow-lg transition-shadow">
+    <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          {getStatusIcon()}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900">Ús de Recursos</h3>
-            <p className={`text-xs font-medium ${getStatusColor()}`}>
-              {getStatusText()}
-            </p>
-          </div>
+          <h3 className="text-lg font-semibold text-gray-900">Ús de Recursos del Pla</h3>
+          {hasExceeded && (
+            <div className="flex items-center gap-1.5 text-xs font-medium text-red-600 bg-red-50 px-3 py-1 rounded-full">
+              <AlertCircle className="w-3.5 h-3.5" />
+              Límit superat
+            </div>
+          )}
+          {!hasExceeded && hasWarning && (
+            <div className="flex items-center gap-1.5 text-xs font-medium text-yellow-600 bg-yellow-50 px-3 py-1 rounded-full">
+              <AlertCircle className="w-3.5 h-3.5" />
+              Prop del límit
+            </div>
+          )}
         </div>
+
+        <Link
+          href="/empresa/pla"
+          className="flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors group"
+        >
+          Veure detalls
+          <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+        </Link>
       </div>
 
-      {/* Limits Progress Bars */}
-      <div className="space-y-3 mb-4">
+      {/* Limits Grid - Horizontal in Desktop, Vertical in Mobile */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {limits.map((limit) => {
           const percentage = getProgressPercentage(limit.used, limit.max);
-          const colorClass = getProgressColor(limit.used, limit.max);
-          const isExceeded = limit.used > limit.max;
+          const progressColor = getProgressColor(limit.used, limit.max);
+          const textColor = getTextColor(limit.used, limit.max);
+          const Icon = limit.icon;
 
           return (
-            <div key={limit.name}>
-              <div className="flex items-center justify-between text-xs mb-1">
-                <span className={`font-medium ${isExceeded ? 'text-red-600' : 'text-gray-700'}`}>
-                  {limit.label}
-                </span>
-                <span className={`${isExceeded ? 'text-red-600 font-semibold' : 'text-gray-500'}`}>
-                  {limit.used} / {limit.max}
-                </span>
+            <div key={limit.name} className="flex flex-col gap-3">
+              {/* Icon and Label */}
+              <div className="flex items-center gap-3">
+                <div className="flex-shrink-0 w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center">
+                  <Icon className="w-5 h-5 text-gray-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{limit.label}</p>
+                  <p className={`text-xs font-semibold ${textColor}`}>
+                    {limit.used} / {limit.max}
+                  </p>
+                </div>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
+
+              {/* Progress Bar */}
+              <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
                 <div
-                  className={`${colorClass} h-2 rounded-full transition-all duration-300`}
+                  className={`${progressColor} h-full rounded-full transition-all duration-500 ease-out`}
                   style={{ width: `${percentage}%` }}
                 ></div>
               </div>
+
+              {/* Percentage Text */}
+              <p className="text-xs text-gray-500 text-center">
+                {Math.round(percentage)}% utilitzat
+              </p>
             </div>
           );
         })}
       </div>
-
-      {/* Footer Link */}
-      <Link
-        href="/empresa/pla"
-        className="block text-center text-sm text-blue-600 hover:text-blue-700 font-medium hover:underline"
-      >
-        Veure detalls del pla →
-      </Link>
-
-      {/* Alert if exceeded */}
-      {hasExceeded && (
-        <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700 flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 flex-shrink-0" />
-          Has superat alguns límits del teu pla
-        </div>
-      )}
     </div>
   );
 }
