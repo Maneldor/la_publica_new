@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import PlanCard from '@/app/components/PlanCard';
+import UpgradeModal from '@/app/components/UpgradeModal';
+import toast from 'react-hot-toast';
 
 interface Plan {
   id: string;
@@ -40,6 +42,10 @@ export default function ComparadorPlansPage() {
   const [currentPlan, setCurrentPlan] = useState<CurrentPlanInfo | null>(null);
   const [availablePlans, setAvailablePlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Estado para el modal de upgrade
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
 
   useEffect(() => {
     if (status === 'authenticated') {
@@ -87,9 +93,26 @@ export default function ComparadorPlansPage() {
   };
 
   const handleUpgrade = (planId: string) => {
-    // TODO: Abrir modal de confirmación
-    console.log('Upgrade a plan:', planId);
-    alert('Modal de confirmación - Próximamente');
+    const planToUpgrade = availablePlans.find(p => p.id === planId);
+    if (planToUpgrade) {
+      setSelectedPlan(planToUpgrade);
+      setShowUpgradeModal(true);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowUpgradeModal(false);
+    setSelectedPlan(null);
+  };
+
+  const handleConfirmUpgrade = async () => {
+    // Recargar datos tras upgrade exitoso
+    await cargarDatos();
+    toast.success('Pla actualitzat! Redirigint...');
+
+    setTimeout(() => {
+      router.push('/empresa/pla');
+    }, 2000);
   };
 
   if (status === 'loading' || loading) {
@@ -215,6 +238,17 @@ export default function ComparadorPlansPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal de upgrade */}
+      {selectedPlan && (
+        <UpgradeModal
+          isOpen={showUpgradeModal}
+          onClose={handleCloseModal}
+          currentPlanName={currentPlan.plan.name}
+          newPlan={selectedPlan}
+          onConfirm={handleConfirmUpgrade}
+        />
+      )}
 
     </div>
   );

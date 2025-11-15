@@ -173,20 +173,43 @@ export async function POST(request: NextRequest) {
       };
     }
 
+    // Calcular próxima renovación
+    const nextRenewalDate = new Date();
+    nextRenewalDate.setDate(nextRenewalDate.getDate() + 365);
+
+    // Estructurar response para coincidir con el modal
+    const proratedAmount = proration?.creditAmount || 0;
+    const nextRenewalAmount = newPlanInfo.basePrice; // Precio base sin descuento
+
     return NextResponse.json({
       success: true,
       data: {
-        currentPlan: currentPlanInfo,
-        newPlan: newPlanInfo,
-        changeType: isUpgrade ? 'upgrade' : (isDowngrade ? 'downgrade' : 'same'),
-        isUpgrade,
-        isDowngrade,
-        isInTrial,
+        currentPlan: {
+          name: currentPlanInfo.name || 'Plan actual',
+          price: proration?.creditAmount || 0
+        },
+        newPlan: {
+          name: newPlanInfo.name,
+          price: newPlanInfo.firstYearPrice
+        },
+        proratedAmount: Number(proratedAmount.toFixed(2)),
         daysRemaining,
-        proration,
         immediateCharge: Number(immediateCharge.toFixed(2)),
-        allowDowngrade: false, // Por ahora no permitimos downgrades
-        canProceed: isUpgrade || (!isDowngrade && company.currentPlanId !== newPlanId)
+        nextRenewalDate: nextRenewalDate.toISOString(),
+        nextRenewalAmount: Number(nextRenewalAmount.toFixed(2)),
+
+        // Información adicional para debug
+        debug: {
+          currentPlan: currentPlanInfo,
+          newPlan: newPlanInfo,
+          changeType: isUpgrade ? 'upgrade' : (isDowngrade ? 'downgrade' : 'same'),
+          isUpgrade,
+          isDowngrade,
+          isInTrial,
+          proration,
+          allowDowngrade: false,
+          canProceed: isUpgrade || (!isDowngrade && company.currentPlanId !== newPlanId)
+        }
       }
     });
 
