@@ -2,58 +2,136 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { RefreshCw } from 'lucide-react';
+
+interface DashboardStats {
+  contenidos: number;
+  usuarios: number;
+  publicaciones: number;
+  traducciones: number;
+}
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<DashboardStats>({
     contenidos: 0,
     usuarios: 0,
     publicaciones: 0,
     traducciones: 0
   });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
+  // Cargar al montar y auto-refresh cada 30s
   useEffect(() => {
     cargarEstadisticas();
+
+    const interval = setInterval(() => {
+      cargarEstadisticas();
+    }, 30000); // 30 segundos
+
+    return () => clearInterval(interval);
   }, []);
 
   const cargarEstadisticas = async () => {
     try {
-      setStats({
-        contenidos: 12,
-        usuarios: 45,
-        publicaciones: 36,
-        traducciones: 24
-      });
-    } catch (error) {
-      console.error('Error cargando estadísticas:', error);
+      setLoading(true);
+      setError(null);
+
+      const response = await fetch('/api/admin/dashboard');
+
+      if (!response.ok) {
+        throw new Error('Error al carregar mètriques');
+      }
+
+      const data = await response.json();
+
+      if (data.success) {
+        setStats(data.stats);
+        setLastUpdated(new Date());
+        console.log('✅ Dashboard metrics loaded:', data.meta?.queryTime || 'N/A');
+      } else {
+        throw new Error(data.error || 'Error desconegut');
+      }
+
+    } catch (err) {
+      console.error('Error loading dashboard metrics:', err);
+      setError(err instanceof Error ? err.message : 'Error al carregar dades');
+      // Mantener datos anteriores si los hay
+    } finally {
+      setLoading(false);
     }
   };
 
   const cards = [
-    { title: 'Contenidos', value: stats.contenidos, icon: '📝', color: 'bg-blue-500' },
-    { title: 'Usuarios', value: stats.usuarios, icon: '👥', color: 'bg-green-500' },
-    { title: 'Publicaciones', value: stats.publicaciones, icon: '🌍', color: 'bg-purple-500' },
-    { title: 'Traducciones', value: stats.traducciones, icon: '🔄', color: 'bg-orange-500' }
+    { title: 'Empreses', value: stats?.companies?.total || 0, icon: '🏢', color: 'bg-blue-500', description: 'Total empreses registrades' },
+    { title: 'Usuaris', value: stats?.users?.total || 0, icon: '👥', color: 'bg-green-500', description: 'Usuaris actius al sistema' },
+    { title: 'Ofertes', value: stats?.offers?.total || 0, icon: '🎯', color: 'bg-purple-500', description: 'Ofertes publicades' },
+    { title: 'Cupons', value: stats?.coupons?.total || 0, icon: '🎫', color: 'bg-orange-500', description: 'Cupons generats' }
   ];
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Dashboard Admin</h1>
+        <div className="flex items-center gap-4">
+          {lastUpdated && (
+            <div className="text-xs text-gray-500 flex items-center gap-2">
+              <RefreshCw className="w-3 h-3" />
+              Última actualització: {lastUpdated.toLocaleTimeString('ca-ES')}
+            </div>
+          )}
+          <button
+            onClick={cargarEstadisticas}
+            disabled={loading}
+            className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            {loading ? 'Carregant...' : 'Actualitzar'}
+          </button>
+        </div>
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {cards.map((card, idx) => (
-          <div key={idx} className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm">{card.title}</p>
-                <p className="text-3xl font-bold mt-2">{card.value}</p>
-              </div>
-              <div className={`${card.color} text-white text-3xl w-16 h-16 rounded-lg flex items-center justify-center`}>
-                {card.icon}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center justify-between">
+            <p className="text-red-800">❌ {error}</p>
+            <button
+              onClick={cargarEstadisticas}
+              className="text-red-600 hover:text-red-800 font-medium"
+            >
+              Tornar a intentar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {loading && !lastUpdated && (
+        <div className="flex items-center justify-center h-64 mb-8">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+        </div>
+      )}
+
+      {!loading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {cards.map((card, idx) => (
+            <div key={idx} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-gray-600 text-sm font-medium">{card.title}</p>
+                  <p className="text-3xl font-bold mt-2 text-gray-900">
+                    {card.value.toLocaleString()}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">{card.description}</p>
+                </div>
+                <div className={`${card.color} text-white text-2xl w-14 h-14 rounded-lg flex items-center justify-center flex-shrink-0`}>
+                  {card.icon}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="text-xl font-bold mb-4">Accesos Rápidos</h2>

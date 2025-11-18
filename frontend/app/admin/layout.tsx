@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { CalendarProvider } from '@/lib/context/CalendarContext';
+import Breadcrumbs from '@/components/Breadcrumbs';
 
 const menuSections = [
   {
@@ -53,6 +54,7 @@ const menuSections = [
     title: 'Sistema',
     items: [
       { title: 'Usuaris', icon: '👤', path: '/admin/usuarios/listar' },
+      { title: 'Logs', icon: '📋', path: '/admin/logs' },
       { title: 'Plataforma', icon: '⚙️', path: '/admin/plataforma/configuracion' },
     ]
   }
@@ -187,10 +189,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </aside>
 
         <main className={`flex-1 transition-all duration-300 ${menuOpen ? 'ml-64' : 'ml-0'}`}>
-          <div className="p-6">{children}</div>
+          <div className="p-6">
+            <Breadcrumbs />
+            {children}
+          </div>
         </main>
       </div>
     </div>
-    </CalendarProvider>
+      </CalendarProvider>
   );
 }

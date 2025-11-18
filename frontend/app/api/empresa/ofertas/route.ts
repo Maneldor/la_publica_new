@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prismaClient } from '@/lib/prisma';
+import { Decimal } from '@prisma/client/runtime/library';
 
 export async function GET(request: NextRequest) {
   try {
@@ -188,6 +189,10 @@ export async function POST(request: NextRequest) {
 
     // Get body
     const body = await request.json();
+
+    // Debug logging
+    console.log('📥 POST /api/empresa/ofertas - Body received:', JSON.stringify(body, null, 2));
+
     const {
       title,
       categoryId,
@@ -228,16 +233,28 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate category exists
+    console.log(`🔍 Looking for category with ID: "${categoryId}"`);
+
     const category = await prismaClient.offerCategory.findUnique({
       where: { id: categoryId }
     });
 
     if (!category) {
+      // List all available categories for debugging
+      const allCategories = await prismaClient.offerCategory.findMany({
+        select: { id: true, name: true, slug: true }
+      });
+      console.log('❌ Category not found. Available categories:', allCategories);
+
       return NextResponse.json({
         error: 'Categoria no vàlida',
-        message: 'La categoria seleccionada no existeix'
+        message: 'La categoria seleccionada no existeix',
+        providedCategoryId: categoryId,
+        availableCategories: allCategories
       }, { status: 400 });
     }
+
+    console.log('✅ Category found:', category);
 
     // Generate slug
     const baseSlug = title
@@ -266,8 +283,8 @@ export async function POST(request: NextRequest) {
         slug,
         description,
         shortDescription,
-        price: price ? parseFloat(price) : null,
-        originalPrice: originalPrice ? parseFloat(originalPrice) : null,
+        price: price ? new Decimal(price) : null,
+        originalPrice: originalPrice ? new Decimal(originalPrice) : null,
         currency,
         priceType: priceType || 'FIXED',
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { prismaClient } from '@/lib/prisma';
 import { stripe, formatAmountForStripe } from '@/lib/stripe';
 
 export async function POST(request: NextRequest) {
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get company
-    const company = await prisma.company.findUnique({
+    const company = await prismaClient.company.findUnique({
       where: { email: session.user.email },
       include: {
         subscriptions: {
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get new plan
-    const newPlan = await prisma.planConfig.findUnique({
+    const newPlan = await prismaClient.planConfig.findUnique({
       where: { id: planId }
     });
 

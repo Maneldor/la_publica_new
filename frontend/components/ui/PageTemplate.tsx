@@ -86,7 +86,7 @@ export function PageTemplate({
         marginBottom: '32px',
         padding: '0 24px'
       }}>
-        {statsData.map((stat, index) => (
+        {(statsData || []).map((stat, index) => (
           <UniversalCard
             key={index}
             variant="compact"

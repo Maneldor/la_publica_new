@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import toast, { Toaster } from 'react-hot-toast';
+import PlanCard from '@/components/plans/PlanCard';
 
 interface PlanConfig {
   id: string;
@@ -54,6 +55,8 @@ export default function AdminPlansPage() {
   const [planStats, setPlanStats] = useState<Record<string, PlanStats>>({});
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
 
   useEffect(() => {
     if (status === 'authenticated') {
@@ -64,7 +67,7 @@ export default function AdminPlansPage() {
   const cargarPlans = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/plans');
+      const response = await fetch('/api/admin/plans');
       const data = await response.json();
 
       if (data.success) {
@@ -84,9 +87,48 @@ export default function AdminPlansPage() {
     setShowEditModal(true);
   };
 
+  // Función de validación
+  const validatePlan = (plan: PlanConfig) => {
+    const errors: string[] = [];
+
+    if (plan.basePrice < 0) {
+      errors.push('El preu base no pot ser negatiu');
+    }
+
+    if (plan.firstYearDiscount < 0 || plan.firstYearDiscount > 1) {
+      errors.push('El descompte del primer any ha d\'estar entre 0 i 1 (0% - 100%)');
+    }
+
+    if (plan.maxActiveOffers < 0) {
+      errors.push('El màxim d\'ofertes actives no pot ser negatiu');
+    }
+
+    if (plan.maxTeamMembers < 0) {
+      errors.push('El màxim de membres d\'equip no pot ser negatiu');
+    }
+
+    if (plan.maxFeaturedOffers < 0) {
+      errors.push('El màxim d\'ofertes destacades no pot ser negatiu');
+    }
+
+    if (plan.maxStorage < 0) {
+      errors.push('El màxim d\'emmagatzematge no pot ser negatiu');
+    }
+
+    return errors;
+  };
+
   const handleSave = async () => {
     if (!editingPlan) return;
 
+    // Validar abans de guardar
+    const validationErrors = validatePlan(editingPlan);
+    if (validationErrors.length > 0) {
+      toast.error(validationErrors[0]);
+      return;
+    }
+
+    setIsSaving(true);
     try {
       const response = await fetch(`/api/admin/plans/${editingPlan.id}`, {
         method: 'PUT',
@@ -98,9 +140,16 @@ export default function AdminPlansPage() {
         await cargarPlans();
         setShowEditModal(false);
         setEditingPlan(null);
+        toast.success('Plan actualitzat correctament!');
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Error al guardar el pla');
       }
     } catch (error) {
       console.error('Error guardando plan:', error);
+      toast.error('Error de connexió');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -355,126 +404,15 @@ export default function AdminPlansPage() {
                 const order = ['STANDARD', 'STRATEGIC', 'ENTERPRISE'];
                 return order.indexOf(a.tier) - order.indexOf(b.tier);
               })
-              .map((plan) => {
-                const firstYearPrice = plan.basePrice * (1 - plan.firstYearDiscount);
-
-                // Funcionalidades desde BD
-                const funcionalitats = plan.funcionalidades
-                  ? plan.funcionalidades.split('\n').filter(f => f.trim().length > 0)
-                  : [];
-
-                return (
-                  <div
-                    key={plan.id}
-                    className={`bg-white rounded-lg shadow-sm border-2 hover:shadow-md transition-shadow flex flex-col h-full ${
-                      plan.destacado ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200'
-                    }`}
-                  >
-                    {/* Header */}
-                    <div className="p-5 border-b border-gray-100">
-                      <div className="flex items-start justify-between mb-2">
-                        <h3 className="text-xl font-bold text-gray-900">
-                          {plan.name}
-                        </h3>
-                        {plan.destacado && (
-                          <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">
-                            RECOMANAT
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Precio */}
-                    <div className="px-5 py-4 bg-gray-50">
-                      <div className="flex items-baseline gap-2 mb-1">
-                        <span className="text-3xl font-bold text-gray-900">
-                          {firstYearPrice.toFixed(0)}€
-                        </span>
-                        <span className="text-gray-500">/any</span>
-                      </div>
-                      {plan.firstYearDiscount > 0 && (
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-gray-500 line-through">
-                            {plan.basePrice}€
-                          </span>
-                          <span className="text-xs font-medium text-green-600">
-                            50% 1r any (per a noves empreses)
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Límites */}
-                    <div className="px-5 py-4 space-y-2 border-b border-gray-100">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Ofertes actives</span>
-                        <span className="font-semibold text-gray-900">
-                          {plan.maxActiveOffers === -1 ? 'Il·limitades' : plan.maxActiveOffers}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Membres equip</span>
-                        <span className="font-semibold text-gray-900">
-                          {plan.maxTeamMembers === -1 ? 'Il·limitats' : plan.maxTeamMembers}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Ofertes destacades</span>
-                        <span className="font-semibold text-gray-900">
-                          {plan.maxFeaturedOffers === -1 ? 'Il·limitades' : plan.maxFeaturedOffers}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Emmagatzematge</span>
-                        <span className="font-semibold text-gray-900">
-                          {plan.maxStorage === -1 ? 'Il·limitat' : `${plan.maxStorage} GB`}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Funcionalidades - flex-grow para ocupar espacio disponible */}
-                    <div className="px-5 py-4 flex-grow">
-                      <h4 className="text-sm font-semibold text-gray-900 mb-2">Funcionalitats</h4>
-                      <ul className="text-sm text-gray-600 space-y-1">
-                        {funcionalitats.map((func, idx) => (
-                          <li key={idx} className={func.startsWith('Tot') ? 'font-semibold text-gray-900 mt-2' : ''}>
-                            {func.startsWith('Tot') ? func : `• ${func}`}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    {/* Toggle - mt-auto para pegar al fondo */}
-                    <div className="px-5 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between mt-auto">
-                      <span className="text-sm font-medium text-gray-700">
-                        {plan.isActive ? 'Actiu' : 'Inactiu'}
-                      </span>
-                      <button
-                        onClick={() => toggleActive(plan)}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                          plan.isActive ? 'bg-green-500' : 'bg-gray-300'
-                        }`}
-                      >
-                        <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                            plan.isActive ? 'translate-x-6' : 'translate-x-1'
-                          }`}
-                        />
-                      </button>
-                    </div>
-
-                    {/* Botones */}
-                    <div className="px-5 py-3 bg-white border-t border-gray-100">
-                      <button
-                        onClick={() => handleEdit(plan)}
-                        className="w-full px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 transition-colors"
-                      >
-                        Editar
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
+              .map((plan) => (
+                <PlanCard
+                  key={plan.id}
+                  plan={plan}
+                  isAdminView={true}
+                  onEdit={handleEdit}
+                  onToggleActive={toggleActive}
+                />
+              ))}
           </div>
         </div>
       ) : (
@@ -785,15 +723,20 @@ export default function AdminPlansPage() {
                   setShowEditModal(false);
                   setEditingPlan(null);
                 }}
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
+                disabled={isSaving}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel·lar
               </button>
               <button
                 onClick={handleSave}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                disabled={isSaving}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
-                Guardar Canvis
+                {isSaving && (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                )}
+                {isSaving ? 'Guardant...' : 'Guardar Canvis'}
               </button>
             </div>
           </div>
@@ -815,6 +758,8 @@ export default function AdminPlansPage() {
 
             <form onSubmit={async (e) => {
               e.preventDefault();
+
+              if (isCreating) return; // Prevenir múltiples submits
 
               // Crear objeto del nuevo plan
               const newPlan = {
@@ -850,6 +795,14 @@ export default function AdminPlansPage() {
                 isPioneer: false
               };
 
+              // Validar antes de crear
+              const validationErrors = validatePlan(newPlan as PlanConfig);
+              if (validationErrors.length > 0) {
+                toast.error(validationErrors[0]);
+                return;
+              }
+
+              setIsCreating(true);
               try {
                 const response = await fetch('/api/plans', {
                   method: 'POST',
@@ -861,13 +814,16 @@ export default function AdminPlansPage() {
                   await cargarPlans();
                   setShowCreateModal(false);
                   e.currentTarget.reset();
+                  toast.success('Plan creat correctament!');
                 } else {
                   const error = await response.json();
-                  alert('Error creant pla: ' + (error.error || 'Error desconegut'));
+                  toast.error('Error creant pla: ' + (error.error || 'Error desconegut'));
                 }
               } catch (error) {
                 console.error('Error creant pla:', error);
-                alert('Error de xarxa');
+                toast.error('Error de connexió');
+              } finally {
+                setIsCreating(false);
               }
             }}>
               <div className="space-y-6 max-h-[70vh] overflow-y-auto px-2">
@@ -1250,15 +1206,20 @@ Estadístiques bàsiques
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium"
+                  disabled={isCreating}
+                  className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Cancel·lar
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
+                  disabled={isCreating}
+                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
-                  Crear Plan
+                  {isCreating && (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  )}
+                  {isCreating ? 'Creant...' : 'Crear Plan'}
                 </button>
               </div>
             </form>

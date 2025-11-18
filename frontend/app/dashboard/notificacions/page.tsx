@@ -2,344 +2,456 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { generateMockNotifications, getNotificationIcon, getNotificationColor, getPriorityColor, getNotificationStats } from '@/lib/notifications/mockData';
-import { Notification } from '@/lib/notifications/types';
+import { PageTemplate } from '@/components/ui/PageTemplate';
+import { UniversalCard } from '@/components/ui/UniversalCard';
+import { Bell, Search, Filter, Check, X, RefreshCw, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
+
+interface Notification {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+  actionUrl?: string;
+  senderId?: string;
+}
+
+interface NotificationFilters {
+  type: string;
+  status: string;
+  search: string;
+}
 
 export default function NotificacionsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [filteredNotifications, setFilteredNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedFilter, setSelectedFilter] = useState<string>('all');
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [refreshing, setRefreshing] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [filters, setFilters] = useState<NotificationFilters>({
+    type: 'all',
+    status: 'all',
+    search: ''
+  });
 
-  useEffect(() => {
-    // Cargar notificaciones
-    const mockNotifications = generateMockNotifications();
-    setNotifications(mockNotifications);
-    setFilteredNotifications(mockNotifications);
-    setLoading(false);
-  }, []);
+  const notificationsPerPage = 20;
 
-  useEffect(() => {
-    let filtered = notifications;
+  // Cargar notificaciones
+  const loadNotifications = async (showRefreshing = false) => {
+    if (showRefreshing) setRefreshing(true);
 
-    // Filtrar por tipo
-    if (selectedFilter !== 'all') {
-      filtered = filtered.filter(notif => notif.tipus === selectedFilter);
+    try {
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: notificationsPerPage.toString(),
+        type: filters.type,
+        status: filters.status,
+        search: filters.search
+      });
+
+      const response = await fetch(`/api/notifications?${params}`);
+      const data = await response.json();
+
+      if (response.ok) {
+        setNotifications(data.notifications || []);
+        setTotalPages(data.totalPages || 1);
+      } else {
+        console.error('Error loading notifications:', data.error);
+        // Fallback a datos mock en caso de error
+        setNotifications([]);
+      }
+    } catch (error) {
+      console.error('Error loading notifications:', error);
+      // Fallback a datos mock en caso de error
+      setNotifications([]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
+  };
 
-    // Filtrar por estado
-    if (selectedStatus === 'unread') {
-      filtered = filtered.filter(notif => !notif.llegit);
-    } else if (selectedStatus === 'read') {
-      filtered = filtered.filter(notif => notif.llegit);
+  // Marcar como leída/no leída
+  const toggleReadStatus = async (notificationId: string, isRead: boolean) => {
+    try {
+      const response = await fetch(`/api/notifications/${notificationId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ isRead: !isRead }),
+      });
+
+      if (response.ok) {
+        setNotifications(prev =>
+          prev.map(notif =>
+            notif.id === notificationId
+              ? { ...notif, isRead: !isRead }
+              : notif
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Error updating notification:', error);
     }
+  };
 
-    // Ordenar por fecha (más recientes primero)
-    filtered = filtered.sort((a, b) =>
-      new Date(b.data_creacio).getTime() - new Date(a.data_creacio).getTime()
-    );
+  // Marcar todas como leídas
+  const markAllAsRead = async () => {
+    try {
+      const response = await fetch('/api/notifications/mark-all-read', {
+        method: 'POST',
+      });
 
-    setFilteredNotifications(filtered);
-  }, [notifications, selectedFilter, selectedStatus]);
+      if (response.ok) {
+        setNotifications(prev =>
+          prev.map(notif => ({ ...notif, isRead: true }))
+        );
+      }
+    } catch (error) {
+      console.error('Error marking all as read:', error);
+    }
+  };
 
+  // Efectos
+  useEffect(() => {
+    loadNotifications();
+  }, [currentPage, filters]);
+
+  // Auto-refresh cada 60 segundos
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadNotifications(true);
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [currentPage, filters]);
+
+  // Estadísticas para el header
+  const statsData = [
+    {
+      label: 'Total',
+      value: notifications.length.toString(),
+      trend: '+0'
+    },
+    {
+      label: 'No leídas',
+      value: notifications.filter(n => !n.isRead).length.toString(),
+      trend: ''
+    },
+    {
+      label: 'Leídas',
+      value: notifications.filter(n => n.isRead).length.toString(),
+      trend: ''
+    },
+    {
+      label: 'Esta semana',
+      value: notifications.filter(n => {
+        const notifDate = new Date(n.createdAt);
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        return notifDate > weekAgo;
+      }).length.toString(),
+      trend: ''
+    }
+  ];
+
+  // Función para obtener el icono según el tipo
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'COUPON_GENERATED':
+        return '🎫';
+      case 'COUPON_USED':
+        return '✅';
+      case 'OFFER_EXPIRING':
+        return '⏰';
+      case 'NEW_FAVORITE':
+        return '❤️';
+      default:
+        return '🔔';
+    }
+  };
+
+  // Función para obtener el color según el tipo
+  const getNotificationColor = (type: string) => {
+    switch (type) {
+      case 'COUPON_GENERATED':
+        return 'bg-green-50 border-green-200';
+      case 'COUPON_USED':
+        return 'bg-blue-50 border-blue-200';
+      case 'OFFER_EXPIRING':
+        return 'bg-orange-50 border-orange-200';
+      case 'NEW_FAVORITE':
+        return 'bg-pink-50 border-pink-200';
+      default:
+        return 'bg-gray-50 border-gray-200';
+    }
+  };
+
+  // Formatear fecha
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
-    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    const diffMs = now.getTime() - date.getTime();
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-    if (diffInMinutes < 1) return 'Ara mateix';
-    if (diffInMinutes < 60) return `Fa ${diffInMinutes} min`;
+    if (diffMinutes < 1) return 'Ahora mismo';
+    if (diffMinutes < 60) return `Hace ${diffMinutes} min`;
+    if (diffHours < 24) return `Hace ${diffHours} h`;
+    if (diffDays < 7) return `Hace ${diffDays} días`;
 
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) return `Fa ${diffInHours}h`;
-
-    const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays < 7) {
-      return date.toLocaleDateString('ca-ES', {
-        weekday: 'short',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    }
-
-    return date.toLocaleDateString('ca-ES', {
-      day: 'numeric',
-      month: 'short',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return date.toLocaleDateString('es-ES');
   };
 
-  const markAsRead = (notificationId: string) => {
-    setNotifications(prev =>
-      prev.map(notif =>
-        notif.id === notificationId
-          ? { ...notif, llegit: true }
-          : notif
-      )
-    );
-  };
-
-  const markAllAsRead = () => {
-    setNotifications(prev =>
-      prev.map(notif => ({ ...notif, llegit: true }))
-    );
-  };
-
-  const deleteNotification = (notificationId: string) => {
-    setNotifications(prev =>
-      prev.filter(notif => notif.id !== notificationId)
-    );
-  };
-
-  const handleNotificationClick = (notification: Notification) => {
-    // Marcar como leído
-    if (!notification.llegit) {
-      markAsRead(notification.id);
-    }
-
-    // Navegar si tiene URL
-    if (notification.accio_url) {
-      window.location.href = notification.accio_url;
-    }
-  };
-
-  const stats = getNotificationStats(notifications);
-  const unreadCount = notifications.filter(n => !n.llegit).length;
-
-  const filterOptions = [
-    { value: 'all', label: 'Totes', icon: '📝' },
-    { value: 'missatge', label: 'Missatges', icon: '💬' },
-    { value: 'event', label: 'Events', icon: '📅' },
-    { value: 'grup', label: 'Grups', icon: '👥' },
-    { value: 'assessorament', label: 'Assessoraments', icon: '💼' },
-    { value: 'formacio', label: 'Formació', icon: '🎓' },
-    { value: 'empresa', label: 'Empreses', icon: '🏢' },
-    { value: 'anunci', label: 'Anuncis', icon: '📢' },
-    { value: 'sistema', label: 'Sistema', icon: '⚙️' }
-  ];
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-gray-500">Carregant notificacions...</div>
-      </div>
+      <PageTemplate
+        title="Notificaciones"
+        subtitle="Gestiona todas tus notificaciones"
+        statsData={[]}
+      >
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="ml-2 text-gray-600">Cargando notificaciones...</span>
+        </div>
+      </PageTemplate>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">🔔 Notificacions</h1>
-            <p className="text-gray-600">
-              Gestiona totes les teves notificacions i actualitzacions
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            {unreadCount > 0 && (
-              <button
-                onClick={markAllAsRead}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-              >
-                Marcar tot com llegit
-              </button>
-            )}
-            <Link
-              href="/dashboard"
-              className="px-4 py-2 text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm"
-            >
-              Tornar al dashboard
-            </Link>
-          </div>
-        </div>
-
-        {/* Estadísticas */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white p-4 rounded-lg border border-gray-200">
-            <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
-            <div className="text-sm text-gray-600">Total notificacions</div>
-          </div>
-          <div className="bg-white p-4 rounded-lg border border-gray-200">
-            <div className="text-2xl font-bold text-red-600">{stats.no_llegits}</div>
-            <div className="text-sm text-gray-600">Sense llegir</div>
-          </div>
-          <div className="bg-white p-4 rounded-lg border border-gray-200">
-            <div className="text-2xl font-bold text-blue-600">{stats.per_tipus.missatge}</div>
-            <div className="text-sm text-gray-600">Missatges</div>
-          </div>
-          <div className="bg-white p-4 rounded-lg border border-gray-200">
-            <div className="text-2xl font-bold text-green-600">{stats.per_tipus.event}</div>
-            <div className="text-sm text-gray-600">Events</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Filtros */}
-      <div className="bg-white p-6 rounded-lg border border-gray-200 mb-6">
-        <div className="flex flex-wrap items-center gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Tipus
-            </label>
-            <select
-              value={selectedFilter}
-              onChange={(e) => setSelectedFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {filterOptions.map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.icon} {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Estat
-            </label>
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">Totes</option>
-              <option value="unread">Sense llegir</option>
-              <option value="read">Llegides</option>
-            </select>
-          </div>
-
-          <div className="flex items-end">
-            <button
-              onClick={() => {
-                setSelectedFilter('all');
-                setSelectedStatus('all');
-              }}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm"
-            >
-              Netejar filtres
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Lista de notificaciones */}
-      <div className="bg-white rounded-lg border border-gray-200">
-        {filteredNotifications.length === 0 ? (
-          <div className="p-12 text-center text-gray-500">
-            <div className="text-6xl mb-4">🔔</div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No hi ha notificacions
-            </h3>
-            <p>
-              {selectedFilter !== 'all' || selectedStatus !== 'all'
-                ? 'No hi ha notificacions que coincideixin amb els filtres seleccionats.'
-                : 'Quan rebis notificacions, apareixeran aquí.'
-              }
-            </p>
-          </div>
-        ) : (
-          <div className="divide-y divide-gray-100">
-            {filteredNotifications.map((notification) => (
-              <div
-                key={notification.id}
-                className={`p-6 hover:bg-gray-50 cursor-pointer transition-all border-l-4 ${getPriorityColor(notification.prioritat)} ${
-                  !notification.llegit ? 'bg-blue-50' : ''
-                }`}
-                onClick={() => handleNotificationClick(notification)}
-              >
-                <div className="flex gap-4">
-                  {/* Icono y tipo */}
-                  <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center ${getNotificationColor(notification.tipus)}`}>
-                    <span className="text-xl">
-                      {getNotificationIcon(notification.tipus)}
-                    </span>
+    <PageTemplate
+      title="Notificaciones"
+      subtitle="Gestiona todas tus notificaciones y mantente al día"
+      statsData={statsData}
+    >
+      <div className="px-6 pb-6">
+        {/* Barra de herramientas */}
+        <UniversalCard
+          variant="modern"
+          padding="lg"
+          className="mb-6"
+          topZone={{
+            title: "Gestión de Notificaciones",
+            subtitle: "Filtra, busca y gestiona tus notificaciones"
+          }}
+          middleZone={{
+            content: (
+              <div className="space-y-4">
+                {/* Filtros y búsqueda */}
+                <div className="flex flex-wrap gap-4 items-center">
+                  {/* Buscador */}
+                  <div className="relative flex-1 min-w-64">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <input
+                      type="text"
+                      placeholder="Buscar notificaciones..."
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      value={filters.search}
+                      onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                    />
                   </div>
 
-                  {/* Contenido */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <h3 className={`text-lg font-medium text-gray-900 mb-1 ${
-                          !notification.llegit ? 'font-semibold' : ''
-                        }`}>
-                          {notification.titol}
-                        </h3>
-                        <p className="text-gray-600 mb-3">
-                          {notification.missatge}
-                        </p>
+                  {/* Filtro por tipo */}
+                  <select
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    value={filters.type}
+                    onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
+                  >
+                    <option value="all">Todos los tipos</option>
+                    <option value="COUPON_GENERATED">Cupones generados</option>
+                    <option value="COUPON_USED">Cupones usados</option>
+                    <option value="OFFER_EXPIRING">Ofertas expiran</option>
+                    <option value="NEW_FAVORITE">Nuevos favoritos</option>
+                  </select>
 
-                        {/* Emissor */}
-                        {notification.emissor && (
-                          <div className="flex items-center gap-2 mb-3">
-                            <span className="text-lg">
-                              {notification.emissor.avatar}
-                            </span>
-                            <span className="text-sm font-medium text-gray-700">
-                              {notification.emissor.nom}
-                            </span>
-                            <span className={`text-xs px-2 py-1 rounded-full ${getNotificationColor(notification.emissor.tipus)}`}>
-                              {notification.emissor.tipus}
-                            </span>
-                          </div>
-                        )}
+                  {/* Filtro por estado */}
+                  <select
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    value={filters.status}
+                    onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+                  >
+                    <option value="all">Todos los estados</option>
+                    <option value="unread">No leídas</option>
+                    <option value="read">Leídas</option>
+                  </select>
 
-                        {/* Acción */}
-                        {notification.accio_text && (
-                          <div className="mb-3">
-                            <span className="text-sm text-blue-600 font-medium">
-                              {notification.accio_text} →
-                            </span>
-                          </div>
-                        )}
-                      </div>
+                  {/* Botones de acción */}
+                  <Link
+                    href="/dashboard/configuracio/preferencies"
+                    className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                    title="Configurar preferències"
+                  >
+                    <Settings className="w-4 h-4" />
+                    Preferències
+                  </Link>
 
-                      {/* Fecha y acciones */}
-                      <div className="flex flex-col items-end gap-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-gray-500">
-                            {formatDate(notification.data_creacio)}
-                          </span>
-                          {!notification.llegit && (
-                            <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
-                          )}
-                        </div>
+                  <button
+                    onClick={() => loadNotifications(true)}
+                    disabled={refreshing}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                    Actualizar
+                  </button>
 
-                        <div className="flex items-center gap-1">
-                          {!notification.llegit && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                markAsRead(notification.id);
-                              }}
-                              className="text-xs text-blue-600 hover:text-blue-700 font-medium px-2 py-1 hover:bg-blue-50 rounded"
-                            >
-                              Marcar llegit
-                            </button>
-                          )}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deleteNotification(notification.id);
-                            }}
-                            className="text-xs text-red-600 hover:text-red-700 font-medium px-2 py-1 hover:bg-red-50 rounded"
-                          >
-                            Eliminar
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  <button
+                    onClick={markAllAsRead}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                  >
+                    <Check className="h-4 w-4" />
+                    Marcar todas como leídas
+                  </button>
                 </div>
               </div>
+            )
+          }}
+        />
+
+        {/* Lista de notificaciones */}
+        {notifications.length === 0 ? (
+          <UniversalCard
+            variant="modern"
+            padding="xl"
+            className="text-center"
+            middleZone={{
+              content: (
+                <div className="py-12">
+                  <Bell className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    No hay notificaciones
+                  </h3>
+                  <p className="text-gray-500">
+                    {filters.search || filters.type !== 'all' || filters.status !== 'all'
+                      ? 'No se encontraron notificaciones con los filtros aplicados.'
+                      : 'Cuando recibas notificaciones aparecerán aquí.'
+                    }
+                  </p>
+                </div>
+              )
+            }}
+          />
+        ) : (
+          <div className="space-y-3">
+            {notifications.map((notification) => (
+              <UniversalCard
+                key={notification.id}
+                variant="modern"
+                padding="md"
+                className={`${getNotificationColor(notification.type)} ${
+                  !notification.isRead ? 'border-l-4 border-l-blue-500' : ''
+                }`}
+                middleZone={{
+                  content: (
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start space-x-3 flex-1">
+                        {/* Icono */}
+                        <div className="flex-shrink-0 text-2xl">
+                          {getNotificationIcon(notification.type)}
+                        </div>
+
+                        {/* Contenido */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className={`text-sm font-medium ${
+                              notification.isRead ? 'text-gray-600' : 'text-gray-900'
+                            }`}>
+                              {notification.title}
+                            </h4>
+                            {!notification.isRead && (
+                              <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                            )}
+                          </div>
+
+                          <p className={`text-sm ${
+                            notification.isRead ? 'text-gray-500' : 'text-gray-700'
+                          } mb-2`}>
+                            {notification.message}
+                          </p>
+
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-gray-400">
+                              {formatDate(notification.createdAt)}
+                            </span>
+
+                            {notification.actionUrl && (
+                              <a
+                                href={notification.actionUrl}
+                                className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                              >
+                                Ver detalles →
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Botón de marcar como leída/no leída */}
+                      <button
+                        onClick={() => toggleReadStatus(notification.id, notification.isRead)}
+                        className={`flex-shrink-0 p-2 rounded-full hover:bg-gray-100 transition-colors ${
+                          notification.isRead ? 'text-gray-400' : 'text-blue-600'
+                        }`}
+                        title={notification.isRead ? 'Marcar como no leída' : 'Marcar como leída'}
+                      >
+                        {notification.isRead ? (
+                          <X className="h-4 w-4" />
+                        ) : (
+                          <Check className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                  )
+                }}
+              />
             ))}
           </div>
         )}
+
+        {/* Paginación */}
+        {totalPages > 1 && (
+          <UniversalCard
+            variant="modern"
+            padding="md"
+            className="mt-6"
+            middleZone={{
+              content: (
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-gray-600">
+                    Página {currentPage} de {totalPages}
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                      className="flex items-center gap-1 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Anterior
+                    </button>
+
+                    <span className="text-sm text-gray-500 px-2">
+                      {Math.min((currentPage - 1) * notificationsPerPage + 1, notifications.length)} - {Math.min(currentPage * notificationsPerPage, notifications.length)} de {notifications.length}
+                    </span>
+
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages}
+                      className="flex items-center gap-1 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Siguiente
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              )
+            }}
+          />
+        )}
       </div>
-    </div>
+    </PageTemplate>
   );
 }

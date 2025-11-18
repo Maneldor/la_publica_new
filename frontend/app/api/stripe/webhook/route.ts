@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { stripe } from '@/lib/stripe';
-import { prisma } from '@/lib/prisma';
+import { prismaClient } from '@/lib/prisma';
 import Stripe from 'stripe';
 
 export async function POST(request: NextRequest) {
@@ -67,7 +67,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   try {
     // 1. Get company and new plan
-    const company = await prisma.company.findUnique({
+    const company = await prismaClient.company.findUnique({
       where: { id: metadata.companyId },
       include: {
         subscriptions: {
@@ -82,7 +82,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       return;
     }
 
-    const newPlan = await prisma.planConfig.findUnique({
+    const newPlan = await prismaClient.planConfig.findUnique({
       where: { id: metadata.planId }
     });
 
@@ -93,7 +93,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
     // 2. Update subscription
     if (company.subscriptions && company.subscriptions.length > 0) {
-      await prisma.subscription.update({
+      await prismaClient.subscription.update({
         where: { id: company.subscriptions[0].id },
         data: {
           planId: newPlan.id,
@@ -105,7 +105,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       });
     } else {
       // Create subscription if doesn't exist
-      await prisma.subscription.create({
+      await prismaClient.subscription.create({
         data: {
           companyId: company.id,
           planId: newPlan.id,
@@ -117,14 +117,14 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     }
 
     // 3. Get next invoice number
-    const lastInvoice = await prisma.invoice.findFirst({
+    const lastInvoice = await prismaClient.invoice.findFirst({
       orderBy: { invoiceNumber: 'desc' }
     });
 
     const nextInvoiceNumber = `FP${String((lastInvoice?.invoiceNumber.replace('FP', '') || 0) + 1).padStart(6, '0')}`;
 
     // 4. Create invoice
-    const invoice = await prisma.invoice.create({
+    const invoice = await prismaClient.invoice.create({
       data: {
         invoiceNumber: nextInvoiceNumber,
         companyId: company.id,
@@ -146,7 +146,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     });
 
     // 5. Create payment record
-    await prisma.payment.create({
+    await prismaClient.payment.create({
       data: {
         companyId: company.id,
         invoiceId: invoice.id,

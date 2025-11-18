@@ -106,6 +106,7 @@ export const authOptions: NextAuthOptions = {
           console.log('  - ID:', user.id);
           console.log('  - Email:', user.email);
           console.log('  - Name:', user.name);
+          console.log('  - Role:', user.role);
           console.log('  - UserType:', user.userType);
           console.log('  - Tiene password:', !!user.password);
 
@@ -133,29 +134,60 @@ export const authOptions: NextAuthOptions = {
           // Usuario autenticado correctamente
           console.log('✅ Usuario autenticado:', user.email);
 
-          // Determinar el rol basado en userType
+          // Determinar el rol - priorizar campo 'role' si existe, sino usar 'userType'
           let role = 'USER';
-          switch (user.userType) {
-            case 'ADMIN':
-              role = 'ADMIN';
-              break;
-            case 'ACCOUNT_MANAGER':
-              role = 'COMPANY_MANAGER';
-              break;
-            case 'COMPANY_OWNER':
-              role = 'COMPANY';
-              break;
-            case 'COMPANY_MEMBER':
-              role = 'COMPANY';
-              break;
-            case 'EMPLOYEE':
-              role = 'PUBLIC_EMPLOYEE';
-              break;
-            default:
-              role = 'USER';
+
+          // Primero verificar si existe el campo 'role' específico
+          if (user.role === 'SUPER_ADMIN' || user.role === 'ADMIN') {
+            role = 'ADMIN';
+          } else if (user.userType) {
+            // Fallback a userType para compatibilidad
+            switch (user.userType) {
+              case 'ADMIN':
+                role = 'ADMIN';
+                break;
+              case 'ACCOUNT_MANAGER':
+                role = 'COMPANY_MANAGER';
+                break;
+              case 'COMPANY_OWNER':
+                role = 'COMPANY';
+                break;
+              case 'COMPANY_MEMBER':
+                role = 'COMPANY';
+                break;
+              case 'EMPLOYEE':
+                role = 'PUBLIC_EMPLOYEE';
+                break;
+              default:
+                role = 'USER';
+            }
           }
 
           console.log('🔵 [AUTHORIZE] Rol asignado:', role);
+
+          // Determinar companyId según el tipo de usuario
+          let companyId = null;
+
+          if (user.ownedCompanyId) {
+            companyId = user.ownedCompanyId;
+          } else if (user.memberCompanyId) {
+            companyId = user.memberCompanyId;
+          } else if (user.userType === 'ACCOUNT_MANAGER') {
+            // Para Account Managers, buscar la primera empresa que gestionan
+            const managedCompany = await prismaClient.company.findFirst({
+              where: {
+                accountManagerId: user.id
+              },
+              select: {
+                id: true
+              }
+            });
+            if (managedCompany) {
+              companyId = managedCompany.id;
+            }
+          }
+
+          console.log('🔵 [AUTHORIZE] CompanyId asignado:', companyId);
 
           // Retornar usuario en formato compatible con NextAuth
           return {
@@ -163,7 +195,8 @@ export const authOptions: NextAuthOptions = {
             email: user.email,
             name: user.name,
             role: role,
-            image: user.image
+            image: user.image,
+            companyId: companyId
           };
 
         } catch (error) {
@@ -218,6 +251,7 @@ export const authOptions: NextAuthOptions = {
           token.role = user.role;
           token.communityId = user.communityId;
           token.isActive = user.isActive;
+          token.companyId = user.companyId;
 
           // Si ya tiene token del backend, usarlo; si no, generar uno nuevo
           if (user.backendToken) {
@@ -245,6 +279,7 @@ export const authOptions: NextAuthOptions = {
         session.user.role = token.role as UserRole;
         session.user.communityId = token.communityId;
         session.user.isActive = token.isActive;
+        session.user.companyId = token.companyId;
 
         // Exponer el token JWT duradero para el API
         session.user.apiToken = token.apiToken as string;

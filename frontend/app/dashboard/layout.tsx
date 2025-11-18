@@ -28,10 +28,11 @@
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
-import { NotificationDropdown } from '@/components/notifications/NotificationDropdown';
-import { generateMockNotifications, getNotificationStats } from '@/lib/notifications/mockData';
-import { Notification } from '@/lib/notifications/types';
+import NotificationBell from '@/components/notifications/NotificationBell';
+import { useSession } from 'next-auth/react';
 import { CalendarProvider } from '@/lib/context/CalendarContext';
+import { Settings } from 'lucide-react';
+import Breadcrumbs from '@/components/Breadcrumbs';
 
 export default function DashboardLayout({
   children,
@@ -40,6 +41,7 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { data: session } = useSession();
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [showPostModal, setShowPostModal] = useState(false);
   const [postContent, setPostContent] = useState('');
@@ -48,29 +50,15 @@ export default function DashboardLayout({
   const [showSearchModal, setShowSearchModal] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Notifications state
-  const [showNotificationDropdown, setShowNotificationDropdown] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [notificationStats, setNotificationStats] = useState({ total: 0, no_llegits: 0 });
+  // NotificationBell component now handles its own state
 
   // Messages state
   const [showMessagesDropdown, setShowMessagesDropdown] = useState(false);
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(5); // Mock data
 
-  // Load notifications
-  useEffect(() => {
-    const mockNotifications = generateMockNotifications();
-    setNotifications(mockNotifications);
-    const stats = getNotificationStats(mockNotifications);
-    setNotificationStats(stats);
-  }, []);
+  // NotificationBell component now manages notifications internally
 
-  // Handle notification click
-  const handleNotificationClick = (notification: Notification) => {
-    if (notification.accio_url) {
-      router.push(notification.accio_url);
-    }
-  };
+  // NotificationBell component handles notification clicks internally
 
   // Cerrar dropdown al hacer clic fuera
   useEffect(() => {
@@ -82,14 +70,11 @@ export default function DashboardLayout({
       if (showMessagesDropdown && !target.closest('.messages-dropdown')) {
         setShowMessagesDropdown(false);
       }
-      if (showNotificationDropdown && !target.closest('.notifications-dropdown')) {
-        setShowNotificationDropdown(false);
-      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showProfileDropdown, showMessagesDropdown, showNotificationDropdown]);
+  }, [showProfileDropdown, showMessagesDropdown]);
 
   const comunitatItems = [
     { href: '/dashboard', label: 'Xarxa Social', icon: '🏠' },
@@ -208,29 +193,17 @@ export default function DashboardLayout({
                 )}
               </div>
 
-              {/* Notifications */}
-              <div className="relative notifications-dropdown">
-                <button
-                  onClick={() => setShowNotificationDropdown(!showNotificationDropdown)}
-                  className="w-10 h-10 rounded-lg border border-gray-200 bg-white
-                    flex items-center justify-center text-gray-600 hover:text-blue-600
-                    hover:border-blue-300 transition-all duration-200 relative"
-                >
-                  🔔
-                  {notificationStats.no_llegits > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full
-                      w-5 h-5 flex items-center justify-center text-xs font-bold">
-                      {notificationStats.no_llegits > 9 ? '9+' : notificationStats.no_llegits}
-                    </span>
-                  )}
-                </button>
+              {/* Notifications - Using NotificationBell component */}
+              <NotificationBell />
 
-                <NotificationDropdown
-                  isOpen={showNotificationDropdown}
-                  onClose={() => setShowNotificationDropdown(false)}
-                  onNotificationClick={handleNotificationClick}
-                />
-              </div>
+              {/* Configuración de notificaciones */}
+              <Link
+                href="/dashboard/configuracio/preferencies"
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                title="Preferències de notificacions"
+              >
+                <Settings className="w-5 h-5 text-gray-600" />
+              </Link>
 
               {/* Profile Dropdown */}
               <div className="relative profile-dropdown">
@@ -360,7 +333,10 @@ export default function DashboardLayout({
 
           {/* MAIN CONTENT */}
           <main className="ml-64 flex-1 bg-gray-50">
-            {children}
+            <div className="p-6">
+              <Breadcrumbs />
+              {children}
+            </div>
           </main>
         </div>
 
@@ -594,6 +570,6 @@ export default function DashboardLayout({
           </>
         )}
         </div>
-    </CalendarProvider>
+      </CalendarProvider>
   );
 }

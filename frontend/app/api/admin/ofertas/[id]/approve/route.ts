@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prismaClient } from '@/lib/prisma';
+import { logSuccess, logError, getRequestInfo } from '@/lib/auditLog';
 
 export async function PUT(
   request: NextRequest,
@@ -65,6 +66,23 @@ export async function PUT(
       }
     });
 
+    // Log audit trail
+    await logSuccess(
+      'OFFER_APPROVED',
+      'Offer',
+      approvedOffer.id,
+      approvedOffer.title,
+      `Oferta "${approvedOffer.title}" de l'empresa "${approvedOffer.company.name}" aprovada`,
+      {
+        offerId: approvedOffer.id,
+        companyId: approvedOffer.companyId,
+        companyName: approvedOffer.company.name,
+        previousStatus: offer.status,
+        newStatus: 'PUBLISHED'
+      },
+      request
+    );
+
     // TODO: Send notification email to company
     // await sendOfferApprovedEmail(offer.company.email, offer.title);
 
@@ -75,6 +93,17 @@ export async function PUT(
 
   } catch (error: any) {
     console.error('Error approving offer:', error);
+
+    // Log audit trail for error
+    await logError(
+      'OFFER_APPROVED',
+      'Offer',
+      `Error aprovant oferta ${params.id}`,
+      error,
+      { offerId: params.id },
+      request
+    );
+
     return NextResponse.json(
       { error: 'Error al aprovar oferta', details: error.message },
       { status: 500 }

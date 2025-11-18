@@ -31,12 +31,26 @@ export default function CalendariPage() {
     );
   }
 
+  // Obtener estadísticas con guards de seguridad
   const stats = getEventStats();
-  const totalEvents = events.length;
-  const myEvents = stats.byTenant.empleat_public || 0;
-  const platformEvents = stats.byTenant.plataforma || 0;
-  const upcomingEvents = events.filter(e => new Date(e.dataInici) > new Date()).length;
+  const totalEvents = events?.length || 0;
 
+  // Guards para evitar errores de undefined
+  const safeByTenant = stats?.byTenant || {};
+  const myEvents = safeByTenant.empleat_public || 0;
+  const platformEvents = safeByTenant.plataforma || 0;
+
+  // Guard adicional para filtrar eventos
+  const safeEvents = events || [];
+  const upcomingEvents = safeEvents.filter(e => {
+    try {
+      return new Date(e.dataInici) > new Date();
+    } catch {
+      return false;
+    }
+  }).length;
+
+  // Inicializar statsData con valores seguros
   const statsData = [
     {
       label: 'Total Esdeveniments',
@@ -208,7 +222,7 @@ export default function CalendariPage() {
       {/* Stats Grid */}
       <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '32px' }}>
-          {statsData.map((stat, index) => (
+          {(statsData || []).map((stat, index) => (
             <div key={index} style={{
               backgroundColor: 'white',
               padding: '20px',

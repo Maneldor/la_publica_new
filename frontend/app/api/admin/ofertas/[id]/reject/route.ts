@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prismaClient } from '@/lib/prisma';
+import { logSuccess, logError } from '@/lib/auditLog';
 
 export async function PUT(
   request: NextRequest,
@@ -75,6 +76,24 @@ export async function PUT(
       }
     });
 
+    // Log audit trail
+    await logSuccess(
+      'OFFER_REJECTED',
+      'Offer',
+      rejectedOffer.id,
+      rejectedOffer.title,
+      `Oferta "${rejectedOffer.title}" de l'empresa "${rejectedOffer.company.name}" rebutjada: ${reason}`,
+      {
+        offerId: rejectedOffer.id,
+        companyId: rejectedOffer.companyId,
+        companyName: rejectedOffer.company.name,
+        rejectionReason: reason,
+        previousStatus: offer.status,
+        newStatus: 'REJECTED'
+      },
+      request
+    );
+
     // TODO: Send notification email to company
     // await sendOfferRejectedEmail(offer.company.email, offer.title, reason);
 
@@ -85,6 +104,17 @@ export async function PUT(
 
   } catch (error: any) {
     console.error('Error rejecting offer:', error);
+
+    // Log audit trail for error
+    await logError(
+      'OFFER_REJECTED',
+      'Offer',
+      `Error rebutjant oferta ${params.id}`,
+      error,
+      { offerId: params.id },
+      request
+    );
+
     return NextResponse.json(
       { error: 'Error al rebutjar oferta', details: error.message },
       { status: 500 }

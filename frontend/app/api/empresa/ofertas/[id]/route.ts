@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prismaClient } from '@/lib/prisma';
+import { Decimal } from '@prisma/client/runtime/library';
 
 export async function GET(
   request: NextRequest,
@@ -184,8 +185,8 @@ export async function PUT(
     if (categoryId !== undefined) updateData.categoryId = categoryId;
     if (description !== undefined) updateData.description = description;
     if (shortDescription !== undefined) updateData.shortDescription = shortDescription;
-    if (price !== undefined) updateData.price = price ? parseFloat(price) : null;
-    if (originalPrice !== undefined) updateData.originalPrice = originalPrice ? parseFloat(originalPrice) : null;
+    if (price !== undefined) updateData.price = price ? new Decimal(price) : null;
+    if (originalPrice !== undefined) updateData.originalPrice = originalPrice ? new Decimal(originalPrice) : null;
     if (currency !== undefined) updateData.currency = currency;
     if (priceType !== undefined) updateData.priceType = priceType;
     if (priority !== undefined) updateData.priority = priority;

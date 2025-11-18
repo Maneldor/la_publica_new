@@ -13,27 +13,54 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    // Obtener todos los planes activos de la base de datos ordenados por 'orden'
+    // Obtener todos los planes activos de la base de datos ordenados por 'priority'
     const planes = await prisma.planConfig.findMany({
-      where: { activo: true, visible: true },
+      where: {
+        isActive: true,
+        isVisible: true
+      },
       select: {
         id: true,
-        nombre: true,
-        nombreCorto: true,
-        descripcion: true,
-        precioMensual: true,
-        precioAnual: true,
-        caracteristicas: true,
+        slug: true,
+        tier: true,
+        name: true,
+        nameEs: true,
+        nameEn: true,
+        description: true,
+        basePrice: true,
+        firstYearDiscount: true,
+        maxActiveOffers: true,
+        maxTeamMembers: true,
+        maxFeaturedOffers: true,
+        maxStorage: true,
+        features: true,
+        badge: true,
+        badgeColor: true,
+        isPioneer: true,
         color: true,
         icono: true,
         destacado: true,
+        priority: true,
+        hasFreeTrial: true,
+        trialDurationDays: true,
+        isActive: true,
+        isVisible: true,
+        displayNote: true,
+        funcionalidades: true,
+        priceIncludesVAT: true,
+        durationMonths: true,
+        isDefault: true,
+        planType: true,
+        esSistema: true,
+        createdAt: true,
+        updatedAt: true
       },
-      orderBy: { orden: 'asc' }
+      orderBy: { priority: 'asc' }
     });
 
     return NextResponse.json({
       success: true,
-      plans: planes
+      data: planes
     });
 
   } catch (error) {
@@ -56,9 +83,9 @@ export async function POST(request: NextRequest) {
     const data = await request.json();
 
     // Validar campos requeridos
-    if (!data.nombre || data.precioMensual === undefined || !data.limites || !data.caracteristicas) {
+    if (!data.name || data.basePrice === undefined || !data.features) {
       return NextResponse.json(
-        { error: 'Falten camps obligatoris' },
+        { error: 'Falten camps obligatoris (name, basePrice, features)' },
         { status: 400 }
       );
     }
@@ -77,30 +104,46 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Obtener el próximo número de orden
-    const maxOrden = await prisma.planConfig.aggregate({
-      _max: { orden: true }
+    // Obtener el próximo número de prioridad
+    const maxPriority = await prisma.planConfig.aggregate({
+      _max: { priority: true }
     });
 
-    const nextOrden = (maxOrden._max.orden || 0) + 1;
+    const nextPriority = (maxPriority._max.priority || 0) + 1;
 
     // Crear nuevo plan en la base de datos
     const nuevoPlan = await prisma.planConfig.create({
       data: {
         planType: data.planType || `CUSTOM_${Date.now()}`,
-        nombre: data.nombre,
-        nombreCorto: data.nombreCorto || data.nombre,
-        descripcion: data.descripcion || 'Sin descripción',
-        precioMensual: parseFloat(data.precioMensual),
-        precioAnual: data.precioAnual ? parseFloat(data.precioAnual) : null,
-        limitesJSON: JSON.stringify(data.limites),
-        caracteristicas: JSON.stringify(data.caracteristicas),
+        slug: data.slug || data.name.toLowerCase().replace(/\s+/g, '-'),
+        tier: data.tier || 'CUSTOM',
+        name: data.name,
+        nameEs: data.nameEs || data.name,
+        nameEn: data.nameEn || data.name,
+        description: data.description || 'Sin descripción',
+        basePrice: parseFloat(data.basePrice),
+        firstYearDiscount: data.firstYearDiscount ? parseFloat(data.firstYearDiscount) : 0,
+        maxActiveOffers: data.maxActiveOffers || null,
+        maxTeamMembers: data.maxTeamMembers || 1,
+        maxFeaturedOffers: data.maxFeaturedOffers || 0,
+        maxStorage: data.maxStorage || null,
+        features: data.features || {},
+        badge: data.badge || null,
+        badgeColor: data.badgeColor || null,
+        isPioneer: data.isPioneer || false,
         color: data.color || '#3B82F6',
         icono: data.icono || '📦',
-        orden: data.orden || nextOrden,
         destacado: data.destacado || false,
-        activo: data.activo !== false, // Por defecto true
-        visible: data.visible !== false, // Por defecto true
+        priority: data.priority || nextPriority,
+        hasFreeTrial: data.hasFreeTrial || false,
+        trialDurationDays: data.trialDurationDays || null,
+        isActive: data.isActive !== false, // Por defecto true
+        isVisible: data.isVisible !== false, // Por defecto true
+        displayNote: data.displayNote || 'IVA incluido',
+        funcionalidades: data.funcionalidades || null,
+        priceIncludesVAT: data.priceIncludesVAT !== false,
+        durationMonths: data.durationMonths || 12,
+        isDefault: data.isDefault || false,
         esSistema: false // Los nuevos planes nunca son del sistema
       }
     });

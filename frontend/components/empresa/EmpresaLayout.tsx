@@ -3,6 +3,7 @@
 import { ReactNode } from 'react';
 import EmpresaHeader from './EmpresaHeader';
 import EmpresaSidebar from './EmpresaSidebar';
+import Breadcrumbs from '@/components/Breadcrumbs';
 
 interface EmpresaLayoutProps {
   children: ReactNode;
@@ -42,6 +43,7 @@ export default function EmpresaLayout({
       {/* Contenido principal con margen para header y sidebar */}
       <main className="ml-64 pt-20">
         <div className="max-w-7xl mx-auto px-6 py-8">
+          <Breadcrumbs />
           {children}
         </div>
       </main>

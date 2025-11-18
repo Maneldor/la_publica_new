@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prismaClient } from '@/lib/prisma';
+import { createAuditLog, getRequestInfo } from '@/lib/auditLog';
 
 /**
  * PATCH /api/admin/users/[id]/toggle-status
@@ -52,6 +53,25 @@ export async function PATCH(
         isActive: !user.isActive,
         updatedAt: new Date()
       }
+    });
+
+    // Registrar en audit log
+    const { ipAddress, userAgent } = getRequestInfo(request);
+    const action = updatedUser.isActive ? 'USER_REACTIVATED' : 'USER_SUSPENDED';
+
+    await createAuditLog({
+      action,
+      entity: 'USER',
+      entityId: updatedUser.id,
+      entityName: updatedUser.name || updatedUser.email,
+      description: `${updatedUser.isActive ? 'Reactivated' : 'Suspended'} user: ${updatedUser.email}`,
+      metadata: {
+        previousState: user.isActive,
+        newState: updatedUser.isActive
+      },
+      severity: updatedUser.isActive ? 'INFO' : 'WARNING',
+      ipAddress,
+      userAgent
     });
 
     return NextResponse.json({

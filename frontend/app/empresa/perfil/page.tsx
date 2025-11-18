@@ -104,7 +104,7 @@ export default function EmpresaPerfilPage() {
 
       {/* Stats cards using StatCard component */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {statsData.map((stat, idx) => (
+        {(statsData || []).map((stat, idx) => (
           <StatCard
             key={idx}
             title={stat.title}

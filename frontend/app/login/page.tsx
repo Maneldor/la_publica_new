@@ -36,7 +36,7 @@ export default function LoginPage() {
           router.push('/empresa/dashboard');
         } else if (session?.user?.role === 'COMPANY_MANAGER' || session?.user?.role === 'GESTOR_EMPRESAS') {
           router.push('/gestor-empreses/dashboard');
-        } else if (session?.user?.role === 'ADMIN') {
+        } else if (session?.user?.role === 'ADMIN' || session?.user?.role === 'SUPER_ADMIN') {
           router.push('/admin');
         } else {
           // Fallback basado en el email si no hay sesión
@@ -163,6 +163,27 @@ export default function LoginPage() {
     }
   };
 
+  const quickLoginSuperAdmin = async () => {
+    setLoading(true);
+    try {
+      const result = await signIn('credentials', {
+        email: 'super.admin@lapublica.cat',
+        password: 'superadmin123',
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError('Error en login rápido de super admin');
+      } else {
+        router.push('/admin'); // Redirigir a admin
+      }
+    } catch (err: any) {
+      setError('Error en login rápido de super admin');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
@@ -251,6 +272,19 @@ export default function LoginPage() {
           <p className="text-sm font-medium text-gray-700 text-center mb-4">Usuarios de Prueba</p>
 
           <div className="space-y-3 text-sm">
+
+            <div className="bg-red-50 p-3 rounded-lg border-2 border-red-200">
+              <div className="font-medium text-red-800">👑 Super Administrador</div>
+              <div className="text-red-600">Email: super.admin@lapublica.cat</div>
+              <div className="text-red-600">Contraseña: superadmin123</div>
+              <button
+                onClick={quickLoginSuperAdmin}
+                disabled={loading}
+                className="mt-2 px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 disabled:opacity-50"
+              >
+                Login Rápido
+              </button>
+            </div>
 
             <div className="bg-purple-50 p-3 rounded-lg">
               <div className="font-medium text-purple-800">👤 Administrador</div>

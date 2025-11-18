@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prismaClient } from '@/lib/prisma';
+import { createAuditLog, getRequestInfo } from '@/lib/auditLog';
 
 /**
  * DELETE /api/admin/users/[id]
@@ -56,6 +57,24 @@ export async function DELETE(
     // Eliminar el usuario
     await prismaClient.user.delete({
       where: { id: params.id }
+    });
+
+    // Registrar en audit log
+    const { ipAddress, userAgent } = getRequestInfo(request);
+    await createAuditLog({
+      action: 'USER_DELETED',
+      entity: 'USER',
+      entityId: params.id,
+      entityName: user.name || user.email,
+      description: `Deleted user: ${user.email}`,
+      metadata: {
+        userEmail: user.email,
+        userName: user.name,
+        userRole: user.role
+      },
+      severity: 'WARNING',
+      ipAddress,
+      userAgent
     });
 
     return NextResponse.json({

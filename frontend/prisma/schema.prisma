@@ -38,6 +38,13 @@ model User {
   paymentsProcessed  Payment[]        @relation("PaymentsProcessed")
   offersApproved     Offer[]          @relation("OfferApprovals")
   offersRejected     Offer[]          @relation("OfferRejections")
+  favorites          UserFavorite[]   @relation("UserFavorites")
+  coupons            Coupon[]         @relation("UserCoupons")
+  redemptions        Redemption[]     @relation("UserRedemptions")
+  offerEvents        OfferEvent[]     @relation("UserOfferEvents")
+  notificationPreference NotificationPreference? @relation("UserNotificationPreferences")
+  emailLogs          EmailLog[]       @relation("UserEmailLogs")
+  auditLogs          AuditLog[]       @relation("UserAuditLogs")
 
   @@index([email])
   @@index([role])
@@ -186,6 +193,9 @@ model Company {
   profileChanges   CompanyProfileChange[]
   invoices         Invoice[]
   subscriptions    Subscription[]
+  coupons          Coupon[]               @relation("CompanyCoupons")
+  redemptions      Redemption[]           @relation("CompanyRedemptions")
+  offerEvents      OfferEvent[]           @relation("CompanyOfferEvents")
 
   @@index([cif])
   @@index([currentPlanId])
@@ -603,6 +613,10 @@ model Offer {
   updatedAt      DateTime      @updatedAt
   company        Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
   category       OfferCategory @relation(fields: [categoryId], references: [id])
+  favorites      UserFavorite[] @relation("OfferFavorites")
+  coupons        Coupon[]      @relation("OfferCoupons")
+  redemptions    Redemption[]  @relation("OfferRedemptions")
+  events         OfferEvent[]  @relation("OfferEvents")
 
   @@index([companyId, status])
   @@index([categoryId, status])
@@ -788,6 +802,12 @@ enum NotificationType {
   PROFILE_CHANGE
   GENERAL
   SYSTEM
+  // AÑADIR nuevos tipos para sistema de cupones
+  COUPON_GENERATED      // Cupón generado
+  COUPON_USED          // Cupón usado
+  OFFER_EXPIRING       // Oferta a punto de caducar
+  NEW_FAVORITE         // Alguien guardó tu oferta
+  WEEKLY_SUMMARY       // Resumen semanal
 }
 
 enum ProfileChangeStatus {
@@ -835,4 +855,389 @@ enum ContactMethod {
   FORM
   EXTERNAL
   WHATSAPP
+}
+
+// ============================================
+// SISTEMA DE FAVORITOS
+// ============================================
+
+model UserFavorite {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation("UserFavorites", fields: [userId], references: [id], onDelete: Cascade)
+  offerId   String
+  offer     Offer    @relation("OfferFavorites", fields: [offerId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, offerId], name: "unique_user_offer_favorite")
+  @@index([userId], name: "idx_favorite_user")
+  @@index([offerId], name: "idx_favorite_offer")
+  @@index([createdAt], name: "idx_favorite_created")
+  @@map("user_favorites")
+}
+
+// ============================================
+// SISTEMA DE CUPONES
+// ============================================
+
+model Coupon {
+  id              String        @id @default(cuid())
+  code            String        @unique // LAPUB-TECHINNOVA-A3F9X2
+
+  // Relaciones
+  offerId         String
+  offer           Offer         @relation("OfferCoupons", fields: [offerId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User          @relation("UserCoupons", fields: [userId], references: [id], onDelete: Cascade)
+  companyId       String
+  company         Company       @relation("CompanyCoupons", fields: [companyId], references: [id], onDelete: Cascade)
+
+  // QR Code
+  qrCodeUrl       String?       // URL del QR generado (Cloudinary/S3)
+  qrCodeData      String?       // Data del QR en base64 como backup
+
+  // Estado y validez
+  status          CouponStatus  @default(ACTIVE)
+  generatedAt     DateTime      @default(now())
+  expiresAt       DateTime      // Fecha de caducidad
+  usedAt          DateTime?     // Cuando se usó
+  cancelledAt     DateTime?     // Si se canceló
+
+  // Tracking y metadata
+  redemption      Redemption?   @relation("CouponRedemption")
+  userAgent       String?       // Navegador usado
+  ipAddress       String?       // IP de generación
+  deviceType      String?       // mobile, desktop, tablet
+  generatedFrom   String?       // web, app, email
+
+  // Notas
+  notes           String?       // Notas internas
+
+  @@index([offerId], name: "idx_coupon_offer")
+  @@index([userId], name: "idx_coupon_user")
+  @@index([companyId], name: "idx_coupon_company")
+  @@index([code], name: "idx_coupon_code")
+  @@index([status], name: "idx_coupon_status")
+  @@index([expiresAt], name: "idx_coupon_expires")
+  @@index([generatedAt], name: "idx_coupon_generated")
+  @@map("coupons")
+}
+
+enum CouponStatus {
+  ACTIVE      // Activo, listo para usar
+  USED        // Ya utilizado
+  EXPIRED     // Caducado por fecha
+  CANCELLED   // Cancelado por empresa o admin
+  SUSPENDED   // Suspendido temporalmente
+}
+
+model Redemption {
+  id              String    @id @default(cuid())
+
+  // Relaciones
+  couponId        String    @unique
+  coupon          Coupon    @relation("CouponRedemption", fields: [couponId], references: [id], onDelete: Cascade)
+  offerId         String
+  offer           Offer     @relation("OfferRedemptions", fields: [offerId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User      @relation("UserRedemptions", fields: [userId], references: [id], onDelete: Cascade)
+  companyId       String
+  company         Company   @relation("CompanyRedemptions", fields: [companyId], references: [id], onDelete: Cascade)
+
+  // Detalles de redención
+  redeemedAt      DateTime  @default(now())
+  redemptionType  String    @default("in_store") // in_store, online, phone, email
+  channel         String?   // web, app, pos
+  location        String?   // "Barcelona - Passeig de Gràcia 23"
+  storeId         String?   // ID tienda física si aplica
+
+  // Información económica
+  originalPrice   Decimal?  @db.Decimal(10, 2)
+  discountAmount  Decimal?  @db.Decimal(10, 2)
+  finalPrice      Decimal?  @db.Decimal(10, 2)
+  currency        String    @default("EUR")
+
+  // Validación
+  validatedBy     String?   // ID del usuario empresa que validó
+  validatedAt     DateTime  @default(now())
+  verificationMethod String? // qr_scan, code_entry, automatic
+
+  // Tracking
+  userAgent       String?
+  ipAddress       String?
+  deviceType      String?
+
+  // Notas y detalles
+  notes           String?   // Notas de la empresa
+  customerNotes   String?   // Notas del cliente
+  receiptNumber   String?   // Número de ticket/factura
+
+  // Satisfacción (opcional)
+  rating          Int?      // 1-5 estrellas
+  feedback        String?   // Comentario del usuario
+
+  @@index([offerId], name: "idx_redemption_offer")
+  @@index([userId], name: "idx_redemption_user")
+  @@index([companyId], name: "idx_redemption_company")
+  @@index([redeemedAt], name: "idx_redemption_date")
+  @@index([redemptionType], name: "idx_redemption_type")
+  @@map("redemptions")
+}
+
+// ============================================
+// TRACKING DE EVENTOS
+// ============================================
+
+model OfferEvent {
+  id          String      @id @default(cuid())
+
+  // Relaciones
+  offerId     String
+  offer       Offer       @relation("OfferEvents", fields: [offerId], references: [id], onDelete: Cascade)
+  userId      String?
+  user        User?       @relation("UserOfferEvents", fields: [userId], references: [id], onDelete: SetNull)
+  companyId   String
+  company     Company     @relation("CompanyOfferEvents", fields: [companyId], references: [id], onDelete: Cascade)
+
+  // Tipo de evento
+  eventType   EventType
+
+  // Metadata del evento
+  sessionId   String?     // ID de sesión para agrupar eventos
+  userAgent   String?
+  ipAddress   String?
+  deviceType  String?     // mobile, desktop, tablet
+  browser     String?     // chrome, firefox, safari
+  os          String?     // windows, macos, ios, android
+  referrer    String?     // De dónde viene
+  utmSource   String?     // Parámetros UTM
+  utmMedium   String?
+  utmCampaign String?
+
+  // Geolocalización (si disponible)
+  country     String?
+  city        String?
+  region      String?
+  latitude    Float?
+  longitude   Float?
+
+  // Timing
+  duration    Int?        // Segundos en la página
+  scrollDepth Int?        // % de scroll
+
+  createdAt   DateTime    @default(now())
+
+  @@index([offerId, eventType], name: "idx_event_offer_type")
+  @@index([userId], name: "idx_event_user")
+  @@index([companyId], name: "idx_event_company")
+  @@index([eventType], name: "idx_event_type")
+  @@index([createdAt], name: "idx_event_created")
+  @@index([sessionId], name: "idx_event_session")
+  @@map("offer_events")
+}
+
+enum EventType {
+  VIEW              // Usuario vio la oferta
+  DETAIL_VIEW       // Entró al detalle completo
+  CLICK             // Click en botón o enlace
+  SHARE             // Compartió la oferta
+  FAVORITE_ADD      // Añadió a favoritos
+  FAVORITE_REMOVE   // Quitó de favoritos
+  COUPON_VIEW       // Vio el botón de cupón
+  COUPON_GENERATED  // Generó un cupón
+  COUPON_DOWNLOADED // Descargó el QR
+  COUPON_SHARED     // Compartió el cupón
+  COUPON_USED       // Usó el cupón
+  EXTERNAL_CLICK    // Click en enlace externo
+  CONTACT_CLICK     // Click en contactar empresa
+  PHONE_CLICK       // Click en teléfono
+  EMAIL_CLICK       // Click en email
+  MAP_VIEW          // Vio ubicación en mapa
+  GALLERY_VIEW      // Vio galería de imágenes
+}
+
+// ============================================
+// SISTEMA DE NOTIFICACIONES EXPANDIDO
+// ============================================
+
+model NotificationPreference {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+
+  // Configuración email
+  emailEnabled          Boolean  @default(true)
+  emailCouponGenerated  Boolean  @default(true)
+  emailCouponUsed       Boolean  @default(true)
+  emailOfferExpiring    Boolean  @default(true)
+  emailNewFavorite      Boolean  @default(true)
+  emailWeeklySummary    Boolean  @default(true)
+
+  // Configuración notificaciones in-app
+  inAppEnabled          Boolean  @default(true)
+  inAppCouponGenerated  Boolean  @default(true)
+  inAppCouponUsed       Boolean  @default(true)
+  inAppOfferExpiring    Boolean  @default(true)
+  inAppNewFavorite      Boolean  @default(true)
+  inAppWeeklySummary    Boolean  @default(false)
+
+  // Configuración horarios
+  weeklySummaryDay      Int      @default(1) // 0=domingo, 1=lunes, etc.
+  weeklySummaryHour     Int      @default(9) // Hora 0-23
+  timezone              String   @default("Europe/Madrid")
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  user                  User     @relation("UserNotificationPreferences", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("notification_preferences")
+}
+
+model EmailLog {
+  id            String        @id @default(cuid())
+  userId        String
+  templateType  EmailTemplate
+  subject       String
+  toEmail       String
+  fromEmail     String        @default("noreply@lapublica.es")
+  status        EmailStatus   @default(PENDING)
+  sentAt        DateTime?
+  deliveredAt   DateTime?
+  openedAt      DateTime?
+  clickedAt     DateTime?
+  bouncedAt     DateTime?
+  errorMessage  String?
+  externalId    String?       // ID de Resend
+  metadata      Json?         // Datos adicionales (offerId, couponId, etc.)
+  createdAt     DateTime      @default(now())
+
+  user          User          @relation("UserEmailLogs", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([templateType])
+  @@index([status])
+  @@index([sentAt])
+  @@index([toEmail])
+  @@index([externalId])
+  @@map("email_logs")
+}
+
+enum EmailTemplate {
+  COUPON_GENERATED
+  COUPON_USED
+  OFFER_EXPIRING
+  NEW_FAVORITE
+  WEEKLY_SUMMARY
+  WELCOME
+  PASSWORD_RESET
+  EMAIL_VERIFICATION
+}
+
+enum EmailStatus {
+  PENDING
+  SENT
+  DELIVERED
+  OPENED
+  CLICKED
+  BOUNCED
+  FAILED
+}
+
+// ============================================
+// SISTEMA DE AUDIT LOGS
+// ============================================
+
+model AuditLog {
+  id          String      @id @default(cuid())
+
+  // Quién realizó la acción
+  userId      String
+  user        User        @relation("UserAuditLogs", fields: [userId], references: [id], onDelete: Cascade)
+  userName    String      // Snapshot del nombre (por si se borra el usuario)
+  userEmail   String      // Snapshot del email
+  userRole    String      // Snapshot del rol
+
+  // Qué acción se realizó
+  action      AuditAction // Tipo de acción
+  entity      String      // Entidad afectada (Company, Offer, User, etc.)
+  entityId    String?     // ID de la entidad afectada
+  entityName  String?     // Nombre/título de la entidad (snapshot)
+
+  // Detalles de la acción
+  description String      // Descripción legible
+  changes     Json?       // Cambios realizados (before/after)
+  metadata    Json?       // Metadata adicional
+
+  // Información de contexto
+  ipAddress   String?     // IP desde donde se realizó
+  userAgent   String?     // Browser/device info
+
+  // Estado
+  severity    LogSeverity @default(INFO)
+  success     Boolean     @default(true)
+  errorMessage String?    // Si la acción falló
+
+  // Timestamp
+  createdAt   DateTime    @default(now())
+
+  // Índices para búsquedas rápidas
+  @@index([userId], name: "idx_auditlog_user")
+  @@index([action], name: "idx_auditlog_action")
+  @@index([entity], name: "idx_auditlog_entity")
+  @@index([entityId], name: "idx_auditlog_entity_id")
+  @@index([createdAt], name: "idx_auditlog_created")
+  @@index([severity], name: "idx_auditlog_severity")
+
+  @@map("audit_logs")
+}
+
+enum AuditAction {
+  // Empresas
+  COMPANY_APPROVED
+  COMPANY_REJECTED
+  COMPANY_SUSPENDED
+  COMPANY_REACTIVATED
+  COMPANY_DELETED
+  COMPANY_UPDATED
+
+  // Ofertas
+  OFFER_APPROVED
+  OFFER_REJECTED
+  OFFER_DELETED
+  OFFER_FEATURED
+  OFFER_UNFEATURED
+  OFFER_UPDATED
+
+  // Usuarios
+  USER_CREATED
+  USER_UPDATED
+  USER_DELETED
+  USER_SUSPENDED
+  USER_REACTIVATED
+  USER_ROLE_CHANGED
+
+  // Cupones
+  COUPON_CANCELLED
+  COUPON_BULK_EXPORT
+
+  // Sistema
+  SETTINGS_UPDATED
+  PLAN_CONFIG_UPDATED
+  BULK_ACTION
+
+  // Seguridad
+  LOGIN_ADMIN
+  LOGOUT_ADMIN
+  PERMISSION_CHANGED
+
+  // Otros
+  OTHER
+}
+
+enum LogSeverity {
+  INFO      // Acciones normales
+  WARNING   // Acciones que requieren atención
+  ERROR     // Acciones que fallaron
+  CRITICAL  // Acciones críticas de seguridad
 }

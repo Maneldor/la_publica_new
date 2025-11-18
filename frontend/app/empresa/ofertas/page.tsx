@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Package, Plus, Search, Filter, Edit, Trash2, Eye, EyeOff, Star, MoreVertical, Clock, CheckCircle, XCircle, Pause, Archive, AlertCircle } from 'lucide-react';
+import { Package, Plus, Search, Filter, Edit, Trash2, Eye, EyeOff, MoreVertical, Clock, CheckCircle, XCircle, Pause, Archive, AlertCircle, BarChart3 } from 'lucide-react';
 
 interface Offer {
   id: string;
@@ -127,50 +127,43 @@ export default function OfertasPage() {
       case 'DRAFT':
         return {
           label: 'Esborrany',
-          icon: EyeOff,
-          color: 'bg-gray-100 text-gray-700 hover:bg-gray-200',
+          style: 'border-gray-300 text-gray-500 bg-gray-50',
           canEdit: true
         };
       case 'PENDING':
         return {
           label: 'Pendent',
-          icon: Clock,
-          color: 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200',
+          style: 'border-gray-400 text-gray-600 bg-gray-50',
           canEdit: false
         };
       case 'PUBLISHED':
         return {
           label: 'Publicada',
-          icon: CheckCircle,
-          color: 'bg-green-100 text-green-700 hover:bg-green-200',
+          style: 'border-gray-400 text-gray-700 bg-white',
           canEdit: true
         };
       case 'REJECTED':
         return {
           label: 'Rebutjada',
-          icon: XCircle,
-          color: 'bg-red-100 text-red-700 hover:bg-red-200',
+          style: 'border-gray-400 text-gray-600 bg-white',
           canEdit: true
         };
       case 'PAUSED':
         return {
           label: 'Pausada',
-          icon: Pause,
-          color: 'bg-orange-100 text-orange-700 hover:bg-orange-200',
+          style: 'border-gray-300 text-gray-500 bg-gray-50',
           canEdit: true
         };
       case 'EXPIRED':
         return {
           label: 'Caducada',
-          icon: AlertCircle,
-          color: 'bg-purple-100 text-purple-700 hover:bg-purple-200',
+          style: 'border-gray-300 text-gray-500 bg-white',
           canEdit: true
         };
       default:
         return {
           label: 'Desconegut',
-          icon: EyeOff,
-          color: 'bg-gray-100 text-gray-700',
+          style: 'border-gray-300 text-gray-500 bg-white',
           canEdit: false
         };
     }
@@ -237,6 +230,30 @@ export default function OfertasPage() {
     return `€${price}`;
   };
 
+  const formatCompactDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('ca-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: '2-digit'
+    });
+  };
+
+  const getShortCategoryName = (categoryName: string) => {
+    const shortNames: { [key: string]: string } = {
+      'Restauració': 'Rest.',
+      'Bellesa i Salut': 'Bellesa',
+      'Entreteniment': 'Entret.',
+      'Serveis professionals': 'Serveis',
+      'Comerç local': 'Comerç',
+      'Altres': 'Altres'
+    };
+    return shortNames[categoryName] || categoryName.substring(0, 8) + (categoryName.length > 8 ? '...' : '');
+  };
+
+  const truncateText = (text: string, maxLength: number = 30) => {
+    return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+  };
+
   return (
     <div className="p-8">
       {/* Header */}
@@ -247,84 +264,60 @@ export default function OfertasPage() {
         </div>
         <Link
           href="/empresa/ofertas/crear"
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
         >
           <Plus className="w-5 h-5" />
-          Crear nova oferta
+          Crear Nova Oferta
         </Link>
       </div>
 
       {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-8">
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Package className="w-4 h-4 text-blue-600" />
-              <span className="text-xs text-gray-600 font-medium">Total</span>
-            </div>
+          <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+            <p className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-2">Total</p>
             <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <EyeOff className="w-4 h-4 text-gray-500" />
-              <span className="text-xs text-gray-600 font-medium">Esborranys</span>
-            </div>
-            <p className="text-2xl font-bold text-gray-600">{stats.draft}</p>
+          <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+            <p className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-2">Esborranys</p>
+            <p className="text-2xl font-bold text-gray-900">{stats.draft}</p>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Clock className="w-4 h-4 text-yellow-600" />
-              <span className="text-xs text-gray-600 font-medium">Pendents</span>
-            </div>
-            <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
+          <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+            <p className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-2">Pendents</p>
+            <p className="text-2xl font-bold text-gray-900">{stats.pending}</p>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <CheckCircle className="w-4 h-4 text-green-600" />
-              <span className="text-xs text-gray-600 font-medium">Publicades</span>
-            </div>
-            <p className="text-2xl font-bold text-green-600">{stats.published}</p>
+          <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+            <p className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-2">Publicades</p>
+            <p className="text-2xl font-bold text-gray-900">{stats.published}</p>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <XCircle className="w-4 h-4 text-red-600" />
-              <span className="text-xs text-gray-600 font-medium">Rebutjades</span>
-            </div>
-            <p className="text-2xl font-bold text-red-600">{stats.rejected}</p>
+          <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+            <p className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-2">Rebutjades</p>
+            <p className="text-2xl font-bold text-gray-900">{stats.rejected}</p>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Pause className="w-4 h-4 text-orange-600" />
-              <span className="text-xs text-gray-600 font-medium">Pausades</span>
-            </div>
-            <p className="text-2xl font-bold text-orange-600">{stats.paused}</p>
+          <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+            <p className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-2">Pausades</p>
+            <p className="text-2xl font-bold text-gray-900">{stats.paused}</p>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <AlertCircle className="w-4 h-4 text-purple-600" />
-              <span className="text-xs text-gray-600 font-medium">Caducades</span>
-            </div>
-            <p className="text-2xl font-bold text-purple-600">{stats.expired}</p>
+          <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+            <p className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-2">Caducades</p>
+            <p className="text-2xl font-bold text-gray-900">{stats.expired}</p>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Star className="w-4 h-4 text-yellow-500" />
-              <span className="text-xs text-gray-600 font-medium">Destacades</span>
-            </div>
-            <p className="text-2xl font-bold text-yellow-600">{stats.featured}</p>
+          <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+            <p className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-2">Destacades</p>
+            <p className="text-2xl font-bold text-gray-900">{stats.featured}</p>
           </div>
         </div>
       )}
 
       {/* Filters */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
+      <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Search */}
           <div className="relative">
@@ -334,7 +327,7 @@ export default function OfertasPage() {
               placeholder="Cercar ofertes..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
             />
           </div>
 
@@ -342,12 +335,12 @@ export default function OfertasPage() {
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
           >
             <option value="">Totes les categories</option>
             {categories.map(cat => (
               <option key={cat.id} value={cat.id}>
-                {cat.icon} {cat.name}
+                {cat.name}
               </option>
             ))}
           </select>
@@ -356,7 +349,7 @@ export default function OfertasPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
           >
             <option value="">Tots els estats</option>
             <option value="DRAFT">Esborranys</option>
@@ -370,10 +363,10 @@ export default function OfertasPage() {
       </div>
 
       {/* Offers Table */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         {isLoading ? (
           <div className="p-12 text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-400"></div>
             <p className="mt-4 text-gray-600">Carregant ofertes...</p>
           </div>
         ) : offers.length === 0 ? (
@@ -383,99 +376,98 @@ export default function OfertasPage() {
             <p className="text-gray-600 mb-6">Comença creant la teva primera oferta</p>
             <Link
               href="/empresa/ofertas/crear"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
             >
               <Plus className="w-5 h-5" />
-              Crear primera oferta
+              Crear Primera Oferta
             </Link>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+            <table className="w-full min-w-[800px] divide-y divide-gray-200">
+              <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Oferta</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Categoria</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Preu</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Estat</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Data</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Accions</th>
+                  <th className="w-[35%] px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Oferta</th>
+                  <th className="w-[15%] px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Categoria</th>
+                  <th className="w-[12%] px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Preu</th>
+                  <th className="w-[15%] px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Estat</th>
+                  <th className="w-[13%] px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Data</th>
+                  <th className="w-[10%] px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Accions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-gray-100">
                 {offers.map(offer => (
                   <tr key={offer.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-start gap-3">
-                        {offer.featured && (
-                          <Star className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
-                        )}
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium text-gray-900 truncate">{offer.title}</p>
-                          {offer.shortDescription && (
-                            <p className="text-sm text-gray-500 truncate mt-0.5">
-                              {offer.shortDescription}
-                            </p>
+                    <td className="px-3 py-3">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">
+                          {truncateText(offer.title, 40)}
+                          {offer.featured && (
+                            <span className="ml-2 text-xs text-gray-500">(Destacada)</span>
                           )}
-                        </div>
+                        </p>
+                        {offer.shortDescription && (
+                          <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">
+                            {truncateText(offer.shortDescription, 50)}
+                          </p>
+                        )}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium"
-                        style={{
-                          backgroundColor: `${offer.category.color}20`,
-                          color: offer.category.color
-                        }}
-                      >
-                        {offer.category.icon} {offer.category.name}
+                    <td className="px-3 py-3 whitespace-nowrap">
+                      <span className="text-sm text-gray-700">
+                        {offer.category.name}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm font-medium text-gray-900">
+                    <td className="px-2 py-3">
+                      <span className="text-xs font-semibold text-gray-900">
                         {formatPrice(offer.price, offer.originalPrice)}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-2 py-3">
                       {(() => {
                         const statusInfo = getStatusInfo(offer.status);
-                        const IconComponent = statusInfo.icon;
                         return (
                           <button
                             onClick={() => toggleStatus(offer.id, offer.status)}
                             disabled={!statusInfo.canEdit}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium transition-colors ${statusInfo.color} ${
-                              !statusInfo.canEdit ? 'cursor-not-allowed opacity-75' : ''
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium border transition-colors ${statusInfo.style} ${
+                              !statusInfo.canEdit ? 'cursor-not-allowed opacity-75' : 'hover:bg-gray-100'
                             }`}
                           >
-                            <IconComponent className="w-3.5 h-3.5" />
                             {statusInfo.label}
                           </button>
                         );
                       })()}
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-600">
-                        <p>Creada: {formatDate(offer.createdAt)}</p>
+                    <td className="px-2 py-3">
+                      <div className="text-xs text-gray-600 space-y-0.5">
+                        <p>{formatCompactDate(offer.createdAt)}</p>
                         {offer.publishedAt && (
-                          <p className="text-xs text-gray-400 mt-1">
-                            Publicada: {formatDate(offer.publishedAt)}
+                          <p className="text-xs text-gray-400">
+                            Pub: {formatCompactDate(offer.publishedAt)}
                           </p>
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
+                    <td className="px-2 py-3">
+                      <div className="flex items-center justify-center gap-1">
+                        <Link
+                          href={`/empresa/ofertas/${offer.id}/analytics`}
+                          className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
+                          title="Analytics"
+                        >
+                          <BarChart3 className="w-4 h-4" />
+                        </Link>
                         <Link
                           href={`/empresa/ofertas/${offer.id}`}
-                          className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
                           title="Editar"
                         >
                           <Edit className="w-4 h-4" />
                         </Link>
                         <button
                           onClick={() => handleDelete(offer.id)}
-                          className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                           title="Eliminar"
                         >
                           <Trash2 className="w-4 h-4" />

@@ -25,12 +25,15 @@ export default function CrearOfertaPage() {
     discountPercentage: '',
     originalPrice: '',
     price: '',
+    finalPrice: '', // For compatibility with wizard steps
     priceType: 'FIXED',
     currency: 'EUR',
     publishedAt: new Date().toISOString().split('T')[0],
     expiresAt: '',
+    validUntil: '', // For compatibility with wizard steps
     duration: '',
     images: [],
+    imageUrl: '', // For compatibility with wizard steps
     benefits: '',
     requirements: '',
     conditions: '',
@@ -39,9 +42,11 @@ export default function CrearOfertaPage() {
     contactEmail: '',
     contactPhone: '',
     externalUrl: '',
+    websiteUrl: '', // For compatibility with wizard steps
     location: '',
     remote: false,
     featured: false,
+    isFeatured: false, // For compatibility with wizard steps
     priority: 0,
     tags: []
   });
@@ -125,12 +130,57 @@ export default function CrearOfertaPage() {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '') + '-' + Date.now();
 
+      // Map form data to API expected format
       const offerData = {
-        ...formData,
+        title: formData.title,
+        categoryId: formData.categoryId,
+        description: formData.description,
+        shortDescription: formData.shortDescription,
+
+        // Price mapping
+        price: formData.price || formData.finalPrice, // Map finalPrice to price
+        originalPrice: formData.originalPrice,
+        currency: formData.currency || 'EUR',
+        priceType: formData.priceType || 'FIXED',
+
+        // Images mapping
+        images: formData.images && formData.images.length > 0
+          ? formData.images
+          : (formData.imageUrl ? [formData.imageUrl] : []), // Map imageUrl to images array
+
+        // URL mapping
+        externalUrl: formData.externalUrl || formData.websiteUrl, // Map websiteUrl to externalUrl
+
+        // Dates
+        publishedAt: formData.publishedAt,
+        expiresAt: formData.expiresAt || formData.validUntil, // Map validUntil to expiresAt
+
+        // Other fields
+        benefits: formData.benefits,
+        requirements: formData.requirements,
+        conditions: formData.conditions,
+        duration: formData.duration,
+        location: formData.location,
+        remote: formData.remote || false,
+        featured: formData.featured || formData.isFeatured || false, // Map isFeatured to featured
+        priority: formData.priority || 0,
+        tags: formData.tags || [],
+
+        // Contact
+        contactMethod: formData.contactMethod || 'EMAIL',
+        contactEmail: formData.contactEmail,
+        contactPhone: formData.contactPhone,
+
+        // Internal
+        internalNotes: formData.internalNotes,
+
+        // Status and timestamps
         slug,
         status,
         submittedAt: status === 'PENDING' ? new Date().toISOString() : null
       };
+
+      console.log('📤 Sending offer data to API:', JSON.stringify(offerData, null, 2));
 
       const response = await fetch('/api/empresa/ofertas', {
         method: 'POST',
