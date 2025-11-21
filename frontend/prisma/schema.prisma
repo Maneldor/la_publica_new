@@ -54,6 +54,11 @@ model User {
   leadActivities         LeadActivity[]
   leadTasks              LeadTask[]
   leadDocuments          LeadDocument[]
+  tasksAssigned          Task[]                  @relation("TasksAssigned")
+  tasksCreated           Task[]                  @relation("TasksCreated")
+  taskComments           TaskComment[]           @relation("TaskComments")
+  taskAttachments        TaskAttachment[]        @relation("TaskAttachments")
+  taskActivities         TaskActivity[]          @relation("TaskActivities")
 
   @@index([email])
   @@index([role])
@@ -208,6 +213,7 @@ model Company {
   redemptions      Redemption[]           @relation("CompanyRedemptions")
   subscriptions    Subscription[]
   originalLead     CompanyLead?           @relation("ConvertedLead")
+  tasks            Task[]
 
   @@index([cif])
   @@index([currentPlanId])
@@ -1467,6 +1473,7 @@ model CompanyLead {
   activities           LeadActivity[]
   tasks                LeadTask[]
   documents            LeadDocument[]
+  enterpriseTasks      Task[]
 
   @@index([status])
   @@index([assignedToId])
@@ -1604,4 +1611,186 @@ enum TaskStatus {
   IN_PROGRESS
   COMPLETED
   CANCELLED
+}
+
+// =============================================================================
+// ENTERPRISE TASK MANAGEMENT SYSTEM
+// =============================================================================
+
+model Task {
+  id          String   @id @default(cuid())
+  title       String
+  description String?  @db.Text
+
+  // Clasificación y contexto
+  type        TaskType
+  status      TaskStatus @default(PENDING)
+  priority    TaskPriority
+  category    TaskCategory?
+
+  // Asignación y ownership
+  assignedToId String
+  assignedTo   User     @relation("TasksAssigned", fields: [assignedToId], references: [id])
+  createdById  String
+  createdBy    User     @relation("TasksCreated", fields: [createdById], references: [id])
+
+  // Relaciones con entidades CRM
+  leadId      String?
+  lead        CompanyLead? @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  companyId   String?
+  company     Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  // Temporalidad
+  dueDate     DateTime?
+  startDate   DateTime?
+  completedAt DateTime?
+  estimatedMinutes Int?    // Estimación de tiempo
+  actualMinutes    Int?    // Tiempo real gastado
+
+  // Recordatorios
+  reminderDate DateTime?
+  reminderSent Boolean  @default(false)
+
+  // Recurrencia
+  isRecurring      Boolean  @default(false)
+  recurrenceRule   String?  // RRULE format
+  parentRecurringId String?
+
+  // Scoring y priorización inteligente
+  urgencyScore    Int      @default(0)  // 0-100
+  impactScore     Int      @default(0)  // 0-100
+  effortScore     Int      @default(0)  // 0-100
+  autoScore       Int      @default(0)  // Calculado automáticamente
+
+  // Dependencias
+  blockedBy       Task[]   @relation("TaskDependencies")
+  blocking        Task[]   @relation("TaskDependencies")
+
+  // Subtareas
+  parentTaskId    String?
+  parentTask      Task?    @relation("TaskSubtasks", fields: [parentTaskId], references: [id], onDelete: Cascade)
+  subtasks        Task[]   @relation("TaskSubtasks")
+
+  // Metadata
+  tags            String[]
+  customFields    Json?    // Campos personalizables
+
+  // Auditoría
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relaciones
+  comments    TaskComment[]
+  attachments TaskAttachment[]
+  activities  TaskActivity[]
+
+  @@index([assignedToId])
+  @@index([leadId])
+  @@index([companyId])
+  @@index([status])
+  @@index([dueDate])
+  @@index([priority])
+  @@map("tasks")
+}
+
+enum TaskType {
+  FOLLOW_UP      // Seguimiento
+  MEETING        // Reunión
+  CALL           // Llamada
+  EMAIL          // Email
+  DEMO           // Demo producto
+  PROPOSAL       // Enviar propuesta
+  CONTRACT       // Gestión contrato
+  ONBOARDING     // Onboarding cliente
+  SUPPORT        // Soporte
+  INTERNAL       // Tarea interna
+  OTHER          // Otros
+}
+
+enum TaskPriority {
+  URGENT         // Crítico - inmediato
+  HIGH           // Alta
+  MEDIUM         // Media
+  LOW            // Baja
+}
+
+enum TaskCategory {
+  SALES          // Ventas
+  MARKETING      // Marketing
+  SUPPORT        // Soporte
+  OPERATIONS     // Operaciones
+  ADMIN          // Administración
+  DEVELOPMENT    // Desarrollo
+}
+
+// Comentarios en tareas
+model TaskComment {
+  id        String   @id @default(cuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  userId    String
+  user      User     @relation("TaskComments", fields: [userId], references: [id])
+
+  content   String   @db.Text
+  mentions  String[] // IDs de usuarios mencionados
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([taskId])
+  @@map("task_comments")
+}
+
+// Attachments
+model TaskAttachment {
+  id        String   @id @default(cuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  fileName  String
+  fileUrl   String
+  fileSize  Int
+  mimeType  String
+
+  uploadedById String
+  uploadedBy   User   @relation("TaskAttachments", fields: [uploadedById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([taskId])
+  @@map("task_attachments")
+}
+
+// Activity log
+model TaskActivity {
+  id          String   @id @default(cuid())
+  taskId      String
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  userId      String?
+  user        User?    @relation("TaskActivities", fields: [userId], references: [id])
+
+  action      TaskActivityAction
+  description String
+  metadata    Json?
+
+  createdAt   DateTime @default(now())
+
+  @@index([taskId])
+  @@index([createdAt])
+  @@map("task_activities")
+}
+
+enum TaskActivityAction {
+  CREATED
+  UPDATED
+  ASSIGNED
+  STATUS_CHANGED
+  PRIORITY_CHANGED
+  COMMENT_ADDED
+  COMPLETED
+  REOPENED
+  DELETED
+  ATTACHMENT_ADDED
 }

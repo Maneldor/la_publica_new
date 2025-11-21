@@ -1989,3 +1989,382 @@ enum ReminderType {
   EMAIL
   SMS
 }
+// ═══════════════════════════════════════════════════════════════
+// OFERTAS GRUPALES - SCHEMA PRISMA
+// Añadir al schema existente (NO reemplazar)
+// ═══════════════════════════════════════════════════════════════
+
+// ─────────────────────────────────────────────────────────────
+// 1. NUEVOS ENUMS
+// ─────────────────────────────────────────────────────────────
+
+enum OfferType {
+  INDIVIDUAL  // Oferta normal existente
+  GRUPAL      // Nueva: Oferta grupal
+}
+
+enum GroupOfferStatus {
+  PROGRAMADA    // Aún no ha empezado
+  ACTIVA        // Aceptando inscripciones
+  COMPLETADA    // Alcanzó mínimo, cerrada con éxito
+  CANCELADA     // No alcanzó mínimo
+  FINALIZADA    // Productos entregados
+}
+
+enum ParticipantStatus {
+  INTERESADO    // Apuntado en Fase 1 (gratis)
+  RESERVADO     // Pagó depósito en Fase 2
+  CONFIRMADO    // Pagó total
+  CANCELADO     // Usuario canceló
+  REEMBOLSADO   // Dinero devuelto
+  ENTREGADO     // Recibió producto/servicio
+}
+
+enum PaymentStage {
+  DEPOSITO      // Pago de depósito
+  FINAL         // Pago final
+  COMPLETO      // Pago único (sin depósito)
+  REEMBOLSO     // Devolución
+}
+
+enum RequestStatus {
+  PENDING_ADMIN_REVIEW    // Esperando análisis admin
+  ADMIN_REVIEWING         // Admin analizando
+  ASSIGNED_TO_GESTOR      // Asignado a gestor con presupuesto
+  NEGOTIATING             // Gestor negociando con empresa
+  NEGOTIATED              // Acuerdo alcanzado
+  OFFER_CREATED           // Oferta creada por gestor
+  PENDING_FINAL_APPROVAL  // Esperando aprobación final admin
+  APPROVED                // Aprobado y publicado
+  REJECTED_BY_ADMIN       // Admin rechazó solicitud
+  REJECTED_BY_COMPANY     // Empresa rechazó presupuesto
+  CANCELLED               // Cancelado
+}
+
+// ─────────────────────────────────────────────────────────────
+// 2. EXTENDER MODELO OFFER EXISTENTE
+// ─────────────────────────────────────────────────────────────
+
+model Offer {
+  // ... TODOS TUS CAMPOS ACTUALES SE MANTIENEN ...
+  
+  // 🆕 AÑADIR SOLO ESTE CAMPO:
+  tipo OfferType @default(INDIVIDUAL)
+  
+  // 🆕 NUEVAS RELACIONES:
+  grupalConfig     GroupOfferConfig?
+  participantes    GroupParticipant[]
+  requestOrigin    GroupOfferRequest?
+}
+
+// ─────────────────────────────────────────────────────────────
+// 3. TABLA: SOLICITUDES DE OFERTAS GRUPALES
+// ─────────────────────────────────────────────────────────────
+
+model GroupOfferRequest {
+  id String @id @default(cuid())
+  
+  // ═══ PASO 1: EMPRESA SOLICITA ═══
+  
+  companyId String
+  company Company @relation("CompanyGroupRequests", fields: [companyId], references: [id], onDelete: Cascade)
+  
+  // Datos de la solicitud
+  productType String          // "Cotxe elèctric Tesla Model 3"
+  description String          // Descripción detallada
+  estimatedPrice Float        // Precio unitario estimado
+  minPeople Int               // Mínimo deseado
+  idealPeople Int             // Ideal
+  startDate DateTime?         // Fecha deseada de inicio
+  duration Int?               // Días de duración
+  needsDeposit Boolean?       // ¿Necesita depósito?
+  observations String?        // Comentarios adicionales
+  
+  // ═══ PASO 2: ADMIN ANALIZA ═══
+  
+  adminReviewedBy String?
+  adminReviewer User? @relation("AdminReviewer", fields: [adminReviewedBy], references: [id], onDelete: SetNull)
+  adminReviewedAt DateTime?
+  
+  // Análisis del admin
+  adminViability String?      // "ALTA" | "MITJANA" | "BAIXA"
+  adminComplexity String?     // "SIMPLE" | "MITJANA" | "ALTA"
+  adminRisk String?           // "BAIX" | "MIG" | "ALT"
+  adminNotes String?          // Notas internas
+  
+  // Presupuesto generado por admin
+  budgetServiceFee Float?     // Precio del servicio (ej: 900€)
+  budgetCommission Float?     // % comisión (ej: 2%)
+  budgetTimeline Int?         // Días totales (ej: 30)
+  budgetPhase1Days Int?       // Días fase inscripción
+  budgetPhase2Days Int?       // Días fase confirmación
+  budgetPhase3Days Int?       // Días fase entrega
+  budgetDeposit Float?        // Depósito sugerido
+  budgetMinPeople Int?        // Mínimo sugerido
+  budgetMaxPeople Int?        // Máximo sugerido
+  budgetPriceScales Json?     // [{people: 50, price: 33000}, ...]
+  budgetPdfUrl String?        // URL del PDF presupuesto
+  budgetNotes String?         // Notas para el gestor
+  
+  // ═══ PASO 3: GESTOR NEGOCIA ═══
+  
+  assignedToGestorId String?
+  assignedToGestor User? @relation("GestorAssignments", fields: [assignedToGestorId], references: [id], onDelete: SetNull)
+  assignedAt DateTime?
+  
+  // Reunión empresa-gestor
+  meetingDate DateTime?
+  meetingNotes String?        // Notas de la reunión
+  
+  // Condiciones finales negociadas
+  finalServiceFee Float?      // Precio negociado
+  finalCommission Float?      // Comisión negociada
+  finalTimeline Int?          // Timeline final
+  finalPhase1Days Int?
+  finalPhase2Days Int?
+  finalPhase3Days Int?
+  finalDeposit Float?
+  finalMinPeople Int?
+  finalMaxPeople Int?
+  finalPriceScales Json?
+  finalNotes String?
+  
+  // ═══ PASO 4: OFERTA CREADA ═══
+  
+  createdOfferId String? @unique
+  createdOffer Offer? @relation(fields: [createdOfferId], references: [id], onDelete: SetNull)
+  offerCreatedAt DateTime?
+  
+  // Estado del proceso
+  status RequestStatus @default(PENDING_ADMIN_REVIEW)
+  
+  // Motivos de rechazo
+  rejectionReason String?
+  rejectedAt DateTime?
+  
+  // Tracking
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([companyId, status])
+  @@index([assignedToGestorId, status])
+  @@index([adminReviewedBy])
+  @@index([status, createdAt])
+  @@map("group_offer_requests")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 4. TABLA: CONFIGURACIÓN DE OFERTA GRUPAL
+// ─────────────────────────────────────────────────────────────
+
+model GroupOfferConfig {
+  id String @id @default(cuid())
+  offerId String @unique
+  offer Offer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  
+  // ═══ CONFIGURACIÓN FINANCIERA ═══
+  
+  // Precio del servicio (pago único a La Pública)
+  serviceFee Float            // Ej: 900€
+  servicePaid Boolean @default(false)
+  servicePaymentId String?    // Stripe Payment Intent ID
+  servicePaymentDate DateTime?
+  
+  // Comisión sobre ventas
+  commissionRate Float        // Ej: 2 (significa 2%)
+  
+  // Precios y escalas
+  precioBase Float            // Precio inicial sin descuento
+  escalas Json                // [{minPersonas: 60, precio: 33000}, ...]
+  precioActual Float          // Precio actual según personas
+  
+  // ═══ LÍMITES Y PERSONAS ═══
+  
+  minPersonas Int             // Mínimo para activar
+  maxPersonas Int             // Máximo de plazas
+  personasActuales Int @default(0)
+  personasInteresadas Int @default(0)    // Fase 1
+  personasDepositadas Int @default(0)    // Fase 2
+  personasConfirmadas Int @default(0)    // Fase 3
+  
+  maxPorUsuario Int @default(1)  // Máximo por usuario
+  
+  // ═══ TIMELINE (3 FASES) ═══
+  
+  // Fase 1: Inscripción (gratis)
+  phase1StartDate DateTime
+  phase1EndDate DateTime
+  phase1Days Int              // Duración en días
+  
+  // Fase 2: Confirmación con depósito
+  phase2StartDate DateTime?
+  phase2EndDate DateTime?
+  phase2Days Int              // Duración en días
+  
+  // Fase 3: Entrega
+  phase3Days Int              // Días desde pago final hasta entrega
+  estimatedDeliveryDate DateTime?
+  
+  // ═══ SISTEMA DE PAGOS ═══
+  
+  requiresDeposit Boolean     // ¿Requiere depósito?
+  depositAmount Float?        // Cantidad del depósito
+  depositPercentage Float?    // O porcentaje del precio
+  
+  // ═══ POLÍTICA DE REEMBOLSOS ═══
+  
+  autoRefundIfNotReached Boolean @default(true)
+  cancellationHoursBefore Int @default(48)  // Horas antes para cancelar
+  refundPolicy String?        // Texto de la política
+  
+  // ═══ ESTADO ═══
+  
+  estado GroupOfferStatus @default(PROGRAMADA)
+  
+  // ═══ ORIGEN Y RESPONSABLES ═══
+  
+  createdByGestorId String
+  createdByGestor User @relation("GestorCreatedOffers", fields: [createdByGestorId], references: [id])
+  
+  requestOriginId String?     // Link a la solicitud original
+  
+  negotiationNotes String?    // Notas de la negociación
+  internalNotes String?       // Notas internas admin/gestor
+  
+  // ═══ GAMIFICACIÓN (OPCIONAL - FASE 7) ═══
+  
+  referralReward Float?       // Recompensa por referido
+  allowReferrals Boolean @default(false)
+  
+  // Tracking
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([offerId])
+  @@index([estado])
+  @@index([createdByGestorId])
+  @@index([phase1StartDate, phase1EndDate])
+  @@map("group_offer_configs")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 5. TABLA: PARTICIPANTES
+// ─────────────────────────────────────────────────────────────
+
+model GroupParticipant {
+  id String @id @default(cuid())
+  offerId String
+  offer Offer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  userId String
+  user User @relation("UserGroupParticipations", fields: [userId], references: [id], onDelete: Cascade)
+  
+  // ═══ POSICIÓN Y ESTADO ═══
+  
+  posicion Int                // Número de inscripción (ej: #37)
+  estado ParticipantStatus @default(INTERESADO)
+  
+  // ═══ PRECIOS ═══
+  
+  precioReservado Float       // Precio cuando se apuntó
+  precioFinal Float?          // Precio final al cerrar
+  
+  // ═══ PAGOS ═══
+  
+  depositoPagado Boolean @default(false)
+  montoDepositado Float?
+  stripeDepositId String?     // Payment Intent del depósito
+  fechaDepositoPagado DateTime?
+  
+  pagoCompleto Boolean @default(false)
+  montoPagoFinal Float?
+  stripeFinalPaymentId String?  // Payment Intent del pago final
+  fechaPagoFinal DateTime?
+  
+  // ═══ TRACKING ═══
+  
+  fechaInscripcion DateTime @default(now())
+  fechaConfirmacion DateTime?     // Cuando pagó depósito
+  fechaCancelacion DateTime?
+  fechaEntrega DateTime?
+  
+  // ═══ NOTIFICACIONES ═══
+  
+  notificarBajadas Boolean @default(true)
+  notificarCierre Boolean @default(true)
+  notificarProximoNivel Boolean @default(true)
+  
+  // ═══ REFERIDOS (OPCIONAL - FASE 7) ═══
+  
+  referidoPor String?         // userId que lo invitó
+  codigoReferido String?      // Código único de referido
+  referidosCount Int @default(0)
+  
+  // ═══ REEMBOLSOS ═══
+  
+  reembolsado Boolean @default(false)
+  montoReembolsado Float?
+  stripeRefundId String?
+  fechaReembolso DateTime?
+  motivoReembolso String?
+  
+  // Tracking
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([offerId, userId])
+  @@index([userId])
+  @@index([offerId, estado])
+  @@index([fechaInscripcion])
+  @@index([estado])
+  @@map("group_participants")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 6. EXTENDER ENUM NotificationType (buscar y añadir)
+// ─────────────────────────────────────────────────────────────
+
+enum NotificationType {
+  // ... tus tipos existentes ...
+  
+  // 🆕 NUEVOS TIPOS PARA OFERTAS GRUPALES:
+  GROUP_REQUEST_RECEIVED       // Admin: Nueva solicitud
+  GROUP_REQUEST_ASSIGNED       // Gestor: Solicitud asignada
+  GROUP_OFFER_APPROVED         // Empresa: Oferta aprobada
+  GROUP_OFFER_REJECTED         // Empresa: Oferta rechazada
+  GROUP_PHASE1_STARTED         // Participantes: Fase 1 inició
+  GROUP_PHASE2_STARTED         // Participantes: Pagar depósito
+  GROUP_PRICE_DROP             // Participantes: Precio bajó
+  GROUP_NEXT_LEVEL             // Participantes: Cerca de siguiente nivel
+  GROUP_CLOSING_SOON           // Participantes: Quedan 24h
+  GROUP_MINIMUM_REACHED        // Todos: Se alcanzó mínimo
+  GROUP_COMPLETED              // Todos: Oferta completada
+  GROUP_CANCELLED              // Todos: Oferta cancelada
+  GROUP_PAYMENT_DUE            // Participante: Pagar resto
+  GROUP_DELIVERED              // Participante: Producto entregado
+  GROUP_REFERRAL_JOINED        // Usuario: Amigo se unió
+}
+
+// ─────────────────────────────────────────────────────────────
+// 7. RELACIONES ADICIONALES EN USER
+// ─────────────────────────────────────────────────────────────
+
+model User {
+  // ... tus campos existentes ...
+  
+  // 🆕 NUEVAS RELACIONES:
+  adminReviewedRequests    GroupOfferRequest[] @relation("AdminReviewer")
+  assignedRequests         GroupOfferRequest[] @relation("GestorAssignments")
+  createdGroupOffers       GroupOfferConfig[] @relation("GestorCreatedOffers")
+  groupParticipations      GroupParticipant[] @relation("UserGroupParticipations")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 8. RELACIONES ADICIONALES EN COMPANY
+// ─────────────────────────────────────────────────────────────
+
+model Company {
+  // ... tus campos existentes ...
+  
+  // 🆕 NUEVA RELACIÓN:
+  groupOfferRequests GroupOfferRequest[] @relation("CompanyGroupRequests")
+}
