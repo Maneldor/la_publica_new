@@ -103,29 +103,31 @@ export default function MillorarPlaPage() {
     }
   }
 
-  // Función para obtener planes disponibles para upgrade
-  function getAvailablePlansForUpgrade(currentPlanTier: string, allPlans: AvailablePlan[]): AvailablePlan[] {
-    const planHierarchy = ['PIONERES', 'STANDARD', 'STRATEGIC', 'ENTERPRISE'];
-    const currentIndex = planHierarchy.indexOf(currentPlanTier);
-
-    if (currentIndex === -1) return [];
-
-    // Filtrar solo planes superiores al actual y visibles
-    return allPlans.filter(plan => {
-      const planIndex = planHierarchy.indexOf(plan.tier);
-      return planIndex > currentIndex && plan.isVisible && plan.isActive;
-    });
-  }
-
   // Actualizar upgradeablePlans cuando cambien currentPlan o availablePlans
   useEffect(() => {
-    if (currentPlan && availablePlans.length > 0) {
-      const upgradeable = getAvailablePlansForUpgrade(currentPlan.plan.tier, availablePlans);
-      setUpgradeablePlans(upgradeable);
+    async function loadUpgradeablePlans() {
+      if (currentPlan && availablePlans.length > 0) {
+        // Usar lógica local directamente (no Prisma en frontend)
+        const planHierarchy = ['PIONERES', 'STANDARD', 'STRATEGIC', 'ENTERPRISE'];
+        const currentIndex = planHierarchy.indexOf(currentPlan.plan.tier);
+        if (currentIndex !== -1) {
+          const upgradeable = availablePlans.filter(plan => {
+            const planIndex = planHierarchy.indexOf(plan.tier);
+            return planIndex > currentIndex && plan.isVisible && plan.isActive;
+          });
+          setUpgradeablePlans(upgradeable);
+        }
+      }
     }
+
+    loadUpgradeablePlans();
   }, [currentPlan, availablePlans]);
 
-  const handleSelectPlan = (selectedPlan: AvailablePlan) => {
+  const [upgradeData, setUpgradeData] = useState<any>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [loadingUpgrade, setLoadingUpgrade] = useState(false);
+
+  const handleSelectPlan = async (selectedPlan: AvailablePlan) => {
     // Validar que el plan seleccionado sea realmente un upgrade válido
     const planHierarchy = ['PIONERES', 'STANDARD', 'STRATEGIC', 'ENTERPRISE'];
     const currentIndex = planHierarchy.indexOf(currentPlan?.plan.tier || '');
@@ -136,9 +138,54 @@ export default function MillorarPlaPage() {
       return;
     }
 
-    // TODO: Redirigir a página de confirmación con selectedPlan
-    console.log('Redirigir a confirmar upgrade:', selectedPlan);
-    alert(`Redirigint a confirmació per actualitzar a ${selectedPlan.name}`);
+    setLoadingUpgrade(true);
+    try {
+      // Obtener información de prorrateo del endpoint
+      const response = await fetch(`/api/empresa/plan/upgrade?targetTier=${selectedPlan.tier}`);
+      const data = await response.json();
+
+      if (data.success) {
+        setUpgradeData(data.preview);
+        setShowUpgradeModal(true);
+      } else {
+        alert(`❌ Error: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('Error fetching upgrade data:', error);
+      alert('❌ Error obtenint informació de l\'upgrade');
+    } finally {
+      setLoadingUpgrade(false);
+    }
+  };
+
+  const handleConfirmUpgrade = async () => {
+    if (!upgradeData) return;
+
+    setLoadingUpgrade(true);
+    try {
+      const response = await fetch('/api/empresa/plan/upgrade', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          newPlan: upgradeData.targetPlan.tier
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert(`✅ ${data.message}`);
+        setShowUpgradeModal(false);
+        router.push('/empresa/pla'); // Redirigir de vuelta al plan
+      } else {
+        alert(`❌ Error: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('Error confirming upgrade:', error);
+      alert('❌ Error confirmant l\'upgrade');
+    } finally {
+      setLoadingUpgrade(false);
+    }
   };
 
   if (loading) {
@@ -245,6 +292,124 @@ export default function MillorarPlaPage() {
           </div>
         )}
       </div>
+
+      {/* Modal de Confirmación de Upgrade */}
+      {showUpgradeModal && upgradeData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between rounded-t-xl">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Confirmar Actualització de Pla</h3>
+                <p className="text-sm text-gray-600">Revisa els detalls del canvi abans de confirmar</p>
+              </div>
+              <button
+                onClick={() => setShowUpgradeModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+                aria-label="Tancar modal"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Plans Comparison */}
+              <div className="grid md:grid-cols-2 gap-4">
+                {/* Current Plan */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="font-semibold text-gray-900 mb-2">Pla Actual</h4>
+                  <p className="text-lg font-bold text-gray-700">{upgradeData.currentPlan.name}</p>
+                  <p className="text-sm text-gray-600">
+                    Preu base: {upgradeData.currentPlan.basePrice}€
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Preu pagat: <span className="font-semibold">{upgradeData.currentPlan.paidPrice}€</span>
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    (Amb {upgradeData.currentPlan.discount}% descompte)
+                  </p>
+                </div>
+
+                {/* Target Plan */}
+                <div className="bg-blue-50 rounded-lg p-4 border-2 border-blue-200">
+                  <h4 className="font-semibold text-blue-900 mb-2">Nou Pla</h4>
+                  <p className="text-lg font-bold text-blue-700">{upgradeData.targetPlan.name}</p>
+                  <p className="text-sm text-blue-600">
+                    Preu base: {upgradeData.targetPlan.basePrice}€
+                  </p>
+                  <p className="text-sm text-blue-600">
+                    Preu amb descompte: <span className="font-semibold">{upgradeData.targetPlan.discountedPrice}€</span>
+                  </p>
+                  <p className="text-xs text-blue-500">
+                    (Amb {upgradeData.targetPlan.discount}% descompte primer any)
+                  </p>
+                </div>
+              </div>
+
+              {/* Proration Details */}
+              {upgradeData.proration && (
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                  <h4 className="font-semibold text-orange-900 mb-3">📊 Detalls del Prorrateo</h4>
+
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Dies restants del pla actual:</span>
+                      <span className="font-semibold">{upgradeData.proration.daysRemaining} dies</span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Tarifa diària pagada:</span>
+                      <span className="font-semibold">{upgradeData.proration.dailyRate}€/dia</span>
+                    </div>
+
+                    <div className="flex justify-between border-t pt-2">
+                      <span className="text-gray-600">Crèdit per dies no usats:</span>
+                      <span className="font-semibold text-green-600">+{upgradeData.proration.remainingCredit}€</span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Preu nou pla (amb descompte):</span>
+                      <span className="font-semibold">{upgradeData.targetPlan.discountedPrice}€</span>
+                    </div>
+
+                    <div className="flex justify-between border-t pt-2 text-lg">
+                      <span className="text-gray-900 font-semibold">Import a pagar ara:</span>
+                      <span className="font-bold text-blue-600">{upgradeData.proration.amountToPay}€</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => setShowUpgradeModal(false)}
+                  className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                  disabled={loadingUpgrade}
+                >
+                  Cancel·lar
+                </button>
+                <button
+                  onClick={handleConfirmUpgrade}
+                  disabled={loadingUpgrade}
+                  className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-medium"
+                >
+                  {loadingUpgrade ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                      Processant...
+                    </>
+                  ) : (
+                    <>
+                      Confirmar Upgrade - {upgradeData.proration?.amountToPay || upgradeData.priceDiff}€
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

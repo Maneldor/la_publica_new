@@ -1,0 +1,266 @@
+### Test 1: Análisis válido completo con aprobación
+POST http://localhost:3001/api/admin/ofertas-grupales/solicitudes/REQUEST_ID_PLACEHOLDER/analizar
+Content-Type: application/json
+
+{
+  "adminViability": "ALTA",
+  "adminComplexity": "MITJANA",
+  "adminRisk": "BAIX",
+  "adminNotes": "Producte premium d'una empresa sòlida. El mercat objectiu és clar i hi ha demanda provada. Recomanem aprovar amb les condicions proposades.",
+  "budgetServiceFee": 900,
+  "budgetCommission": 2.5,
+  "budgetPhase1Days": 15,
+  "budgetPhase2Days": 7,
+  "budgetPhase3Days": 30,
+  "budgetDeposit": 1500,
+  "budgetMinPeople": 50,
+  "budgetMaxPeople": 100,
+  "budgetPriceScales": [
+    { "minPersonas": 50, "precio": 3300 },
+    { "minPersonas": 75, "precio": 3000 },
+    { "minPersonas": 100, "precio": 2500 }
+  ],
+  "budgetNotes": "Negociar possibilitat de reduir servei a 850€ si accepten tot el pressupost. Timeline pot ajustar-se segons capacitat logística de l'empresa.",
+  "approved": true
+}
+
+### Test 2: Sin autenticación (debe fallar 401)
+POST http://localhost:3001/api/admin/ofertas-grupales/solicitudes/REQUEST_ID_PLACEHOLDER/analizar
+Content-Type: application/json
+
+{
+  "adminViability": "ALTA",
+  "adminComplexity": "SIMPLE",
+  "adminRisk": "BAIX",
+  "adminNotes": "Test sin autenticación",
+  "budgetServiceFee": 500,
+  "budgetCommission": 2,
+  "budgetPhase1Days": 10,
+  "budgetPhase2Days": 5,
+  "budgetPhase3Days": 15,
+  "budgetPriceScales": [
+    { "minPersonas": 20, "precio": 100 }
+  ]
+}
+
+### Test 3: Escalas de precio inválidas (orden incorrecto personas)
+POST http://localhost:3001/api/admin/ofertas-grupales/solicitudes/REQUEST_ID_PLACEHOLDER/analizar
+Content-Type: application/json
+
+{
+  "adminViability": "ALTA",
+  "adminComplexity": "SIMPLE",
+  "adminRisk": "BAIX",
+  "adminNotes": "Test de validación de escalas - orden incorrecto",
+  "budgetServiceFee": 500,
+  "budgetCommission": 2,
+  "budgetPhase1Days": 10,
+  "budgetPhase2Days": 5,
+  "budgetPhase3Days": 15,
+  "budgetPriceScales": [
+    { "minPersonas": 50, "precio": 150 },
+    { "minPersonas": 20, "precio": 100 }
+  ]
+}
+
+### Test 4: Max personas < Min personas (debe fallar)
+POST http://localhost:3001/api/admin/ofertas-grupales/solicitudes/REQUEST_ID_PLACEHOLDER/analizar
+Content-Type: application/json
+
+{
+  "adminViability": "ALTA",
+  "adminComplexity": "SIMPLE",
+  "adminRisk": "BAIX",
+  "adminNotes": "Test validación límites personas",
+  "budgetServiceFee": 500,
+  "budgetCommission": 2,
+  "budgetPhase1Days": 10,
+  "budgetPhase2Days": 5,
+  "budgetPhase3Days": 15,
+  "budgetMinPeople": 100,
+  "budgetMaxPeople": 50,
+  "budgetPriceScales": [
+    { "minPersonas": 100, "precio": 1000 }
+  ]
+}
+
+### Test 5: Solicitud inexistente (debe fallar 404)
+POST http://localhost:3001/api/admin/ofertas-grupales/solicitudes/invalid-id-12345/analizar
+Content-Type: application/json
+
+{
+  "adminViability": "ALTA",
+  "adminComplexity": "SIMPLE",
+  "adminRisk": "BAIX",
+  "adminNotes": "Test solicitud inexistente",
+  "budgetServiceFee": 500,
+  "budgetCommission": 2,
+  "budgetPhase1Days": 10,
+  "budgetPhase2Days": 5,
+  "budgetPhase3Days": 15,
+  "budgetPriceScales": [
+    { "minPersonas": 20, "precio": 100 }
+  ]
+}
+
+### Test 6: Primera escala no coincide con mínimo (múltiples escalas)
+POST http://localhost:3001/api/admin/ofertas-grupales/solicitudes/REQUEST_ID_PLACEHOLDER/analizar
+Content-Type: application/json
+
+{
+  "adminViability": "ALTA",
+  "adminComplexity": "SIMPLE",
+  "adminRisk": "BAIX",
+  "adminNotes": "Test primera escala no coincide con mínimo",
+  "budgetServiceFee": 500,
+  "budgetCommission": 2,
+  "budgetPhase1Days": 10,
+  "budgetPhase2Days": 5,
+  "budgetPhase3Days": 15,
+  "budgetMinPeople": 50,
+  "budgetMaxPeople": 100,
+  "budgetPriceScales": [
+    { "minPersonas": 60, "precio": 1000 },
+    { "minPersonas": 100, "precio": 800 }
+  ]
+}
+
+### Test 7: Análisis con rechazo
+POST http://localhost:3001/api/admin/ofertas-grupales/solicitudes/REQUEST_ID_PLACEHOLDER/analizar
+Content-Type: application/json
+
+{
+  "adminViability": "BAIXA",
+  "adminComplexity": "ALTA",
+  "adminRisk": "ALT",
+  "adminNotes": "Producte massa específic per al nostre mercat. L'empresa no té l'experiència necessària per garantir la qualitat. El volum mínim és massa alt per les nostres comunitats.",
+  "budgetServiceFee": 1200,
+  "budgetCommission": 5,
+  "budgetPhase1Days": 30,
+  "budgetPhase2Days": 15,
+  "budgetPhase3Days": 60,
+  "budgetDeposit": 2000,
+  "budgetPriceScales": [
+    { "minPersonas": 100, "precio": 5000 }
+  ],
+  "budgetNotes": "Cost massa elevat per al perfil de les nostres comunitats públiques.",
+  "approved": false
+}
+
+### Test 8: Datos mínimos requeridos válidos
+POST http://localhost:3001/api/admin/ofertas-grupales/solicitudes/REQUEST_ID_PLACEHOLDER/analizar
+Content-Type: application/json
+
+{
+  "adminViability": "MITJANA",
+  "adminComplexity": "SIMPLE",
+  "adminRisk": "MIG",
+  "adminNotes": "Análisis mínimo pero completo per aprovar aquesta sol·licitud",
+  "budgetServiceFee": 300,
+  "budgetCommission": 1.5,
+  "budgetPhase1Days": 7,
+  "budgetPhase2Days": 3,
+  "budgetPhase3Days": 7,
+  "budgetPriceScales": [
+    { "minPersonas": 20, "precio": 150 }
+  ]
+}
+
+### Test 9: Validación campos requeridos faltantes
+POST http://localhost:3001/api/admin/ofertas-grupales/solicitudes/REQUEST_ID_PLACEHOLDER/analizar
+Content-Type: application/json
+
+{
+  "adminViability": "ALTA",
+  "budgetServiceFee": 500,
+  "budgetCommission": 2,
+  "budgetPhase1Days": 10,
+  "budgetPhase2Days": 5,
+  "budgetPhase3Days": 15
+}
+
+### Test 10: Notas demasiado cortas
+POST http://localhost:3001/api/admin/ofertas-grupales/solicitudes/REQUEST_ID_PLACEHOLDER/analizar
+Content-Type: application/json
+
+{
+  "adminViability": "ALTA",
+  "adminComplexity": "SIMPLE",
+  "adminRisk": "BAIX",
+  "adminNotes": "Nota curta",
+  "budgetServiceFee": 500,
+  "budgetCommission": 2,
+  "budgetPhase1Days": 10,
+  "budgetPhase2Days": 5,
+  "budgetPhase3Days": 15,
+  "budgetPriceScales": [
+    { "minPersonas": 20, "precio": 100 }
+  ]
+}
+
+### Test 11: Valores fuera de rango
+POST http://localhost:3001/api/admin/ofertas-grupales/solicitudes/REQUEST_ID_PLACEHOLDER/analizar
+Content-Type: application/json
+
+{
+  "adminViability": "ALTA",
+  "adminComplexity": "SIMPLE",
+  "adminRisk": "BAIX",
+  "adminNotes": "Test de valores fuera de los rangos permitidos por el schema de validación",
+  "budgetServiceFee": 15000,
+  "budgetCommission": 25,
+  "budgetPhase1Days": 5,
+  "budgetPhase2Days": 1,
+  "budgetPhase3Days": 100,
+  "budgetPriceScales": [
+    { "minPersonas": 20, "precio": 100 }
+  ]
+}
+
+### Test 12: Métodos HTTP no permitidos - GET (debe fallar 405)
+GET http://localhost:3001/api/admin/ofertas-grupales/solicitudes/REQUEST_ID_PLACEHOLDER/analizar
+
+### Test 13: Métodos HTTP no permitidos - PUT (debe fallar 405)
+PUT http://localhost:3001/api/admin/ofertas-grupales/solicitudes/REQUEST_ID_PLACEHOLDER/analizar
+Content-Type: application/json
+
+{
+  "test": "data"
+}
+
+### Test 14: Métodos HTTP no permitidos - DELETE (debe fallar 405)
+DELETE http://localhost:3001/api/admin/ofertas-grupales/solicitudes/REQUEST_ID_PLACEHOLDER/analizar
+
+### Test 15: Escalas múltiples válidas
+POST http://localhost:3001/api/admin/ofertas-grupales/solicitudes/REQUEST_ID_PLACEHOLDER/analizar
+Content-Type: application/json
+
+{
+  "adminViability": "ALTA",
+  "adminComplexity": "MITJANA",
+  "adminRisk": "BAIX",
+  "adminNotes": "Test d'escalas múltiples vàlides amb descomptes progressius",
+  "budgetServiceFee": 750,
+  "budgetCommission": 3,
+  "budgetPhase1Days": 12,
+  "budgetPhase2Days": 5,
+  "budgetPhase3Days": 20,
+  "budgetMinPeople": 30,
+  "budgetMaxPeople": 150,
+  "budgetDeposit": 1000,
+  "budgetPriceScales": [
+    { "minPersonas": 30, "precio": 500 },
+    { "minPersonas": 50, "precio": 450 },
+    { "minPersonas": 80, "precio": 400 },
+    { "minPersonas": 120, "precio": 350 },
+    { "minPersonas": 150, "precio": 300 }
+  ],
+  "budgetNotes": "Descomptes atractius per volums alts. Recomanem promocionar les opcions de major volum.",
+  "approved": true
+}
+
+### Instrucciones de uso:
+### 1. Ejecutar el seeder: npm run seed:group-offers
+### 2. Obtener un ID real de solicitud PENDING de Prisma Studio
+### 3. Reemplazar REQUEST_ID_PLACEHOLDER en todos los tests
+### 4. Probar con autenticación de admin válida

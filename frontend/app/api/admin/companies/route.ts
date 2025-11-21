@@ -30,9 +30,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Obtener todas las empresas activas
+    // Obtener todas las empresas
     const companies = await prismaClient.company.findMany({
-      where: { isActive: true },
       select: {
         id: true,
         name: true,
@@ -41,28 +40,33 @@ export async function GET(request: NextRequest) {
         phone: true,
         address: true,
         website: true,
+        description: true,
+        logo: true,
         isActive: true,
+        status: true,
         createdAt: true,
+        updatedAt: true,
       },
-      orderBy: { name: 'asc' },
+      orderBy: { createdAt: 'desc' },
     });
 
     // Formatear respuesta para compatibilidad con el frontend
     const formattedCompanies = companies.map(company => ({
       id: company.id,
       name: company.name,
-      description: 'Empresa registrada en la plataforma', // Descripción por defecto
-      sector: 'otros', // Por defecto, ya que no hay campo sector en el modelo
-      size: 'pequeña', // Por defecto, ya que no hay campo size en el modelo
+      description: company.description || 'Empresa colaboradora',
+      sector: 'colaboracion', // Sector por defecto para empresas colaboradoras
+      size: 'pequeña', // Tamaño por defecto
       email: company.email,
       phone: company.phone,
       website: company.website,
       address: company.address,
-      logo: null, // Por ahora null
-      isVerified: true, // Por defecto, ya que no hay campo isVerified en el modelo
+      logo: company.logo,
+      isVerified: company.status !== 'PENDING', // Verificada si no está pendiente
       isActive: company.isActive,
+      status: company.status, // Incluir el status real
       createdAt: company.createdAt.toISOString(),
-      updatedAt: company.createdAt.toISOString(),
+      updatedAt: company.updatedAt.toISOString(),
       foundedYear: null,
       employeeCount: 0,
       configuration: {}

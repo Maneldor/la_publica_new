@@ -100,6 +100,27 @@ export default function LoginPage() {
     }
   };
 
+  const quickLoginCRM = async () => {
+    setLoading(true);
+    try {
+      const result = await signIn('credentials', {
+        email: 'contacte@lapublica.es',
+        password: 'crm123',
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError('Error en login rápido de CRM');
+      } else {
+        router.push('/gestor-empreses/dashboard'); // Redirigir a gestor CRM
+      }
+    } catch (err: any) {
+      setError('Error en login rápido de CRM');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const quickLoginEmpresa = async () => {
     setLoading(true);
     try {
@@ -309,6 +330,19 @@ export default function LoginPage() {
                 className="mt-2 px-3 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700 disabled:opacity-50"
               >
                 Login Rápido
+              </button>
+            </div>
+
+            <div className="bg-orange-50 p-3 rounded-lg border-2 border-orange-200">
+              <div className="font-medium text-orange-800">📊 Gestor CRM (con datos reales)</div>
+              <div className="text-orange-600">Email: contacte@lapublica.es</div>
+              <div className="text-orange-600">Contraseña: crm123</div>
+              <button
+                onClick={quickLoginCRM}
+                disabled={loading}
+                className="mt-2 px-3 py-1 bg-orange-600 text-white text-xs rounded hover:bg-orange-700 disabled:opacity-50"
+              >
+                Login Rápido CRM
               </button>
             </div>
 

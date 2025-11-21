@@ -1,0 +1,150 @@
+### Test 0: Listar gestores disponibles
+GET http://localhost:3001/api/admin/gestores
+Content-Type: application/json
+
+### Test 1: Asignación válida con notas
+POST http://localhost:3001/api/admin/ofertas-grupales/solicitudes/REQUEST_ID_APPROVED/asignar
+Content-Type: application/json
+
+{
+  "gestorId": "GESTOR_ID_PLACEHOLDER",
+  "notes": "Gestor amb experiència en productes tecnològics premium. Recomanem reunió presencial per la importància del compte."
+}
+
+### Test 2: Asignación sin notas (válido)
+POST http://localhost:3001/api/admin/ofertas-grupales/solicitudes/REQUEST_ID_APPROVED/asignar
+Content-Type: application/json
+
+{
+  "gestorId": "GESTOR_ID_PLACEHOLDER"
+}
+
+### Test 3: Sin autenticación (debe fallar 401)
+POST http://localhost:3001/api/admin/ofertas-grupales/solicitudes/REQUEST_ID_APPROVED/asignar
+Content-Type: application/json
+
+{
+  "gestorId": "GESTOR_ID_PLACEHOLDER"
+}
+
+### Test 4: Gestor inexistente (debe fallar 404)
+POST http://localhost:3001/api/admin/ofertas-grupales/solicitudes/REQUEST_ID_APPROVED/asignar
+Content-Type: application/json
+
+{
+  "gestorId": "clxxx_invalid_id_12345"
+}
+
+### Test 5: Solicitud inexistente (debe fallar 404)
+POST http://localhost:3001/api/admin/ofertas-grupales/solicitudes/invalid-request-id/asignar
+Content-Type: application/json
+
+{
+  "gestorId": "GESTOR_ID_PLACEHOLDER"
+}
+
+### Test 6: Solicitud no aprobada - estado PENDING (debe fallar 400)
+POST http://localhost:3001/api/admin/ofertas-grupales/solicitudes/REQUEST_ID_PENDING/asignar
+Content-Type: application/json
+
+{
+  "gestorId": "GESTOR_ID_PLACEHOLDER",
+  "notes": "Intento de asignar solicitud no aprobada"
+}
+
+### Test 7: Usuario sin rol admin asignando a otro usuario (debe fallar 400)
+POST http://localhost:3001/api/admin/ofertas-grupales/solicitudes/REQUEST_ID_APPROVED/asignar
+Content-Type: application/json
+
+{
+  "gestorId": "EMPLEADO_ID_PLACEHOLDER",
+  "notes": "Test con usuario empleado"
+}
+
+### Test 8: Reasignación (válido si ya está asignado)
+POST http://localhost:3001/api/admin/ofertas-grupales/solicitudes/REQUEST_ID_APPROVED/asignar
+Content-Type: application/json
+
+{
+  "gestorId": "OTRO_GESTOR_ID_PLACEHOLDER",
+  "notes": "Reassignació per sobrecàrrega de treball del gestor anterior"
+}
+
+### Test 9: Validación de campos - gestorId inválido
+POST http://localhost:3001/api/admin/ofertas-grupales/solicitudes/REQUEST_ID_APPROVED/asignar
+Content-Type: application/json
+
+{
+  "gestorId": "invalid-format-id",
+  "notes": "Test de validación de formato de ID"
+}
+
+### Test 10: Validación de campos - notas demasiado largas
+POST http://localhost:3001/api/admin/ofertas-grupales/solicitudes/REQUEST_ID_APPROVED/asignar
+Content-Type: application/json
+
+{
+  "gestorId": "GESTOR_ID_PLACEHOLDER",
+  "notes": "Aquesta nota és extremament llarga i supera els 1000 caràcters permesos pel sistema de validació implementat amb Zod. La finalitat és provar que la validació funciona correctament quan l'usuari introdueix notes que superen el límit establert. Aquest tipus de validacions són importants per mantenir la integritat de les dades i assegurar-se que els camps no contenen més informació de la que el sistema pot processar adequadament. En aquest cas específic, estem provant el límit de 1000 caràcters per les notes d'assignació, que hauria de ser suficient per proporcionar context i instruccions detallades sobre l'assignació de la sol·licitud al gestor corresponent. Si aquesta validació funciona correctament, el sistema hauria de retornar un error indicant que les notes superen el límit permès i no hauria de processar la sol·licitud d'assignació fins que l'usuari redueixi la longitud del text."
+}
+
+### Test 11: Datos mínimos requeridos (solo gestorId)
+POST http://localhost:3001/api/admin/ofertas-grupales/solicitudes/REQUEST_ID_APPROVED/asignar
+Content-Type: application/json
+
+{
+  "gestorId": "GESTOR_ID_PLACEHOLDER"
+}
+
+### Test 12: Campo gestorId faltante (debe fallar 400)
+POST http://localhost:3001/api/admin/ofertas-grupales/solicitudes/REQUEST_ID_APPROVED/asignar
+Content-Type: application/json
+
+{
+  "notes": "Test sin gestorId"
+}
+
+### Test 13: Métodos HTTP no permitidos - GET (debe fallar 405)
+GET http://localhost:3001/api/admin/ofertas-grupales/solicitudes/REQUEST_ID_APPROVED/asignar
+
+### Test 14: Métodos HTTP no permitidos - PUT (debe fallar 405)
+PUT http://localhost:3001/api/admin/ofertas-grupales/solicitudes/REQUEST_ID_APPROVED/asignar
+Content-Type: application/json
+
+{
+  "gestorId": "GESTOR_ID_PLACEHOLDER"
+}
+
+### Test 15: Métodos HTTP no permitidos - DELETE (debe fallar 405)
+DELETE http://localhost:3001/api/admin/ofertas-grupales/solicitudes/REQUEST_ID_APPROVED/asignar
+
+### Test 16: Verificar endpoint de gestores sin autenticación
+GET http://localhost:3001/api/admin/gestores
+
+### Test 17: Asignación con gestor inactivo (si tienes usuarios inactivos)
+POST http://localhost:3001/api/admin/ofertas-grupales/solicitudes/REQUEST_ID_APPROVED/asignar
+Content-Type: application/json
+
+{
+  "gestorId": "GESTOR_INACTIVO_ID",
+  "notes": "Test con gestor inactivo"
+}
+
+### Instrucciones de uso:
+### 1. Ejecutar Test 0 para obtener lista de gestores disponibles
+### 2. Reemplazar GESTOR_ID_PLACEHOLDER con un ID real de gestor activo
+### 3. Obtener IDs de solicitudes reales:
+###    - REQUEST_ID_APPROVED: una solicitud en estado APPROVED
+###    - REQUEST_ID_PENDING: una solicitud en estado PENDING
+### 4. Reemplazar EMPLEADO_ID_PLACEHOLDER con ID de usuario empleado
+### 5. Ejecutar tests con autenticación de admin válida
+
+### Consultas SQL útiles para obtener IDs:
+### -- Solicitud aprobada:
+### SELECT id, title, status FROM "GroupOfferRequest" WHERE status = 'APPROVED' LIMIT 1;
+###
+### -- Solicitud pendiente:
+### SELECT id, title, status FROM "GroupOfferRequest" WHERE status = 'PENDING' LIMIT 1;
+###
+### -- Usuario empleado:
+### SELECT id, name, email FROM "User" WHERE role = 'EMPLEADO_PUBLICO' LIMIT 1;

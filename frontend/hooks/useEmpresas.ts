@@ -48,6 +48,7 @@ export interface Empresa {
   configuration?: any;
   isVerified: boolean;
   isActive: boolean;
+  status?: string;
   createdAt: string;
   updatedAt: string;
 }

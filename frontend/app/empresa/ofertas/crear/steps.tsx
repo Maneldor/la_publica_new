@@ -57,8 +57,182 @@ export function Step1Info({ formData, onChange, categories }: any) {
   );
 }
 
-// Step 2: Preus
-export function Step2Preus({ formData, onChange }: any) {
+// Step 2: Tipus de Redempció
+export function Step2RedemptionType({ formData, onChange }: any) {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-semibold mb-2">Tipus de redempció</h3>
+        <p className="text-sm text-gray-600 mb-4">
+          Selecciona com els usuaris podran accedir a la teva oferta
+        </p>
+      </div>
+
+      {/* Grid de opciones */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        {/* CUPÓN QR - Por defecto */}
+        <button
+          type="button"
+          onClick={() => onChange({ ...formData, redemptionType: 'COUPON' })}
+          className={`
+            p-6 rounded-lg border-2 text-left transition-all
+            ${formData.redemptionType === 'COUPON'
+              ? 'border-blue-500 bg-blue-50'
+              : 'border-gray-200 hover:border-gray-300'
+            }
+          `}
+        >
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h4 className="font-semibold mb-1">Cupó amb QR</h4>
+              <p className="text-sm text-gray-600">
+                L'usuari genera un cupó amb codi QR que pot utilitzar a la teva botiga física o online
+              </p>
+              <div className="mt-2">
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                  Recomanat
+                </span>
+              </div>
+            </div>
+          </div>
+        </button>
+
+        {/* ONLINE - Redirect externo */}
+        <button
+          type="button"
+          onClick={() => onChange({ ...formData, redemptionType: 'ONLINE' })}
+          className={`
+            p-6 rounded-lg border-2 text-left transition-all
+            ${formData.redemptionType === 'ONLINE'
+              ? 'border-blue-500 bg-blue-50'
+              : 'border-gray-200 hover:border-gray-300'
+            }
+          `}
+        >
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-green-100 rounded-lg">
+              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h4 className="font-semibold mb-1">Enllaç extern</h4>
+              <p className="text-sm text-gray-600">
+                Redirigeix directament al teu web amb el descompte aplicat automàticament
+              </p>
+            </div>
+          </div>
+        </button>
+
+        {/* VIP_ACCOUNT - Monedero */}
+        <button
+          type="button"
+          onClick={() => onChange({ ...formData, redemptionType: 'VIP_ACCOUNT' })}
+          className={`
+            p-6 rounded-lg border-2 text-left transition-all
+            ${formData.redemptionType === 'VIP_ACCOUNT'
+              ? 'border-blue-500 bg-blue-50'
+              : 'border-gray-200 hover:border-gray-300'
+            }
+          `}
+        >
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-purple-100 rounded-lg">
+              <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h4 className="font-semibold mb-1">Moneder digital</h4>
+              <p className="text-sm text-gray-600">
+                El descompte s'afegeix al moneder de l'usuari per utilitzar-lo quan vulgui
+              </p>
+            </div>
+          </div>
+        </button>
+
+        {/* CONTACT_FORM - Lead generation */}
+        <button
+          type="button"
+          onClick={() => onChange({ ...formData, redemptionType: 'CONTACT_FORM' })}
+          className={`
+            p-6 rounded-lg border-2 text-left transition-all
+            ${formData.redemptionType === 'CONTACT_FORM'
+              ? 'border-blue-500 bg-blue-50'
+              : 'border-gray-200 hover:border-gray-300'
+            }
+          `}
+        >
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-orange-100 rounded-lg">
+              <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h4 className="font-semibold mb-1">Formulari de contacte</h4>
+              <p className="text-sm text-gray-600">
+                Els usuaris omplen un formulari i tu els contactes directament per tancar la venda
+              </p>
+            </div>
+          </div>
+        </button>
+      </div>
+
+      {/* Campo condicional: URL externa para tipo ONLINE */}
+      {formData.redemptionType === 'ONLINE' && (
+        <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            URL de la teva pàgina d'oferta *
+          </label>
+          <input
+            type="url"
+            value={formData.externalUrl || ''}
+            onChange={(e) => onChange({ ...formData, externalUrl: e.target.value })}
+            placeholder="https://www.exemple.cat/oferta-especial"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            required
+          />
+          <p className="mt-2 text-xs text-gray-600">
+            Els usuaris seran redirigits a aquesta URL amb paràmetres de seguiment automàtics
+          </p>
+        </div>
+      )}
+
+      {/* Información adicional según tipo */}
+      <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="flex gap-2">
+          <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+          </svg>
+          <div className="text-sm text-gray-700">
+            {formData.redemptionType === 'COUPON' && (
+              <p>Els usuaris podran generar un cupó únic amb codi QR per utilitzar a la teva botiga o web.</p>
+            )}
+            {formData.redemptionType === 'ONLINE' && (
+              <p>Quan l'usuari faci clic a "Aprofitar oferta", serà redirigit directament al teu web amb el descompte aplicat.</p>
+            )}
+            {formData.redemptionType === 'VIP_ACCOUNT' && (
+              <p>El valor del descompte s'afegirà automàticament al moneder digital de l'usuari per utilitzar-lo quan vulgui.</p>
+            )}
+            {formData.redemptionType === 'CONTACT_FORM' && (
+              <p>Rebràs les dades de contacte dels usuaris interessats i podràs gestionar les sol·licituds des del teu panel.</p>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Step 3: Preus
+export function Step3Preus({ formData, onChange }: any) {
   const calculateDiscount = () => {
     const original = parseFloat(formData.originalPrice) || 0;
     const final = parseFloat(formData.price) || 0;
@@ -140,8 +314,8 @@ export function Step2Preus({ formData, onChange }: any) {
   );
 }
 
-// Step 3: Dates
-export function Step3Dates({ formData, onChange }: any) {
+// Step 4: Dates
+export function Step4Dates({ formData, onChange }: any) {
   const today = new Date().toISOString().split('T')[0];
 
   return (
@@ -194,8 +368,8 @@ export function Step3Dates({ formData, onChange }: any) {
   );
 }
 
-// Step 4: Imatges
-export function Step4Imatges({ formData, onChange }: any) {
+// Step 5: Imatges
+export function Step5Imatges({ formData, onChange }: any) {
   const addImage = (url: string) => {
     const currentImages = formData.images || [];
     if (url && !currentImages.includes(url)) {
@@ -278,8 +452,8 @@ export function Step4Imatges({ formData, onChange }: any) {
   );
 }
 
-// Step 5: Contingut (descripción detallada)
-export function Step5Contingut({ formData, onChange }: any) {
+// Step 6: Contingut (descripción detallada)
+export function Step6Contingut({ formData, onChange }: any) {
   return (
     <div className="space-y-4">
       <div>
@@ -315,8 +489,8 @@ export function Step5Contingut({ formData, onChange }: any) {
   );
 }
 
-// Step 6: Condicions
-export function Step6Condicions({ formData, onChange }: any) {
+// Step 7: Condicions
+export function Step7Condicions({ formData, onChange }: any) {
   return (
     <div className="space-y-4">
       <div>
@@ -361,8 +535,8 @@ export function Step6Condicions({ formData, onChange }: any) {
   );
 }
 
-// Step 7: Contacte i Ubicació
-export function Step7Contacte({ formData, onChange }: any) {
+// Step 8: Contacte i Ubicació
+export function Step8Contacte({ formData, onChange }: any) {
   return (
     <div className="space-y-4">
       <div>
@@ -453,8 +627,8 @@ export function Step7Contacte({ formData, onChange }: any) {
   );
 }
 
-// Step 8: Revisió i Publicació
-export function Step8Publicacio({ formData, onChange }: any) {
+// Step 9: Revisió i Publicació
+export function Step9Publicacio({ formData, onChange }: any) {
   return (
     <div className="space-y-6">
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -528,6 +702,41 @@ export function Step8Publicacio({ formData, onChange }: any) {
             <dt className="text-gray-600">Categoria:</dt>
             <dd className="font-medium text-gray-900">{formData.categoryId || '-'}</dd>
           </div>
+          <div className="flex justify-between">
+            <dt className="text-gray-600">Tipus redempció:</dt>
+            <dd className="font-medium text-gray-900">
+              {formData.redemptionType === 'COUPON' &&
+                <span className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                  Cupó QR
+                </span>
+              }
+              {formData.redemptionType === 'ONLINE' &&
+                <span className="inline-flex items-center px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                  Enllaç extern
+                </span>
+              }
+              {formData.redemptionType === 'VIP_ACCOUNT' &&
+                <span className="inline-flex items-center px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
+                  Moneder digital
+                </span>
+              }
+              {formData.redemptionType === 'CONTACT_FORM' &&
+                <span className="inline-flex items-center px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">
+                  Formulari contacte
+                </span>
+              }
+            </dd>
+          </div>
+          {formData.redemptionType === 'ONLINE' && formData.externalUrl && (
+            <div className="flex justify-between">
+              <dt className="text-gray-600">URL externa:</dt>
+              <dd className="font-medium text-gray-900 break-all">
+                <a href={formData.externalUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                  {formData.externalUrl}
+                </a>
+              </dd>
+            </div>
+          )}
           {formData.discountPercentage && (
             <div className="flex justify-between">
               <dt className="text-gray-600">Descompte:</dt>

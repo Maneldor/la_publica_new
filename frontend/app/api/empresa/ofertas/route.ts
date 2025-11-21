@@ -211,6 +211,7 @@ export async function POST(request: NextRequest) {
       contactPhone,
       contactForm,
       externalUrl,
+      redemptionType = 'COUPON', // 🆕 Nuevo campo con valor por defecto
       requirements,
       benefits,
       duration,
@@ -229,6 +230,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         error: 'Camps obligatoris',
         message: 'Títol, categoria i descripció són obligatoris'
+      }, { status: 400 });
+    }
+
+    // Validar redemptionType específicos
+    if (redemptionType === 'ONLINE' && !externalUrl) {
+      return NextResponse.json({
+        error: 'URL externa requerida',
+        message: 'Les ofertes de tipus "Enllaç extern" necessiten una URL externa vàlida'
       }, { status: 400 });
     }
 
@@ -301,6 +310,7 @@ export async function POST(request: NextRequest) {
         contactPhone,
         contactForm,
         externalUrl,
+        redemptionType: redemptionType.toUpperCase(), // 🆕 Agregar redemptionType
         expiresAt: body.expiresAt ? new Date(body.expiresAt) : null,
         requirements,
         benefits,

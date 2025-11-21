@@ -5,13 +5,14 @@ import { useRouter } from 'next/navigation';
 import OfferWizard from '@/app/components/empresa/OfferWizard';
 import {
   Step1Info,
-  Step2Preus,
-  Step3Dates,
-  Step4Imatges,
-  Step5Contingut,
-  Step6Condicions,
-  Step7Contacte,
-  Step8Publicacio
+  Step2RedemptionType,
+  Step3Preus,
+  Step4Dates,
+  Step5Imatges,
+  Step6Contingut,
+  Step7Condicions,
+  Step8Contacte,
+  Step9Publicacio
 } from './steps';
 
 export default function CrearOfertaPage() {
@@ -42,6 +43,7 @@ export default function CrearOfertaPage() {
     contactEmail: '',
     contactPhone: '',
     externalUrl: '',
+    redemptionType: 'COUPON' as const, // 🆕 Nuevo campo
     websiteUrl: '', // For compatibility with wizard steps
     location: '',
     remote: false,
@@ -76,47 +78,54 @@ export default function CrearOfertaPage() {
       isValid: !!formData.title && !!formData.categoryId
     },
     {
+      id: 'redempcio',
+      title: 'Tipus redempció',
+      description: 'Com accediran els usuaris a l\'oferta',
+      component: <Step2RedemptionType formData={formData} onChange={setFormData} />,
+      isValid: formData.redemptionType === 'ONLINE' ? !!formData.externalUrl : true
+    },
+    {
       id: 'preus',
       title: 'Preus',
       description: 'Configura els descomptes i preus',
-      component: <Step2Preus formData={formData} onChange={setFormData} />
+      component: <Step3Preus formData={formData} onChange={setFormData} />
     },
     {
       id: 'dates',
       title: 'Dates',
       description: 'Defineix les dates de validesa',
-      component: <Step3Dates formData={formData} onChange={setFormData} />
+      component: <Step4Dates formData={formData} onChange={setFormData} />
     },
     {
       id: 'imatges',
       title: 'Imatges',
       description: 'Afegeix imatges de l\'oferta',
-      component: <Step4Imatges formData={formData} onChange={setFormData} />
+      component: <Step5Imatges formData={formData} onChange={setFormData} />
     },
     {
       id: 'contingut',
       title: 'Contingut',
       description: 'Descripció detallada i beneficis',
-      component: <Step5Contingut formData={formData} onChange={setFormData} />,
+      component: <Step6Contingut formData={formData} onChange={setFormData} />,
       isValid: !!formData.description
     },
     {
       id: 'condicions',
       title: 'Condicions',
       description: 'Requisits i condicions d\'ús',
-      component: <Step6Condicions formData={formData} onChange={setFormData} />
+      component: <Step7Condicions formData={formData} onChange={setFormData} />
     },
     {
       id: 'contacte',
       title: 'Contacte',
       description: 'Informació de contacte i ubicació',
-      component: <Step7Contacte formData={formData} onChange={setFormData} />
+      component: <Step8Contacte formData={formData} onChange={setFormData} />
     },
     {
       id: 'publicacio',
       title: 'Publicació',
       description: 'Revisió final i opcions de publicació',
-      component: <Step8Publicacio formData={formData} onChange={setFormData} />
+      component: <Step9Publicacio formData={formData} onChange={setFormData} />
     }
   ];
 
@@ -150,6 +159,9 @@ export default function CrearOfertaPage() {
 
         // URL mapping
         externalUrl: formData.externalUrl || formData.websiteUrl, // Map websiteUrl to externalUrl
+
+        // Redemption type
+        redemptionType: formData.redemptionType || 'COUPON', // 🆕 Agregar redemptionType
 
         // Dates
         publishedAt: formData.publishedAt,

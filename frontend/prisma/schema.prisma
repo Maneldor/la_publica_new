@@ -8,43 +8,52 @@ datasource db {
 }
 
 model User {
-  id                 String           @id @default(cuid())
-  email              String           @unique
-  name               String?
-  image              String?
-  role               UserRole         @default(USER)
-  communityId        String?
-  isActive           Boolean          @default(true)
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
-  userType           UserType         @default(EMPLOYEE)
-  ownedCompanyId     String?          @unique
-  memberCompanyId    String?
-  companyRole        CompanyRole?
-  cargo              String?
-  password           String?
-  anunciosCreados    Anuncio[]        @relation("AnunciosCreados")
-  comentariosCreados AnuncioComment[] @relation("ComentariosCreados")
-  community          Comunidad?       @relation(fields: [communityId], references: [id])
-  memberCompany      Company?         @relation("CompanyMembers", fields: [memberCompanyId], references: [id])
-  ownedCompany       Company?         @relation("CompanyOwner", fields: [ownedCompanyId], references: [id])
-  managedCompanies   Company[]        @relation("AccountManager")
-  companiesApproved  Company[]        @relation("CompanyApprovedBy")
-  companiesReviewed  Company[]        @relation("CompanyLastReviewedBy")
-  companiesRejected  Company[]        @relation("CompanyRejectedBy")
-  invoicesCreated    Invoice[]        @relation("InvoicesCreated")
-  sentNotifications  Notification[]   @relation("NotificationSender")
-  notifications      Notification[]   @relation("UserNotifications")
-  paymentsProcessed  Payment[]        @relation("PaymentsProcessed")
-  offersApproved     Offer[]          @relation("OfferApprovals")
-  offersRejected     Offer[]          @relation("OfferRejections")
-  favorites          UserFavorite[]   @relation("UserFavorites")
-  coupons            Coupon[]         @relation("UserCoupons")
-  redemptions        Redemption[]     @relation("UserRedemptions")
-  offerEvents        OfferEvent[]     @relation("UserOfferEvents")
+  id                     String                  @id @default(cuid())
+  email                  String                  @unique
+  name                   String?
+  image                  String?
+  role                   UserRole                @default(USER)
+  communityId            String?
+  isActive               Boolean                 @default(true)
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  userType               UserType                @default(EMPLOYEE)
+  ownedCompanyId         String?                 @unique
+  memberCompanyId        String?
+  companyRole            CompanyRole?
+  cargo                  String?
+  password               String?
+  anunciosCreados        Anuncio[]               @relation("AnunciosCreados")
+  comentariosCreados     AnuncioComment[]        @relation("ComentariosCreados")
+  offersApproved         Offer[]                 @relation("OfferApprovals")
+  offersRejected         Offer[]                 @relation("OfferRejections")
+  community              Comunidad?              @relation(fields: [communityId], references: [id])
+  memberCompany          Company?                @relation("CompanyMembers", fields: [memberCompanyId], references: [id])
+  ownedCompany           Company?                @relation("CompanyOwner", fields: [ownedCompanyId], references: [id])
+  auditLogs              AuditLog[]              @relation("UserAuditLogs")
+  managedCompanies       Company[]               @relation("AccountManager")
+  companiesApproved      Company[]               @relation("CompanyApprovedBy")
+  companiesReviewed      Company[]               @relation("CompanyLastReviewedBy")
+  companiesRejected      Company[]               @relation("CompanyRejectedBy")
+  coupons                Coupon[]                @relation("UserCoupons")
+  emailLogs              EmailLog[]              @relation("UserEmailLogs")
+  groupOfferRequests     GroupOfferRequest[]     @relation("GroupOfferRequests")
+  groupParticipations    GroupParticipant[]      @relation("UserGroupParticipants")
+  invoicesCreated        Invoice[]               @relation("InvoicesCreated")
+  leads                  Lead[]
   notificationPreference NotificationPreference? @relation("UserNotificationPreferences")
-  emailLogs          EmailLog[]       @relation("UserEmailLogs")
-  auditLogs          AuditLog[]       @relation("UserAuditLogs")
+  sentNotifications      Notification[]          @relation("NotificationSender")
+  notifications          Notification[]          @relation("UserNotifications")
+  offerEvents            OfferEvent[]            @relation("UserOfferEvents")
+  paymentsProcessed      Payment[]               @relation("PaymentsProcessed")
+  redemptions            Redemption[]            @relation("UserRedemptions")
+  favorites              UserFavorite[]          @relation("UserFavorites")
+  wallet                 UserWallet?
+  assignedLeads          CompanyLead[]           @relation("LeadAssignee")
+  leadInteractions       LeadInteraction[]
+  leadActivities         LeadActivity[]
+  leadTasks              LeadTask[]
+  leadDocuments          LeadDocument[]
 
   @@index([email])
   @@index([role])
@@ -181,21 +190,24 @@ model Company {
   rejectedById     String?
   rejectionReason  String?
   status           CompanyStatus          @default(PENDING)
+  offers           Offer[]
   teamMembers      User[]                 @relation("CompanyMembers")
   owner            User?                  @relation("CompanyOwner")
   budgets          Budget[]
-  offers           Offer[]
   accountManager   User?                  @relation("AccountManager", fields: [accountManagerId], references: [id])
   approvedBy       User?                  @relation("CompanyApprovedBy", fields: [approvedById], references: [id])
   currentPlan      PlanConfig?            @relation("CompanyCurrentPlan", fields: [currentPlanId], references: [id])
   lastReviewedBy   User?                  @relation("CompanyLastReviewedBy", fields: [lastReviewedById], references: [id])
   rejectedBy       User?                  @relation("CompanyRejectedBy", fields: [rejectedById], references: [id])
   profileChanges   CompanyProfileChange[]
-  invoices         Invoice[]
-  subscriptions    Subscription[]
   coupons          Coupon[]               @relation("CompanyCoupons")
-  redemptions      Redemption[]           @relation("CompanyRedemptions")
+  groupOffers      GroupOfferConfig[]     @relation("CompanyGroupOffers")
+  invoices         Invoice[]
+  leads            Lead[]
   offerEvents      OfferEvent[]           @relation("CompanyOfferEvents")
+  redemptions      Redemption[]           @relation("CompanyRedemptions")
+  subscriptions    Subscription[]
+  originalLead     CompanyLead?           @relation("ConvertedLead")
 
   @@index([cif])
   @@index([currentPlanId])
@@ -549,74 +561,75 @@ model OfferCategory {
   name        String   @unique
   slug        String   @unique
   description String?
-  icon        String? // Emoji o nombre de icono Lucide
-  color       String? // Color hex para UI
+  icon        String?
+  color       String?
   isActive    Boolean  @default(true)
-  offers      Offer[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  offers      Offer[]
 
   @@index([slug])
   @@index([isActive])
 }
 
 model Offer {
-  id               String      @id @default(cuid())
-  title            String
-  slug             String      @unique
-  shortDescription String?
-  description      String
-  images           String[]    @default([])
-  price            Decimal?    @db.Decimal(10, 2)
-  originalPrice    Decimal?    @db.Decimal(10, 2)
-  currency         String      @default("EUR")
-  priceType        PriceType   @default(FIXED)
-  companyId        String
-  categoryId       String
-  status           OfferStatus @default(DRAFT)
-  publishedAt      DateTime?
-  expiresAt        DateTime?
-
-  // Campos de aprobación
-  approvedAt     DateTime?
-  approvedBy     String? // userId del admin que aprobó
-  approvedByUser User?         @relation("OfferApprovals", fields: [approvedBy], references: [id])
-  rejectedAt     DateTime?
-  rejectedBy     String? // userId del admin que rechazó
-  rejectedByUser User?         @relation("OfferRejections", fields: [rejectedBy], references: [id])
-  rejectedReason String? // Motivo del rechazo
-  submittedAt    DateTime? // Fecha envío para aprobación
-  priority       Int           @default(0)
-  featured       Boolean       @default(false)
-  featuredUntil  DateTime?
-  contactMethod  ContactMethod @default(EMAIL)
-  contactEmail   String?
-  contactPhone   String?
-  contactForm    String?
-  externalUrl    String?
-  requirements   String?
-  benefits       String?
-  duration       String?
-  location       String?
-  remote         Boolean       @default(false)
-  tags           String[]      @default([])
-  views          Int           @default(0)
-  clicks         Int           @default(0)
-  applications   Int           @default(0)
-  shares         Int           @default(0)
-  lastViewedAt   DateTime?
-  seoTitle       String?
-  seoDescription String?
-  seoKeywords    String[]      @default([])
-  internalNotes  String?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  company        Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  category       OfferCategory @relation(fields: [categoryId], references: [id])
-  favorites      UserFavorite[] @relation("OfferFavorites")
-  coupons        Coupon[]      @relation("OfferCoupons")
-  redemptions    Redemption[]  @relation("OfferRedemptions")
-  events         OfferEvent[]  @relation("OfferEvents")
+  id                 String              @id @default(cuid())
+  title              String
+  slug               String              @unique
+  shortDescription   String?
+  description        String
+  images             String[]            @default([])
+  price              Decimal?            @db.Decimal(10, 2)
+  originalPrice      Decimal?            @db.Decimal(10, 2)
+  currency           String              @default("EUR")
+  priceType          PriceType           @default(FIXED)
+  companyId          String
+  categoryId         String
+  status             OfferStatus         @default(DRAFT)
+  publishedAt        DateTime?
+  expiresAt          DateTime?
+  approvedAt         DateTime?
+  approvedBy         String?
+  rejectedAt         DateTime?
+  rejectedBy         String?
+  rejectedReason     String?
+  submittedAt        DateTime?
+  priority           Int                 @default(0)
+  featured           Boolean             @default(false)
+  featuredUntil      DateTime?
+  contactMethod      ContactMethod       @default(EMAIL)
+  contactEmail       String?
+  contactPhone       String?
+  contactForm        String?
+  externalUrl        String?
+  requirements       String?
+  benefits           String?
+  duration           String?
+  location           String?
+  remote             Boolean             @default(false)
+  tags               String[]            @default([])
+  views              Int                 @default(0)
+  clicks             Int                 @default(0)
+  applications       Int                 @default(0)
+  shares             Int                 @default(0)
+  lastViewedAt       DateTime?
+  seoTitle           String?
+  seoDescription     String?
+  seoKeywords        String[]            @default([])
+  internalNotes      String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  redemptionType     RedemptionType      @default(COUPON)
+  approvedByUser     User?               @relation("OfferApprovals", fields: [approvedBy], references: [id])
+  category           OfferCategory       @relation(fields: [categoryId], references: [id])
+  company            Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  rejectedByUser     User?               @relation("OfferRejections", fields: [rejectedBy], references: [id])
+  coupons            Coupon[]            @relation("OfferCoupons")
+  leads              Lead[]
+  events             OfferEvent[]        @relation("OfferEvents")
+  redemptions        Redemption[]        @relation("OfferRedemptions")
+  favorites          UserFavorite[]      @relation("OfferFavorites")
+  walletTransactions WalletTransaction[]
 
   @@index([companyId, status])
   @@index([categoryId, status])
@@ -628,6 +641,420 @@ model Offer {
   @@index([createdAt])
 }
 
+model UserFavorite {
+  id        String   @id @default(cuid())
+  userId    String
+  offerId   String
+  createdAt DateTime @default(now())
+  offer     Offer    @relation("OfferFavorites", fields: [offerId], references: [id], onDelete: Cascade)
+  user      User     @relation("UserFavorites", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, offerId], name: "unique_user_offer_favorite")
+  @@index([userId], map: "idx_favorite_user")
+  @@index([offerId], map: "idx_favorite_offer")
+  @@index([createdAt], map: "idx_favorite_created")
+  @@map("user_favorites")
+}
+
+model Coupon {
+  id                 String              @id @default(cuid())
+  code               String              @unique
+  offerId            String
+  userId             String
+  companyId          String
+  qrCodeUrl          String?
+  qrCodeData         String?
+  status             CouponStatus        @default(ACTIVE)
+  generatedAt        DateTime            @default(now())
+  expiresAt          DateTime
+  usedAt             DateTime?
+  cancelledAt        DateTime?
+  userAgent          String?
+  ipAddress          String?
+  deviceType         String?
+  generatedFrom      String?
+  notes              String?
+  company            Company             @relation("CompanyCoupons", fields: [companyId], references: [id], onDelete: Cascade)
+  offer              Offer               @relation("OfferCoupons", fields: [offerId], references: [id], onDelete: Cascade)
+  user               User                @relation("UserCoupons", fields: [userId], references: [id], onDelete: Cascade)
+  redemption         Redemption?         @relation("CouponRedemption")
+  walletTransactions WalletTransaction[]
+
+  @@index([offerId], map: "idx_coupon_offer")
+  @@index([userId], map: "idx_coupon_user")
+  @@index([companyId], map: "idx_coupon_company")
+  @@index([code], map: "idx_coupon_code")
+  @@index([status], map: "idx_coupon_status")
+  @@index([expiresAt], map: "idx_coupon_expires")
+  @@index([generatedAt], map: "idx_coupon_generated")
+  @@map("coupons")
+}
+
+model Redemption {
+  id                 String   @id @default(cuid())
+  couponId           String   @unique
+  offerId            String
+  userId             String
+  companyId          String
+  redeemedAt         DateTime @default(now())
+  redemptionType     String   @default("in_store")
+  channel            String?
+  location           String?
+  storeId            String?
+  originalPrice      Decimal? @db.Decimal(10, 2)
+  discountAmount     Decimal? @db.Decimal(10, 2)
+  finalPrice         Decimal? @db.Decimal(10, 2)
+  currency           String   @default("EUR")
+  validatedBy        String?
+  validatedAt        DateTime @default(now())
+  verificationMethod String?
+  userAgent          String?
+  ipAddress          String?
+  deviceType         String?
+  notes              String?
+  customerNotes      String?
+  receiptNumber      String?
+  rating             Int?
+  feedback           String?
+  company            Company  @relation("CompanyRedemptions", fields: [companyId], references: [id], onDelete: Cascade)
+  coupon             Coupon   @relation("CouponRedemption", fields: [couponId], references: [id], onDelete: Cascade)
+  offer              Offer    @relation("OfferRedemptions", fields: [offerId], references: [id], onDelete: Cascade)
+  user               User     @relation("UserRedemptions", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([offerId], map: "idx_redemption_offer")
+  @@index([userId], map: "idx_redemption_user")
+  @@index([companyId], map: "idx_redemption_company")
+  @@index([redeemedAt], map: "idx_redemption_date")
+  @@index([redemptionType], map: "idx_redemption_type")
+  @@map("redemptions")
+}
+
+model OfferEvent {
+  id          String    @id @default(cuid())
+  offerId     String
+  userId      String?
+  companyId   String
+  eventType   EventType
+  sessionId   String?
+  userAgent   String?
+  ipAddress   String?
+  deviceType  String?
+  browser     String?
+  os          String?
+  referrer    String?
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  country     String?
+  city        String?
+  region      String?
+  latitude    Float?
+  longitude   Float?
+  duration    Int?
+  scrollDepth Int?
+  createdAt   DateTime  @default(now())
+  company     Company   @relation("CompanyOfferEvents", fields: [companyId], references: [id], onDelete: Cascade)
+  offer       Offer     @relation("OfferEvents", fields: [offerId], references: [id], onDelete: Cascade)
+  user        User?     @relation("UserOfferEvents", fields: [userId], references: [id])
+
+  @@index([offerId, eventType], map: "idx_event_offer_type")
+  @@index([userId], map: "idx_event_user")
+  @@index([companyId], map: "idx_event_company")
+  @@index([eventType], map: "idx_event_type")
+  @@index([createdAt], map: "idx_event_created")
+  @@index([sessionId], map: "idx_event_session")
+  @@map("offer_events")
+}
+
+model NotificationPreference {
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  emailEnabled         Boolean  @default(true)
+  emailCouponGenerated Boolean  @default(true)
+  emailCouponUsed      Boolean  @default(true)
+  emailOfferExpiring   Boolean  @default(true)
+  emailNewFavorite     Boolean  @default(true)
+  emailWeeklySummary   Boolean  @default(true)
+  inAppEnabled         Boolean  @default(true)
+  inAppCouponGenerated Boolean  @default(true)
+  inAppCouponUsed      Boolean  @default(true)
+  inAppOfferExpiring   Boolean  @default(true)
+  inAppNewFavorite     Boolean  @default(true)
+  inAppWeeklySummary   Boolean  @default(false)
+  weeklySummaryDay     Int      @default(1)
+  weeklySummaryHour    Int      @default(9)
+  timezone             String   @default("Europe/Madrid")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  user                 User     @relation("UserNotificationPreferences", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("notification_preferences")
+}
+
+model EmailLog {
+  id           String        @id @default(cuid())
+  userId       String
+  templateType EmailTemplate
+  subject      String
+  toEmail      String
+  fromEmail    String        @default("noreply@lapublica.es")
+  status       EmailStatus   @default(PENDING)
+  sentAt       DateTime?
+  deliveredAt  DateTime?
+  openedAt     DateTime?
+  clickedAt    DateTime?
+  bouncedAt    DateTime?
+  errorMessage String?
+  externalId   String?
+  metadata     Json?
+  createdAt    DateTime      @default(now())
+  user         User          @relation("UserEmailLogs", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([templateType])
+  @@index([status])
+  @@index([sentAt])
+  @@index([toEmail])
+  @@index([externalId])
+  @@map("email_logs")
+}
+
+model AuditLog {
+  id           String      @id @default(cuid())
+  userId       String
+  userName     String
+  userEmail    String
+  userRole     String
+  action       AuditAction
+  entity       String
+  entityId     String?
+  entityName   String?
+  description  String
+  changes      Json?
+  metadata     Json?
+  ipAddress    String?
+  userAgent    String?
+  severity     LogSeverity @default(INFO)
+  success      Boolean     @default(true)
+  errorMessage String?
+  createdAt    DateTime    @default(now())
+  user         User        @relation("UserAuditLogs", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "idx_auditlog_user")
+  @@index([action], map: "idx_auditlog_action")
+  @@index([entity], map: "idx_auditlog_entity")
+  @@index([entityId], map: "idx_auditlog_entity_id")
+  @@index([createdAt], map: "idx_auditlog_created")
+  @@index([severity], map: "idx_auditlog_severity")
+  @@map("audit_logs")
+}
+
+model GroupOfferRequest {
+  id              String            @id @default(cuid())
+  title           String
+  description     String
+  category        String?
+  location        String?
+  minParticipants Int
+  maxParticipants Int?
+  targetPrice     Decimal?          @db.Decimal(10, 2)
+  status          RequestStatus     @default(PENDING)
+  publishedAt     DateTime?
+  expiresAt       DateTime?
+  requesterId     String
+  contactEmail    String?
+  contactPhone    String?
+  reviewedAt      DateTime?
+  reviewedBy      String?
+  rejectionReason String?
+  groupOfferId    String?           @unique
+  tags            String[]          @default([])
+  priority        Int               @default(0)
+  internalNotes   String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  groupOffer      GroupOfferConfig? @relation("RequestToConfig", fields: [groupOfferId], references: [id])
+  requester       User              @relation("GroupOfferRequests", fields: [requesterId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([requesterId])
+  @@index([category])
+  @@index([createdAt])
+  @@index([expiresAt])
+  @@map("group_offer_requests")
+}
+
+model GroupOfferConfig {
+  id                 String             @id @default(cuid())
+  title              String
+  slug               String             @unique
+  description        String
+  shortDescription   String?
+  images             String[]           @default([])
+  category           String?
+  tags               String[]           @default([])
+  minParticipants    Int
+  maxParticipants    Int
+  currentCount       Int                @default(0)
+  originalPrice      Decimal            @db.Decimal(10, 2)
+  groupPrice         Decimal            @db.Decimal(10, 2)
+  savingsAmount      Decimal            @db.Decimal(10, 2)
+  savingsPercent     Float
+  requiresDeposit    Boolean            @default(false)
+  depositAmount      Decimal?           @db.Decimal(10, 2)
+  depositPercent     Float?
+  registrationStart  DateTime           @default(now())
+  registrationEnd    DateTime
+  serviceStart       DateTime?
+  serviceEnd         DateTime?
+  status             GroupOfferStatus   @default(DRAFT)
+  publishedAt        DateTime?
+  completedAt        DateTime?
+  cancelledAt        DateTime?
+  cancellationReason String?
+  companyId          String
+  contactEmail       String?
+  contactPhone       String?
+  location           String?
+  address            String?
+  isOnline           Boolean            @default(false)
+  meetingUrl         String?
+  requirements       String?
+  includes           String?
+  excludes           String?
+  terms              String?
+  cancellationPolicy String?
+  refundPolicy       String?
+  seoTitle           String?
+  seoDescription     String?
+  seoKeywords        String[]           @default([])
+  priority           Int                @default(0)
+  featured           Boolean            @default(false)
+  internalNotes      String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  company            Company            @relation("CompanyGroupOffers", fields: [companyId], references: [id], onDelete: Cascade)
+  originRequest      GroupOfferRequest? @relation("RequestToConfig")
+  participants       GroupParticipant[] @relation("ConfigParticipants")
+
+  @@index([companyId])
+  @@index([status])
+  @@index([slug])
+  @@index([category])
+  @@index([registrationEnd])
+  @@index([serviceStart])
+  @@index([featured])
+  @@map("group_offer_configs")
+}
+
+model GroupParticipant {
+  id                 String            @id @default(cuid())
+  groupOfferId       String
+  userId             String
+  status             ParticipantStatus @default(PENDING)
+  joinedAt           DateTime          @default(now())
+  confirmedAt        DateTime?
+  completedAt        DateTime?
+  cancelledAt        DateTime?
+  cancellationReason String?
+  contactName        String?
+  contactEmail       String?
+  contactPhone       String?
+  specialRequests    String?
+  allergies          String?
+  emergencyContact   String?
+  notes              String?
+  totalAmount        Decimal           @db.Decimal(10, 2)
+  paidAmount         Decimal           @default(0) @db.Decimal(10, 2)
+  pendingAmount      Decimal           @db.Decimal(10, 2)
+  registrationPaid   Boolean           @default(false)
+  registrationPaidAt DateTime?
+  depositPaid        Boolean           @default(false)
+  depositPaidAt      DateTime?
+  finalPaid          Boolean           @default(false)
+  finalPaidAt        DateTime?
+  paymentIds         String[]          @default([])
+  invoiceNumbers     String[]          @default([])
+  rating             Int?
+  feedback           String?
+  wouldRecommend     Boolean?
+  referredBy         String?
+  utmSource          String?
+  utmCampaign        String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  groupOffer         GroupOfferConfig  @relation("ConfigParticipants", fields: [groupOfferId], references: [id], onDelete: Cascade)
+  user               User              @relation("UserGroupParticipants", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupOfferId, userId], name: "unique_group_user_participation")
+  @@index([groupOfferId])
+  @@index([userId])
+  @@index([status])
+  @@index([joinedAt])
+  @@map("group_participants")
+}
+
+model UserWallet {
+  id           String              @id @default(cuid())
+  userId       String              @unique
+  balance      Decimal             @default(0) @db.Decimal(10, 2)
+  currency     String              @default("EUR")
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions WalletTransaction[]
+
+  @@index([userId])
+  @@map("user_wallets")
+}
+
+model WalletTransaction {
+  id          String     @id @default(cuid())
+  walletId    String
+  type        String
+  amount      Decimal    @db.Decimal(10, 2)
+  description String
+  offerId     String?
+  couponId    String?
+  metadata    Json?
+  createdAt   DateTime   @default(now())
+  coupon      Coupon?    @relation(fields: [couponId], references: [id])
+  offer       Offer?     @relation(fields: [offerId], references: [id])
+  wallet      UserWallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@index([walletId])
+  @@index([offerId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("wallet_transactions")
+}
+
+model Lead {
+  id        String   @id @default(cuid())
+  offerId   String
+  userId    String
+  companyId String
+  name      String
+  email     String
+  phone     String?
+  message   String?
+  status    String   @default("NEW")
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  offer     Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([offerId])
+  @@index([userId])
+  @@index([companyId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("leads")
+}
+
 enum UserRole {
   USER
   MODERATOR
@@ -635,6 +1062,7 @@ enum UserRole {
   ADMIN
   SUPER_ADMIN
   COMPANY
+  COMPANY_MANAGER
 }
 
 enum AnuncioType {
@@ -802,12 +1230,11 @@ enum NotificationType {
   PROFILE_CHANGE
   GENERAL
   SYSTEM
-  // AÑADIR nuevos tipos para sistema de cupones
-  COUPON_GENERATED      // Cupón generado
-  COUPON_USED          // Cupón usado
-  OFFER_EXPIRING       // Oferta a punto de caducar
-  NEW_FAVORITE         // Alguien guardó tu oferta
-  WEEKLY_SUMMARY       // Resumen semanal
+  COUPON_GENERATED
+  COUPON_USED
+  OFFER_EXPIRING
+  NEW_FAVORITE
+  WEEKLY_SUMMARY
 }
 
 enum ProfileChangeStatus {
@@ -840,13 +1267,20 @@ enum PlanTier {
 }
 
 enum OfferStatus {
-  DRAFT // Borrador - empresa está creando
-  PENDING // Pendiente revisión - esperando aprobación admin
-  PUBLISHED // Publicada - visible para empleados
-  REJECTED // Rechazada - admin rechazó
-  PAUSED // Pausada - empresa pausó temporalmente
-  EXPIRED // Caducada - pasó fecha validUntil
-  ARCHIVED // Archivada - empresa la archivó
+  DRAFT
+  PENDING
+  PUBLISHED
+  REJECTED
+  PAUSED
+  EXPIRED
+  ARCHIVED
+}
+
+enum RedemptionType {
+  COUPON
+  ONLINE
+  VIP_ACCOUNT
+  CONTACT_FORM
 }
 
 enum ContactMethod {
@@ -857,270 +1291,32 @@ enum ContactMethod {
   WHATSAPP
 }
 
-// ============================================
-// SISTEMA DE FAVORITOS
-// ============================================
-
-model UserFavorite {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation("UserFavorites", fields: [userId], references: [id], onDelete: Cascade)
-  offerId   String
-  offer     Offer    @relation("OfferFavorites", fields: [offerId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-
-  @@unique([userId, offerId], name: "unique_user_offer_favorite")
-  @@index([userId], name: "idx_favorite_user")
-  @@index([offerId], name: "idx_favorite_offer")
-  @@index([createdAt], name: "idx_favorite_created")
-  @@map("user_favorites")
-}
-
-// ============================================
-// SISTEMA DE CUPONES
-// ============================================
-
-model Coupon {
-  id              String        @id @default(cuid())
-  code            String        @unique // LAPUB-TECHINNOVA-A3F9X2
-
-  // Relaciones
-  offerId         String
-  offer           Offer         @relation("OfferCoupons", fields: [offerId], references: [id], onDelete: Cascade)
-  userId          String
-  user            User          @relation("UserCoupons", fields: [userId], references: [id], onDelete: Cascade)
-  companyId       String
-  company         Company       @relation("CompanyCoupons", fields: [companyId], references: [id], onDelete: Cascade)
-
-  // QR Code
-  qrCodeUrl       String?       // URL del QR generado (Cloudinary/S3)
-  qrCodeData      String?       // Data del QR en base64 como backup
-
-  // Estado y validez
-  status          CouponStatus  @default(ACTIVE)
-  generatedAt     DateTime      @default(now())
-  expiresAt       DateTime      // Fecha de caducidad
-  usedAt          DateTime?     // Cuando se usó
-  cancelledAt     DateTime?     // Si se canceló
-
-  // Tracking y metadata
-  redemption      Redemption?   @relation("CouponRedemption")
-  userAgent       String?       // Navegador usado
-  ipAddress       String?       // IP de generación
-  deviceType      String?       // mobile, desktop, tablet
-  generatedFrom   String?       // web, app, email
-
-  // Notas
-  notes           String?       // Notas internas
-
-  @@index([offerId], name: "idx_coupon_offer")
-  @@index([userId], name: "idx_coupon_user")
-  @@index([companyId], name: "idx_coupon_company")
-  @@index([code], name: "idx_coupon_code")
-  @@index([status], name: "idx_coupon_status")
-  @@index([expiresAt], name: "idx_coupon_expires")
-  @@index([generatedAt], name: "idx_coupon_generated")
-  @@map("coupons")
-}
-
 enum CouponStatus {
-  ACTIVE      // Activo, listo para usar
-  USED        // Ya utilizado
-  EXPIRED     // Caducado por fecha
-  CANCELLED   // Cancelado por empresa o admin
-  SUSPENDED   // Suspendido temporalmente
-}
-
-model Redemption {
-  id              String    @id @default(cuid())
-
-  // Relaciones
-  couponId        String    @unique
-  coupon          Coupon    @relation("CouponRedemption", fields: [couponId], references: [id], onDelete: Cascade)
-  offerId         String
-  offer           Offer     @relation("OfferRedemptions", fields: [offerId], references: [id], onDelete: Cascade)
-  userId          String
-  user            User      @relation("UserRedemptions", fields: [userId], references: [id], onDelete: Cascade)
-  companyId       String
-  company         Company   @relation("CompanyRedemptions", fields: [companyId], references: [id], onDelete: Cascade)
-
-  // Detalles de redención
-  redeemedAt      DateTime  @default(now())
-  redemptionType  String    @default("in_store") // in_store, online, phone, email
-  channel         String?   // web, app, pos
-  location        String?   // "Barcelona - Passeig de Gràcia 23"
-  storeId         String?   // ID tienda física si aplica
-
-  // Información económica
-  originalPrice   Decimal?  @db.Decimal(10, 2)
-  discountAmount  Decimal?  @db.Decimal(10, 2)
-  finalPrice      Decimal?  @db.Decimal(10, 2)
-  currency        String    @default("EUR")
-
-  // Validación
-  validatedBy     String?   // ID del usuario empresa que validó
-  validatedAt     DateTime  @default(now())
-  verificationMethod String? // qr_scan, code_entry, automatic
-
-  // Tracking
-  userAgent       String?
-  ipAddress       String?
-  deviceType      String?
-
-  // Notas y detalles
-  notes           String?   // Notas de la empresa
-  customerNotes   String?   // Notas del cliente
-  receiptNumber   String?   // Número de ticket/factura
-
-  // Satisfacción (opcional)
-  rating          Int?      // 1-5 estrellas
-  feedback        String?   // Comentario del usuario
-
-  @@index([offerId], name: "idx_redemption_offer")
-  @@index([userId], name: "idx_redemption_user")
-  @@index([companyId], name: "idx_redemption_company")
-  @@index([redeemedAt], name: "idx_redemption_date")
-  @@index([redemptionType], name: "idx_redemption_type")
-  @@map("redemptions")
-}
-
-// ============================================
-// TRACKING DE EVENTOS
-// ============================================
-
-model OfferEvent {
-  id          String      @id @default(cuid())
-
-  // Relaciones
-  offerId     String
-  offer       Offer       @relation("OfferEvents", fields: [offerId], references: [id], onDelete: Cascade)
-  userId      String?
-  user        User?       @relation("UserOfferEvents", fields: [userId], references: [id], onDelete: SetNull)
-  companyId   String
-  company     Company     @relation("CompanyOfferEvents", fields: [companyId], references: [id], onDelete: Cascade)
-
-  // Tipo de evento
-  eventType   EventType
-
-  // Metadata del evento
-  sessionId   String?     // ID de sesión para agrupar eventos
-  userAgent   String?
-  ipAddress   String?
-  deviceType  String?     // mobile, desktop, tablet
-  browser     String?     // chrome, firefox, safari
-  os          String?     // windows, macos, ios, android
-  referrer    String?     // De dónde viene
-  utmSource   String?     // Parámetros UTM
-  utmMedium   String?
-  utmCampaign String?
-
-  // Geolocalización (si disponible)
-  country     String?
-  city        String?
-  region      String?
-  latitude    Float?
-  longitude   Float?
-
-  // Timing
-  duration    Int?        // Segundos en la página
-  scrollDepth Int?        // % de scroll
-
-  createdAt   DateTime    @default(now())
-
-  @@index([offerId, eventType], name: "idx_event_offer_type")
-  @@index([userId], name: "idx_event_user")
-  @@index([companyId], name: "idx_event_company")
-  @@index([eventType], name: "idx_event_type")
-  @@index([createdAt], name: "idx_event_created")
-  @@index([sessionId], name: "idx_event_session")
-  @@map("offer_events")
+  ACTIVE
+  USED
+  EXPIRED
+  CANCELLED
+  SUSPENDED
 }
 
 enum EventType {
-  VIEW              // Usuario vio la oferta
-  DETAIL_VIEW       // Entró al detalle completo
-  CLICK             // Click en botón o enlace
-  SHARE             // Compartió la oferta
-  FAVORITE_ADD      // Añadió a favoritos
-  FAVORITE_REMOVE   // Quitó de favoritos
-  COUPON_VIEW       // Vio el botón de cupón
-  COUPON_GENERATED  // Generó un cupón
-  COUPON_DOWNLOADED // Descargó el QR
-  COUPON_SHARED     // Compartió el cupón
-  COUPON_USED       // Usó el cupón
-  EXTERNAL_CLICK    // Click en enlace externo
-  CONTACT_CLICK     // Click en contactar empresa
-  PHONE_CLICK       // Click en teléfono
-  EMAIL_CLICK       // Click en email
-  MAP_VIEW          // Vio ubicación en mapa
-  GALLERY_VIEW      // Vio galería de imágenes
-}
-
-// ============================================
-// SISTEMA DE NOTIFICACIONES EXPANDIDO
-// ============================================
-
-model NotificationPreference {
-  id                    String   @id @default(cuid())
-  userId                String   @unique
-
-  // Configuración email
-  emailEnabled          Boolean  @default(true)
-  emailCouponGenerated  Boolean  @default(true)
-  emailCouponUsed       Boolean  @default(true)
-  emailOfferExpiring    Boolean  @default(true)
-  emailNewFavorite      Boolean  @default(true)
-  emailWeeklySummary    Boolean  @default(true)
-
-  // Configuración notificaciones in-app
-  inAppEnabled          Boolean  @default(true)
-  inAppCouponGenerated  Boolean  @default(true)
-  inAppCouponUsed       Boolean  @default(true)
-  inAppOfferExpiring    Boolean  @default(true)
-  inAppNewFavorite      Boolean  @default(true)
-  inAppWeeklySummary    Boolean  @default(false)
-
-  // Configuración horarios
-  weeklySummaryDay      Int      @default(1) // 0=domingo, 1=lunes, etc.
-  weeklySummaryHour     Int      @default(9) // Hora 0-23
-  timezone              String   @default("Europe/Madrid")
-
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-
-  user                  User     @relation("UserNotificationPreferences", fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@map("notification_preferences")
-}
-
-model EmailLog {
-  id            String        @id @default(cuid())
-  userId        String
-  templateType  EmailTemplate
-  subject       String
-  toEmail       String
-  fromEmail     String        @default("noreply@lapublica.es")
-  status        EmailStatus   @default(PENDING)
-  sentAt        DateTime?
-  deliveredAt   DateTime?
-  openedAt      DateTime?
-  clickedAt     DateTime?
-  bouncedAt     DateTime?
-  errorMessage  String?
-  externalId    String?       // ID de Resend
-  metadata      Json?         // Datos adicionales (offerId, couponId, etc.)
-  createdAt     DateTime      @default(now())
-
-  user          User          @relation("UserEmailLogs", fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([templateType])
-  @@index([status])
-  @@index([sentAt])
-  @@index([toEmail])
-  @@index([externalId])
-  @@map("email_logs")
+  VIEW
+  DETAIL_VIEW
+  CLICK
+  SHARE
+  FAVORITE_ADD
+  FAVORITE_REMOVE
+  COUPON_VIEW
+  COUPON_GENERATED
+  COUPON_DOWNLOADED
+  COUPON_SHARED
+  COUPON_USED
+  EXTERNAL_CLICK
+  CONTACT_CLICK
+  PHONE_CLICK
+  EMAIL_CLICK
+  MAP_VIEW
+  GALLERY_VIEW
 }
 
 enum EmailTemplate {
@@ -1144,100 +1340,268 @@ enum EmailStatus {
   FAILED
 }
 
-// ============================================
-// SISTEMA DE AUDIT LOGS
-// ============================================
-
-model AuditLog {
-  id          String      @id @default(cuid())
-
-  // Quién realizó la acción
-  userId      String
-  user        User        @relation("UserAuditLogs", fields: [userId], references: [id], onDelete: Cascade)
-  userName    String      // Snapshot del nombre (por si se borra el usuario)
-  userEmail   String      // Snapshot del email
-  userRole    String      // Snapshot del rol
-
-  // Qué acción se realizó
-  action      AuditAction // Tipo de acción
-  entity      String      // Entidad afectada (Company, Offer, User, etc.)
-  entityId    String?     // ID de la entidad afectada
-  entityName  String?     // Nombre/título de la entidad (snapshot)
-
-  // Detalles de la acción
-  description String      // Descripción legible
-  changes     Json?       // Cambios realizados (before/after)
-  metadata    Json?       // Metadata adicional
-
-  // Información de contexto
-  ipAddress   String?     // IP desde donde se realizó
-  userAgent   String?     // Browser/device info
-
-  // Estado
-  severity    LogSeverity @default(INFO)
-  success     Boolean     @default(true)
-  errorMessage String?    // Si la acción falló
-
-  // Timestamp
-  createdAt   DateTime    @default(now())
-
-  // Índices para búsquedas rápidas
-  @@index([userId], name: "idx_auditlog_user")
-  @@index([action], name: "idx_auditlog_action")
-  @@index([entity], name: "idx_auditlog_entity")
-  @@index([entityId], name: "idx_auditlog_entity_id")
-  @@index([createdAt], name: "idx_auditlog_created")
-  @@index([severity], name: "idx_auditlog_severity")
-
-  @@map("audit_logs")
-}
-
 enum AuditAction {
-  // Empresas
   COMPANY_APPROVED
   COMPANY_REJECTED
   COMPANY_SUSPENDED
   COMPANY_REACTIVATED
   COMPANY_DELETED
   COMPANY_UPDATED
-
-  // Ofertas
   OFFER_APPROVED
   OFFER_REJECTED
   OFFER_DELETED
   OFFER_FEATURED
   OFFER_UNFEATURED
   OFFER_UPDATED
-
-  // Usuarios
   USER_CREATED
   USER_UPDATED
   USER_DELETED
   USER_SUSPENDED
   USER_REACTIVATED
   USER_ROLE_CHANGED
-
-  // Cupones
   COUPON_CANCELLED
   COUPON_BULK_EXPORT
-
-  // Sistema
   SETTINGS_UPDATED
   PLAN_CONFIG_UPDATED
   BULK_ACTION
-
-  // Seguridad
   LOGIN_ADMIN
   LOGOUT_ADMIN
   PERMISSION_CHANGED
-
-  // Otros
   OTHER
 }
 
 enum LogSeverity {
-  INFO      // Acciones normales
-  WARNING   // Acciones que requieren atención
-  ERROR     // Acciones que fallaron
-  CRITICAL  // Acciones críticas de seguridad
+  INFO
+  WARNING
+  ERROR
+  CRITICAL
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum GroupOfferStatus {
+  DRAFT
+  PUBLISHED
+  PAUSED
+  COMPLETED
+  CANCELLED
+  EXPIRED
+}
+
+enum ParticipantStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  REFUNDED
+}
+
+enum PaymentStage {
+  REGISTRATION
+  DEPOSIT
+  FINAL
+  FULL
+}
+
+// =============================================================================
+// CRM MODELS FOR COMPANY LEAD MANAGEMENT
+// =============================================================================
+
+model CompanyLead {
+  id                   String       @id @default(cuid())
+
+  // Información básica empresa
+  companyName          String
+  cif                  String?
+  sector               String?
+  contactName          String
+  contactRole          String?
+  email                String
+  phone                String?
+  website              String?
+
+  // Clasificación
+  companySize          String?      // "10-50", "50-200", "200+"
+  estimatedRevenue     Decimal?     @db.Decimal(10, 2)
+
+  // 🆕 TRACKING PUBLICIDAD (REQUERIMIENTO NUEVO)
+  currentPlatforms     Json?        // Plataformas donde se publicita: VipDistrict, Groupon, etc.
+  competitorOffers     Json?        // Ofertas que tiene en otras plataformas
+  discountTypes        Json?        // Tipos de descuentos: %, fijo, 2x1, grupal
+
+  // Pipeline CRM
+  status               LeadStatus   @default(NEW)
+  priority             LeadPriority @default(MEDIUM)
+  score                Int?         // Score IA 0-100
+  scoreGrade           String?      // A, B, C
+
+  // Seguimiento
+  source               LeadSource
+  assignedToId         String?
+  lastContactDate      DateTime?
+  nextFollowUpDate     DateTime?
+
+  // Conversión
+  convertedToCompanyId String?      @unique
+  convertedAt          DateTime?
+
+  // Metadata
+  tags                 String[]
+  notes                String?      @db.Text
+  internalNotes        String?      @db.Text
+  lostReason           String?
+
+  // Timestamps
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+
+  // Relaciones
+  assignedTo           User?        @relation("LeadAssignee", fields: [assignedToId], references: [id])
+  convertedCompany     Company?     @relation("ConvertedLead", fields: [convertedToCompanyId], references: [id])
+  interactions         LeadInteraction[]
+  activities           LeadActivity[]
+  tasks                LeadTask[]
+  documents            LeadDocument[]
+
+  @@index([status])
+  @@index([assignedToId])
+  @@index([source])
+  @@index([createdAt])
+  @@index([score])
+  @@index([convertedAt])
+  @@map("company_leads")
+}
+
+model LeadInteraction {
+  id          String           @id @default(cuid())
+  leadId      String
+  userId      String
+  type        InteractionType
+  title       String?
+  description String           @db.Text
+  outcome     String?          // Positivo, Neutral, Negativo
+  duration    Int?             // En minutos
+  metadata    Json?
+  createdAt   DateTime         @default(now())
+
+  lead        CompanyLead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user        User             @relation(fields: [userId], references: [id])
+
+  @@index([leadId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("lead_interactions")
+}
+
+model LeadActivity {
+  id          String      @id @default(cuid())
+  leadId      String
+  userId      String?
+  type        String
+  description String
+  metadata    Json?
+  createdAt   DateTime    @default(now())
+
+  lead        CompanyLead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user        User?       @relation(fields: [userId], references: [id])
+
+  @@index([leadId])
+  @@index([createdAt])
+  @@map("lead_activities")
+}
+
+model LeadTask {
+  id          String        @id @default(cuid())
+  leadId      String?
+  userId      String
+  title       String
+  description String?       @db.Text
+  dueDate     DateTime?
+  priority    LeadPriority  @default(MEDIUM)
+  status      TaskStatus    @default(PENDING)
+  completedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  lead        CompanyLead?  @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  user        User          @relation(fields: [userId], references: [id])
+
+  @@index([leadId])
+  @@index([userId])
+  @@index([dueDate])
+  @@index([status])
+  @@map("lead_tasks")
+}
+
+model LeadDocument {
+  id          String      @id @default(cuid())
+  leadId      String
+  userId      String
+  name        String
+  fileUrl     String
+  fileType    String
+  fileSize    Int
+  uploadedAt  DateTime    @default(now())
+
+  lead        CompanyLead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id])
+
+  @@index([leadId])
+  @@map("lead_documents")
+}
+
+// =============================================================================
+// CRM ENUMS
+// =============================================================================
+
+enum LeadStatus {
+  NEW              // Nuevo, sin contactar
+  PROSPECTING      // En prospección activa
+  CONTACTED        // Primer contacto realizado
+  QUALIFIED        // Cualificado, interesado
+  PROPOSAL_SENT    // Propuesta enviada
+  NEGOTIATION      // En negociación
+  DOCUMENTATION    // Pendiente documentación
+  WON              // Ganado, convertido
+  LOST             // Perdido
+  ON_HOLD          // En pausa
+}
+
+enum LeadPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum LeadSource {
+  MANUAL           // Creado manualmente por gestor
+  WEB_FORM         // Formulario "Quiero Colaborar"
+  AI_PROSPECTING   // Encontrado por IA
+  REFERRAL         // Referido por otra empresa
+  EMPLOYEE_SUGGESTION // Sugerido por empleado público
+  INBOUND          // Marketing inbound
+  COLD_OUTREACH    // Outreach en frío
+}
+
+enum InteractionType {
+  NOTE           // Nota interna
+  CALL           // Llamada telefónica
+  EMAIL          // Email enviado
+  MEETING        // Reunión
+  WHATSAPP       // WhatsApp/SMS
+  STATUS_CHANGE  // Cambio de estado
+  DOCUMENT       // Documento subido
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
 }

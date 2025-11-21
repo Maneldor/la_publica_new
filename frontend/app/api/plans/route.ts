@@ -36,14 +36,16 @@ export async function GET(request: NextRequest) {
         color: true,
         icono: true,
         destacado: true,
-        priority: true,
+        orden: true,
         hasFreeTrial: true,
         trialDurationDays: true,
         displayNote: true,
         funcionalidades: true,
         priceIncludesVAT: true,
+        isActive: true,
+        isVisible: true,
       },
-      orderBy: { priority: 'asc' }
+      orderBy: { orden: 'asc' }
     });
 
     return NextResponse.json({

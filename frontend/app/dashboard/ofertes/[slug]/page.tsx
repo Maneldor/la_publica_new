@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 import Image from 'next/image';
 import { PageTemplate } from '@/components/ui/PageTemplate';
 import { useGuardats } from '@/hooks/useGuardats';
+import RedeemButton from '@/app/components/ofertes/RedeemButton';
 import {
   Heart,
   Share2,
@@ -74,6 +75,7 @@ interface Offer {
   contactPhone: string | null;
   contactForm: string | null;
   externalUrl: string | null;
+  redemptionType: 'COUPON' | 'ONLINE' | 'VIP_ACCOUNT' | 'CONTACT_FORM'; // 🆕 Agregar redemptionType
   requirements: string | null;
   benefits: string | null;
   duration: string | null;
@@ -601,6 +603,35 @@ export default function OfferSinglePage({ params }: { params: { slug: string } }
               )}
             </div>
 
+            {/* Badge Tipo de Redención */}
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-sm text-gray-600">Tipus de redempció:</span>
+              {offer.redemptionType === 'COUPON' && (
+                <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium flex items-center gap-1">
+                  <QrCode className="w-3 h-3" />
+                  Cupó QR
+                </span>
+              )}
+              {offer.redemptionType === 'ONLINE' && (
+                <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium flex items-center gap-1">
+                  <ExternalLink className="w-3 h-3" />
+                  Enllaç extern
+                </span>
+              )}
+              {offer.redemptionType === 'VIP_ACCOUNT' && (
+                <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-medium flex items-center gap-1">
+                  <ShoppingCart className="w-3 h-3" />
+                  Moneder digital
+                </span>
+              )}
+              {offer.redemptionType === 'CONTACT_FORM' && (
+                <span className="px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs font-medium flex items-center gap-1">
+                  <Mail className="w-3 h-3" />
+                  Formulari contacte
+                </span>
+              )}
+            </div>
+
             {/* Botón Principal */}
             <div className="space-y-4">
               {offer.hasActiveCoupon && offer.activeCoupon ? (
@@ -645,23 +676,37 @@ export default function OfferSinglePage({ params }: { params: { slug: string } }
               ) : (
                 <>
                   {session?.user ? (
-                    <button
-                      onClick={() => setShowModal(true)}
-                      disabled={couponLoading}
-                      className="w-full bg-blue-600 text-white font-semibold py-4 px-6 rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      {couponLoading ? (
-                        <div className="flex items-center justify-center">
-                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                          Generant cupó...
-                        </div>
-                      ) : (
-                        <>
-                          <ShoppingCart className="inline h-5 w-5 mr-2" />
-                          Aprofitar oferta
-                        </>
+                    <>
+                      {/* Botón original para COUPON */}
+                      {offer.redemptionType === 'COUPON' && (
+                        <button
+                          onClick={() => setShowModal(true)}
+                          disabled={couponLoading}
+                          className="w-full bg-blue-600 text-white font-semibold py-4 px-6 rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                          {couponLoading ? (
+                            <div className="flex items-center justify-center">
+                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                              Generant cupó...
+                            </div>
+                          ) : (
+                            <>
+                              <QrCode className="inline h-5 w-5 mr-2" />
+                              Generar cupó
+                            </>
+                          )}
+                        </button>
                       )}
-                    </button>
+
+                      {/* Nuevo botón dinámico para otros tipos */}
+                      <RedeemButton
+                        offer={offer}
+                        onRedeemSuccess={() => {
+                          // Opcional: refetch de la oferta, analytics, etc.
+                          console.log('Redempció exitosa!');
+                        }}
+                      />
+                    </>
                   ) : (
                     <button
                       onClick={() => router.push('/auth/signin')}
@@ -673,8 +718,24 @@ export default function OfferSinglePage({ params }: { params: { slug: string } }
                 </>
               )}
 
+              {/* Info adicional según tipo de redención */}
+              <div className="mt-4 text-xs text-gray-600 bg-gray-50 rounded-lg p-3">
+                {offer.redemptionType === 'COUPON' && (
+                  <p>💡 Genera un cupó únic amb codi QR per utilitzar a la botiga física o online</p>
+                )}
+                {offer.redemptionType === 'ONLINE' && offer.externalUrl && (
+                  <p>💡 Seràs redirigit a <strong>{new URL(offer.externalUrl).hostname}</strong> per completar la compra amb descompte</p>
+                )}
+                {offer.redemptionType === 'VIP_ACCOUNT' && (
+                  <p>💡 El descompte s'afegirà al teu moneder digital per usar quan vulguis en futures compres</p>
+                )}
+                {offer.redemptionType === 'CONTACT_FORM' && (
+                  <p>💡 L'empresa <strong>{offer.company.name}</strong> es posarà en contacte amb tu per gestionar l'oferta</p>
+                )}
+              </div>
+
               {/* Info adicional */}
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-2 gap-4 text-sm mt-4">
                 <div className="text-gray-600">
                   <span className="font-semibold">Categoria:</span> {offer.category.name}
                 </div>

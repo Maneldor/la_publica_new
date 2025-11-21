@@ -1,0 +1,70 @@
+### Test 1: Solicitud válida (necesita token real)
+POST http://localhost:3001/api/empresa/ofertas-grupales/solicitar
+Content-Type: application/json
+
+{
+  "title": "MacBook Pro M3 Max 16 polzades per a desenvolupadors",
+  "description": "Sol·licitem crear una oferta grupal per a MacBook Pro M3 Max de 16 polzades dirigida als desenvolupadors i dissenyadors de l'administració pública. Portàtil d'alt rendiment amb chip M3 Max, 36GB RAM, 1TB SSD. Ideal per desenvolupadors i creatius. Pantalla Liquid Retina XDR de 16 polzades. Garantia Apple de 2 anys. Inclou software professional Adobe Creative Cloud i eines de desenvolupament.",
+  "category": "Tecnologia",
+  "location": "Catalunya",
+  "targetPrice": 3500,
+  "minParticipants": 20,
+  "maxParticipants": 50,
+  "contactEmail": "contacto@teslacatalunya.cat",
+  "contactPhone": "933456789",
+  "tags": ["apple", "macbook", "desenvolupament", "tecnologia"],
+  "priority": 1,
+  "internalNotes": "Primera prova amb producte tecnològic d'alta gamma per empleats tècnics"
+}
+
+### Test 2: Sin autenticación (debe fallar con 401)
+POST http://localhost:3001/api/empresa/ofertas-grupales/solicitar
+Content-Type: application/json
+
+{
+  "title": "Test Product"
+}
+
+### Test 3: Datos inválidos (debe fallar con 400)
+POST http://localhost:3001/api/empresa/ofertas-grupales/solicitar
+Content-Type: application/json
+
+{
+  "title": "Test",
+  "description": "Corto",
+  "minParticipants": -5,
+  "targetPrice": -100
+}
+
+### Test 4: Título demasiado largo (debe fallar con 400)
+POST http://localhost:3001/api/empresa/ofertas-grupales/solicitar
+Content-Type: application/json
+
+{
+  "title": "Este título es extremadamente largo y supera por mucho los 200 caracteres permitidos en el sistema de validación, debería fallar con un error específico de validación que indique que se ha superado el límite máximo permitido",
+  "description": "Descripción válida que cumple con el mínimo de 50 caracteres requeridos por el sistema de validación implementado con Zod",
+  "minParticipants": 10,
+  "targetPrice": 100
+}
+
+### Test 5: Max menor que min (debe fallar con 400)
+POST http://localhost:3001/api/empresa/ofertas-grupales/solicitar
+Content-Type: application/json
+
+{
+  "title": "Producte de prova valid",
+  "description": "Aquesta és una descripció vàlida que compleix amb el mínim de 50 caràcters requerits pel sistema",
+  "minParticipants": 50,
+  "maxParticipants": 20,
+  "targetPrice": 100
+}
+
+### Test 6: Solicitud mínima válida
+POST http://localhost:3001/api/empresa/ofertas-grupales/solicitar
+Content-Type: application/json
+
+{
+  "title": "Producte mínim vàlid",
+  "description": "Aquesta és una descripció que compleix exactament amb els requisits mínims establerts pel sistema de validació",
+  "minParticipants": 10
+}

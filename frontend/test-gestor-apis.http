@@ -1,0 +1,352 @@
+### ================================================================
+### PRUEBAS PARA APIs DEL PANEL DE GESTORES - LA PÚBLICA
+### ================================================================
+### Puerto: localhost:3002 (Next.js 14)
+### Autenticación: Bearer Token (JWT)
+### Fecha: 19 Noviembre 2025
+
+### INSTRUCCIONES DE USO:
+### 1. Ejecutar npm run dev en el proyecto
+### 2. Obtener token de autenticación de usuario ADMIN
+### 3. Reemplazar ADMIN_TOKEN con el token real
+### 4. Reemplazar SOLICITUD_ID_PLACEHOLDER con ID real de solicitud asignada
+### 5. Ejecutar tests en orden secuencial
+
+### ================================================================
+### 1. LISTAR SOLICITUDES ASIGNADAS AL GESTOR
+### ================================================================
+
+### Test 1.1: Obtener todas las solicitudes asignadas (básico)
+GET http://localhost:3002/api/gestor/ofertas-grupales/mis-solicitudes
+Authorization: Bearer ADMIN_TOKEN
+Content-Type: application/json
+
+### Test 1.2: Filtrar por estado APPROVED
+GET http://localhost:3002/api/gestor/ofertas-grupales/mis-solicitudes?status=APPROVED
+Authorization: Bearer ADMIN_TOKEN
+Content-Type: application/json
+
+### Test 1.3: Filtrar por prioridad HIGH
+GET http://localhost:3002/api/gestor/ofertas-grupales/mis-solicitudes?priority=HIGH
+Authorization: Bearer ADMIN_TOKEN
+Content-Type: application/json
+
+### Test 1.4: Búsqueda por texto con paginación
+GET http://localhost:3002/api/gestor/ofertas-grupales/mis-solicitudes?search=tecnologia&page=1&limit=10
+Authorization: Bearer ADMIN_TOKEN
+Content-Type: application/json
+
+### Test 1.5: Ordenamiento por empresa ascendente
+GET http://localhost:3002/api/gestor/ofertas-grupales/mis-solicitudes?sortBy=empresa&sortOrder=asc
+Authorization: Bearer ADMIN_TOKEN
+Content-Type: application/json
+
+### Test 1.6: Filtro por rango de fechas
+GET http://localhost:3002/api/gestor/ofertas-grupales/mis-solicitudes?dateFrom=2025-11-01T00:00:00Z&dateTo=2025-11-30T23:59:59Z
+Authorization: Bearer ADMIN_TOKEN
+Content-Type: application/json
+
+### Test 1.7: Sin autenticación (debe fallar 401)
+GET http://localhost:3002/api/gestor/ofertas-grupales/mis-solicitudes
+
+### Test 1.8: Parámetros inválidos (debe fallar 400)
+GET http://localhost:3002/api/gestor/ofertas-grupales/mis-solicitudes?status=INVALID&priority=WRONG&page=-1
+Authorization: Bearer ADMIN_TOKEN
+Content-Type: application/json
+
+### ================================================================
+### 2. DETALLE DE SOLICITUD ESPECÍFICA
+### ================================================================
+
+### Test 2.1: Obtener detalle completo de solicitud asignada
+GET http://localhost:3002/api/gestor/ofertas-grupales/solicitudes/SOLICITUD_ID_PLACEHOLDER
+Authorization: Bearer ADMIN_TOKEN
+Content-Type: application/json
+
+### Test 2.2: ID de solicitud inexistente (debe fallar 404)
+GET http://localhost:3002/api/gestor/ofertas-grupales/solicitudes/clxxx_invalid_id_12345
+Authorization: Bearer ADMIN_TOKEN
+Content-Type: application/json
+
+### Test 2.3: ID malformado (debe fallar 400)
+GET http://localhost:3002/api/gestor/ofertas-grupales/solicitudes/invalid-uuid-format
+Authorization: Bearer ADMIN_TOKEN
+Content-Type: application/json
+
+### Test 2.4: Sin autenticación (debe fallar 401)
+GET http://localhost:3002/api/gestor/ofertas-grupales/solicitudes/SOLICITUD_ID_PLACEHOLDER
+
+### Test 2.5: Acceder a solicitud no asignada al gestor (debe fallar 403)
+GET http://localhost:3002/api/gestor/ofertas-grupales/solicitudes/OTRA_SOLICITUD_ID
+Authorization: Bearer ADMIN_TOKEN
+Content-Type: application/json
+
+### ================================================================
+### 3. ACTUALIZAR SOLICITUD ASIGNADA
+### ================================================================
+
+### Test 3.1: Agregar nota de negociación válida
+PATCH http://localhost:3002/api/gestor/ofertas-grupales/solicitudes/SOLICITUD_ID_PLACEHOLDER/actualizar
+Authorization: Bearer ADMIN_TOKEN
+Content-Type: application/json
+
+{
+  "action": "add_note",
+  "negotiationNote": "He contactado con la empresa y están muy interesados. Proponen ampliar a 120 participantes si podemos mejorar el precio a 2800€. Reunión programada para el viernes."
+}
+
+### Test 3.2: Cambiar prioridad a HIGH
+PATCH http://localhost:3002/api/gestor/ofertas-grupales/solicitudes/SOLICITUD_ID_PLACEHOLDER/actualizar
+Authorization: Bearer ADMIN_TOKEN
+Content-Type: application/json
+
+{
+  "action": "update",
+  "priority": "HIGH"
+}
+
+### Test 3.3: Actualizar notas internas completas
+PATCH http://localhost:3002/api/gestor/ofertas-grupales/solicitudes/SOLICITUD_ID_PLACEHOLDER/actualizar
+Authorization: Bearer ADMIN_TOKEN
+Content-Type: application/json
+
+{
+  "action": "update",
+  "internalNotes": "ESTADO: Negociando condiciones\n\nCONTACTO INICIAL:\n- Reunión telefónica realizada el 18/11\n- Empresa muy interesada en el producto\n- Solicitan ampliar participantes y mejorar precio\n\nPRÓXIMOS PASOS:\n- Reunión presencial viernes 22/11\n- Preparar propuesta alternativa\n- Consultar con equipo comercial"
+}
+
+### Test 3.4: Actualización múltiple (prioridad + nota)
+PATCH http://localhost:3002/api/gestor/ofertas-grupales/solicitudes/SOLICITUD_ID_PLACEHOLDER/actualizar
+Authorization: Bearer ADMIN_TOKEN
+Content-Type: application/json
+
+{
+  "action": "update",
+  "priority": "MEDIUM",
+  "internalNotes": "Estado actualizado tras reunión con empresa. Condiciones acordadas preliminarmente."
+}
+
+### Test 3.5: Sin campos para actualizar (debe fallar 400)
+PATCH http://localhost:3002/api/gestor/ofertas-grupales/solicitudes/SOLICITUD_ID_PLACEHOLDER/actualizar
+Authorization: Bearer ADMIN_TOKEN
+Content-Type: application/json
+
+{
+  "action": "update"
+}
+
+### Test 3.6: Nota de negociación demasiado corta (debe fallar 400)
+PATCH http://localhost:3002/api/gestor/ofertas-grupales/solicitudes/SOLICITUD_ID_PLACEHOLDER/actualizar
+Authorization: Bearer ADMIN_TOKEN
+Content-Type: application/json
+
+{
+  "action": "add_note",
+  "negotiationNote": "Muy corta"
+}
+
+### Test 3.7: Notas internas demasiado largas (debe fallar 400)
+PATCH http://localhost:3002/api/gestor/ofertas-grupales/solicitudes/SOLICITUD_ID_PLACEHOLDER/actualizar
+Authorization: Bearer ADMIN_TOKEN
+Content-Type: application/json
+
+{
+  "action": "update",
+  "internalNotes": "Esta nota es extremadamente larga y supera el límite de 2000 caracteres establecido por el sistema de validación. El propósito de esta prueba es verificar que la validación funciona correctamente cuando un gestor intenta introducir notas que excedan la longitud máxima permitida. Este tipo de validaciones son cruciales para mantener la integridad de los datos y asegurar que los campos no contienen más información de la que el sistema puede procesar adecuadamente. Las notas internas son importantes para el seguimiento de las negociaciones y el estado de las solicitudes, pero deben mantenerse dentro de límites razonables para garantizar la eficiencia del sistema y la legibilidad de la información. En este caso específico, estamos probando el límite de 2000 caracteres para las notas internas, que debería ser suficiente para proporcionar contexto detallado y actualizaciones sobre el progreso de la gestión de la solicitud. Si esta validación funciona correctamente, el sistema debería retornar un error indicando que las notas superan el límite permitido y no debería procesar la actualización hasta que el gestor reduzca la longitud del texto. Es fundamental que estas validaciones sean robustas y proporcionen mensajes de error claros para guiar al usuario en la corrección de los datos introducidos. La implementación de estas validaciones utiliza Zod como biblioteca de esquemas de validación, lo que proporciona un sistema robusto y tipado para verificar la integridad de los datos antes de procesarlos en la base de datos. Este enfoque ayuda a prevenir errores de datos y mejora la experiencia del usuario al proporcionar retroalimentación inmediata sobre problemas en los datos introducidos."
+}
+
+### Test 3.8: Prioridad inválida (debe fallar 400)
+PATCH http://localhost:3002/api/gestor/ofertas-grupales/solicitudes/SOLICITUD_ID_PLACEHOLDER/actualizar
+Authorization: Bearer ADMIN_TOKEN
+Content-Type: application/json
+
+{
+  "action": "update",
+  "priority": "INVALID_PRIORITY"
+}
+
+### Test 3.9: ID de solicitud inexistente (debe fallar 404)
+PATCH http://localhost:3002/api/gestor/ofertas-grupales/solicitudes/clxxx_invalid_id_12345/actualizar
+Authorization: Bearer ADMIN_TOKEN
+Content-Type: application/json
+
+{
+  "action": "add_note",
+  "negotiationNote": "Esta nota no debería guardarse"
+}
+
+### Test 3.10: Sin autenticación (debe fallar 401)
+PATCH http://localhost:3002/api/gestor/ofertas-grupales/solicitudes/SOLICITUD_ID_PLACEHOLDER/actualizar
+Content-Type: application/json
+
+{
+  "action": "add_note",
+  "negotiationNote": "Test sin autenticación"
+}
+
+### Test 3.11: Métodos HTTP no permitidos - GET (debe fallar 405)
+GET http://localhost:3002/api/gestor/ofertas-grupales/solicitudes/SOLICITUD_ID_PLACEHOLDER/actualizar
+Authorization: Bearer ADMIN_TOKEN
+
+### Test 3.12: Métodos HTTP no permitidos - POST (debe fallar 405)
+POST http://localhost:3002/api/gestor/ofertas-grupales/solicitudes/SOLICITUD_ID_PLACEHOLDER/actualizar
+Authorization: Bearer ADMIN_TOKEN
+Content-Type: application/json
+
+{
+  "test": "data"
+}
+
+### ================================================================
+### 4. ESTADÍSTICAS DEL GESTOR
+### ================================================================
+
+### Test 4.1: Obtener estadísticas completas del gestor
+GET http://localhost:3002/api/gestor/ofertas-grupales/estadisticas
+Authorization: Bearer ADMIN_TOKEN
+Content-Type: application/json
+
+### Test 4.2: Sin autenticación (debe fallar 401)
+GET http://localhost:3002/api/gestor/ofertas-grupales/estadisticas
+
+### Test 4.3: Métodos HTTP no permitidos - POST (debe fallar 405)
+POST http://localhost:3002/api/gestor/ofertas-grupales/estadisticas
+Authorization: Bearer ADMIN_TOKEN
+Content-Type: application/json
+
+{
+  "invalid": "request"
+}
+
+### Test 4.4: Métodos HTTP no permitidos - PUT (debe fallar 405)
+PUT http://localhost:3002/api/gestor/ofertas-grupales/estadisticas
+Authorization: Bearer ADMIN_TOKEN
+Content-Type: application/json
+
+{
+  "invalid": "request"
+}
+
+### Test 4.5: Métodos HTTP no permitidos - DELETE (debe fallar 405)
+DELETE http://localhost:3002/api/gestor/ofertas-grupales/estadisticas
+Authorization: Bearer ADMIN_TOKEN
+
+### ================================================================
+### 5. PRUEBAS DE SEGURIDAD Y EDGE CASES
+### ================================================================
+
+### Test 5.1: Token JWT malformado (debe fallar 401)
+GET http://localhost:3002/api/gestor/ofertas-grupales/mis-solicitudes
+Authorization: Bearer invalid.jwt.token
+Content-Type: application/json
+
+### Test 5.2: Header Authorization sin Bearer (debe fallar 401)
+GET http://localhost:3002/api/gestor/ofertas-grupales/mis-solicitudes
+Authorization: ADMIN_TOKEN
+Content-Type: application/json
+
+### Test 5.3: SQL Injection attempt en search (debe ser sanitizado)
+GET http://localhost:3002/api/gestor/ofertas-grupales/mis-solicitudes?search='; DROP TABLE users; --
+Authorization: Bearer ADMIN_TOKEN
+Content-Type: application/json
+
+### Test 5.4: XSS attempt en nota de negociación (debe ser sanitizado)
+PATCH http://localhost:3002/api/gestor/ofertas-grupales/solicitudes/SOLICITUD_ID_PLACEHOLDER/actualizar
+Authorization: Bearer ADMIN_TOKEN
+Content-Type: application/json
+
+{
+  "action": "add_note",
+  "negotiationNote": "Nota normal con contenido <script>alert('XSS')</script> malicioso que debería ser sanitizado correctamente."
+}
+
+### Test 5.5: Rate limiting - muchas actualizaciones rápidas (debe limitar después de 30)
+### NOTA: Ejecutar este test 31 veces rápidamente para probar el rate limiting
+PATCH http://localhost:3002/api/gestor/ofertas-grupales/solicitudes/SOLICITUD_ID_PLACEHOLDER/actualizar
+Authorization: Bearer ADMIN_TOKEN
+Content-Type: application/json
+
+{
+  "action": "add_note",
+  "negotiationNote": "Test de rate limiting número 1"
+}
+
+### ================================================================
+### 6. CASOS DE USO REALES
+### ================================================================
+
+### Test 6.1: Flujo completo - Consultar solicitudes, ver detalle y actualizar
+### Paso 1: Listar solicitudes
+GET http://localhost:3002/api/gestor/ofertas-grupales/mis-solicitudes?status=APPROVED&sortBy=priority&sortOrder=desc&limit=5
+Authorization: Bearer ADMIN_TOKEN
+Content-Type: application/json
+
+### Paso 2: Ver detalle de la primera solicitud (reemplazar ID)
+# GET http://localhost:3002/api/gestor/ofertas-grupales/solicitudes/[ID_DE_PRIMERA_SOLICITUD]
+# Authorization: Bearer ADMIN_TOKEN
+# Content-Type: application/json
+
+### Paso 3: Agregar nota de negociación
+# PATCH http://localhost:3002/api/gestor/ofertas-grupales/solicitudes/[ID_DE_PRIMERA_SOLICITUD]/actualizar
+# Authorization: Bearer ADMIN_TOKEN
+# Content-Type: application/json
+#
+# {
+#   "action": "add_note",
+#   "negotiationNote": "Primera reunión completada. Empresa muestra interés alto. Próximos pasos: enviar propuesta detallada y programar segunda reunión."
+# }
+
+### Paso 4: Aumentar prioridad
+# PATCH http://localhost:3002/api/gestor/ofertas-grupales/solicitudes/[ID_DE_PRIMERA_SOLICITUD]/actualizar
+# Authorization: Bearer ADMIN_TOKEN
+# Content-Type: application/json
+#
+# {
+#   "action": "update",
+#   "priority": "HIGH"
+# }
+
+### Paso 5: Ver estadísticas actualizadas
+GET http://localhost:3002/api/gestor/ofertas-grupales/estadisticas
+Authorization: Bearer ADMIN_TOKEN
+Content-Type: application/json
+
+### ================================================================
+### INSTRUCCIONES PARA OBTENER IDs Y TOKENS
+### ================================================================
+
+### Para obtener ADMIN_TOKEN:
+### 1. Ir a la aplicación web
+### 2. Iniciar sesión como usuario ADMIN
+### 3. Abrir DevTools → Network → Headers
+### 4. Copiar el token JWT del header Authorization
+
+### Para obtener SOLICITUD_ID_PLACEHOLDER:
+### 1. Ejecutar en Prisma Studio:
+###    SELECT id FROM "GroupOfferRequest" WHERE "reviewedBy" = 'USER_ID_ADMIN' LIMIT 1;
+### 2. O hacer GET a /api/gestor/ofertas-grupales/mis-solicitudes y copiar un ID
+
+### Para obtener OTRA_SOLICITUD_ID (para test 2.5):
+### 1. Ejecutar en Prisma Studio:
+###    SELECT id FROM "GroupOfferRequest" WHERE "reviewedBy" != 'USER_ID_ADMIN' OR "reviewedBy" IS NULL LIMIT 1;
+
+### ================================================================
+### RESPUESTAS ESPERADAS
+### ================================================================
+
+### Éxito (200): { "success": true, "data": {...} }
+### Error Cliente (400): { "success": false, "error": "...", "details": [...] }
+### No Autorizado (401): { "success": false, "error": "No autenticat" }
+### Prohibido (403): { "success": false, "error": "Accés denegat..." }
+### No Encontrado (404): { "success": false, "error": "Sol·licitud no trobada" }
+### Método No Permitido (405): { "error": "Mètode no permès..." }
+### Rate Limit (429): { "success": false, "error": "Massa actualitzacions..." }
+### Error Servidor (500): { "success": false, "error": "Error intern del servidor..." }
+
+### ================================================================
+### VALIDACIÓN DE ENDPOINTS
+### ================================================================
+### ✅ GET  /api/gestor/ofertas-grupales/mis-solicitudes
+### ✅ GET  /api/gestor/ofertas-grupales/solicitudes/[id]
+### ✅ PATCH /api/gestor/ofertas-grupales/solicitudes/[id]/actualizar
+### ✅ GET  /api/gestor/ofertas-grupales/estadisticas

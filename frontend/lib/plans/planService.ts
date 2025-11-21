@@ -59,17 +59,23 @@ function canAddTeamMember(tier: PlanTier, current: number, config: any): boolean
 }
 
 /**
- * Parsear tier del plan desde BD
+ * Parsear tier del plan desde BD con validación robusta
  */
 export function parsePlanTier(tierFromDB: string | null | undefined): PlanTier {
   // Si no hay tier, usar fallback
-  if (!tierFromDB) {
-    console.warn('⚠️ No tier provided, using PIONERES fallback');
+  if (!tierFromDB || tierFromDB === 'undefined' || tierFromDB === 'null') {
+    console.warn('⚠️ No tier provided or invalid tier, using PIONERES fallback');
     return 'PIONERES';
   }
 
   // Normalizar entrada
   const normalized = tierFromDB.toUpperCase().trim();
+
+  // Validar que no sea vacío después de normalizar
+  if (!normalized) {
+    console.warn('⚠️ Empty tier after normalization, using PIONERES fallback');
+    return 'PIONERES';
+  }
 
   // Mapeo exhaustivo (soporta múltiples variantes) - Usando tiers de BD
   const tierMap: Record<string, PlanTier> = {
@@ -111,6 +117,97 @@ export function parsePlanTier(tierFromDB: string | null | undefined): PlanTier {
 
   console.log(`✅ Mapped "${tierFromDB}" -> "${result}"`);
   return result;
+}
+
+/**
+ * Obtener jerarquía dinámica de planes desde BD
+ */
+export async function getDynamicPlanHierarchy(): Promise<PlanTier[]> {
+  try {
+    const planConfigs = await prismaClient.planConfig.findMany({
+      where: {
+        isActive: true,
+        isVisible: true
+      },
+      select: { tier: true, orden: true },
+      orderBy: { orden: 'asc' }
+    });
+
+    return planConfigs.map(p => p.tier as PlanTier);
+  } catch (error) {
+    console.error('Error getting dynamic plan hierarchy:', error);
+    // Fallback a jerarquía estática
+    return ['PIONERES', 'STANDARD', 'STRATEGIC', 'ENTERPRISE'];
+  }
+}
+
+/**
+ * Obtener planes disponibles para upgrade de forma dinámica
+ */
+export async function getAvailablePlansForUpgrade(
+  currentTier: string | null | undefined,
+  allPlans?: any[]
+): Promise<any[]> {
+  try {
+    // Parsear tier actual de forma robusta
+    const normalizedCurrentTier = parsePlanTier(currentTier);
+
+    // Obtener jerarquía dinámica
+    const hierarchy = await getDynamicPlanHierarchy();
+    const currentIndex = hierarchy.indexOf(normalizedCurrentTier);
+
+    console.log(`📊 Plan upgrade analysis: ${normalizedCurrentTier} (index: ${currentIndex})`);
+
+    if (currentIndex === -1) {
+      console.warn(`⚠️ Current tier not found in hierarchy: ${normalizedCurrentTier}`);
+      return [];
+    }
+
+    // Obtener planes si no se proporcionan
+    let availablePlans = allPlans;
+    if (!availablePlans) {
+      availablePlans = await prismaClient.planConfig.findMany({
+        where: {
+          isActive: true,
+          isVisible: true
+        },
+        select: {
+          id: true,
+          tier: true,
+          name: true,
+          basePrice: true,
+          firstYearDiscount: true,
+          maxActiveOffers: true,
+          maxTeamMembers: true,
+          maxFeaturedOffers: true,
+          maxStorage: true,
+          features: true,
+          badge: true,
+          badgeColor: true,
+          destacado: true,
+          color: true,
+          icono: true,
+          funcionalidades: true,
+          isActive: true,
+          isVisible: true,
+        }
+      });
+    }
+
+    // Filtrar solo planes superiores al actual
+    const upgradeablePlans = availablePlans.filter(plan => {
+      const planIndex = hierarchy.indexOf(plan.tier);
+      return planIndex > currentIndex && plan.isActive && plan.isVisible;
+    });
+
+    console.log(`📈 Available upgrades: ${upgradeablePlans.map(p => p.tier).join(', ')}`);
+
+    return upgradeablePlans;
+
+  } catch (error) {
+    console.error('Error getting available plans for upgrade:', error);
+    return [];
+  }
 }
 
 /**

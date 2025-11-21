@@ -243,76 +243,117 @@ export default function CrearUsuarioPage() {
 
       case 'EMPRESA':
         return (
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium text-gray-900">Datos de la Empresa</h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nombre de la Empresa *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={userData.name || ''}
-                  onChange={(e) => setUserData({ ...userData, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  CIF/NIF
-                </label>
-                <input
-                  type="text"
-                  value={userData.cif || ''}
-                  onChange={(e) => setUserData({ ...userData, cif: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Sector *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={userData.sector || ''}
-                  onChange={(e) => setUserData({ ...userData, sector: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tamaño de la Empresa
-                </label>
-                <select
-                  value={userData.size || 'pequeña'}
-                  onChange={(e) => setUserData({ ...userData, size: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="pequeña">Pequeña</option>
-                  <option value="mediana">Mediana</option>
-                  <option value="grande">Grande</option>
-                </select>
+          <div className="space-y-6">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <span className="text-2xl">🏢</span>
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-medium text-blue-900 mb-2">
+                    🏢 Crear Empresa Col·laboradora (Nou)
+                  </h3>
+                  <p className="text-blue-700 mb-4">
+                    Per a crear una empresa col·laboradora, utilitza l'assistent especialitzat que inclou:
+                  </p>
+                  <ul className="text-blue-600 text-sm space-y-1 mb-4">
+                    <li>• Validació automàtica de dades</li>
+                    <li>• Generació de credencials segures</li>
+                    <li>• Assignació de pla de col·laboració</li>
+                    <li>• Enviament automàtic de credencials</li>
+                  </ul>
+                  <button
+                    type="button"
+                    onClick={() => router.push('/admin/usuarios/crear-empresa')}
+                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  >
+                    Obrir Assistent d'Empresa
+                  </button>
+                </div>
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Descripción
-              </label>
-              <textarea
-                value={userData.description || ''}
-                onChange={(e) => setUserData({ ...userData, description: e.target.value })}
-                rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+              <h4 className="text-sm font-medium text-gray-900 mb-2">
+                Formulari Bàsic (No Recomanat per Empreses)
+              </h4>
+              <p className="text-sm text-gray-600 mb-4">
+                Si prefereixes usar el formulari bàsic, omple les dades següents.
+                Recorda que no inclou generació automàtica de credencials ni enviament d'emails.
+              </p>
+
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Nombre de la Empresa *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={userData.name || ''}
+                      onChange={(e) => setUserData({ ...userData, name: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      CIF/NIF
+                    </label>
+                    <input
+                      type="text"
+                      value={userData.cif || ''}
+                      onChange={(e) => setUserData({ ...userData, cif: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Sector *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={userData.sector || ''}
+                      onChange={(e) => setUserData({ ...userData, sector: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Tamaño de la Empresa
+                    </label>
+                    <select
+                      value={userData.size || 'pequeña'}
+                      onChange={(e) => setUserData({ ...userData, size: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="pequeña">Pequeña</option>
+                      <option value="mediana">Mediana</option>
+                      <option value="grande">Grande</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Descripción
+                  </label>
+                  <textarea
+                    value={userData.description || ''}
+                    onChange={(e) => setUserData({ ...userData, description: e.target.value })}
+                    rows={3}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         );

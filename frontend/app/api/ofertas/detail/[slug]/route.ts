@@ -217,12 +217,13 @@ export async function GET(
         expiresAt: offer.expiresAt,
         publishedAt: offer.publishedAt,
 
-        // Contacto
+        // Contacto y redención
         contactMethod: offer.contactMethod,
         contactEmail: offer.contactEmail,
         contactPhone: offer.contactPhone,
         contactForm: offer.contactForm,
         externalUrl: offer.externalUrl,
+        redemptionType: offer.redemptionType, // 🆕 Agregar redemptionType
 
         // Detalles
         requirements: offer.requirements,

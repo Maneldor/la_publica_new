@@ -115,6 +115,21 @@ export async function GET(request: NextRequest) {
       where: { tier: targetTier }
     });
 
+    // Obtener subscription activa para calcular prorrateo
+    const company = await prismaClient.company.findUnique({
+      where: { id: session.user.companyId },
+      include: {
+        subscriptions: {
+          where: { status: 'ACTIVE' },
+          include: { plan: true },
+          orderBy: { createdAt: 'desc' },
+          take: 1
+        }
+      }
+    });
+
+    const currentSubscription = company?.subscriptions[0];
+
     if (!targetConfig) {
       return NextResponse.json(
         { success: false, error: 'Configuració del pla destí no trobada' },
@@ -125,8 +140,33 @@ export async function GET(request: NextRequest) {
     // Verificar si puede hacer upgrade
     const upgradeCheck = await canUpgradeToPlan(session.user.companyId, targetTier);
 
-    // Calcular diferencia de precio
-    const priceDiff = targetConfig.basePrice - currentConfig.basePrice;
+    // Calcular precios reales pagados (con descuentos)
+    const currentPaidPrice = currentConfig.basePrice * (1 - (currentConfig.firstYearDiscount || 0) / 100);
+    const targetDiscountedPrice = targetConfig.basePrice * (1 - (targetConfig.firstYearDiscount || 0) / 100);
+
+    // Calcular prorrateo si hay subscription activa
+    let prorationDetails = null;
+    if (currentSubscription?.endDate) {
+      const now = new Date();
+      const endDate = new Date(currentSubscription.endDate);
+      const diffTime = endDate.getTime() - now.getTime();
+      const daysRemaining = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+
+      const dailyPaidRate = currentPaidPrice / 365;
+      const remainingCredit = dailyPaidRate * daysRemaining;
+      const amountToPay = Math.max(0, targetDiscountedPrice - remainingCredit);
+
+      prorationDetails = {
+        daysRemaining,
+        currentPaidPrice,
+        targetDiscountedPrice,
+        dailyRate: Math.round(dailyPaidRate * 100) / 100,
+        remainingCredit: Math.round(remainingCredit * 100) / 100,
+        amountToPay: Math.round(amountToPay * 100) / 100
+      };
+    }
+
+    const priceDiff = prorationDetails?.amountToPay || (targetDiscountedPrice - currentPaidPrice);
 
     // Calcular mejoras
     const improvements = {
@@ -160,13 +200,18 @@ export async function GET(request: NextRequest) {
         currentPlan: {
           tier: currentConfig.tier,
           name: currentConfig.name,
-          price: currentConfig.basePrice,
+          basePrice: currentConfig.basePrice,
+          paidPrice: currentPaidPrice,
+          discount: currentConfig.firstYearDiscount || 0,
         },
         targetPlan: {
           tier: targetConfig.tier,
           name: targetConfig.name,
-          price: targetConfig.basePrice,
+          basePrice: targetConfig.basePrice,
+          discountedPrice: targetDiscountedPrice,
+          discount: targetConfig.firstYearDiscount || 0,
         },
+        proration: prorationDetails,
         priceDiff,
         improvements,
       },

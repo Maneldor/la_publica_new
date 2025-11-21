@@ -1,0 +1,128 @@
+### Test 1: Listar todas las solicitudes (requiere auth admin)
+GET http://localhost:3001/api/admin/ofertas-grupales/solicitudes
+Content-Type: application/json
+
+### Test 2: Listar con paginación
+GET http://localhost:3001/api/admin/ofertas-grupales/solicitudes?page=1&limit=10
+Content-Type: application/json
+
+### Test 3: Filtrar por status PENDING
+GET http://localhost:3001/api/admin/ofertas-grupales/solicitudes?status=PENDING
+Content-Type: application/json
+
+### Test 4: Filtrar por status APPROVED
+GET http://localhost:3001/api/admin/ofertas-grupales/solicitudes?status=APPROVED
+Content-Type: application/json
+
+### Test 5: Filtrar por status REJECTED
+GET http://localhost:3001/api/admin/ofertas-grupales/solicitudes?status=REJECTED
+Content-Type: application/json
+
+### Test 6: Buscar por texto "Tesla"
+GET http://localhost:3001/api/admin/ofertas-grupales/solicitudes?search=Tesla
+Content-Type: application/json
+
+### Test 7: Buscar por texto "MacBook"
+GET http://localhost:3001/api/admin/ofertas-grupales/solicitudes?search=MacBook
+Content-Type: application/json
+
+### Test 8: Buscar por texto "tecnologia"
+GET http://localhost:3001/api/admin/ofertas-grupales/solicitudes?search=tecnologia
+Content-Type: application/json
+
+### Test 9: Ordenar por precio DESC
+GET http://localhost:3001/api/admin/ofertas-grupales/solicitudes?sortBy=targetPrice&sortOrder=desc
+Content-Type: application/json
+
+### Test 10: Ordenar por fecha creación ASC
+GET http://localhost:3001/api/admin/ofertas-grupales/solicitudes?sortBy=createdAt&sortOrder=asc
+Content-Type: application/json
+
+### Test 11: Ordenar por título alfabético ASC
+GET http://localhost:3001/api/admin/ofertas-grupales/solicitudes?sortBy=title&sortOrder=asc
+Content-Type: application/json
+
+### Test 12: Ordenar por número mínimo de participantes DESC
+GET http://localhost:3001/api/admin/ofertas-grupales/solicitudes?sortBy=minParticipants&sortOrder=desc
+Content-Type: application/json
+
+### Test 13: Combinación de filtros - status + búsqueda
+GET http://localhost:3001/api/admin/ofertas-grupales/solicitudes?status=PENDING&search=Apple
+Content-Type: application/json
+
+### Test 14: Combinación completa - status + búsqueda + ordenación + paginación
+GET http://localhost:3001/api/admin/ofertas-grupales/solicitudes?status=PENDING&search=desenvolupament&sortBy=createdAt&sortOrder=desc&page=1&limit=5
+Content-Type: application/json
+
+### Test 15: Paginación límite mínimo
+GET http://localhost:3001/api/admin/ofertas-grupales/solicitudes?limit=1
+Content-Type: application/json
+
+### Test 16: Paginación límite máximo
+GET http://localhost:3001/api/admin/ofertas-grupales/solicitudes?limit=100
+Content-Type: application/json
+
+### Test 17: Página específica con límite
+GET http://localhost:3001/api/admin/ofertas-grupales/solicitudes?page=2&limit=3
+Content-Type: application/json
+
+### Test 18: Sin autenticación (debe fallar 401)
+GET http://localhost:3001/api/admin/ofertas-grupales/solicitudes
+Content-Type: application/json
+
+### Test 19: Parámetros inválidos - página negativa (debe fallar 400)
+GET http://localhost:3001/api/admin/ofertas-grupales/solicitudes?page=-1
+Content-Type: application/json
+
+### Test 20: Parámetros inválidos - límite excesivo (debe fallar 400)
+GET http://localhost:3001/api/admin/ofertas-grupales/solicitudes?limit=101
+Content-Type: application/json
+
+### Test 21: Parámetros inválidos - status incorrecto (debe fallar 400)
+GET http://localhost:3001/api/admin/ofertas-grupales/solicitudes?status=INVALID_STATUS
+Content-Type: application/json
+
+### Test 22: Parámetros inválidos - búsqueda demasiado larga (debe fallar 400)
+GET http://localhost:3001/api/admin/ofertas-grupales/solicitudes?search=Esta%20búsqueda%20es%20extremadamente%20larga%20y%20supera%20los%20200%20caracteres%20permitidos%20en%20el%20sistema%20de%20validación%20implementado%20con%20Zod%20y%20debería%20fallar%20con%20un%20error%20específico%20de%20validación%20que%20indique%20que%20se%20ha%20superado%20el%20límite%20máximo%20permitido
+Content-Type: application/json
+
+### Test 23: Parámetros inválidos - sortBy incorrecto (debe fallar 400)
+GET http://localhost:3001/api/admin/ofertas-grupales/solicitudes?sortBy=invalidField
+Content-Type: application/json
+
+### Test 24: Parámetros inválidos - sortOrder incorrecto (debe fallar 400)
+GET http://localhost:3001/api/admin/ofertas-grupales/solicitudes?sortOrder=invalidOrder
+Content-Type: application/json
+
+### Test 25: Método POST bloqueado (debe fallar 405)
+POST http://localhost:3001/api/admin/ofertas-grupales/solicitudes
+Content-Type: application/json
+
+{
+  "test": "data"
+}
+
+### Test 26: Método PUT bloqueado (debe fallar 405)
+PUT http://localhost:3001/api/admin/ofertas-grupales/solicitudes
+Content-Type: application/json
+
+{
+  "test": "data"
+}
+
+### Test 27: Método DELETE bloqueado (debe fallar 405)
+DELETE http://localhost:3001/api/admin/ofertas-grupales/solicitudes
+Content-Type: application/json
+
+### Test 28: Filtro por empresa específica (usar ID real de empresa)
+# Cambiar clxxx por ID real de empresa del seed
+GET http://localhost:3001/api/admin/ofertas-grupales/solicitudes?companyId=clxxx
+Content-Type: application/json
+
+### Test 29: Verificar estadísticas en respuesta vacía
+GET http://localhost:3001/api/admin/ofertas-grupales/solicitudes?search=TextoQueNoExiste123
+Content-Type: application/json
+
+### Test 30: Todas las solicitudes sin filtros (verificar estadísticas completas)
+GET http://localhost:3001/api/admin/ofertas-grupales/solicitudes?limit=50
+Content-Type: application/json

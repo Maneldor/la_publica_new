@@ -48,7 +48,9 @@ export default function PlanCard({
 }: PlanCardProps) {
 
   // Calcular precio con descuento (igual que admin)
-  const firstYearPrice = plan.basePrice * (1 - plan.firstYearDiscount);
+  // firstYearDiscount viene como porcentaje (ej: 50), hay que convertir a decimal (0.5)
+  const discountDecimal = plan.firstYearDiscount / 100;
+  const firstYearPrice = plan.basePrice * (1 - discountDecimal);
 
   // Parsear funcionalidades (igual que admin)
   const funcionalitats = plan.funcionalidades
