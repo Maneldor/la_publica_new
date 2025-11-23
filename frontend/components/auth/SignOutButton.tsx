@@ -10,6 +10,12 @@ interface SignOutButtonProps {
 
 export function SignOutButton({ className = '', variant = 'button' }: SignOutButtonProps) {
   const handleSignOut = () => {
+    // Limpiar el token de localStorage
+    localStorage.removeItem('token');
+    localStorage.removeItem('lapublica_token');
+    console.log('🔓 Token eliminado de localStorage');
+
+    // Cerrar sesión con NextAuth
     signOut({ callbackUrl: '/login' })
   }
 

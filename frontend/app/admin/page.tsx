@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { RefreshCw } from 'lucide-react';
+import { useSession } from 'next-auth/react';
 
 interface DashboardStats {
   contenidos: number;
@@ -12,6 +13,7 @@ interface DashboardStats {
 }
 
 export default function AdminDashboard() {
+  const { data: session } = useSession();
   const [stats, setStats] = useState<DashboardStats>({
     contenidos: 0,
     usuarios: 0,
@@ -61,6 +63,47 @@ export default function AdminDashboard() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Función para debuggear el token
+  const debugToken = () => {
+    console.log('🔍 === DEBUG SESSION & TOKEN ===');
+    console.log('📝 Session completa:', session);
+    console.log('📝 User:', session?.user);
+    console.log('📝 API Token presente:', !!session?.user?.apiToken);
+
+    if (session?.user?.apiToken) {
+      console.log('🔑 API Token:', session.user.apiToken.substring(0, 50) + '...');
+
+      // Decodificar JWT para ver fechas
+      try {
+        const tokenParts = session.user.apiToken.split('.');
+        const payload = JSON.parse(atob(tokenParts[1]));
+        console.log('🕐 Payload del token:', payload);
+
+        const now = Math.floor(Date.now() / 1000);
+        const issuedAt = new Date(payload.iat * 1000);
+        const expiresAt = new Date(payload.exp * 1000);
+
+        console.log('🕐 Ahora:', new Date().toLocaleString());
+        console.log('🕐 Token creado:', issuedAt.toLocaleString());
+        console.log('🕐 Token expira:', expiresAt.toLocaleString());
+        console.log('⏰ Token válido:', now < payload.exp ? '✅ SÍ' : '❌ NO (EXPIRADO)');
+        console.log('⏳ Tiempo restante:', Math.max(0, payload.exp - now), 'segundos');
+
+      } catch (error) {
+        console.error('❌ Error decodificando token:', error);
+      }
+
+      localStorage.setItem('token', session.user.apiToken);
+      console.log('✅ Token guardado en localStorage');
+    } else {
+      console.log('❌ NO HAY API TOKEN EN LA SESIÓN');
+      console.log('📝 Propiedades disponibles:', Object.keys(session?.user || {}));
+    }
+
+    console.log('🔍 Token en localStorage:', localStorage.getItem('token'));
+    console.log('🔍 === FIN DEBUG ===');
   };
 
   const cards = [
@@ -201,6 +244,20 @@ export default function AdminDashboard() {
             <div className="text-3xl mb-2">🏢</div>
             <div className="font-medium">Gestionar Empresas</div>
           </Link>
+        </div>
+
+        {/* Botón de Debug Token */}
+        <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <h3 className="font-medium text-yellow-800 mb-2">🔧 Debug Lead Generation Token</h3>
+          <p className="text-sm text-yellow-700 mb-3">
+            Si Lead Generation no funciona, usa este botón para verificar y arreglar el token:
+          </p>
+          <button
+            onClick={debugToken}
+            className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 transition-colors"
+          >
+            🔍 Debuggear Token
+          </button>
         </div>
       </div>
     </div>

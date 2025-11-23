@@ -54,6 +54,7 @@ const menuSections = [
     title: 'Sistema',
     items: [
       { title: 'Usuaris', icon: '👤', path: '/admin/usuarios/listar' },
+      { title: 'Lead Generation', icon: '🤖', path: '/admin/lead-generation' },
       { title: 'Logs', icon: '📋', path: '/admin/logs' },
       { title: 'Plataforma', icon: '⚙️', path: '/admin/plataforma/configuracion' },
     ]
@@ -91,8 +92,33 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   }, [session, status, router]);
 
-  const handleLogout = () => {
-    signOut({ callbackUrl: '/login' });
+  const handleLogout = async () => {
+    console.log('🔴 CLICK EN CERRAR SESIÓN - INICIO');
+
+    try {
+      // Limpiar tokens de localStorage
+      localStorage.removeItem('token');
+      localStorage.removeItem('lapublica_token');
+      console.log('🔓 Token eliminado de localStorage');
+
+      // Intentar cerrar sesión con NextAuth
+      console.log('🔴 Llamando a signOut...');
+
+      // Usar signOut y forzar redirección
+      await signOut({
+        callbackUrl: '/login',
+        redirect: false  // No usar redirección automática
+      });
+
+      // Redirigir manualmente
+      console.log('🔴 Redirigiendo a /login...');
+      window.location.href = '/login';
+
+    } catch (error) {
+      console.error('❌ Error en logout:', error);
+      // Forzar redirección en caso de error
+      window.location.href = '/login';
+    }
   };
 
   const toggleSection = (sectionTitle: string) => {
@@ -133,7 +159,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-600">{session.user.email}</span>
-            <button onClick={handleLogout} className="px-4 py-2 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200">
+            <button
+              onClick={() => {
+                console.log('🎯 BOTÓN CLICKEADO');
+                handleLogout();
+              }}
+              className="px-4 py-2 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 cursor-pointer"
+            >
               Cerrar Sesión
             </button>
           </div>

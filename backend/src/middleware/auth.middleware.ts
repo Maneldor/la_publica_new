@@ -27,7 +27,9 @@ export const authMiddleware = async (
   console.log('🔑 Token extraído:', token.substring(0, 30) + '...');
 
   try {
-    const SECRET = process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET || 'mi-secreto-super-seguro-2024';
+    console.log('🔍 DEBUG: process.env.NEXTAUTH_SECRET:', process.env.NEXTAUTH_SECRET?.substring(0, 15) + '...');
+    console.log('🔍 DEBUG: process.env.JWT_SECRET:', process.env.JWT_SECRET?.substring(0, 15) + '...');
+    const SECRET = process.env.NEXTAUTH_SECRET || process.env.JWT_SECRET || 'mi-secreto-super-seguro-2024';
     console.log('🔐 SECRET usado:', SECRET.substring(0, 15) + '...');
 
     const decoded = jwt.verify(token, SECRET) as any;

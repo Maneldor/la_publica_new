@@ -79,7 +79,7 @@ export default function TaskKanbanView({
       LOW: 'Baixa',
     };
     return (
-      <span className={`text-xs font-medium px-2 py-0.5 rounded ${badges[priority]}`}>
+      <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${badges[priority]}`}>
         {labels[priority]}
       </span>
     );
@@ -93,7 +93,7 @@ export default function TaskKanbanView({
     const formattedDate = d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
 
     return (
-      <span className={`text-xs ${isOverdue ? 'text-red-600 font-semibold' : 'text-gray-500'}`}>
+      <span className={`text-[10px] ${isOverdue ? 'text-red-600 font-semibold' : 'text-gray-500'}`}>
         {isOverdue && '⚠️ '}
         {formattedDate}
       </span>
@@ -133,21 +133,21 @@ export default function TaskKanbanView({
 
   return (
     <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className="flex gap-4 h-[calc(100vh-400px)] overflow-x-auto pb-4">
+      <div className="flex gap-2 h-[calc(100vh-400px)] overflow-x-hidden pb-2">
         {columns.map((column) => {
           const columnTasks = getTasksByStatus(column.id);
 
           return (
             <div
               key={column.id}
-              className="flex-shrink-0 w-80 bg-gray-50 rounded-lg border border-gray-200"
+              className="flex-1 min-w-0 bg-gray-50 rounded-lg border border-gray-200"
             >
               {/* Header de columna */}
-              <div className={`px-4 py-3 border-b-2 ${column.color} rounded-t-lg`}>
+              <div className={`px-3 py-2 border-b-2 ${column.color} rounded-t-lg`}>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
                     <svg
-                      className="w-5 h-5"
+                      className="w-4 h-4"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -159,9 +159,9 @@ export default function TaskKanbanView({
                         d={column.icon}
                       />
                     </svg>
-                    <h3 className="font-semibold text-sm">{column.title}</h3>
+                    <h3 className="font-semibold text-xs">{column.title}</h3>
                   </div>
-                  <span className="px-2 py-0.5 bg-white rounded-full text-xs font-semibold">
+                  <span className="px-1.5 py-0.5 bg-white rounded-full text-xs font-semibold">
                     {columnTasks.length}
                   </span>
                 </div>
@@ -173,7 +173,7 @@ export default function TaskKanbanView({
                   <div
                     ref={provided.innerRef}
                     {...provided.droppableProps}
-                    className={`p-3 space-y-3 min-h-[200px] overflow-y-auto max-h-[calc(100vh-500px)] ${
+                    className={`p-2 space-y-2 min-h-[200px] overflow-y-auto max-h-[calc(100vh-500px)] ${
                       snapshot.isDraggingOver ? 'bg-blue-50' : ''
                     }`}
                   >
@@ -191,7 +191,7 @@ export default function TaskKanbanView({
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
                             onClick={() => !snapshot.isDragging && onOpenDetail(task.id)}
-                            className={`bg-white rounded-lg shadow-sm border border-gray-200 p-3 cursor-pointer hover:shadow-md transition-shadow ${
+                            className={`bg-white rounded-lg shadow-sm border border-gray-200 p-2 cursor-pointer hover:shadow-md transition-shadow ${
                               getPriorityColor(task.priority)
                             } ${
                               snapshot.isDragging
@@ -200,28 +200,28 @@ export default function TaskKanbanView({
                             }`}
                           >
                             {/* Título */}
-                            <h4 className="text-sm font-medium text-gray-900 mb-2 line-clamp-2">
+                            <h4 className="text-xs font-medium text-gray-900 mb-1 line-clamp-2">
                               {task.title}
                             </h4>
 
                             {/* Badges */}
-                            <div className="flex flex-wrap gap-1 mb-2">
+                            <div className="flex flex-wrap gap-1 mb-1">
                               {getPriorityBadge(task.priority)}
-                              {task.tags && task.tags.slice(0, 2).map((tag: string) => (
+                              {task.tags && task.tags.slice(0, 1).map((tag: string) => (
                                 <span
                                   key={tag}
-                                  className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded"
+                                  className="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded"
                                 >
-                                  {tag}
+                                  {tag.length > 8 ? tag.slice(0, 8) + '...' : tag}
                                 </span>
                               ))}
                             </div>
 
                             {/* Metadata */}
-                            <div className="flex items-center justify-between text-xs text-gray-500 mt-3 pt-2 border-t border-gray-100">
+                            <div className="flex items-center justify-between text-xs text-gray-500 mt-2 pt-1 border-t border-gray-100">
                               {/* Asignado */}
                               <div className="flex items-center gap-1">
-                                <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-medium">
+                                <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center text-white text-[10px] font-medium">
                                   {task.assignedTo?.name?.[0] || '?'}
                                 </div>
                               </div>
@@ -232,11 +232,11 @@ export default function TaskKanbanView({
 
                             {/* Score */}
                             {task.autoScore > 0 && (
-                              <div className="mt-2 pt-2 border-t border-gray-100">
+                              <div className="mt-1 pt-1 border-t border-gray-100">
                                 <div className="flex items-center justify-between">
-                                  <span className="text-xs text-gray-500">Score:</span>
+                                  <span className="text-[10px] text-gray-500">Score:</span>
                                   <span
-                                    className={`text-xs font-bold ${
+                                    className={`text-[10px] font-bold ${
                                       task.autoScore >= 80
                                         ? 'text-red-600'
                                         : task.autoScore >= 60
@@ -251,44 +251,46 @@ export default function TaskKanbanView({
                             )}
 
                             {/* Indicador de comentarios/subtareas */}
-                            <div className="flex gap-3 mt-2 pt-2 border-t border-gray-100">
-                              {task._count?.comments > 0 && (
-                                <div className="flex items-center gap-1 text-xs text-gray-500">
-                                  <svg
-                                    className="w-4 h-4"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                                    />
-                                  </svg>
-                                  {task._count.comments}
-                                </div>
-                              )}
-                              {task._count?.subtasks > 0 && (
-                                <div className="flex items-center gap-1 text-xs text-gray-500">
-                                  <svg
-                                    className="w-4 h-4"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                                    />
-                                  </svg>
-                                  {task._count.subtasks}
-                                </div>
-                              )}
-                            </div>
+                            {(task._count?.comments > 0 || task._count?.subtasks > 0) && (
+                              <div className="flex gap-2 mt-1 pt-1 border-t border-gray-100">
+                                {task._count?.comments > 0 && (
+                                  <div className="flex items-center gap-0.5 text-[10px] text-gray-500">
+                                    <svg
+                                      className="w-3 h-3"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                                      />
+                                    </svg>
+                                    {task._count.comments}
+                                  </div>
+                                )}
+                                {task._count?.subtasks > 0 && (
+                                  <div className="flex items-center gap-0.5 text-[10px] text-gray-500">
+                                    <svg
+                                      className="w-3 h-3"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                                      />
+                                    </svg>
+                                    {task._count.subtasks}
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         )}
                       </Draggable>

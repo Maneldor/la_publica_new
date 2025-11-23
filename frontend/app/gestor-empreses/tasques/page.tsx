@@ -8,8 +8,10 @@ import TaskStats from './components/TaskStats';
 import TaskFilters from './components/TaskFilters';
 import TaskListView from './components/TaskListView';
 import TaskKanbanView from './components/TaskKanbanView';
+import TaskCalendar from './components/TaskCalendar';
 import TaskCreateModal from './components/TaskCreateModal';
 import TaskDetailPanel from './components/TaskDetailPanel';
+import TaskTimeline from './components/TaskTimeline';
 
 type ViewMode = 'list' | 'kanban' | 'calendar' | 'timeline';
 
@@ -346,9 +348,16 @@ export default function TasquesEnterprisePage() {
   };
 
   const userOptions = [
-    { id: '1', name: 'Maria García' },
-    { id: '2', name: 'Juan López' },
-    { id: '3', name: 'Ana Martín' }
+    // Gestores de Empresa
+    { id: '1', name: 'Maria García', isAI: false },
+    { id: '2', name: 'Juan López', isAI: false },
+    { id: '3', name: 'Ana Martín', isAI: false },
+    { id: '4', name: 'Carlos Rodríguez', isAI: false },
+    { id: '5', name: 'Laura Fernández', isAI: false },
+
+    // Gestores de IA
+    { id: 'ai-1', name: 'Alex IA', role: 'Comercial', isAI: true },
+    { id: 'ai-2', name: 'Sofia IA', role: 'Marketing', isAI: true }
   ];
 
   return (
@@ -468,6 +477,7 @@ export default function TasquesEnterprisePage() {
           <TaskListView
             tasks={tasks}
             loading={loading}
+            onTaskClick={(taskId) => setSelectedTaskId(taskId)}
             onTaskEdit={(task) => setSelectedTaskId(task.id)}
             onTaskUpdate={updateTask}
             onTaskDelete={deleteTask}
@@ -489,17 +499,33 @@ export default function TasquesEnterprisePage() {
         )}
 
         {viewMode === 'calendar' && (
-          <div className="bg-gray-100 p-8 rounded-lg text-center">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Vista Calendario</h3>
-            <p className="text-gray-600">Próximamente disponible</p>
-          </div>
+          <TaskCalendar
+            tasks={tasks}
+            loading={loading}
+            onTaskClick={(taskId) => setSelectedTaskId(taskId)}
+            onDateClick={(date) => {
+              setShowCreateModal(true);
+              // Aquí podrías pre-rellenar la fecha en el modal si fuera necesario
+            }}
+            filters={{
+              status: filters.status !== 'all' ? filters.status : undefined,
+              priority: filters.priority !== 'all' ? filters.priority : undefined,
+              search: filters.search
+            }}
+          />
         )}
 
         {viewMode === 'timeline' && (
-          <div className="bg-gray-100 p-8 rounded-lg text-center">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Vista Timeline</h3>
-            <p className="text-gray-600">Próximamente disponible</p>
-          </div>
+          <TaskTimeline
+            tasks={tasks}
+            loading={loading}
+            onTaskClick={(taskId) => setSelectedTaskId(taskId)}
+            filters={{
+              status: filters.status !== 'all' ? filters.status : undefined,
+              priority: filters.priority !== 'all' ? filters.priority : undefined,
+              search: filters.search
+            }}
+          />
         )}
       </div>
 

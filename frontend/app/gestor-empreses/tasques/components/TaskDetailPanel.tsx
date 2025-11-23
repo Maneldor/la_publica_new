@@ -625,7 +625,7 @@ export default function TaskDetailPanel({ taskId, onClose, onUpdate }: TaskDetai
                             <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">
                               Lead
                             </span>
-                            
+                            <a
                               href={`/gestor-empreses/leads/${task.lead.id}`}
                               className="text-sm text-blue-600 hover:text-blue-700 hover:underline"
                               target="_blank"
@@ -640,7 +640,7 @@ export default function TaskDetailPanel({ taskId, onClose, onUpdate }: TaskDetai
                             <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium">
                               Cliente
                             </span>
-                            
+                            <a
                               href={`/gestor-empreses/empresas/${task.company.id}`}
                               className="text-sm text-green-600 hover:text-green-700 hover:underline"
                               target="_blank"

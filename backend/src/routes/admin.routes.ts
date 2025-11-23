@@ -4,6 +4,8 @@ import { authenticateToken } from '../middleware/auth.middleware';
 import { requirePermission } from '../middleware/permissions.middleware';
 import { PermissionType } from '@prisma/client';
 import { cache, cacheList, cacheUser, invalidateCache } from '../middleware/cache.middleware';
+import dashboardRoutes from './admin/dashboard.routes';
+import settingsRoutes from './admin/settings.routes';
 
 const router = Router();
 const adminController = new AdminController();
@@ -154,5 +156,12 @@ router.post('/custom-fields/:fieldId/validate',
   requirePermission(PermissionType.MANAGE_USERS),
   adminController.validateCustomFieldValue
 );
+
+// ========== SUBRUTAS ADMIN ==========
+// Dashboard routes
+router.use('/dashboard', dashboardRoutes);
+
+// Settings routes (Lead Generation)
+router.use('/settings', settingsRoutes);
 
 export default router;

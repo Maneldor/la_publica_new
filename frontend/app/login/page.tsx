@@ -27,9 +27,21 @@ export default function LoginPage() {
       if (result?.error) {
         setError('Credenciales incorrectas');
       } else {
+        console.log('🔐 Login exitoso, obteniendo sesión...');
+
         // Obtener sesión para determinar el rol del usuario
         const response = await fetch('/api/auth/session');
         const session = await response.json();
+
+        console.log('📝 Sesión después de login normal:', session);
+
+        // Guardar el token JWT en localStorage para las APIs
+        if (session?.user?.apiToken) {
+          localStorage.setItem('token', session.user.apiToken);
+          console.log('✅ Token JWT guardado en localStorage');
+        } else {
+          console.error('❌ NO HAY API TOKEN EN LA SESIÓN');
+        }
 
         // Redirigir según el rol real del usuario
         if (session?.user?.role === 'COMPANY' || session?.user?.role === 'EMPRESA') {
@@ -69,6 +81,25 @@ export default function LoginPage() {
       if (result?.error) {
         setError('Error en login rápido de admin');
       } else {
+        console.log('🔐 Login exitoso, obteniendo sesión...');
+
+        // Obtener sesión y guardar token
+        const response = await fetch('/api/auth/session');
+        const session = await response.json();
+
+        console.log('📝 Sesión completa:', session);
+        console.log('📝 Usuario:', session?.user);
+        console.log('📝 API Token presente:', !!session?.user?.apiToken);
+
+        if (session?.user?.apiToken) {
+          localStorage.setItem('token', session.user.apiToken);
+          console.log('✅ Token JWT guardado en localStorage');
+          console.log('🔑 Token:', session.user.apiToken.substring(0, 50) + '...');
+        } else {
+          console.error('❌ NO HAY API TOKEN EN LA SESIÓN');
+          console.log('Datos de usuario disponibles:', Object.keys(session?.user || {}));
+        }
+
         router.push('/admin');
       }
     } catch (err: any) {
@@ -91,6 +122,15 @@ export default function LoginPage() {
       if (result?.error) {
         setError('Error en login rápido de gestor');
       } else {
+        // Obtener sesión y guardar token
+        const response = await fetch('/api/auth/session');
+        const session = await response.json();
+
+        if (session?.user?.apiToken) {
+          localStorage.setItem('token', session.user.apiToken);
+          console.log('✅ Token JWT guardado en localStorage (gestor)');
+        }
+
         router.push('/gestor-empreses/dashboard'); // Redirigir a gestor
       }
     } catch (err: any) {

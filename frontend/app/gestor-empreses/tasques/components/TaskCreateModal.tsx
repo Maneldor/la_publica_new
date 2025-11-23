@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { TaskType, TaskPriority, TaskCategory } from '@prisma/client';
 import { useUsers } from '@/hooks/useUsers';
+import { useSession } from 'next-auth/react';
 
 interface TaskCreateModalProps {
   isOpen: boolean;
@@ -12,10 +13,12 @@ interface TaskCreateModalProps {
 }
 
 export default function TaskCreateModal({ isOpen, onClose, onSubmit, editTask }: TaskCreateModalProps) {
+  const { data: session } = useSession();
   const { usersForAssignment, loading: loadingUsers } = useUsers({ active: true });
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   // Estado del formulario
   const [formData, setFormData] = useState({
@@ -42,6 +45,16 @@ export default function TaskCreateModal({ isOpen, onClose, onSubmit, editTask }:
 
   const [newTag, setNewTag] = useState('');
 
+  // Obtener ID del usuario actual
+  useEffect(() => {
+    if (session?.user?.email && usersForAssignment.length > 0) {
+      const currentUser = usersForAssignment.find((u: any) => u.email === session.user?.email);
+      if (currentUser) {
+        setCurrentUserId(currentUser.id);
+      }
+    }
+  }, [session, usersForAssignment]);
+
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -61,8 +74,14 @@ export default function TaskCreateModal({ isOpen, onClose, onSubmit, editTask }:
 
     setSubmitting(true);
     try {
+      // Si seleccionó "Yo mismo", usar el ID del usuario actual
+      const assignedToId = formData.assignedToId === 'current-user'
+        ? currentUserId
+        : formData.assignedToId;
+
       await onSubmit({
         ...formData,
+        assignedToId,
         dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : null,
         startDate: formData.startDate ? new Date(formData.startDate).toISOString() : null,
         reminderDate: formData.reminderDate ? new Date(formData.reminderDate).toISOString() : null,
@@ -274,7 +293,7 @@ export default function TaskCreateModal({ isOpen, onClose, onSubmit, editTask }:
               {/* Asignado a */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Asignar a <span className="text-red-500">*</span>
+                  Seleccionar Gestor <span className="text-red-500">*</span>
                 </label>
                 {loadingUsers ? (
                   <div className="text-sm text-gray-500">Cargando usuarios...</div>
@@ -285,12 +304,28 @@ export default function TaskCreateModal({ isOpen, onClose, onSubmit, editTask }:
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     disabled={submitting}
                   >
-                    <option value="">Selecciona un usuario</option>
-                    {usersForAssignment.map((user) => (
-                      <option key={user.id} value={user.id}>
-                        {user.name || user.email}
+                    <option value="">Selecciona un gestor</option>
+                    {currentUserId && (
+                      <option value="current-user" className="font-semibold">
+                        👤 Yo mismo (Gestor actual)
                       </option>
-                    ))}
+                    )}
+                    <optgroup label="Gestores de Empresa">
+                      {usersForAssignment.filter((u: any) => !u.isAI).map((user: any) => (
+                        <option key={user.id} value={user.id}>
+                          {user.name || user.email}
+                        </option>
+                      ))}
+                    </optgroup>
+                    {usersForAssignment.some((u: any) => u.isAI) && (
+                      <optgroup label="Gestores de IA">
+                        {usersForAssignment.filter((u: any) => u.isAI).map((user: any) => (
+                          <option key={user.id} value={user.id}>
+                            🤖 {user.name} - {user.role || 'IA'}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
                   </select>
                 )}
               </div>

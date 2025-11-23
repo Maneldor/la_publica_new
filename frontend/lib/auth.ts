@@ -16,7 +16,9 @@ const generateBackendJWT = (user: any) => {
 
   // Mapear roles del frontend de vuelta al backend
   let backendRole = user.role;
-  if (user.role === UserRole.COMPANY) {
+  if (user.role === 'SUPER_ADMIN') {
+    backendRole = 'SUPER_ADMIN';
+  } else if (user.role === UserRole.COMPANY) {
     backendRole = 'EMPRESA';
   } else if (user.role === UserRole.COMPANY_MANAGER) {
     backendRole = 'GESTOR_EMPRESAS';
@@ -138,7 +140,9 @@ export const authOptions: NextAuthOptions = {
           let role = 'USER';
 
           // Primero verificar si existe el campo 'role' específico
-          if (user.role === 'SUPER_ADMIN' || user.role === 'ADMIN') {
+          if (user.role === 'SUPER_ADMIN') {
+            role = 'SUPER_ADMIN';
+          } else if (user.role === 'ADMIN') {
             role = 'ADMIN';
           } else if (user.userType) {
             // Fallback a userType para compatibilidad
