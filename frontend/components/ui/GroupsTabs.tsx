@@ -25,14 +25,14 @@ export function GroupsTabs({ activeTab, onTabChange, counts }: GroupsTabsProps) 
     {
       id: 'public',
       label: 'Grups Públics',
-      count: counts.public,
+      count: counts.all,
       icon: '',
       description: 'Grups públics accessibles per tothom'
     },
     {
       id: 'professional',
       label: 'Grups Professionals',
-      count: counts.professional,
+      count: counts.recommended,
       icon: '',
       description: 'Grups professionals per àrees de treball'
     }

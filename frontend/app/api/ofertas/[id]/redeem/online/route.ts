@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prismaClient } from '@/lib/prisma';
 import { z } from 'zod';
+import { EventType, NotificationType } from '@prisma/client';
 
 const redeemOnlineSchema = z.object({
   userAgent: z.string().optional(),
@@ -97,14 +98,10 @@ export async function POST(
         offerId: offer.id,
         userId: session.user.id,
         companyId: offer.companyId,
-        eventType: 'EXTERNAL_CLICK',
+        eventType: EventType.EXTERNAL_CLICK,
         userAgent: validated.userAgent || request.headers.get('user-agent'),
         ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
-        referrer: validated.referrer,
-        metadata: {
-          redirectUrl: offer.externalUrl,
-          timestamp: new Date().toISOString()
-        }
+        referrer: validated.referrer
       }
     });
 
@@ -132,7 +129,7 @@ export async function POST(
     await prismaClient.notification.create({
       data: {
         userId: offer.companyId,
-        type: 'SYSTEM_NOTIFICATION',
+        type: NotificationType.SYSTEM,
         title: 'Click en oferta online',
         message: `Un usuari ha fet click a la teva oferta "${offer.title}"`,
         priority: 'LOW',
@@ -158,7 +155,14 @@ export async function POST(
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { success: false, error: 'Dades invàlides', details: error.errors },
+        {
+          success: false,
+          error: 'Dades invàlides',
+          details: error.issues.map(issue => ({
+            field: issue.path.join('.'),
+            message: issue.message
+          }))
+        },
         { status: 400 }
       );
     }

@@ -171,12 +171,12 @@ export async function POST(req: NextRequest) {
     const validationResult = SolicitudSchema.safeParse(body);
 
     if (!validationResult.success) {
-      console.warn(`[VALIDATION] Datos inválidos de ${user.email}:`, validationResult.error.errors);
+      console.warn(`[VALIDATION] Datos inválidos de ${user.email}:`, validationResult.error.issues);
       return NextResponse.json(
         {
           success: false,
           error: 'Dades invàlides',
-          details: validationResult.error.errors.map(e => ({
+          details: validationResult.error.issues.map(e => ({
             field: e.path.join('.'),
             message: e.message
           }))

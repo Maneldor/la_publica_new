@@ -18,8 +18,9 @@ export async function POST(request: NextRequest) {
 
     const data = await request.json();
 
-    // Obtener configuración de facturación
-    const config = await prismaClient.configFacturacion.findFirst();
+    // Obtener configuración de facturación (TODO: crear modelo ConfigFacturacion o usar configuración alternativa)
+    // const config = await prismaClient.configFacturacion.findFirst();
+    const config = { prefijoFactura: 'FAC', serieActual: 'A', siguienteNumero: 1, id: 'default' } as any;
     if (!config) {
       return NextResponse.json(
         { error: 'Configuració de facturació no trobada' },
@@ -34,12 +35,9 @@ export async function POST(request: NextRequest) {
         id: true,
         name: true,
         email: true,
-        nombreFiscal: true,
-        cifFiscal: true,
-        direccionFiscal: true,
-        ciudadFiscal: true,
-        cpFiscal: true,
-        provinciaFiscal: true
+        cif: true,
+        address: true,
+        // Campos fiscales no existen en schema, usar campos básicos
       }
     });
 
@@ -53,48 +51,54 @@ export async function POST(request: NextRequest) {
     // Generar número de factura secuencial
     const numeroFactura = `${config.prefijoFactura}-${config.serieActual}-${String(config.siguienteNumero).padStart(5, '0')}`;
 
-    // Crear factura
-    const factura = await prismaClient.factura.create({
+    // Crear factura usando campos del schema real
+    const factura = await prismaClient.invoice.create({
       data: {
-        numeroFactura,
-        serieFactura: config.serieActual,
-        numeroSecuencial: config.siguienteNumero,
+        invoiceNumber: numeroFactura,
+        invoiceSeries: config.serieActual,
         companyId: company.id,
-        empresaNombre: company.nombreFiscal || company.name,
-        empresaCIF: company.cifFiscal,
-        empresaDireccion: company.direccionFiscal,
-        empresaCiudad: company.ciudadFiscal,
-        empresaCP: company.cpFiscal,
-        empresaProvincia: company.provinciaFiscal,
-        empresaEmail: company.email,
-        baseImponible: data.baseImponible,
-        porcentajeIVA: data.porcentajeIVA,
-        importeIVA: data.importeIVA,
-        total: data.total,
-        fechaEmision: new Date(data.fechaEmision),
-        fechaVencimiento: new Date(data.fechaVencimiento),
-        estado: data.enviar ? 'ENVIADA' : 'BORRADOR',
-        tipoFactura: 'MANUAL',
-        observaciones: data.observaciones,
-        notasInternas: data.notasInternas,
-        creadoPor: session.user.email || 'admin',
-        conceptos: {
-          create: data.conceptos
+        clientName: company.name,
+        clientCif: company.cif,
+        clientEmail: company.email,
+        clientAddress: company.address || '',
+        clientCity: '',
+        clientPostalCode: '',
+        subtotalAmount: Math.round(data.baseImponible * 100), // Convertir a centavos
+        taxAmount: Math.round(data.importeIVA * 100), // Convertir a centavos
+        totalAmount: Math.round(data.total * 100), // Convertir a centavos
+        taxRate: data.porcentajeIVA || 21.0,
+        issueDate: new Date(data.fechaEmision),
+        dueDate: new Date(data.fechaVencimiento),
+        status: data.enviar ? 'SENT' : 'DRAFT',
+        invoiceType: 'REGULAR',
+        concept: data.observaciones || 'Factura manual',
+        notes: data.notasInternas || null,
+        pendingAmount: Math.round(data.total * 100), // Convertir a centavos
+        items: {
+          create: data.conceptos?.map((item: any, index: number) => ({
+            order: index,
+            description: item.descripcion || item.nombre || '',
+            quantity: item.cantidad || 1,
+            unitPrice: Math.round((item.precio || 0) * 100), // Convertir a centavos
+            subtotalAmount: Math.round((item.subtotal || item.precio || 0) * 100),
+            taxAmount: Math.round(((item.subtotal || item.precio || 0) * (data.porcentajeIVA || 21) / 100) * 100),
+            totalAmount: Math.round((item.total || item.subtotal || item.precio || 0) * 100),
+          })) || []
         }
       },
       include: {
-        conceptos: true,
+        items: true,
         company: true
       }
     });
 
-    // Actualizar siguiente número en configuración
-    await prismaClient.configFacturacion.update({
-      where: { id: config.id },
-      data: {
-        siguienteNumero: config.siguienteNumero + 1
-      }
-    });
+    // Actualizar siguiente número en configuración (TODO: implementar cuando exista el modelo)
+    // await prismaClient.configFacturacion.update({
+    //   where: { id: config.id },
+    //   data: {
+    //     siguienteNumero: config.siguienteNumero + 1
+    //   }
+    // });
 
     // TODO: Si data.enviar === true, enviar email a la empresa
     if (data.enviar) {

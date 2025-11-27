@@ -52,12 +52,12 @@ export async function GET(request: NextRequest) {
 
     // Obtener facturas
     const [facturas, total] = await Promise.all([
-      prismaClient.factura.findMany({
+      prismaClient.invoice.findMany({
         where,
         skip,
         take: limite,
         orderBy: {
-          fechaCreacion: 'desc'
+          createdAt: 'desc'
         },
         include: {
           company: {
@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
           }
         }
       }),
-      prismaClient.factura.count({ where })
+      prismaClient.invoice.count({ where })
     ]);
 
     return NextResponse.json({

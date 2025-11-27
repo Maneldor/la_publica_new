@@ -16,6 +16,35 @@ interface ModalityConfig {
   };
 }
 
+interface Expert {
+  nom?: string;
+  carrec?: string;
+  experiencia?: string;
+  especialitat?: string;
+  bio?: string;
+  qualificacions?: string[];
+  clients?: string;
+  formacio?: string;
+  colegiada?: string;
+  frase?: string;
+  linkedin?: string;
+}
+
+interface AssessoramentExtended {
+  id?: string;
+  titol?: string;
+  subtitol?: string;
+  categoria?: string;
+  empresa?: { id?: number | string };
+  expert?: Expert;
+  modalitats?: ModalityConfig[];
+  descripcio?: string;
+  metodologia?: string;
+  recursos_necessaris?: string;
+  resultats_esperats?: string;
+  status?: 'esborrany' | 'publicat' | 'inactiu';
+}
+
 const CATEGORIES = [
   'Contractació Pública',
   'Tributació',
@@ -34,6 +63,13 @@ const MODALITAT_OPTIONS = [
   { value: 'online', label: 'Online', icon: '💻' },
   { value: 'telefonica', label: 'Telefònica', icon: '📞' },
   { value: 'email', label: 'Email', icon: '✉️' }
+];
+
+const INITIAL_MODALITATS: ModalityConfig[] = [
+  { tipus: 'presencial', activa: false, config: { durada: 60, places_disponibles: 10, preu_sessio: 0 } },
+  { tipus: 'online', activa: false, config: { durada: 45, places_disponibles: 15, preu_sessio: 0 } },
+  { tipus: 'telefonica', activa: false, config: { durada: 30, places_disponibles: 20, preu_sessio: 0 } },
+  { tipus: 'email', activa: false, config: { durada: 0, places_disponibles: 50, preu_sessio: 0 } }
 ];
 
 export default function EditarAssessoramentPage() {
@@ -59,12 +95,7 @@ export default function EditarAssessoramentPage() {
     status: 'esborrany' as 'esborrany' | 'publicat' | 'inactiu'
   });
 
-  const [modalitats, setModalitats] = useState<ModalityConfig[]>([
-    { tipus: 'presencial', activa: false, config: { durada: 60, places_disponibles: 10, preu_sessio: 0 } },
-    { tipus: 'online', activa: false, config: { durada: 45, places_disponibles: 15, preu_sessio: 0 } },
-    { tipus: 'telefonica', activa: false, config: { durada: 30, places_disponibles: 20, preu_sessio: 0 } },
-    { tipus: 'email', activa: false, config: { durada: 0, places_disponibles: 50, preu_sessio: 0 } }
-  ]);
+  const [modalitats, setModalitats] = useState<ModalityConfig[]>(INITIAL_MODALITATS);
 
   const [newQualification, setNewQualification] = useState('');
 
@@ -86,14 +117,14 @@ export default function EditarAssessoramentPage() {
         expert_bio: currentAssessorament.expert?.bio || '',
         expert_qualificacions: currentAssessorament.expert?.qualificacions || [],
         descripcio: currentAssessorament.descripcio,
-        metodologia: currentAssessorament.metodologia || '',
-        recursos_necessaris: currentAssessorament.recursos_necessaris || '',
-        resultats_esperats: currentAssessorament.resultats_esperats || '',
-        status: (currentAssessorament as any).status as 'esborrany' | 'publicat' | 'inactiu' || 'publicat'
+        metodologia: (currentAssessorament as AssessoramentExtended).metodologia || '',
+        recursos_necessaris: (currentAssessorament as AssessoramentExtended).recursos_necessaris || '',
+        resultats_esperats: (currentAssessorament as AssessoramentExtended).resultats_esperats || '',
+        status: (currentAssessorament as AssessoramentExtended).status || 'publicat'
       });
 
       // Cargar modalitats
-      const loadedModalitats = modalitats.map(m => {
+      const loadedModalitats = INITIAL_MODALITATS.map(m => {
         const existingModalitat = currentAssessorament.modalitats?.find(cm => cm.tipus === m.tipus);
         if (existingModalitat) {
           return {
@@ -104,7 +135,7 @@ export default function EditarAssessoramentPage() {
         }
         return m;
       });
-      setModalitats(loadedModalitats);
+      setModalitats(loadedModalitats as ModalityConfig[]);
     }
   }, [params.slug]);
 
@@ -179,6 +210,8 @@ export default function EditarAssessoramentPage() {
         }
       };
 
+      if (!assessorament) return;
+      
       const response = await fetch(`http://localhost:5000/api/v1/assessoraments/${assessorament.id}`, {
         method: 'PUT',
         headers: {
@@ -551,7 +584,7 @@ export default function EditarAssessoramentPage() {
 
             <div className="bg-gray-50 p-4 rounded-lg">
               <p className="text-sm text-gray-600">Visualitzacions</p>
-              <p className="text-2xl font-bold text-green-600">{assessorament.stats?.views || 0}</p>
+              <p className="text-2xl font-bold text-green-600">{assessorament.stats?.vistes || 0}</p>
               <p className="text-xs text-gray-500">vistes totals</p>
             </div>
 

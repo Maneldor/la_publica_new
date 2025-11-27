@@ -160,9 +160,7 @@ export default function EstadistiquesPage() {
           }}
           middleZone={{
             title: 'Període d\'Anàlisi',
-            description: 'Selecciona el període per a l\'anàlisi de dades'
-          }}
-          bottomZone={{
+            description: 'Selecciona el període per a l\'anàlisi de dades',
             content: (
               <div className="flex gap-4">
                 <select
@@ -189,9 +187,7 @@ export default function EstadistiquesPage() {
           }}
           middleZone={{
             title: 'Evolució Mensual',
-            description: 'Seguiment de la performance mes a mes'
-          }}
-          bottomZone={{
+            description: 'Seguiment de la performance mes a mes',
             content: (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -239,9 +235,7 @@ export default function EstadistiquesPage() {
             }}
             middleZone={{
               title: 'Rendiment per Sector',
-              description: 'Anàlisi de conversió per sectors'
-            }}
-            bottomZone={{
+              description: 'Anàlisi de conversió per sectors',
               content: (
                 <div className="space-y-4">
                   {mockSectorStats.map((stat, index) => (
@@ -277,9 +271,7 @@ export default function EstadistiquesPage() {
             }}
             middleZone={{
               title: 'Rendiment per Font',
-              description: 'Efectivitat de les fonts de leads'
-            }}
-            bottomZone={{
+              description: 'Efectivitat de les fonts de leads',
               content: (
                 <div className="space-y-4">
                   {mockSourceStats.map((stat, index) => (
@@ -316,9 +308,7 @@ export default function EstadistiquesPage() {
           }}
           middleZone={{
             title: 'Insights i Recomanacions',
-            description: 'Anàlisi automàtica basada en les dades'
-          }}
-          bottomZone={{
+            description: 'Anàlisi automàtica basada en les dades',
             content: (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

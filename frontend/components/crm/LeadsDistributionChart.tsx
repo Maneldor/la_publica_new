@@ -165,9 +165,9 @@ export function LeadsDistributionChart({
       <ResponsiveContainer width="100%" height={300}>
         <PieChart>
           <Pie
-            activeIndex={activeIndex}
+            {...(activeIndex !== null && activeIndex !== undefined ? { activeIndex } : {})}
             activeShape={renderActiveShape}
-            data={chartData}
+            data={chartData as any}
             cx="50%"
             cy="50%"
             innerRadius={60}

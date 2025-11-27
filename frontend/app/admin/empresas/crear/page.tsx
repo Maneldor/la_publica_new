@@ -164,14 +164,11 @@ export default function CrearEmpresaAdminPage() {
       console.log('🚀 Iniciando creación de empresa...');
 
       // 1. Subir imágenes primero
-      let imageUrls: string[] = [];
       let logoUrl: string | undefined;
 
-      if (formData.images.length > 0) {
-        console.log('📸 Subiendo imágenes...');
-        const uploadedImages = await uploadImagesMutation.mutateAsync(formData.images);
-        imageUrls = uploadedImages;
-      }
+      const imageUrls: string[] = formData.images.length > 0
+        ? await uploadImagesMutation.mutateAsync(formData.images)
+        : [];
 
       if (formData.logo) {
         console.log('🎨 Subiendo logo...');

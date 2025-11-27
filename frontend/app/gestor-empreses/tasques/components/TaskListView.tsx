@@ -105,7 +105,7 @@ export default function TaskListView({
       DEMO: 'Demo',
       PROPOSAL: 'Propuesta'
     };
-    return labels[type];
+    return labels[type as keyof typeof labels] || type;
   };
 
   const formatDate = (date: Date | string | undefined) => {

@@ -27,7 +27,7 @@ export const assessoramentsMock = [
 
     modalitats: [
       {
-        tipus: 'presencial',
+        tipus: 'presencial' as const,
         activa: true,
         config: {
           adreca: 'Carrer de la Llei, 45, 08001 Barcelona',
@@ -38,7 +38,7 @@ export const assessoramentsMock = [
         }
       },
       {
-        tipus: 'online',
+        tipus: 'online' as const,
         activa: true,
         config: {
           plataforma: 'Zoom/Meet/Teams',
@@ -48,7 +48,7 @@ export const assessoramentsMock = [
         }
       },
       {
-        tipus: 'telefonica',
+        tipus: 'telefonica' as const,
         activa: true,
         config: {
           telefon: '+34 93 456 78 90',
@@ -57,7 +57,7 @@ export const assessoramentsMock = [
         }
       },
       {
-        tipus: 'email',
+        tipus: 'email' as const,
         activa: false,
         config: {
           email: 'info@cpuig.cat',
@@ -142,7 +142,7 @@ Aquest servei està dissenyat específicament per empleats públics membres de L
 
     modalitats: [
       {
-        tipus: 'presencial',
+        tipus: 'presencial' as const,
         activa: true,
         config: {
           adreca: 'Avinguda Diagonal, 123, 08028 Barcelona',
@@ -153,7 +153,7 @@ Aquest servei està dissenyat específicament per empleats públics membres de L
         }
       },
       {
-        tipus: 'online',
+        tipus: 'online' as const,
         activa: true,
         config: {
           plataforma: 'Teams/Zoom',
@@ -163,7 +163,7 @@ Aquest servei està dissenyat específicament per empleats públics membres de L
         }
       },
       {
-        tipus: 'telefonica',
+        tipus: 'telefonica' as const,
         activa: true,
         config: {
           telefon: '+34 93 234 56 78',
@@ -172,7 +172,7 @@ Aquest servei està dissenyat específicament per empleats públics membres de L
         }
       },
       {
-        tipus: 'email',
+        tipus: 'email' as const,
         activa: true,
         config: {
           email: 'consultes@fiscalcat.es',
@@ -252,7 +252,7 @@ Servei pensat per a responsables de gestió econòmica en administracions locals
 
     modalitats: [
       {
-        tipus: 'presencial',
+        tipus: 'presencial' as const,
         activa: true,
         config: {
           adreca: 'Carrer de la Salut, 89, 08024 Barcelona',
@@ -263,7 +263,7 @@ Servei pensat per a responsables de gestió econòmica en administracions locals
         }
       },
       {
-        tipus: 'online',
+        tipus: 'online' as const,
         activa: true,
         config: {
           plataforma: 'Zoom especialitzat',
@@ -273,12 +273,12 @@ Servei pensat per a responsables de gestió econòmica en administracions locals
         }
       },
       {
-        tipus: 'telefonica',
+        tipus: 'telefonica' as const,
         activa: false,
         config: {}
       },
       {
-        tipus: 'email',
+        tipus: 'email' as const,
         activa: true,
         config: {
           email: 'dietista@nutrisalut.cat',
@@ -358,7 +358,7 @@ Especialment dissenyat per a treballadors d'oficina que volen millorar la seva e
 
     modalitats: [
       {
-        tipus: 'presencial',
+        tipus: 'presencial' as const,
         activa: true,
         config: {
           adreca: 'Carrer de la Tecnologia, 22, 08018 Barcelona',
@@ -369,7 +369,7 @@ Especialment dissenyat per a treballadors d'oficina que volen millorar la seva e
         }
       },
       {
-        tipus: 'online',
+        tipus: 'online' as const,
         activa: true,
         config: {
           plataforma: 'Teams/Zoom amb pantalla compartida',
@@ -379,12 +379,12 @@ Especialment dissenyat per a treballadors d'oficina que volen millorar la seva e
         }
       },
       {
-        tipus: 'telefonica',
+        tipus: 'telefonica' as const,
         activa: false,
         config: {}
       },
       {
-        tipus: 'email',
+        tipus: 'email' as const,
         activa: true,
         config: {
           email: 'consultoria@digitalpub.es',
@@ -464,7 +464,7 @@ Perfecte per a responsables de sistemes, secretaris tècnics i personal que vol 
 
     modalitats: [
       {
-        tipus: 'presencial',
+        tipus: 'presencial' as const,
         activa: true,
         config: {
           adreca: 'Passeig de Gràcia, 156, 08008 Barcelona',
@@ -475,7 +475,7 @@ Perfecte per a responsables de sistemes, secretaris tècnics i personal que vol 
         }
       },
       {
-        tipus: 'online',
+        tipus: 'online' as const,
         activa: true,
         config: {
           plataforma: 'Zoom amb compartició de documents',
@@ -485,7 +485,7 @@ Perfecte per a responsables de sistemes, secretaris tècnics i personal que vol 
         }
       },
       {
-        tipus: 'telefonica',
+        tipus: 'telefonica' as const,
         activa: true,
         config: {
           telefon: '+34 93 567 89 01',
@@ -494,7 +494,7 @@ Perfecte per a responsables de sistemes, secretaris tècnics i personal que vol 
         }
       },
       {
-        tipus: 'email',
+        tipus: 'email' as const,
         activa: false,
         config: {}
       }

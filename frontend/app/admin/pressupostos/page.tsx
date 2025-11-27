@@ -27,7 +27,12 @@ interface Budget {
   company: {
     id: string;
     name: string;
+    cif?: string;
+    address?: string;
+    city?: string;
+    postalCode?: string;
   };
+  notes?: string;
   items: BudgetItem[];
   invoice?: {
     id: string;

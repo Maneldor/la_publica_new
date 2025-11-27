@@ -19,18 +19,21 @@ const convertApiConversation = (apiConv: ApiConversation): Conversation => {
     avatar: apiConv.avatar,
     lastMessage: apiConv.lastMessage ? {
       id: apiConv.lastMessage.id,
+      conversationId: apiConv.id,
       senderId: apiConv.lastMessage.senderId,
       content: apiConv.lastMessage.content,
       timestamp: new Date(apiConv.lastMessage.timestamp),
-      type: apiConv.lastMessage.type as 'text' | 'image' | 'file' | 'audio',
-      status: apiConv.lastMessage.status as 'sent' | 'delivered' | 'read',
-      replyTo: apiConv.lastMessage.replyTo ? {
-        id: apiConv.lastMessage.replyTo.id,
-        content: apiConv.lastMessage.replyTo.content,
-        sender: apiConv.lastMessage.replyTo.sender
-      } : undefined,
-      attachments: apiConv.lastMessage.attachments || []
-    } : undefined,
+      type: (apiConv.lastMessage.type === 'file' ? 'document' : apiConv.lastMessage.type) as 'text' | 'image' | 'document' | 'audio' | 'video' | 'link' | 'system',
+      status: apiConv.lastMessage.status as 'sending' | 'sent' | 'delivered' | 'read',
+      replyTo: apiConv.lastMessage.replyTo ? parseInt(apiConv.lastMessage.replyTo.id) : undefined,
+      attachments: (apiConv.lastMessage.attachments || []).map(att => ({
+        id: att.id || '',
+        type: att.type === 'file' ? 'document' : att.type as 'image' | 'document' | 'audio' | 'video',
+        url: att.url || '',
+        name: att.name,
+        size: att.size
+      }))
+    } : null,
     unreadCount: apiConv.unreadCount,
     isPinned: apiConv.isPinned,
     isMuted: apiConv.isMuted,
@@ -39,27 +42,37 @@ const convertApiConversation = (apiConv: ApiConversation): Conversation => {
       id: p.id,
       name: p.name,
       avatar: p.avatar,
-      isOnline: p.isOnline
+      isOnline: p.isOnline,
+      lastSeen: new Date().toISOString()
     }))
   };
 };
 
 const convertApiMessage = (apiMsg: ApiMessage, conversationId?: string): Message => {
+  // Mapear tipos de mensaje
+  let messageType: 'text' | 'image' | 'document' | 'audio' | 'video' | 'link' | 'system' = 'text';
+  if (apiMsg.type === 'file') messageType = 'document';
+  else if (apiMsg.type === 'image') messageType = 'image';
+  else if (apiMsg.type === 'audio') messageType = 'audio';
+  else messageType = apiMsg.type as 'text' | 'link' | 'system';
+
   return {
     id: apiMsg.id,
-    conversationId: apiMsg.conversationId || conversationId || '', // Usar conversationId del mensaje o el parámetro
+    conversationId: apiMsg.conversationId || conversationId || '',
     senderId: apiMsg.senderId,
     content: apiMsg.content,
     timestamp: new Date(apiMsg.timestamp),
-    type: apiMsg.type as 'text' | 'image' | 'file' | 'audio',
-    status: apiMsg.status as 'sent' | 'delivered' | 'read',
+    type: messageType,
+    status: apiMsg.status as 'sending' | 'sent' | 'delivered' | 'read',
     isEdited: apiMsg.isEdited || false,
-    replyTo: apiMsg.replyTo ? {
-      id: apiMsg.replyTo.id,
-      content: apiMsg.replyTo.content,
-      sender: apiMsg.replyTo.sender
-    } : undefined,
-    attachments: apiMsg.attachments || []
+    replyTo: apiMsg.replyTo ? parseInt(apiMsg.replyTo.id) : undefined,
+    attachments: (apiMsg.attachments || []).map(att => ({
+      id: att.id || '',
+      type: att.type === 'file' ? 'document' : att.type as 'image' | 'document' | 'audio' | 'video',
+      url: att.url || '',
+      name: att.name,
+      size: att.size
+    }))
   };
 };
 
@@ -75,7 +88,7 @@ export default function MissatgesPage() {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
-  const [selectedMessages, setSelectedMessages] = useState<number[]>([]);
+  const [selectedMessages, setSelectedMessages] = useState<string[]>([]);
   const [showSearchInChat, setShowSearchInChat] = useState(false);
   const [searchInChatTerm, setSearchInChatTerm] = useState('');
   const [showGroupInfo, setShowGroupInfo] = useState(false);
@@ -210,7 +223,7 @@ export default function MissatgesPage() {
       type: 'text',
       timestamp: new Date(),
       status: 'sending',
-      replyTo: replyingTo?.id
+      replyTo: replyingTo?.id ? parseInt(replyingTo.id) : undefined
     };
 
     // Afegir missatge temporal a la UI
@@ -249,9 +262,9 @@ export default function MissatgesPage() {
       }
     } catch (err) {
       console.error('Error enviant missatge:', err);
-      // Marcar el missatge com a error
+      // Marcar el missatge com a error (usar 'sending' como fallback ya que 'error' no existe)
       setMessages(prev => prev.map(msg =>
-        msg.id === tempMessage.id ? { ...msg, status: 'error' } : msg
+        msg.id === tempMessage.id ? { ...msg, status: 'sending' } : msg
       ));
     }
   };
@@ -265,11 +278,11 @@ export default function MissatgesPage() {
     }
   };
 
-  const togglePin = async (conversationId: number) => {
+  const togglePin = async (conversationId: string) => {
     try {
       const conversation = conversations.find(c => c.id === conversationId);
       if (conversation) {
-        await conversationsApi.pinConversation(conversationId.toString(), !conversation.isPinned);
+        await conversationsApi.pinConversation(conversationId, !conversation.isPinned);
         setConversations(prev => prev.map(conv =>
           conv.id === conversationId ? { ...conv, isPinned: !conv.isPinned } : conv
         ));
@@ -279,11 +292,11 @@ export default function MissatgesPage() {
     }
   };
 
-  const toggleMute = async (conversationId: number) => {
+  const toggleMute = async (conversationId: string) => {
     try {
       const conversation = conversations.find(c => c.id === conversationId);
       if (conversation) {
-        await conversationsApi.muteConversation(conversationId.toString(), !conversation.isMuted);
+        await conversationsApi.muteConversation(conversationId, !conversation.isMuted);
         setConversations(prev => prev.map(conv =>
           conv.id === conversationId ? { ...conv, isMuted: !conv.isMuted } : conv
         ));
@@ -293,11 +306,11 @@ export default function MissatgesPage() {
     }
   };
 
-  const archiveConversation = async (conversationId: number) => {
+  const archiveConversation = async (conversationId: string) => {
     try {
       const conversation = conversations.find(c => c.id === conversationId);
       if (conversation) {
-        await conversationsApi.archiveConversation(conversationId.toString(), !conversation.isArchived);
+        await conversationsApi.archiveConversation(conversationId, !conversation.isArchived);
         setConversations(prev => prev.map(conv =>
           conv.id === conversationId ? { ...conv, isArchived: true } : conv
         ));
@@ -307,11 +320,11 @@ export default function MissatgesPage() {
     }
   };
 
-  const deleteMessage = (messageId: number) => {
+  const deleteMessage = (messageId: string) => {
     setMessages(prev => prev.filter(msg => msg.id !== messageId));
   };
 
-  const starMessage = (messageId: number) => {
+  const starMessage = (messageId: string) => {
     setMessages(prev => prev.map(msg =>
       msg.id === messageId ? { ...msg, isStarred: !msg.isStarred } : msg
     ));
@@ -333,10 +346,10 @@ export default function MissatgesPage() {
         filtered = filtered.filter(c => c.isArchived);
         break;
       case 'admins':
-        filtered = filtered.filter(c => c.type === 'admin');
+        filtered = filtered.filter(c => (c.type as string) === 'admin');
         break;
       case 'gestors':
-        filtered = filtered.filter(c => c.type === 'gestor');
+        filtered = filtered.filter(c => (c.type as string) === 'gestor');
         break;
       case 'companies':
         filtered = filtered.filter(c => c.type === 'company');
@@ -370,7 +383,7 @@ export default function MissatgesPage() {
     { label: 'Converses Actives', value: conversations.filter(c => !c.isArchived).length.toString(), trend: '+2' },
     { label: 'Missatges No Llegits', value: totalUnread.toString(), trend: totalUnread > 0 ? '!' : '' },
     { label: 'Empreses', value: conversations.filter(c => c.type === 'company').length.toString(), trend: '+1' },
-    { label: 'Equip Gestors', value: conversations.filter(c => c.type === 'gestor').length.toString(), trend: '' }
+    { label: 'Equip Gestors', value: conversations.filter(c => (c.type as string) === 'gestor').length.toString(), trend: '' }
   ];
 
   const openConversation = async (conv: Conversation) => {
@@ -499,8 +512,8 @@ export default function MissatgesPage() {
             isMobile={isMobile}
             closeConversation={closeConversation}
             sendMessage={sendMessage}
-            starMessage={starMessage}
-            deleteMessage={deleteMessage}
+            starMessage={(messageId: number) => starMessage(messageId.toString())}
+            deleteMessage={(messageId: number) => deleteMessage(messageId.toString())}
             setMessages={setMessages}
             handleFileSelect={handleFileSelect}
             formatTime={formatTime}

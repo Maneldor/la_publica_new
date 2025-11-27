@@ -32,6 +32,8 @@ export interface AnunciFormData {
   // Step 5 - Imágenes
   coverImage: File | null;     // Imagen de portada (obligatoria)
   galleryImages: File[];       // Galería de imágenes adicionales (opcional)
+  images: File[];              // Todas las imágenes (combinación de coverImage + galleryImages)
+  mainImageIndex: number;      // Índice de la imagen principal
 }
 
 const initialFormData: AnunciFormData = {
@@ -55,6 +57,8 @@ const initialFormData: AnunciFormData = {
   contactSchedule: '',
   coverImage: null,
   galleryImages: [],
+  images: [],
+  mainImageIndex: 0,
 };
 
 export const useCreateAnunci = () => {

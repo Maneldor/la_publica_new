@@ -316,14 +316,14 @@ export default function TaskDetailPanel({ taskId, onClose, onUpdate }: TaskDetai
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={tab.icon} />
                     </svg>
                     {tab.label}
-                    {tab.id === 'comments' && task._count?.comments > 0 && (
+                    {tab.id === 'comments' && (task._count?.comments || 0) > 0 && (
                       <span className="px-2 py-0.5 bg-blue-100 text-blue-600 rounded-full text-xs font-semibold">
-                        {task._count.comments}
+                        {task._count?.comments || 0}
                       </span>
                     )}
-                    {tab.id === 'subtasks' && task._count?.subtasks > 0 && (
+                    {tab.id === 'subtasks' && (task._count?.subtasks || 0) > 0 && (
                       <span className="px-2 py-0.5 bg-purple-100 text-purple-600 rounded-full text-xs font-semibold">
-                        {task._count.subtasks}
+                        {task._count?.subtasks || 0}
                       </span>
                     )}
                   </button>
@@ -717,8 +717,8 @@ export default function TaskDetailPanel({ taskId, onClose, onUpdate }: TaskDetai
 
               {activeTab === 'activity' && (
                 <div className="space-y-3">
-                  {task.activities && task.activities.length > 0 ? (
-                    task.activities.map((activity: any) => (
+                  {(task as any).activities && (task as any).activities.length > 0 ? (
+                    (task as any).activities.map((activity: any) => (
                       <div key={activity.id} className="flex gap-3 pb-3 border-b border-gray-100 last:border-0">
                         <div className="w-2 h-2 rounded-full bg-blue-500 mt-2 flex-shrink-0" />
                         <div className="flex-1">

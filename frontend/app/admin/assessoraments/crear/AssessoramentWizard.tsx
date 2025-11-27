@@ -5,23 +5,7 @@ import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
   ArrowRight,
-  Save,
-  Eye,
-  Upload,
-  X,
-  Plus,
-  Info,
-  Tag,
-  Calendar,
-  ShoppingBag,
-  Image,
-  CheckCircle,
-  ExternalLink,
-  Phone,
-  Mail,
-  FileText,
-  QrCode,
-  Ticket
+  Save
 } from 'lucide-react';
 
 import WizardSteps from './AssessoramentWizardSteps';
@@ -147,8 +131,8 @@ export const AssessoramentWizard: React.FC<OfferWizardProps> = ({ onClose }) => 
 
       // Convertir al formato esperado para companies
       const companiesFromEmpresas = createdEmpresas
-        .filter((empresa: any) => empresa.status === 'published' && empresa.isVerified)
-        .map((empresa: any) => ({
+        .filter((empresa: { status?: string; isVerified?: boolean }) => empresa.status === 'published' && empresa.isVerified)
+        .map((empresa: { id: number; name: string }) => ({
           id: empresa.id,
           name: empresa.name
         }));
@@ -174,7 +158,7 @@ export const AssessoramentWizard: React.FC<OfferWizardProps> = ({ onClose }) => 
     }
   };
 
-  const updateField = (field: keyof WizardFormData, value: any) => {
+  const updateField = <K extends keyof WizardFormData>(field: K, value: WizardFormData[K]) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -308,7 +292,7 @@ export const AssessoramentWizard: React.FC<OfferWizardProps> = ({ onClose }) => 
       case 6:
         return <Step6Imatge formData={formData} updateField={updateField} addArrayItem={addArrayItem} removeArrayItem={removeArrayItem} errors={errors} />;
       case 7:
-        return <Step7Review formData={formData} updateField={updateField} companies={companies} />;
+        return <Step7Review formData={formData} updateField={updateField} companies={companies} errors={errors} />;
       default:
         return null;
     }

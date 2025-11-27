@@ -259,6 +259,7 @@ export default function EspaiTreballPage() {
       {/* Modal para enviar mensaje */}
       {showMessageModal && selectedMember && (
         <MessageModal
+          isOpen={showMessageModal}
           member={selectedMember}
           onClose={() => setShowMessageModal(false)}
         />

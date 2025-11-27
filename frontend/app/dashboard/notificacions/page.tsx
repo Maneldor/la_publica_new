@@ -230,14 +230,12 @@ export default function NotificacionsPage() {
       <div className="px-6 pb-6">
         {/* Barra de herramientas */}
         <UniversalCard
-          variant="modern"
+          variant="default"
           padding="lg"
           className="mb-6"
-          topZone={{
-            title: "Gestión de Notificaciones",
-            subtitle: "Filtra, busca y gestiona tus notificaciones"
-          }}
           middleZone={{
+            title: "Gestión de Notificaciones",
+            subtitle: "Filtra, busca y gestiona tus notificaciones",
             content: (
               <div className="space-y-4">
                 {/* Filtros y búsqueda */}
@@ -313,8 +311,8 @@ export default function NotificacionsPage() {
         {/* Lista de notificaciones */}
         {notifications.length === 0 ? (
           <UniversalCard
-            variant="modern"
-            padding="xl"
+            variant="default"
+            padding="lg"
             className="text-center"
             middleZone={{
               content: (
@@ -338,7 +336,7 @@ export default function NotificacionsPage() {
             {notifications.map((notification) => (
               <UniversalCard
                 key={notification.id}
-                variant="modern"
+                variant="default"
                 padding="md"
                 className={`${getNotificationColor(notification.type)} ${
                   !notification.isRead ? 'border-l-4 border-l-blue-500' : ''
@@ -413,7 +411,7 @@ export default function NotificacionsPage() {
         {/* Paginación */}
         {totalPages > 1 && (
           <UniversalCard
-            variant="modern"
+            variant="default"
             padding="md"
             className="mt-6"
             middleZone={{

@@ -251,7 +251,7 @@ export default function FormacioPage() {
         console.error('Error loading courses:', err);
         setError('Error al cargar los cursos');
         // Fallback a datos mock si hay error
-        setCourses(sampleCourses as Course[]);
+        setCourses(sampleCourses as unknown as Course[]);
       } finally {
         setLoading(false);
       }
@@ -445,7 +445,7 @@ export default function FormacioPage() {
             {filteredCourses.map((course) => (
               <CourseCard
                 key={course.id}
-                course={course}
+                course={course as any}
                 viewMode={viewMode}
               />
             ))}

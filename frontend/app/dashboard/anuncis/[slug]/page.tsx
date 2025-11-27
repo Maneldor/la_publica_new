@@ -48,22 +48,22 @@ export default function AnunciSinglePage({ params }: { params: { slug: string } 
   useEffect(() => {
     if (backendAnuncio) {
       // Convertir anuncio del backend al formato de detalle
-      const marketplace = backendAnuncio.configuration?.marketplace;
-
+      // El modelo Anuncio no tiene configuration, usar campos reales
+      // Convertir id de string a number para el tipo Anunci
+      const anunciId = parseInt(backendAnuncio.id.replace(/[^0-9]/g, '')) || 0;
       const convertedAnuncio: Anunci = {
-        id: backendAnuncio.id,
-        slug: params.slug,
+        id: anunciId,
+        slug: params.slug || backendAnuncio.slug || '',
         title: backendAnuncio.title,
         description: backendAnuncio.content,
-        type: marketplace?.adType || 'oferta',
-        category: marketplace?.category || 'general',
-        price: marketplace?.price || 0,
-        priceType: marketplace?.priceType === 'fix' ? 'fix' : marketplace?.priceType === 'negociable' ? 'negociable' : 'gratuït',
-        location: marketplace?.location ? `${marketplace.location.city}, ${marketplace.location.province}` : 'La Pública',
-        images: [
-          marketplace?.coverImage || marketplace?.images?.[0] || 'https://via.placeholder.com/800x600?text=Sense+imatge',
-          ...(marketplace?.galleryImages || marketplace?.images?.slice(1) || [])
-        ].filter(Boolean),
+        type: 'oferta', // Valor por defecto, no hay campo en el modelo
+        category: 'general', // Valor por defecto
+        price: 0, // Valor por defecto, no hay campo en el modelo
+        priceType: 'gratuït',
+        location: 'La Pública',
+        images: backendAnuncio.imageUrl 
+          ? [backendAnuncio.imageUrl] 
+          : ['https://via.placeholder.com/800x600?text=Sense+imatge'],
         author: backendAnuncio.author?.email || 'Usuari',
         authorAvatar: backendAnuncio.author?.image || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150',
         authorDepartment: backendAnuncio.community?.nombre || 'Comunitat',
@@ -74,8 +74,8 @@ export default function AnunciSinglePage({ params }: { params: { slug: string } 
         authorSalesCompleted: 0,
         authorActiveAds: 1,
         authorResponseTime: '1 hora',
-        contactPhone: marketplace?.contact?.phone || '900 123 456',
-        contactEmail: marketplace?.contact?.email || backendAnuncio.author?.email || 'contacte@lapublica.cat',
+        contactPhone: '900 123 456', // Valor por defecto, no hay campo en el modelo
+        contactEmail: backendAnuncio.author?.email || 'contacte@lapublica.cat',
         status: 'actiu' as const,
         createdAt: new Date(backendAnuncio.createdAt).toLocaleDateString('ca'),
         expiresAt: backendAnuncio.expiresAt ? new Date(backendAnuncio.expiresAt).toLocaleDateString('ca') : 'Sense caducitat',
@@ -83,20 +83,20 @@ export default function AnunciSinglePage({ params }: { params: { slug: string } 
         favorites: backendAnuncio.reactions || 0,
         isFavorite: false,
         specifications: {
-          'Estat': marketplace?.condition === 'nou' ? 'Nou' : marketplace?.condition === 'usat' ? 'Usat' : 'Com nou',
-          'Categoria': marketplace?.category || 'General',
-          'Ubicació': marketplace?.location ? `${marketplace.location.city}, ${marketplace.location.province}` : 'La Pública',
-          'Codi Postal': marketplace?.location?.postalCode || '',
-          'Recollida': marketplace?.delivery?.pickup ? 'Disponible' : 'No disponible',
-          'Enviament': marketplace?.delivery?.shipping ? 'Disponible' : 'No disponible',
-          'Enviament inclòs': marketplace?.delivery?.shippingIncluded ? 'Sí' : 'No'
+          'Estat': 'Usat',
+          'Categoria': 'General',
+          'Ubicació': 'La Pública',
+          'Codi Postal': '',
+          'Recollida': 'Disponible',
+          'Enviament': 'No disponible',
+          'Enviament inclòs': 'No'
         },
-        shippingAvailable: marketplace?.delivery?.shipping || false,
-        handPickup: marketplace?.delivery?.pickup || false
+        shippingAvailable: false,
+        handPickup: true
       };
 
       console.log('🔍 Anunci carregat del backend:', convertedAnuncio);
-      console.log('📸 Imatges - Portada:', !!marketplace?.coverImage, 'Galería:', marketplace?.galleryImages?.length || 0, 'Legacy:', marketplace?.images?.length || 0);
+      console.log('📸 Imatges:', convertedAnuncio.images.length);
 
       setAnunci(convertedAnuncio);
       setIsFavorited(false);
@@ -207,8 +207,8 @@ export default function AnunciSinglePage({ params }: { params: { slug: string } 
                   isGuardat={isGuardat}
                   isLoadingGuardat={isLoadingGuardat}
                   onContactClick={() => setShowContactModal(true)}
-                  onPhoneClick={() => window.open(`tel:${anunci.author.phone}`, '_self')}
-                  onEmailClick={() => window.open(`mailto:${anunci.author.email}`, '_self')}
+                  onPhoneClick={() => window.open(`tel:${anunci.contactPhone}`, '_self')}
+                  onEmailClick={() => window.open(`mailto:${anunci.contactEmail}`, '_self')}
                   onShareClick={() => setShowShareModal(true)}
                   onReportClick={() => setShowReportModal(true)}
                   onToggleGuardar={handleToggleGuardar}
@@ -235,7 +235,10 @@ export default function AnunciSinglePage({ params }: { params: { slug: string } 
               onClose={() => setShowContactModal(false)}
               anunci={{
                 title: anunci.title,
-                author: anunci.author
+                author: {
+                  name: anunci.author,
+                  avatar: anunci.authorAvatar
+                }
               }}
               priceDisplay={getPriceDisplay()}
               onSubmit={(data) => {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../../../../../lib/auth';
-import { prismaClient } from '../../../../../lib/prisma';
+import { authOptions } from '@/lib/auth';
+import { prismaClient } from '@/lib/prisma';
 
 /**
  * POST /api/empresa/plan/calculate-proration
@@ -132,9 +132,9 @@ export async function POST(request: NextRequest) {
           newCost: newPlanFirstYearPrice,
           immediateCharge: newPlanFirstYearPrice
         };
-      } else if (daysRemaining > 0 && currentSubscription.precioAnual > 0) {
+      } else if (daysRemaining > 0 && currentSubscription.precioAnual && currentSubscription.precioAnual > 0) {
         // Si está pagando, calcular prorrateo
-        const currentDailyRate = (currentSubscription.precioAnual || 0) / 365;
+        const currentDailyRate = currentSubscription.precioAnual / 365;
         const creditAmount = currentDailyRate * daysRemaining;
 
         const newDailyRate = newPlanFirstYearPrice / 365;

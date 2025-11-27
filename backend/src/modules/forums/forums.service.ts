@@ -19,12 +19,12 @@ export class ForumsService {
         category: data.category,
         comunidadSlug: data.comunidadSlug,
         creatorId: data.creatorId,
-        configuration: data.configuration ? JSON.stringify(data.configuration) : null,
+        configuration: data.configuration || null,
         order: data.order || 0,
         isPinned: false,
         isActive: true,
         isLocked: false
-      }
+      } as any
     });
 
     return {
@@ -206,17 +206,18 @@ export class ForumsService {
         content: data.content,
         type: data.type,
         userId: data.userId,
-        tags: data.tags ? JSON.stringify(data.tags) : null,
+        authorId: data.userId,
+        tags: data.tags || [],
         isPinned: data.isPinned || false,
         isActive: true,
         isLocked: false,
         lastActivity: new Date()
-      }
+      } as any
     });
 
     return {
       ...topic,
-      tags: topic.tags ? JSON.parse(topic.tags as string) : []
+      tags: topic.tags || []
     };
   }
 
@@ -268,7 +269,7 @@ export class ForumsService {
     return {
       topics: topics.map(topic => ({
         ...topic,
-        tags: topic.tags ? JSON.parse(topic.tags as string) : []
+        tags: topic.tags || []
       })),
       total
     };
@@ -285,7 +286,7 @@ export class ForumsService {
 
     return {
       ...topic,
-      tags: topic.tags ? JSON.parse(topic.tags as string) : []
+      tags: topic.tags || []
     };
   }
 
@@ -325,7 +326,7 @@ export class ForumsService {
 
     return {
       ...updatedTopic,
-      tags: updatedTopic.tags ? JSON.parse(updatedTopic.tags as string) : []
+      tags: (updatedTopic.tags as unknown as string[]) || []
     };
   }
 
@@ -381,9 +382,10 @@ export class ForumsService {
         topicId: data.topicId,
         content: data.content,
         userId: data.userId,
+        authorId: data.userId,
         replyToId: data.replyToId,
         isActive: true
-      }
+      } as any
     });
 
     await prisma.forumTopic.update({
@@ -503,8 +505,9 @@ export class ForumsService {
         forumId,
         userId: data.userId,
         role: data.role,
+        assignedBy: data.assignedBy || 'admin',
         assignedAt: new Date()
-      }
+      } as any
     });
 
     return moderator;

@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prismaClient } from '@/lib/prisma';
 import { stripe, formatAmountForStripe } from '@/lib/stripe';
+import { Prisma } from '@prisma/client';
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,9 +20,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'planId requerido' }, { status: 400 });
     }
 
-    // Get company
-    const company = await prismaClient.company.findUnique({
-      where: { email: session.user.email },
+    // Get company by owner or member relation
+    const company = await prismaClient.company.findFirst({
+      where: {
+        OR: [
+          { owner: { email: session.user.email } },
+          { teamMembers: { some: { email: session.user.email } } }
+        ]
+      },
       include: {
         subscriptions: {
           include: { plan: true },
@@ -45,7 +51,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate amount to charge (considering proration)
-    const amountToCharge = prorationAmount || newPlan.precioMensual;
+    const amountToCharge = prorationAmount ?? newPlan.precioMensual;
 
     // Create Stripe Checkout Session
     const checkoutSession = await stripe.checkout.sessions.create({

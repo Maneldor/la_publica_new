@@ -30,7 +30,16 @@ api.interceptors.request.use((config) => {
 export interface LeadSource {
   id: string;
   name: string;
-  type: 'GOOGLE_MAPS' | 'WEB_SCRAPING' | 'API' | 'CSV_IMPORT' | 'MANUAL';
+  description?: string | null;
+  type:
+    | 'GOOGLE_MAPS'
+    | 'WEB_SCRAPING'
+    | 'API'
+    | 'API_INTEGRATION'
+    | 'CSV_IMPORT'
+    | 'LINKEDIN'
+    | 'CUSTOM'
+    | 'MANUAL';
   isActive: boolean;
   aiProviderId?: string;
   config: {
@@ -43,6 +52,7 @@ export interface LeadSource {
     headers?: Record<string, string>;
     payload?: Record<string, any>;
     mapping?: Record<string, string>;
+    selectors?: Record<string, string>;
     delimiter?: string;
     skipRows?: number;
   };
@@ -52,10 +62,19 @@ export interface LeadSource {
     dayOfWeek?: number;
     dayOfMonth?: number;
     timezone?: string;
+    daysOfWeek?: number[];
+    isActive?: boolean;
   };
+  frequency?: 'MANUAL' | 'HOURLY' | 'DAILY' | 'WEEKLY' | 'MONTHLY';
+  time?: string;
+  lastRun?: string | null;
+  nextRun?: string | null;
   totalLeads: number;
+  leadsGenerated?: number;
+  leadsApproved?: number;
+  successRate?: number;
   successfulRuns: number;
-  failedRuns: number;
+  failedRuns?: number;
   lastRunAt?: string;
   nextRunAt?: string;
   lastRunStatus?: 'SUCCESS' | 'FAILED' | 'RUNNING' | 'PENDING';

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 
 interface Anunci {
   id: number;
+  slug?: string;
   title: string;
   description: string;
   type: 'oferta' | 'demanda';
@@ -24,6 +25,9 @@ interface Anunci {
   views: number;
   favorites: number;
   isFavorite: boolean;
+  specifications?: Record<string, string>;
+  shippingAvailable?: boolean;
+  handPickup?: boolean;
 }
 
 interface AnunciCardProps {

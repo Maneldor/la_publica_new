@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { Anunci } from '../../../../lib/data/anuncisData';
 
 // Tipus per als filtres d'anuncis
-interface AnunciFilters {
+export interface AnunciFilters {
   type: string;
   category: string;
   priceMin: string;

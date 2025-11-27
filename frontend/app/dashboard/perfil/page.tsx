@@ -230,18 +230,18 @@ export default function PerfilPage() {
     }
   ]);
 
-  const [skills] = useState([
+  const [skills, setSkills] = useState([
     'Transformació Digital', 'Gestió de Projectes', 'Administració Electrònica',
     'Lean Management', 'Process Mining', 'React', 'Node.js', 'TypeScript',
     'Power BI', 'Agile', 'Scrum', 'Leadership', 'Change Management', 'UX/UI Design'
   ]);
 
-  const [interests] = useState([
+  const [interests, setInterests] = useState([
     'Innovació Pública', 'Smart Cities', 'Sostenibilitat', 'Ciclisme',
     'Fotografia', 'Tecnologia', 'Política Local', 'Educació Digital'
   ]);
 
-  const [languages] = useState([
+  const [languages, setLanguages] = useState([
     { name: 'Català', level: 'Natiu' },
     { name: 'Castellà', level: 'Natiu' },
     { name: 'Anglès', level: 'Avançat (C1)' },

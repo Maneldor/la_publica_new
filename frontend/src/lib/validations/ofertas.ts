@@ -39,9 +39,7 @@ export const JobStatusEnum = z.enum([
   'expired',       // Expirada
   'cancelled',     // Cancelada
   'rejected'       // Rechazada
-], {
-  errorMap: () => ({ message: 'Estado de oferta inválido' })
-});
+]);
 
 export const JobCategoryEnum = z.enum([
   'tecnologia',
@@ -70,9 +68,7 @@ export const JobCategoryEnum = z.enum([
   'cultura',
   'deporte',
   'otros'
-], {
-  errorMap: () => ({ message: 'Categoría de trabajo inválida' })
-});
+]);
 
 export const EducationLevelEnum = z.enum([
   'sin_estudios',
@@ -83,36 +79,28 @@ export const EducationLevelEnum = z.enum([
   'universitario',
   'master',
   'doctorado'
-], {
-  errorMap: () => ({ message: 'Nivel educativo inválido' })
-});
+]);
 
 export const SalaryTypeEnum = z.enum([
   'fixed',         // Salario fijo
   'range',         // Rango salarial
   'competitive',   // Competitivo
   'to_negotiate'   // A negociar
-], {
-  errorMap: () => ({ message: 'Tipo de salario inválido' })
-});
+]);
 
 export const ApplicationMethodEnum = z.enum([
   'platform',      // A través de la plataforma
   'email',         // Por email
   'website',       // Web externa
   'phone'          // Por teléfono
-], {
-  errorMap: () => ({ message: 'Método de aplicación inválido' })
-});
+]);
 
 export const JobSourceEnum = z.enum([
   'direct',        // Publicada directamente
   'imported',      // Importada
   'scrapped',      // Extraída por scraping
   'api'           // Recibida por API
-], {
-  errorMap: () => ({ message: 'Origen de oferta inválido' })
-});
+]);
 
 // ==================== SCHEMAS BASE ====================
 

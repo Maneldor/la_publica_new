@@ -26,7 +26,7 @@ export const Step7Languages = ({
     'Xinès', 'Japonès', 'Rus', 'Hindi', 'Neerlandès'
   ];
 
-  const proficiencyLevels = [
+  const levelLevels = [
     { value: 'Bàsic', label: 'Bàsic (A1-A2)', description: 'Conceptes elementals i converses senzilles' },
     { value: 'Intermig', label: 'Intermig (B1-B2)', description: 'Comunicació fluida en situacions quotidianes' },
     { value: 'Avançat', label: 'Avançat (C1-C2)', description: 'Domini professional i acadèmic' },
@@ -121,38 +121,38 @@ export const Step7Languages = ({
                   Nivell de Competència *
                 </label>
                 <select
-                  value={lang.proficiency}
-                  onChange={(e) => updateLanguage(lang.id, 'proficiency', e.target.value)}
+                  value={lang.level}
+                  onChange={(e) => updateLanguage(lang.id, 'level', e.target.value)}
                   className={`
                     w-full px-4 py-3 rounded-lg border
-                    ${errors[`language_${index}_proficiency`] ? 'border-red-500 bg-red-50' : 'border-gray-300'}
+                    ${errors[`language_${index}_level`] ? 'border-red-500 bg-red-50' : 'border-gray-300'}
                     focus:ring-2 focus:ring-blue-500 focus:border-transparent
                     transition-all
                   `}
                 >
                   <option value="">Selecciona el nivell</option>
-                  {proficiencyLevels.map((level) => (
+                  {levelLevels.map((level) => (
                     <option key={level.value} value={level.value}>
                       {level.label}
                     </option>
                   ))}
                 </select>
-                {errors[`language_${index}_proficiency`] && (
-                  <p className="text-sm text-red-600 mt-1">{errors[`language_${index}_proficiency`]}</p>
+                {errors[`language_${index}_level`] && (
+                  <p className="text-sm text-red-600 mt-1">{errors[`language_${index}_level`]}</p>
                 )}
               </div>
             </div>
 
             {/* Level Preview */}
-            {lang.proficiency && (
+            {lang.level && (
               <div className="mt-4 p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getLevelColor(lang.proficiency)}`}>
-                      {lang.proficiency}
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getLevelColor(lang.level)}`}>
+                      {lang.level}
                     </span>
                     <p className="text-sm text-gray-600 mt-1">
-                      {proficiencyLevels.find(level => level.value === lang.proficiency)?.description}
+                      {levelLevels.find(level => level.value === lang.level)?.description}
                     </p>
                   </div>
                   <div className="flex">
@@ -160,7 +160,7 @@ export const Step7Languages = ({
                       <Star
                         key={i}
                         className={`w-4 h-4 ${
-                          i < getLevelStars(lang.proficiency)
+                          i < getLevelStars(lang.level)
                             ? 'text-yellow-400 fill-current'
                             : 'text-gray-300'
                         }`}
@@ -206,7 +206,7 @@ export const Step7Languages = ({
                     const newLanguage = languages[languages.length - 1];
                     if (newLanguage) {
                       updateLanguage(newLanguage.id, 'name', suggestion.name);
-                      updateLanguage(newLanguage.id, 'proficiency', suggestion.level);
+                      updateLanguage(newLanguage.id, 'level', suggestion.level);
                     }
                   }, 100);
                 }}
@@ -226,7 +226,7 @@ export const Step7Languages = ({
           📚 Guia de nivells de competència:
         </h4>
         <div className="space-y-2">
-          {proficiencyLevels.map((level) => (
+          {levelLevels.map((level) => (
             <div key={level.value} className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <span className={`px-2 py-1 text-xs font-medium rounded border ${getLevelColor(level.value)}`}>
@@ -276,19 +276,19 @@ export const Step7Languages = ({
               <div key={lang.id} className="flex items-center justify-between">
                 <div className="text-sm text-gray-700">
                   <strong>{index + 1}.</strong> {lang.name || 'Idioma pendent'}
-                  {lang.proficiency && (
-                    <span className={`ml-2 px-2 py-0.5 text-xs rounded border ${getLevelColor(lang.proficiency)}`}>
-                      {lang.proficiency}
+                  {lang.level && (
+                    <span className={`ml-2 px-2 py-0.5 text-xs rounded border ${getLevelColor(lang.level)}`}>
+                      {lang.level}
                     </span>
                   )}
                 </div>
-                {lang.proficiency && (
+                {lang.level && (
                   <div className="flex">
                     {Array.from({ length: 5 }, (_, i) => (
                       <Star
                         key={i}
                         className={`w-3 h-3 ${
-                          i < getLevelStars(lang.proficiency)
+                          i < getLevelStars(lang.level)
                             ? 'text-yellow-400 fill-current'
                             : 'text-gray-300'
                         }`}

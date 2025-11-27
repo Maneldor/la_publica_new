@@ -84,37 +84,38 @@ const createPost = async (postData: { title: string; content: string; excerpt?: 
 
 // Get posts with infinite scroll
 export const useInfinitePosts = (limit = 20) => {
-  return useInfiniteQuery({
-    queryKey: ['posts', 'infinite'],
-    queryFn: ({ pageParam = 1 }) => fetchPosts(pageParam, limit),
-    getNextPageParam: (lastPage) => {
+  return useInfiniteQuery<PostsResponse, Error>({
+    queryKey: ['posts', 'infinite', limit],
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) => fetchPosts((pageParam as number | undefined) ?? 1, limit),
+    getNextPageParam: (lastPage: PostsResponse) => {
       const { page, totalPages } = lastPage.pagination;
       return page < totalPages ? page + 1 : undefined;
     },
     staleTime: 60 * 1000, // 1 minuto
-    cacheTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 5 * 60 * 1000, // 5 minutos (cacheTime renombrado a gcTime en v5)
   });
 };
 
 // Get paginated posts
 export const usePosts = (page = 1, limit = 20) => {
-  return useQuery({
+  return useQuery<PostsResponse, Error>({
     queryKey: ['posts', page, limit],
     queryFn: () => fetchPosts(page, limit),
     staleTime: 60 * 1000, // 1 minuto
-    cacheTime: 5 * 60 * 1000, // 5 minutos
-    keepPreviousData: true, // Keep previous data while fetching new data
+    gcTime: 5 * 60 * 1000, // 5 minutos (cacheTime renombrado a gcTime en v5)
+    placeholderData: (previousData) => previousData, // keepPreviousData renombrado en v5
   });
 };
 
 // Get single post
 export const usePost = (id: string) => {
-  return useQuery({
+  return useQuery<Post, Error>({
     queryKey: ['post', id],
     queryFn: () => fetchPost(id),
     enabled: !!id, // Only run if id exists
     staleTime: 2 * 60 * 1000, // 2 minutos
-    cacheTime: 10 * 60 * 1000, // 10 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos (cacheTime renombrado a gcTime en v5)
   });
 };
 
@@ -126,7 +127,7 @@ export const useCreatePost = () => {
     mutationFn: createPost,
     onSuccess: (newPost) => {
       // Invalidate and refetch posts
-      queryClient.invalidateQueries(['posts']);
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
 
       // Optionally, add the new post to the cache
       queryClient.setQueryData(['post', newPost.id], newPost);
@@ -142,7 +143,7 @@ export const usePrefetchPost = () => {
   const queryClient = useQueryClient();
 
   return (id: string) => {
-    queryClient.prefetchQuery({
+    queryClient.prefetchQuery<Post, Error>({
       queryKey: ['post', id],
       queryFn: () => fetchPost(id),
       staleTime: 2 * 60 * 1000,
@@ -172,7 +173,7 @@ export const useLikePost = () => {
     },
     onMutate: async (postId) => {
       // Cancel any outgoing refetches
-      await queryClient.cancelQueries(['post', postId]);
+      await queryClient.cancelQueries({ queryKey: ['post', postId] });
 
       // Snapshot the previous value
       const previousPost = queryClient.getQueryData(['post', postId]);
@@ -197,7 +198,7 @@ export const useLikePost = () => {
     },
     onSettled: (data, error, postId) => {
       // Always refetch after error or success
-      queryClient.invalidateQueries(['post', postId]);
+      queryClient.invalidateQueries({ queryKey: ['post', postId] });
     },
   });
 };

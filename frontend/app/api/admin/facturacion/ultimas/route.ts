@@ -17,10 +17,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Obtener las últimas 10 facturas
-    const ultimasFacturas = await prismaClient.factura.findMany({
+    const ultimasFacturas = await prismaClient.invoice.findMany({
       take: 10,
       orderBy: {
-        fechaCreacion: 'desc'
+        createdAt: 'desc'
       },
       include: {
         company: {
@@ -34,11 +34,11 @@ export async function GET(request: NextRequest) {
     // Formatear los datos para el frontend
     const facturasFormateadas = ultimasFacturas.map(factura => ({
       id: factura.id,
-      numeroFactura: factura.numeroFactura,
+      numeroFactura: factura.invoiceNumber,
       companyName: factura.company.name,
-      total: factura.total,
-      estat: factura.estado,
-      fechaCreacion: factura.fechaCreacion.toISOString()
+      total: factura.totalAmount / 100, // Convertir de centavos a euros
+      estat: factura.status,
+      fechaCreacion: factura.createdAt.toISOString()
     }));
 
     return NextResponse.json(facturasFormateadas);

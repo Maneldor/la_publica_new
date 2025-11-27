@@ -6,10 +6,9 @@ import { z } from 'zod';
 
 // Schema de validación para query parameters
 const leadsQuerySchema = z.object({
-  page: z.string().optional().transform(val => val ? parseInt(val) : 1),
-  limit: z.string().optional().transform(val => val ? Math.min(parseInt(val), 50) : 20), // Max 50 leads
+  page: z.string().optional().transform(val => val ? parseInt(val, 10) : 1),
+  limit: z.string().optional().transform(val => val ? Math.min(parseInt(val, 10), 50) : 20), // Max 50 leads
   status: z.enum(['NEW', 'CONTACTED', 'CONVERTED', 'CLOSED']).optional(),
-  source: z.enum(['OFFER_REDEMPTION', 'WEBSITE', 'REFERRAL', 'ADVERTISING']).optional(),
   offerId: z.string().uuid().optional(),
   search: z.string().max(100).optional(),
   dateFrom: z.string().datetime().optional(),
@@ -80,7 +79,6 @@ export async function GET(req: NextRequest) {
       page: url.searchParams.get('page'),
       limit: url.searchParams.get('limit'),
       status: url.searchParams.get('status'),
-      source: url.searchParams.get('source'),
       offerId: url.searchParams.get('offerId'),
       search: url.searchParams.get('search'),
       dateFrom: url.searchParams.get('dateFrom'),
@@ -96,7 +94,7 @@ export async function GET(req: NextRequest) {
         {
           success: false,
           error: 'Paràmetres de consulta invàlids',
-          details: validation.error.errors.map(e => ({
+          details: validation.error.issues.map(e => ({
             field: e.path.join('.'),
             message: e.message
           }))
@@ -105,7 +103,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const { page, limit, status, source, offerId, search, dateFrom, dateTo, sortBy, sortOrder, includeStats } = validation.data;
+    const { page, limit, status, offerId, search, dateFrom, dateTo, sortBy, sortOrder, includeStats } = validation.data;
 
     // 4. Construir filtros para leads
     const leadFilters: any = {
@@ -114,10 +112,6 @@ export async function GET(req: NextRequest) {
 
     if (status) {
       leadFilters.status = status;
-    }
-
-    if (source) {
-      leadFilters.source = source;
     }
 
     if (offerId) {
@@ -197,18 +191,12 @@ export async function GET(req: NextRequest) {
     // 7. Estadísticas adicionales (opcional)
     let additionalStats = {};
     if (includeStats) {
-      const [statusDistribution, sourceDistribution, thisWeekLeads, thisMonthLeads] = await Promise.all([
+      const [statusDistribution, thisWeekLeads, thisMonthLeads] = await Promise.all([
         // Distribución por estado
         prismaClient.lead.groupBy({
           by: ['status'],
           where: { companyId: user.ownedCompany.id },
           _count: { status: true }
-        }),
-        // Distribución por fuente
-        prismaClient.lead.groupBy({
-          by: ['source'],
-          where: { companyId: user.ownedCompany.id },
-          _count: { source: true }
         }),
         // Leads esta semana
         prismaClient.lead.count({
@@ -237,14 +225,8 @@ export async function GET(req: NextRequest) {
         statusStats[stat.status as keyof typeof statusStats] = stat._count.status;
       });
 
-      const sourceStats = {};
-      sourceDistribution.forEach(stat => {
-        sourceStats[stat.source] = stat._count.source;
-      });
-
       additionalStats = {
         statusDistribution: statusStats,
-        sourceDistribution: sourceStats,
         thisWeekLeads,
         thisMonthLeads,
         conversionRate: totalLeads > 0 ? ((statusStats.CONVERTED / totalLeads) * 100).toFixed(2) : '0'
@@ -259,8 +241,6 @@ export async function GET(req: NextRequest) {
       phone: lead.phone,
       message: lead.message,
       status: lead.status,
-      source: lead.source,
-      acceptsMarketing: lead.acceptsMarketing,
       createdAt: lead.createdAt.toISOString(),
       updatedAt: lead.updatedAt.toISOString(),
       offer: lead.offer ? {
@@ -285,7 +265,7 @@ export async function GET(req: NextRequest) {
     // 10. AUDIT LOG
     await prismaClient.notification.create({
       data: {
-        type: 'AUDIT_LOG',
+        type: 'SYSTEM',
         title: 'EMPRESA_ACCESS: Consulta leads',
         message: `${user.email} consultó leads de empresa ${user.ownedCompany.name} - ${totalLeads} leads encontrados`,
         priority: 'LOW',
@@ -294,7 +274,7 @@ export async function GET(req: NextRequest) {
         metadata: JSON.stringify({
           action: 'VIEW_COMPANY_LEADS',
           companyId: user.ownedCompany.id,
-          filters: { status, source, offerId, search, dateFrom, dateTo },
+          filters: { status, offerId, search, dateFrom, dateTo },
           pagination: { page, limit },
           ipAddress: req.headers.get('x-forwarded-for') || 'unknown',
           userAgent: req.headers.get('user-agent') || 'unknown'
@@ -324,7 +304,6 @@ export async function GET(req: NextRequest) {
         },
         filters: {
           status: status || null,
-          source: source || null,
           offerId: offerId || null,
           search: search || null,
           dateFrom: dateFrom || null,
@@ -342,7 +321,7 @@ export async function GET(req: NextRequest) {
         {
           success: false,
           error: 'Paràmetres invàlids',
-          details: error.errors.map(e => ({
+          details: error.issues.map(e => ({
             field: e.path.join('.'),
             message: e.message
           }))

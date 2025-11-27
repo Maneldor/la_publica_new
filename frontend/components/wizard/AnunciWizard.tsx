@@ -307,7 +307,7 @@ export default function AnunciWizard({ mode, initialData, onSuccess, onClose }: 
       const mutation = mode === 'edit' ? updateAnuncioMutation : createAnuncioMutation;
       const mutationData = mode === 'edit' ? { id: initialData.id, ...apiData } : apiData;
 
-      mutation.mutate(mutationData, {
+      mutation.mutate(mutationData as any, {
         onSuccess: () => {
           const message = mode === 'edit'
             ? (isDraft ? 'Anunci actualitzat com a borrador!' : 'Anunci actualitzat correctament!')

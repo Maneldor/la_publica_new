@@ -14,7 +14,7 @@ interface Friend {
 }
 
 export default function FriendsTab() {
-  const friends: Friend[] = mockFriends;
+  const friends: Friend[] = mockFriends as Friend[];
 
   const getAdministrationBadge = (type: AdministrationType) => {
     const badges = {

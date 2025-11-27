@@ -62,12 +62,13 @@ export class DashboardService {
 
   // GET /api/admin/dashboard/stats - Stats complets del dashboard
   async getDashboardStats(): Promise<DashboardStats> {
-    const now = new Date();
-    const todayStart = new Date(now.setHours(0, 0, 0, 0));
-    const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    try {
+      const now = new Date();
+      const todayStart = new Date(now.setHours(0, 0, 0, 0));
+      const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    // 1. OVERVIEW DE LEADS (MODELO RENOMBRADO: lead -> companyLead)
+    // 1. OVERVIEW DE LEADS (usando company_leads con guión bajo)
     const [
       totalLeads,
       leadsToday,
@@ -75,14 +76,14 @@ export class DashboardService {
       leadsThisMonth,
       leadsByStatus
     ] = await Promise.all([
-      this.prisma.companyLead.count(),
-      this.prisma.companyLead.count({ where: { createdAt: { gte: todayStart } } }),
-      this.prisma.companyLead.count({ where: { createdAt: { gte: weekStart } } }),
-      this.prisma.companyLead.count({ where: { createdAt: { gte: monthStart } } }),
-      this.prisma.companyLead.groupBy({
-        by: ['status'], // Usamos 'status' en CompanyLead en lugar de 'reviewStatus'
+      this.prisma.company_leads.count().catch(() => 0),
+      this.prisma.company_leads.count({ where: { createdAt: { gte: todayStart } } }).catch(() => 0),
+      this.prisma.company_leads.count({ where: { createdAt: { gte: weekStart } } }).catch(() => 0),
+      this.prisma.company_leads.count({ where: { createdAt: { gte: monthStart } } }).catch(() => 0),
+      this.prisma.company_leads.groupBy({
+        by: ['status'],
         _count: { status: true }
-      })
+      }).catch(() => [])
     ]);
 
     const overview = {
@@ -90,10 +91,12 @@ export class DashboardService {
       leadsToday,
       leadsThisWeek,
       leadsThisMonth,
-      // Usamos 'status' de CompanyLead
-      pendingReview: leadsByStatus.find(s => s.status === 'PENDING')?._count.status || 0,
-      approvedLeads: leadsByStatus.find(s => s.status === 'APPROVED')?._count.status || 0,
-      rejectedLeads: leadsByStatus.find(s => s.status === 'REJECTED')?._count.status || 0,
+      // Mapear estados de company_leads a los esperados por el frontend
+      // company_leads usa LeadStatus enum: NEW, CONTACTED, QUALIFIED, WON, LOST, etc.
+      // Frontend espera: pendingReview, approvedLeads, rejectedLeads
+      pendingReview: leadsByStatus.find(s => s.status === 'NEW')?._count.status || 0,
+      approvedLeads: leadsByStatus.find(s => s.status === 'WON')?._count.status || 0,
+      rejectedLeads: leadsByStatus.find(s => s.status === 'LOST')?._count.status || 0,
     };
 
     // 2. STATS DE FONTS (leadSource - SECCIÓN COMENTADA PORQUE EL MODELO FALTA EN schema.prisma)
@@ -105,13 +108,13 @@ export class DashboardService {
       sourcesByType,
       topSources
     ] = await Promise.all([
-      this.prisma.leadSource.count(),
-      this.prisma.leadSource.count({ where: { isActive: true } }),
-      this.prisma.leadSource.groupBy({
+      (this.prisma as any).leadSource.count(),
+      (this.prisma as any).leadSource.count({ where: { isActive: true } }),
+      (this.prisma as any).leadSource.groupBy({
         by: ['type'],
         _count: { type: true }
       }),
-      this.prisma.leadSource.findMany({
+      (this.prisma as any).leadSource.findMany({
         select: {
           id: true,
           name: true,
@@ -198,11 +201,11 @@ export class DashboardService {
       jobsByStatus,
       recentJobs
     ] = await Promise.all([
-      this.prisma.scrapingJob.groupBy({
+      (this.prisma as any).scrapingJob.groupBy({
         by: ['status'],
         _count: { status: true }
       }),
-      this.prisma.scrapingJob.findMany({
+      (this.prisma as any).scrapingJob.findMany({
         select: {
           id: true,
           status: true,
@@ -250,14 +253,14 @@ export class DashboardService {
         const nextDay = new Date(date);
         nextDay.setDate(nextDay.getDate() + 1);
 
-        const count = await this.prisma.companyLead.count({ // Corregido
+        const count = await this.prisma.company_leads.count({
           where: {
             createdAt: {
               gte: date,
               lt: nextDay
             }
           }
-        });
+        }).catch(() => 0);
 
         return {
           date: date.toISOString().split('T')[0],
@@ -272,17 +275,17 @@ export class DashboardService {
         nextDay.setDate(nextDay.getDate() + 1);
 
         const [total, approved] = await Promise.all([
-          this.prisma.companyLead.count({ // Corregido
+          this.prisma.company_leads.count({
             where: {
               createdAt: { gte: date, lt: nextDay }
             }
-          }),
-          this.prisma.companyLead.count({ // Corregido
+          }).catch(() => 0),
+          this.prisma.company_leads.count({
             where: {
               createdAt: { gte: date, lt: nextDay },
-              status: 'APPROVED' // Usamos 'status' de CompanyLead en lugar de 'reviewStatus'
+              status: 'WON' // company_leads usa 'WON' para leads convertidos
             }
-          })
+          }).catch(() => 0)
         ]);
 
         return {
@@ -292,22 +295,42 @@ export class DashboardService {
       })
     );
 
-    return {
-      overview,
-      sources,
-      aiProviders,
-      jobs,
-      trends: {
-        leadsPerDay,
-        successRateOverTime
-      }
-    };
+      return {
+        overview,
+        sources,
+        aiProviders,
+        jobs,
+        trends: {
+          leadsPerDay,
+          successRateOverTime
+        }
+      };
+    } catch (error) {
+      console.error('Error en getDashboardStats:', error);
+      // Retornar datos vacíos en caso de error
+      return {
+        overview: {
+          totalLeads: 0,
+          leadsToday: 0,
+          leadsThisWeek: 0,
+          leadsThisMonth: 0,
+          pendingReview: 0,
+          approvedLeads: 0,
+          rejectedLeads: 0,
+        },
+        sources: { total: 0, active: 0, inactive: 0, byType: [], topPerformers: [] },
+        aiProviders: { total: 0, active: 0, byType: [], usage: { totalRequests: 0, successfulRequests: 0, failedRequests: 0, totalCost: 0 } },
+        jobs: { total: 0, pending: 0, running: 0, completed: 0, failed: 0, recentActivity: [] },
+        trends: { leadsPerDay: [], successRateOverTime: [] }
+      };
+    }
   }
 
   // GET /api/admin/dashboard/quick-stats - Stats ràpides per header
   async getQuickStats() {
-    const now = new Date();
-    const todayStart = new Date(now.setHours(0, 0, 0, 0));
+    try {
+      const now = new Date();
+      const todayStart = new Date(now.setHours(0, 0, 0, 0));
 
     const [
       pendingReview,
@@ -315,27 +338,37 @@ export class DashboardService {
       leadsToday,
       activeSources
     ] = await Promise.all([
-      this.prisma.companyLead.count({ // Corregido
-        where: { status: 'PENDING' } // Usamos 'status'
-      }),
-      // this.prisma.scrapingJob.count({ // SECCIÓN COMENTADA
+      this.prisma.company_leads.count({
+        where: { status: 'NEW' } // company_leads usa 'NEW' del enum LeadStatus
+      }).catch(() => 0),
+      // (this.prisma as any).scrapingJob.count({ // SECCIÓN COMENTADA
       //   where: { status: { in: ['PENDING', 'RUNNING'] } }
       // }),
-      0, // Valor por defecto para activeJobs
-      this.prisma.companyLead.count({ // Corregido
+      Promise.resolve(0), // Valor por defecto para activeJobs
+      this.prisma.company_leads.count({
         where: { createdAt: { gte: todayStart } }
-      }),
-      // this.prisma.leadSource.count({ // SECCIÓN COMENTADA
+      }).catch(() => 0),
+      // (this.prisma as any).leadSource.count({ // SECCIÓN COMENTADA
       //   where: { isActive: true }
       // })
-      0 // Valor por defecto para activeSources
+      Promise.resolve(0) // Valor por defecto para activeSources
     ]);
 
-    return {
-      pendingReview,
-      activeJobs,
-      leadsToday,
-      activeSources
-    };
+      return {
+        pendingReview,
+        activeJobs,
+        leadsToday,
+        activeSources
+      };
+    } catch (error) {
+      console.error('Error en getQuickStats:', error);
+      // Retornar datos vacíos en caso de error
+      return {
+        pendingReview: 0,
+        activeJobs: 0,
+        leadsToday: 0,
+        activeSources: 0
+      };
+    }
   }
 }

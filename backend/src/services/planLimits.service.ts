@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { PrismaClient } from '@prisma/client';
-import { merge } from 'lodash';
+const merge = require('lodash');
 import {
   PlanType,
   getPlanLimits,
@@ -93,7 +93,7 @@ export class PlanLimitsService {
    */
   async getCompanyLimits(companyId: string): Promise<CompanyLimitsInfo | null> {
     try {
-      const company = await prisma.company.findUnique({
+      const company = await (prisma as any).companies.findUnique({
         where: { id: companyId },
         include: {
           Subscription: true,
@@ -120,7 +120,7 @@ export class PlanLimitsService {
       // Calcular uso actual con queries separadas
       const [currentMembers, currentDocuments, currentOffers] = await Promise.all([
         // Contar usuarios que pertenecen a esta empresa (excluyendo el owner)
-        prisma.user.count({
+        (prisma as any).user.count({
           where: {
             Company_Company_userIdToUser: {
               id: companyId
@@ -128,7 +128,7 @@ export class PlanLimitsService {
           }
         }),
         // Contar documentos de la empresa
-        prisma.document.count({
+        (prisma as any).document.count({
           where: {
             companyId: companyId,
             isLatestVersion: true
@@ -194,7 +194,7 @@ export class PlanLimitsService {
    */
   async getCompanyPlanLimits(companyId: string): Promise<PlanLimits | null> {
     try {
-      const subscription = await prisma.subscription.findUnique({
+      const subscription = await (prisma as any).subscription.findUnique({
         where: { companyId }
       });
 

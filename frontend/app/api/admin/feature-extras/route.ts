@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prismaClient } from '@/lib/prisma';
 
 // GET - Listar todos los extras (admin)
 export async function GET(request: NextRequest) {
@@ -22,18 +20,18 @@ export async function GET(request: NextRequest) {
     }
 
     // Obtener todos los extras de la base de datos ordenados por categoría y orden
-    const extras = await prisma.featureExtra.findMany({
+    const extras = await prismaClient.extra.findMany({
       where,
       orderBy: [
-        { categoria: 'asc' },
-        { orden: 'asc' }
+        { category: 'asc' },
+        { order: 'asc' }
       ]
     });
 
     return NextResponse.json({
       extras,
       total: extras.length,
-      categorias: [...new Set(extras.map(e => e.categoria))]
+      categorias: Array.from(new Set(extras.map(e => e.category)))
     });
 
   } catch (error) {
@@ -64,23 +62,27 @@ export async function POST(request: NextRequest) {
     }
 
     // Obtener el próximo número de orden para la categoría
-    const maxOrden = await prisma.featureExtra.aggregate({
-      where: { categoria: data.categoria },
-      _max: { orden: true }
+    const maxOrden = await prismaClient.extra.aggregate({
+      where: { category: data.categoria },
+      _max: { order: true }
     });
 
-    const nextOrden = (maxOrden._max.orden || 0) + 1;
+    const nextOrden = (maxOrden._max?.order || 0) + 1;
 
     // Crear nuevo extra en la base de datos
-    const nuevoExtra = await prisma.featureExtra.create({
+    const nuevoExtra = await prismaClient.extra.create({
       data: {
-        nombre: data.nombre,
-        descripcion: data.descripcion || null,
-        categoria: data.categoria,
-        precio: parseFloat(data.precio),
-        limitesJSON: data.limites ? JSON.stringify(data.limites) : null,
-        activo: data.activo !== false, // Por defecto true
-        orden: data.orden || nextOrden
+        name: data.nombre,
+        description: data.descripcion || '',
+        category: data.categoria,
+        basePrice: parseFloat(data.precio),
+        details: data.limites ? data.limites : null,
+        active: data.activo !== false, // Por defecto true
+        order: data.orden || nextOrden,
+        slug: data.nombre.toLowerCase().replace(/\s+/g, '-'), // Generar slug automático
+        priceType: 'FIXED' as any, // Tipo por defecto
+        featured: false,
+        requiresApproval: false
       }
     });
 

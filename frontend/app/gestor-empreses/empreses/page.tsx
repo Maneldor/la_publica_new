@@ -162,9 +162,7 @@ export default function EmpresasPage() {
           }}
           middleZone={{
             title: 'Filtres i Cerca',
-            description: 'Filtra i cerca empreses convertides'
-          }}
-          bottomZone={{
+            description: 'Filtra i cerca empreses convertides',
             content: (
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1">
@@ -200,22 +198,21 @@ export default function EmpresasPage() {
               key={company.id}
               variant="default"
               topZone={{
-                type: 'content',
-                value: (
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-semibold text-white text-lg">{company.name}</h3>
-                      <p className="text-blue-100 text-sm">CIF: {company.cif}</p>
-                    </div>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(company.status)}`}>
-                      {getStatusText(company.status)}
-                    </span>
-                  </div>
-                )
+                type: 'gradient',
+                value: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)'
               }}
               middleZone={{
+                title: company.name,
+                subtitle: `CIF: ${company.cif}`,
                 content: (
                   <div className="space-y-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(company.status)}`}>
+                          {getStatusText(company.status)}
+                        </span>
+                      </div>
+                    </div>
                     {/* Informació de l'empresa */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>

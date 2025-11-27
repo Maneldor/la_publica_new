@@ -356,12 +356,15 @@ export default function GroupDetailPage() {
         ...prev,
         posts: prev.posts.map(post => {
           if (post.id === postId) {
-            const currentReaction = post[`is${reactionType.charAt(0).toUpperCase() + reactionType.slice(1)}`];
+            const postAny = post as any;
+            const reactionKey = `is${reactionType.charAt(0).toUpperCase() + reactionType.slice(1)}` as keyof GroupPost;
+            const countKey = `${reactionType}s` as keyof GroupPost;
+            const currentReaction = postAny[reactionKey] as boolean;
             return {
               ...post,
-              [reactionType + 's']: currentReaction ? post[reactionType + 's'] - 1 : post[reactionType + 's'] + 1,
-              [`is${reactionType.charAt(0).toUpperCase() + reactionType.slice(1)}`]: !currentReaction
-            };
+              [countKey]: currentReaction ? (postAny[countKey] as number) - 1 : (postAny[countKey] as number) + 1,
+              [reactionKey]: !currentReaction
+            } as GroupPost;
           }
           return post;
         })

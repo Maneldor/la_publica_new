@@ -142,7 +142,7 @@ export const toggleGuardar = async (
   if (isGuardat) {
     return await eliminarGuardat(usuariId, tipus, itemId);
   } else {
-    return await guardarItem(usuariId, tipus, itemId, metadata);
+    return await guardarItem(usuariId, tipus as 'blog' | 'oferta' | 'forum' | 'anunci' | 'empresa' | 'grup' | 'assessorament', itemId, metadata);
   }
 };
 

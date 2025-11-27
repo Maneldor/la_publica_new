@@ -38,10 +38,11 @@ export async function POST(request: NextRequest) {
     // Buscar usuario y empresa
     const user = await prisma.user.findUnique({
       where: { email: session.user.email! },
-      include: { company: true }
+      include: { ownedCompany: true, memberCompany: true }
     });
 
-    if (!user?.company) {
+    const company = user?.ownedCompany || user?.memberCompany;
+    if (!company) {
       return NextResponse.json(
         { error: 'Empresa no encontrada' },
         { status: 404 }
@@ -49,10 +50,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar que todos los extras existen
-    const extras = await prisma.featureExtra.findMany({
+    const extras = await prisma.extra.findMany({
       where: {
         id: { in: extrasIds },
-        activo: true
+        active: true
       }
     });
 
@@ -63,10 +64,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Crear la solicitud
+    // TODO: Implementar modelo de solicitudes de extras cuando esté disponible
+    // Por ahora, retornar error indicando que la funcionalidad no está disponible
+    return NextResponse.json(
+      { error: 'Funcionalidad de solicitudes de extras no disponible temporalmente' },
+      { status: 501 }
+    );
+
+    /* Código comentado hasta que se implemente el modelo
     const solicitud = await prisma.solicitudExtra.create({
       data: {
-        empresaId: user.company.id,
+        empresaId: company.id,
         usuarioId: user.id,
         extrasIds: extrasIds,
         mensaje: mensaje.trim(),
@@ -91,18 +99,18 @@ export async function POST(request: NextRequest) {
     });
 
     // Crear notificación para administradores
-    const extrasNombres = extras.map(e => e.nombre).join(', ');
+    const extrasNombres = extras.map((e: any) => e.name).join(', ');
     await prisma.notification.create({
       data: {
         userId: user.id,
         type: 'INFO',
         title: 'Nueva solicitud de información de extras',
-        message: `La empresa ${user.company.name} ha solicitado información sobre: ${extrasNombres}`,
+        message: `La empresa ${company.name} ha solicitado información sobre: ${extrasNombres}`,
         read: false,
         metadata: JSON.stringify({
           solicitudId: solicitud.id,
-          empresaId: user.company.id,
-          empresaNombre: user.company.name,
+          empresaId: company.id,
+          empresaNombre: company.name,
           extrasIds: extrasIds,
           extrasNombres: extrasNombres
         })
@@ -145,23 +153,34 @@ export async function GET(request: NextRequest) {
     // Buscar usuario y empresa
     const user = await prisma.user.findUnique({
       where: { email: session.user.email! },
-      include: { company: true }
+      include: { ownedCompany: true, memberCompany: true }
     });
 
-    if (!user?.company) {
+    const company = user?.ownedCompany || user?.memberCompany;
+    if (!company) {
       return NextResponse.json(
         { error: 'Empresa no encontrada' },
         { status: 404 }
       );
     }
 
+    // TODO: Implementar modelo de solicitudes de extras cuando esté disponible
+    return NextResponse.json({
+      solicitudes: [],
+      total: 0,
+      limit: 10,
+      offset: 0,
+      hasMore: false
+    });
+
+    /* Código comentado hasta que se implemente el modelo
     const url = new URL(request.url);
     const estado = url.searchParams.get('estado');
     const limit = parseInt(url.searchParams.get('limit') || '10');
     const offset = parseInt(url.searchParams.get('offset') || '0');
 
     const where: any = {
-      empresaId: user.company.id
+      empresaId: company.id
     };
 
     if (estado) {
@@ -203,16 +222,16 @@ export async function GET(request: NextRequest) {
 
     // Obtener información de los extras para cada solicitud
     const solicitudesConExtras = await Promise.all(
-      solicitudes.map(async (solicitud) => {
-        const extras = await prisma.featureExtra.findMany({
+      solicitudes.map(async (solicitud: any) => {
+        const extras = await prisma.extra.findMany({
           where: {
             id: { in: solicitud.extrasIds }
           },
           select: {
             id: true,
-            nombre: true,
-            categoria: true,
-            precio: true
+            name: true,
+            category: true,
+            basePrice: true
           }
         });
 
@@ -233,6 +252,7 @@ export async function GET(request: NextRequest) {
       offset,
       hasMore: offset + limit < total
     });
+    */
 
   } catch (error) {
     console.error('Error al obtener solicitudes:', error);

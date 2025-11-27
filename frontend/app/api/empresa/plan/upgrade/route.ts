@@ -6,6 +6,18 @@ import { prismaClient } from '@/lib/prisma';
 
 type PlanTier = 'PIONERES' | 'STANDARD' | 'STRATEGIC' | 'ENTERPRISE';
 
+const resolveCompanyId = async (userId: string) => {
+  const userRecord = await prismaClient.user.findUnique({
+    where: { id: userId },
+    select: {
+      ownedCompanyId: true,
+      memberCompanyId: true,
+    },
+  });
+
+  return userRecord?.ownedCompanyId || userRecord?.memberCompanyId || null;
+};
+
 /**
  * POST /api/empresa/plan/upgrade
  * Solicitar upgrade de plan
@@ -14,10 +26,19 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session?.user?.companyId) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         { success: false, error: 'No autoritzat' },
         { status: 401 }
+      );
+    }
+
+    const companyId = await resolveCompanyId(session.user.id);
+
+    if (!companyId) {
+      return NextResponse.json(
+        { success: false, error: 'No pertanys a cap empresa' },
+        { status: 403 }
       );
     }
 
@@ -40,10 +61,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`🚀 [Upgrade] Company ${session.user.companyId} requesting upgrade to ${targetTier}`);
+    console.log(`🚀 [Upgrade] Company ${companyId} requesting upgrade to ${targetTier}`);
 
     // Verificar si puede hacer upgrade
-    const upgradeCheck = await canUpgradeToPlan(session.user.companyId, targetTier);
+    const upgradeCheck = await canUpgradeToPlan(companyId, targetTier);
     if (!upgradeCheck.allowed) {
       return NextResponse.json(
         {
@@ -57,7 +78,7 @@ export async function POST(request: NextRequest) {
     // TODO: Aquí iría la integración con Stripe para procesar el pago
     // Por ahora, realizamos el upgrade directamente
 
-    const upgradeResult = await upgradePlan(session.user.companyId, targetTier);
+    const upgradeResult = await upgradePlan(companyId, targetTier);
 
     if (!upgradeResult.success) {
       return NextResponse.json(
@@ -91,10 +112,19 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session?.user?.companyId) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         { success: false, error: 'No autoritzat' },
         { status: 401 }
+      );
+    }
+
+    const companyId = await resolveCompanyId(session.user.id);
+
+    if (!companyId) {
+      return NextResponse.json(
+        { success: false, error: 'No pertanys a cap empresa' },
+        { status: 403 }
       );
     }
 
@@ -110,14 +140,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const { config: currentConfig } = await getCompanyPlan(session.user.companyId);
+    const { config: currentConfig } = await getCompanyPlan(companyId);
     const targetConfig = await prismaClient.planConfig.findFirst({
       where: { tier: targetTier }
     });
 
     // Obtener subscription activa para calcular prorrateo
     const company = await prismaClient.company.findUnique({
-      where: { id: session.user.companyId },
+      where: { id: companyId },
       include: {
         subscriptions: {
           where: { status: 'ACTIVE' },
@@ -138,7 +168,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Verificar si puede hacer upgrade
-    const upgradeCheck = await canUpgradeToPlan(session.user.companyId, targetTier);
+    const upgradeCheck = await canUpgradeToPlan(companyId, targetTier);
 
     // Calcular precios reales pagados (con descuentos)
     const currentPaidPrice = currentConfig.basePrice * (1 - (currentConfig.firstYearDiscount || 0) / 100);

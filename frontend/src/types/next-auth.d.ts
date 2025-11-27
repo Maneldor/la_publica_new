@@ -17,6 +17,7 @@ declare module 'next-auth' {
       role: UserRole;
       communityId?: string;
       isActive: boolean;
+      companyId?: string | null;
       apiToken?: string;  // Token JWT duradero para el API
       backendToken?: string;  // Token legacy del backend
       backendRefreshToken?: string;
@@ -36,6 +37,7 @@ declare module 'next-auth' {
     role: UserRole;
     communityId?: string;
     isActive: boolean;
+    companyId?: string | null;
     apiToken?: string;  // Token JWT duradero para el API
     backendToken?: string;  // Token legacy del backend
     backendRefreshToken?: string;
@@ -54,6 +56,7 @@ declare module 'next-auth/jwt' {
     role: UserRole;
     communityId?: string;
     isActive: boolean;
+    companyId?: string | null;
     apiToken?: string;  // Token JWT duradero para el API
     backendToken?: string;  // Token legacy del backend
     backendRefreshToken?: string;

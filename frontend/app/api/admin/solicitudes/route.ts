@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
       `${process.env.NEXT_PUBLIC_API_URL}/api/admin/solicitudes${queryString}`,
       {
         headers: {
-          'Authorization': `Bearer ${session.user.accessToken}`,
+          'Authorization': `Bearer ${(session.user as any).backendToken || (session.user as any).apiToken || ''}`,
           'Content-Type': 'application/json',
         },
       }

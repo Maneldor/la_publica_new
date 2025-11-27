@@ -24,21 +24,23 @@ export const authMiddleware = async (
   }
 
   const token = authHeader.replace('Bearer ', '');
-  console.log('🔑 Token extraído:', token.substring(0, 30) + '...');
 
   try {
-    console.log('🔍 DEBUG: process.env.NEXTAUTH_SECRET:', process.env.NEXTAUTH_SECRET?.substring(0, 15) + '...');
-    console.log('🔍 DEBUG: process.env.JWT_SECRET:', process.env.JWT_SECRET?.substring(0, 15) + '...');
     const SECRET = process.env.NEXTAUTH_SECRET || process.env.JWT_SECRET || 'mi-secreto-super-seguro-2024';
-    console.log('🔐 SECRET usado:', SECRET.substring(0, 15) + '...');
+    
+    if (!process.env.NEXTAUTH_SECRET && !process.env.JWT_SECRET) {
+      console.warn('⚠️  WARNING: Using default JWT secret. Set NEXTAUTH_SECRET or JWT_SECRET in production!');
+    }
 
     const decoded = jwt.verify(token, SECRET) as any;
-    console.log('✅ Token decodificado exitosamente');
-    console.log('📋 Contenido del token:', decoded);
-    console.log('👤 Usuario ID:', decoded.id || decoded.userId);
-    console.log('👤 Email:', decoded.email);
-    console.log('👤 Rol primario:', decoded.primaryRole);
-    console.log('👤 Rol adicional:', decoded.role);
+    
+    // Solo log en desarrollo
+    if (process.env.NODE_ENV === 'development') {
+      console.log('✅ Token decodificado exitosamente');
+      console.log('👤 Usuario ID:', decoded.id || decoded.userId);
+      console.log('👤 Rol primario:', decoded.primaryRole);
+      console.log('👤 Rol adicional:', decoded.role);
+    }
 
     try {
       // Intentar obtener información del usuario desde la base de datos
@@ -47,6 +49,7 @@ export const authMiddleware = async (
         select: {
           id: true,
           email: true,
+          role: true,
           primaryRole: true,
           isActive: true
         }
@@ -57,7 +60,7 @@ export const authMiddleware = async (
         req.user = {
           id: user.id,
           email: user.email,
-          primaryRole: user.primaryRole
+          primaryRole: user.primaryRole || user.role
         };
         console.log('✅ Usuario adjuntado a request desde BD');
         console.log('🔒 === FIN AUTH MIDDLEWARE (ÉXITO BD) ===\n');

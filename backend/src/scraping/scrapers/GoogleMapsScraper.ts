@@ -1,6 +1,6 @@
 import { LeadSource } from '@prisma/client';
 import { BaseScraper, ScraperResult, ScrapedData, SearchFilters, ScraperConfig } from '../interfaces/IScraper';
-import { ScraperError, INDUSTRY_MAPPINGS, SCRAPER_CONSTANTS } from '../types';
+import { ScraperError, INDUSTRY_MAPPINGS } from '../types';
 
 export interface GoogleMapsConfig extends ScraperConfig {
   language: string;
@@ -12,7 +12,7 @@ export interface GoogleMapsConfig extends ScraperConfig {
 
 export class GoogleMapsScraper extends BaseScraper {
   readonly name = 'Google Maps Scraper';
-  readonly source = LeadSource.GOOGLE_MAPS;
+  readonly source = LeadSource.AI_PROSPECTING; // Usar AI_PROSPECTING para Google Maps
 
   private readonly mockBusinesses: Array<Partial<ScrapedData>> = [
     {

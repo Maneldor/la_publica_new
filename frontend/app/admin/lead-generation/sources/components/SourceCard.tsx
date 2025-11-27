@@ -18,49 +18,17 @@ import {
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
+import { LeadSource } from '@/lib/api/leadSources';
 
-// Types
-type LeadSourceType =
-  | 'GOOGLE_MAPS'
-  | 'WEB_SCRAPING'
-  | 'API_INTEGRATION'
-  | 'LINKEDIN'
-  | 'CSV_IMPORT'
-  | 'CUSTOM';
-
-type ScheduleFrequency =
-  | 'MANUAL'
-  | 'HOURLY'
-  | 'DAILY'
-  | 'WEEKLY'
-  | 'MONTHLY';
-
-interface LeadSource {
-  id: string;
-  name: string;
-  description: string | null;
-  type: LeadSourceType;
-  isActive: boolean;
-  config: any;
-  frequency: ScheduleFrequency;
-  lastRun: string | null;
-  nextRun: string | null;
-  aiProviderId: string | null;
-  aiProvider: {
-    name: string;
-    displayName: string;
-  } | null;
-  leadsGenerated: number;
-  leadsApproved: number;
-  successRate: number;
-  createdAt: string;
-  updatedAt?: string;
-}
+type LeadSourceType = LeadSource['type'];
+type ScheduleFrequency = NonNullable<
+  LeadSource['frequency'] | (LeadSource['schedule'] extends { frequency: infer F } ? F : never)
+>;
 
 interface SourceCardProps {
   source: LeadSource;
   onEdit: (source: LeadSource) => void;
-  onToggleActive: (id: string, active: boolean) => void;
+  onToggleActive: (id: string, active: boolean) => Promise<void> | void;
   onDelete: (id: string) => void;
   onExecuteNow: (id: string) => void;
   onTest: (source: LeadSource) => void;
@@ -76,6 +44,22 @@ export default function SourceCard({
 }: SourceCardProps) {
   const [isToggling, setIsToggling] = useState(false);
   const { toast } = useToast();
+
+  const frequencyValue = (source.frequency ||
+    source.schedule?.frequency ||
+    'MANUAL') as ScheduleFrequency;
+  const lastRun = source.lastRun ?? source.lastRunAt ?? null;
+  const nextRun = source.nextRun ?? source.nextRunAt ?? null;
+  const leadsGenerated = source.leadsGenerated ?? source.totalLeads ?? 0;
+  const leadsApproved = source.leadsApproved ?? source.successfulRuns ?? 0;
+  const failedRuns = source.failedRuns ?? 0;
+  const computedSuccessRate =
+    source.successRate ??
+    (leadsGenerated > 0
+      ? (leadsApproved / leadsGenerated) * 100
+      : (source.successfulRuns + failedRuns > 0
+          ? (source.successfulRuns / (source.successfulRuns + failedRuns)) * 100
+          : 0));
 
   // Get source type styling
   const getTypeConfig = (type: LeadSourceType) => {
@@ -109,6 +93,16 @@ export default function SourceCard({
         icon: Settings,
         color: 'text-gray-600 bg-gray-100',
         label: 'Personalitzat',
+      },
+      'API': {
+        icon: Zap,
+        color: 'text-green-600 bg-green-100',
+        label: 'API',
+      },
+      'MANUAL': {
+        icon: Settings,
+         color: 'text-gray-600 bg-gray-100',
+         label: 'Manual',
       },
     };
     return configs[type] || configs.CUSTOM;
@@ -219,7 +213,7 @@ export default function SourceCard({
 
   const typeConfig = getTypeConfig(source.type);
   const TypeIcon = typeConfig.icon;
-  const frequencyConfig = getFrequencyConfig(source.frequency);
+  const frequencyConfig = getFrequencyConfig(frequencyValue);
   const configPreview = getConfigPreview();
 
   return (
@@ -263,7 +257,7 @@ export default function SourceCard({
         )}
 
         {/* Performance */}
-        {source.leadsGenerated > 0 && (
+        {leadsGenerated > 0 && (
           <div className="mb-4">
             <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
               📊 Rendiment
@@ -271,19 +265,19 @@ export default function SourceCard({
             <div className="space-y-1 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-600">Leads generats:</span>
-                <span className="font-medium">{source.leadsGenerated}</span>
+                <span className="font-medium">{leadsGenerated}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Aprovats:</span>
-                <span className={`font-medium ${getSuccessRateColor(source.successRate)}`}>
-                  {source.leadsApproved} ({source.successRate.toFixed(1)}%)
+                <span className={`font-medium ${getSuccessRateColor(computedSuccessRate)}`}>
+                  {leadsApproved} ({computedSuccessRate.toFixed(1)}%)
                 </span>
               </div>
             </div>
           </div>
         )}
 
-        {source.leadsGenerated === 0 && (
+        {leadsGenerated === 0 && (
           <div className="mb-4 p-3 bg-gray-50 rounded-lg">
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <Clock className="h-4 w-4" />
@@ -305,17 +299,17 @@ export default function SourceCard({
               </span>
             </div>
 
-            {source.lastRun && (
+            {lastRun && (
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Última execució:</span>
-                <span className="font-medium">{formatRelativeTime(source.lastRun)}</span>
+                <span className="font-medium">{formatRelativeTime(lastRun)}</span>
               </div>
             )}
 
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Pròxima execució:</span>
               <span className="font-medium">
-                {source.nextRun ? formatFutureTime(source.nextRun) : 'Manual'}
+                {nextRun ? formatFutureTime(nextRun) : 'Manual'}
               </span>
             </div>
           </div>
@@ -397,20 +391,20 @@ export default function SourceCard({
           </div>
         )}
 
-        {source.isActive && source.successRate > 0 && source.successRate < 50 && (
+        {source.isActive && computedSuccessRate > 0 && computedSuccessRate < 50 && (
           <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
             <div className="flex items-center gap-2 text-sm text-red-700">
               <XCircle className="h-4 w-4" />
-              <span>Taxa d'èxit baixa ({source.successRate.toFixed(1)}%)</span>
+              <span>Taxa d'èxit baixa ({computedSuccessRate.toFixed(1)}%)</span>
             </div>
           </div>
         )}
 
-        {source.isActive && source.successRate >= 70 && (
+        {source.isActive && computedSuccessRate >= 70 && (
           <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
             <div className="flex items-center gap-2 text-sm text-green-700">
               <CheckCircle className="h-4 w-4" />
-              <span>Bon rendiment ({source.successRate.toFixed(1)}% èxit)</span>
+              <span>Bon rendiment ({computedSuccessRate.toFixed(1)}% èxit)</span>
             </div>
           </div>
         )}

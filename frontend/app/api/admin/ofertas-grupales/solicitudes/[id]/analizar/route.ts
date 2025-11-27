@@ -7,15 +7,9 @@ import { z } from 'zod';
 // SEGURIDAD: Schema de validación adaptado a los campos existentes
 const AnalisisSchema = z.object({
   // Análisis del admin
-  adminViability: z.enum(['ALTA', 'MITJANA', 'BAIXA'], {
-    required_error: 'La viabilitat és obligatòria'
-  }),
-  adminComplexity: z.enum(['SIMPLE', 'MITJANA', 'ALTA'], {
-    required_error: 'La complexitat és obligatòria'
-  }),
-  adminRisk: z.enum(['BAIX', 'MIG', 'ALT'], {
-    required_error: 'El risc és obligatori'
-  }),
+  adminViability: z.enum(['ALTA', 'MITJANA', 'BAIXA'] as const),
+  adminComplexity: z.enum(['SIMPLE', 'MITJANA', 'ALTA'] as const),
+  adminRisk: z.enum(['BAIX', 'MIG', 'ALT'] as const),
   adminNotes: z.string()
     .min(20, 'Les notes han de tenir almenys 20 caràcters')
     .max(2000, 'Les notes no poden superar 2000 caràcters'),
@@ -170,12 +164,12 @@ export async function POST(
     const validationResult = AnalisisSchema.safeParse(body);
 
     if (!validationResult.success) {
-      console.warn(`[VALIDATION] Datos de análisis inválidos:`, validationResult.error.errors);
+      console.warn(`[VALIDATION] Datos de análisis inválidos:`, validationResult.error.issues);
       return NextResponse.json(
         {
           success: false,
           error: 'Dades d\'anàlisi invàlides',
-          details: validationResult.error.errors.map(e => ({
+          details: validationResult.error.issues.map(e => ({
             field: e.path.join('.'),
             message: e.message
           }))
@@ -277,7 +271,7 @@ export async function POST(
 
     await prismaClient.notification.create({
       data: {
-        type: 'SYSTEM_NOTIFICATION',
+        type: 'SYSTEM',
         title: data.approved ? 'Sol·licitud Aprovada' : 'Sol·licitud Revisada',
         message: notificationMessage,
         priority: 'HIGH',
@@ -295,7 +289,7 @@ export async function POST(
     // AUDIT LOG (usando la tabla Notification como registro de auditoría temporal)
     await prismaClient.notification.create({
       data: {
-        type: 'AUDIT_LOG',
+        type: 'SYSTEM',
         title: `ADMIN_ANALYSIS: ${data.approved ? 'APPROVED' : 'REJECTED'}`,
         message: `${user.email} analizó solicitud ${requestId} - Viabilidad: ${data.adminViability}, Complejidad: ${data.adminComplexity}, Riesgo: ${data.adminRisk}`,
         priority: 'LOW',

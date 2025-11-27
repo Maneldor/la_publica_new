@@ -71,12 +71,13 @@ export class EmailService {
           userId: options.userId,
           templateType: options.template,
           subject: options.subject,
-          recipient: Array.isArray(options.to) ? options.to.join(', ') : options.to
+          toEmail: Array.isArray(options.to) ? options.to[0] : options.to,
+          fromEmail: DEFAULT_FROM.email,
+          status: EmailStatus.SENT,
+          sentAt: new Date(),
+          externalId: 'dev-email-simulated',
+          metadata: options.templateProps
         }) : null;
-
-        if (emailLog) {
-          await this.updateEmailLogStatus(emailLog.id, EmailStatus.SENT, 'dev-email-simulated');
-        }
 
         console.log('✅ [Email] DEV MODE - Email logged successfully');
 

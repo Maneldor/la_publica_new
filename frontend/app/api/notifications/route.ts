@@ -64,24 +64,39 @@ export async function GET(request: NextRequest) {
     ]);
 
     // Formatear notificaciones
-    const formattedNotifications = notifications.map(notification => ({
-      id: notification.id,
-      type: notification.type,
-      title: notification.title,
-      message: notification.message,
-      priority: notification.priority,
-      isRead: notification.isRead,
-      createdAt: notification.createdAt,
-      readAt: notification.readAt,
-      metadata: notification.metadata,
-      sender: notification.sender ? {
-        id: notification.sender.id,
-        name: notification.sender.name,
-        image: notification.sender.image
-      } : null,
-      // Helper para URL de acción desde metadata
-      actionUrl: notification.metadata?.actionUrl || null
-    }));
+    const formattedNotifications = notifications.map(notification => {
+      const metadata =
+        notification.metadata &&
+        typeof notification.metadata === 'object' &&
+        !Array.isArray(notification.metadata)
+          ? notification.metadata
+          : null;
+
+      const actionUrl =
+        metadata && 'actionUrl' in metadata && typeof metadata.actionUrl === 'string'
+          ? metadata.actionUrl
+          : null;
+
+      return {
+        id: notification.id,
+        type: notification.type,
+        title: notification.title,
+        message: notification.message,
+        priority: notification.priority,
+        isRead: notification.isRead,
+        createdAt: notification.createdAt,
+        readAt: notification.readAt,
+        metadata: notification.metadata,
+        sender: notification.sender
+          ? {
+              id: notification.sender.id,
+              name: notification.sender.name,
+              image: notification.sender.image
+            }
+          : null,
+        actionUrl
+      };
+    });
 
     console.log(`✅ [Notifications] Found ${notifications.length} notifications, ${unreadCount} unread`);
 

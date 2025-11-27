@@ -176,7 +176,7 @@ export async function GET(
     });
 
     // Convertir a array para el gráfico
-    for (const [date, stats] of statsMap.entries()) {
+    for (const [date, stats] of Array.from(statsMap.entries())) {
       dailyStats.push({
         date,
         coupons_generated: stats.generated,

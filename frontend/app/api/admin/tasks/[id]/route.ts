@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { prismaClient } from '@/lib/prisma';
 import { recalculateTaskScores } from '@/lib/tasks/taskScoring';
 
 // GET /api/admin/tasks/[id] - Obtener tarea por ID
@@ -15,7 +15,7 @@ export async function GET(
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const task = await prisma.task.findUnique({
+    const task = await prismaClient.task.findUnique({
       where: { id: params.id },
       include: {
         assignedTo: {
@@ -105,7 +105,7 @@ export async function PATCH(
     } = body;
 
     // VERIFICAR QUE EXISTE
-    const existingTask = await prisma.task.findUnique({
+    const existingTask = await prismaClient.task.findUnique({
       where: { id: params.id },
     });
 
@@ -207,7 +207,7 @@ export async function PATCH(
     }
 
     // ACTUALIZAR TAREA
-    const task = await prisma.task.update({
+    const task = await prismaClient.task.update({
       where: { id: params.id },
       data: updateData,
       include: {
@@ -221,7 +221,7 @@ export async function PATCH(
 
     // REGISTRAR ACTIVIDAD
     if (changes.length > 0) {
-      await prisma.taskActivity.create({
+      await prismaClient.taskActivity.create({
         data: {
           taskId: task.id,
           userId: session.user.id,
@@ -252,7 +252,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const task = await prisma.task.findUnique({
+    const task = await prismaClient.task.findUnique({
       where: { id: params.id },
       select: { title: true },
     });
@@ -261,7 +261,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Tarea no encontrada' }, { status: 404 });
     }
 
-    await prisma.task.delete({
+    await prismaClient.task.delete({
       where: { id: params.id },
     });
 

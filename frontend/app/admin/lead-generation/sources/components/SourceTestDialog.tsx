@@ -3,21 +3,9 @@
 import { useState } from 'react';
 import { X, CheckCircle, XCircle, Loader2, RefreshCw, Info, MapPin, Globe, Clock } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { LeadSource } from '@/lib/api/leadSources';
 
-type LeadSourceType =
-  | 'GOOGLE_MAPS'
-  | 'WEB_SCRAPING'
-  | 'API_INTEGRATION'
-  | 'LINKEDIN'
-  | 'CSV_IMPORT'
-  | 'CUSTOM';
-
-interface LeadSource {
-  id: string;
-  name: string;
-  type: LeadSourceType;
-  config: any;
-}
+type LeadSourceType = LeadSource['type'];
 
 interface TestResult {
   success: boolean;
@@ -83,6 +71,16 @@ export default function SourceTestDialog({
         icon: Globe,
         color: 'text-gray-600 bg-gray-100',
         label: 'Personalitzat',
+      },
+      'API': {
+        icon: Globe,
+        color: 'text-green-600 bg-green-100',
+        label: 'API',
+      },
+      'MANUAL': {
+        icon: Globe,
+        color: 'text-gray-600 bg-gray-100',
+        label: 'Manual',
       },
     };
     return configs[type] || configs.CUSTOM;

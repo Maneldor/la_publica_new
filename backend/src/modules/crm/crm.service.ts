@@ -18,26 +18,26 @@ export class CrmService {
     assignedToId?: string;
     notes?: string;
   }) {
-    return prisma.companyLead.create({
+    return prisma.company_leads.create({
       data: {
         companyName: data.companyName,
         cif: data.cif,
         sector: data.sector,
         website: data.website,
         employees: data.employees,
-        source: data.source,
-        priority: data.priority,
-        status: data.status || 'new',
+        source: data.source as any,
+        priority: data.priority as any,
+        status: (data.status || 'new') as any,
         estimatedValue: data.estimatedValue,
         assignedToId: data.assignedToId,
         notes: data.notes
-      },
+      } as any,
       include: {
-        assignedTo: {
+        User: {
           select: { id: true, email: true }
         },
         contacts: true,
-        interactions: {
+        lead_interactions: {
           take: 5,
           orderBy: { createdAt: 'desc' }
         }
@@ -60,15 +60,15 @@ export class CrmService {
     if (filters.assignedToId) where.assignedToId = filters.assignedToId;
     if (filters.source) where.source = filters.source;
 
-    return prisma.companyLead.findMany({
+    return prisma.company_leads.findMany({
       where,
       include: {
-        assignedTo: {
+        User: {
           select: { id: true, email: true }
         },
         contacts: true,
         _count: {
-          select: { interactions: true }
+          select: { lead_interactions: true }
         }
       },
       orderBy: { createdAt: 'desc' },
@@ -78,16 +78,16 @@ export class CrmService {
   }
 
   async getLeadById(id: string) {
-    const lead = await prisma.companyLead.findUnique({
+    const lead = await prisma.company_leads.findUnique({
       where: { id },
       include: {
-        assignedTo: {
+        User: {
           select: { id: true, email: true }
         },
         contacts: {
           orderBy: { isPrimary: 'desc' }
         },
-        interactions: {
+        lead_interactions: {
           orderBy: { createdAt: 'desc' },
           include: {
             contact: true,
@@ -96,7 +96,7 @@ export class CrmService {
             }
           }
         },
-        convertedToCompany: true
+        companies: true
       }
     });
 
@@ -108,11 +108,11 @@ export class CrmService {
   }
 
   async updateLead(id: string, data: any) {
-    return prisma.companyLead.update({
+    return prisma.company_leads.update({
       where: { id },
       data,
       include: {
-        assignedTo: {
+        User: {
           select: { id: true, email: true }
         },
         contacts: true
@@ -135,7 +135,7 @@ export class CrmService {
       });
 
       // Crear la empresa
-      const company = await tx.company.create({
+      const company = await tx.companies.create({
         data: {
           name: lead.companyName,
           description: companyData.description || `Empresa ${lead.companyName}`,
@@ -152,10 +152,10 @@ export class CrmService {
       });
 
       // Actualizar el lead como convertido
-      await tx.companyLead.update({
+      await tx.company_leads.update({
         where: { id: leadId },
         data: {
-          status: 'converted',
+          status: 'WON' as any as any,
           convertedToCompanyId: company.id,
           convertedAt: new Date()
         }
@@ -197,31 +197,28 @@ export class CrmService {
     companyLeadId?: string;
     companyId?: string;
     contactId?: string;
-    createdById: string;
+    userId: string;
   }) {
-    return prisma.interaction.create({
+    return prisma.lead_interactions.create({
       data: {
-        type: data.type,
-        subject: data.subject,
-        content: data.content,
+        id: `interaction_${Date.now()}_${Math.random()}`,
+        leadId: data.companyLeadId || '',
+        userId: data.userId,
+        type: data.type as any,
+        title: data.subject,
+        description: data.content || '',
         outcome: data.outcome,
         nextAction: data.nextAction,
         nextActionDate: data.nextActionDate,
-        companyLeadId: data.companyLeadId,
-        companyId: data.companyId,
-        contactId: data.contactId,
-        createdById: data.createdById
-      },
+        contactId: data.contactId
+      } as any,
       include: {
         contact: true,
         createdBy: {
           select: { id: true, email: true }
         },
-        companyLead: {
+        company_leads: {
           select: { id: true, companyName: true }
-        },
-        company: {
-          select: { id: true, name: true }
         }
       }
     });
@@ -242,7 +239,7 @@ export class CrmService {
     if (filters.contactId) where.contactId = filters.contactId;
     if (filters.type) where.type = filters.type;
 
-    return prisma.interaction.findMany({
+    return prisma.lead_interactions.findMany({
       where,
       include: {
         contact: true,
@@ -257,7 +254,7 @@ export class CrmService {
   }
 
   async updateInteraction(id: string, data: any) {
-    return prisma.interaction.update({
+    return prisma.lead_interactions.update({
       where: { id },
       data,
       include: {
@@ -270,7 +267,7 @@ export class CrmService {
   }
 
   async markActionCompleted(id: string) {
-    return prisma.interaction.update({
+    return prisma.lead_interactions.update({
       where: { id },
       data: {
         nextActionCompleted: true
@@ -295,6 +292,7 @@ export class CrmService {
   }) {
     return prisma.contact.create({
       data: {
+        firstName: data.name,
         name: data.name,
         position: data.position,
         phone: data.phone,
@@ -336,27 +334,27 @@ export class CrmService {
 
   async getDashboardData(userId: string) {
     // KPIs básicos
-    const totalLeads = await prisma.companyLead.count({
+    const totalLeads = await prisma.company_leads.count({
       where: { assignedToId: userId }
     });
 
-    const contactedLeads = await prisma.companyLead.count({
+    const contactedLeads = await prisma.company_leads.count({
       where: {
         assignedToId: userId,
-        status: { in: ['contacted', 'negotiating', 'converted'] }
+        status: { in: ['CONTACTED', 'NEGOTIATION', 'WON'] as any }
       }
     });
 
-    const convertedLeads = await prisma.companyLead.count({
+    const convertedLeads = await prisma.company_leads.count({
       where: {
         assignedToId: userId,
-        status: 'converted'
+        status: 'WON' as any
       }
     });
 
-    const pendingTasks = await prisma.interaction.count({
+    const pendingTasks = await prisma.lead_interactions.count({
       where: {
-        createdById: userId,
+        userId: userId,
         nextActionCompleted: false,
         nextActionDate: {
           lte: new Date()
@@ -365,7 +363,7 @@ export class CrmService {
     });
 
     // Pipeline data
-    const pipelineData = await prisma.companyLead.groupBy({
+    const pipelineData = await prisma.company_leads.groupBy({
       by: ['status'],
       where: { assignedToId: userId },
       _count: true
@@ -399,9 +397,9 @@ export class CrmService {
   }
 
   async getPendingTasks(userId: string) {
-    return prisma.interaction.findMany({
+    return prisma.lead_interactions.findMany({
       where: {
-        createdById: userId,
+        userId: userId,
         nextActionCompleted: false,
         nextAction: { not: null },
         nextActionDate: {
@@ -409,11 +407,8 @@ export class CrmService {
         }
       },
       include: {
-        companyLead: {
+        company_leads: {
           select: { id: true, companyName: true }
-        },
-        company: {
-          select: { id: true, name: true }
         },
         contact: true
       },
@@ -465,12 +460,7 @@ export class CrmService {
         id: true,
         email: true,
         primaryRole: true,
-        company: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
+        ownedCompanyId: true
       },
       orderBy: [
         { primaryRole: 'asc' },
@@ -493,12 +483,9 @@ export class CrmService {
       where.priority = 'HIGH';
     }
 
-    return prisma.notification.findMany({
+    return prisma.notifications.findMany({
       where,
       include: {
-        lead: {
-          select: { id: true, companyName: true }
-        },
         company: {
           select: { id: true, name: true }
         }
@@ -514,7 +501,7 @@ export class CrmService {
 
   async markNotificationAsRead(notificationId: string, userId: string) {
     // Verificar que la notificación pertenece al usuario
-    const notification = await prisma.notification.findFirst({
+    const notification = await prisma.notifications.findFirst({
       where: {
         id: notificationId,
         userId: userId
@@ -525,16 +512,13 @@ export class CrmService {
       throw new Error('Notificación no encontrada o no tienes permisos para acceder a ella');
     }
 
-    return prisma.notification.update({
+    return prisma.notifications.update({
       where: { id: notificationId },
       data: {
         isRead: true,
         readAt: new Date()
       },
       include: {
-        lead: {
-          select: { id: true, companyName: true }
-        },
         company: {
           select: { id: true, name: true }
         }
@@ -543,7 +527,7 @@ export class CrmService {
   }
 
   async markAllNotificationsAsRead(userId: string) {
-    return prisma.notification.updateMany({
+    return prisma.notifications.updateMany({
       where: {
         userId: userId,
         isRead: false
@@ -568,7 +552,7 @@ export class CrmService {
     dueDate?: Date;
     metadata?: any;
   }) {
-    return prisma.notification.create({
+    return prisma.notifications.create({
       data: {
         userId: data.userId,
         type: data.type,
@@ -581,11 +565,8 @@ export class CrmService {
         companyId: data.companyId,
         dueDate: data.dueDate,
         metadata: data.metadata
-      },
+      } as any,
       include: {
-        lead: {
-          select: { id: true, companyName: true }
-        },
         company: {
           select: { id: true, name: true }
         }
@@ -604,8 +585,10 @@ export class CrmService {
     if (senderRole === 'GESTOR_EMPRESAS') {
       const recipient = await prisma.user.findUnique({
         where: { id: recipientId },
-        include: {
-          company: true
+        select: {
+          id: true,
+          primaryRole: true,
+          ownedCompanyId: true
         }
       });
 
@@ -619,15 +602,15 @@ export class CrmService {
       }
 
       // 2. Admins
-      if (['ADMIN', 'SUPER_ADMIN'].includes(recipient.primaryRole)) {
+      if (recipient.primaryRole && ['ADMIN', 'SUPER_ADMIN'].includes(recipient.primaryRole)) {
         return true;
       }
 
       // 3. Empresas que tenga asignadas
-      if (recipient.primaryRole === 'EMPRESA' && recipient.company) {
-        const assignedCompany = await prisma.company.findFirst({
+      if (recipient.primaryRole === 'COMPANY' && recipient.ownedCompanyId) {
+        const assignedCompany = await prisma.companies.findFirst({
           where: {
-            id: recipient.company.id,
+            id: recipient.ownedCompanyId,
             accountManagerId: senderId
           }
         });
@@ -639,10 +622,10 @@ export class CrmService {
   }
 
   async generateAutomaticNotifications(userId: string) {
-    const leads = await prisma.companyLead.findMany({
+    const leads = await prisma.company_leads.findMany({
       where: { assignedToId: userId },
       include: {
-        interactions: {
+        lead_interactions: {
           orderBy: { createdAt: 'desc' },
           take: 5
         }
@@ -653,14 +636,14 @@ export class CrmService {
     const now = new Date();
 
     for (const lead of leads) {
-      const lastActivity = lead.interactions.length > 0
-        ? new Date(lead.interactions[0].createdAt)
+      const lastActivity = lead.lead_interactions.length > 0
+        ? new Date(lead.lead_interactions[0].createdAt)
         : new Date(lead.createdAt);
 
       const daysSinceActivity = Math.floor((now.getTime() - lastActivity.getTime()) / (1000 * 60 * 60 * 24));
 
       // Lead sin actividad por más de 3 días
-      if (daysSinceActivity >= 3 && lead.status !== 'converted' && lead.status !== 'lost') {
+      if (daysSinceActivity >= 3 && lead.status !== 'WON' && lead.status !== 'LOST') {
         notifications.push({
           userId: userId,
           type: 'REMINDER',
@@ -675,7 +658,7 @@ export class CrmService {
       }
 
       // Lead de alta prioridad sin conversión
-      if (lead.priority === 'high' && lead.status !== 'converted' && daysSinceActivity >= 2) {
+      if (lead.priority === 'HIGH' && lead.status !== 'WON' && daysSinceActivity >= 2) {
         notifications.push({
           userId: userId,
           type: 'ALERT',
@@ -690,7 +673,7 @@ export class CrmService {
       }
 
       // Acciones vencidas
-      for (const interaction of lead.interactions) {
+      for (const interaction of lead.lead_interactions) {
         if (interaction.nextAction && !interaction.nextActionCompleted && interaction.nextActionDate) {
           const actionDate = new Date(interaction.nextActionDate);
           if (actionDate <= now) {
@@ -715,7 +698,7 @@ export class CrmService {
     const createdNotifications = [];
     for (const notificationData of notifications) {
       // Verificar si ya existe una notificación similar reciente
-      const existingNotification = await prisma.notification.findFirst({
+      const existingNotification = await prisma.notifications.findFirst({
         where: {
           userId: notificationData.userId,
           leadId: notificationData.leadId,

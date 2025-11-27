@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { getCompanyPlan, getPlanUsageStats } from '@/lib/plans/planService';
+import { prismaClient } from '@/lib/prisma';
 
 /**
  * GET /api/empresa/plan
@@ -11,18 +12,36 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session?.user?.companyId) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         { success: false, error: 'No autoritzat o no ets una empresa' },
         { status: 401 }
       );
     }
 
-    console.log('📊 [Plan API] Getting plan for company:', session.user.companyId);
+    const sessionUser = await prismaClient.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        ownedCompanyId: true,
+        memberCompanyId: true,
+        email: true,
+      },
+    });
+
+    const companyId = sessionUser?.ownedCompanyId || sessionUser?.memberCompanyId;
+
+    if (!companyId) {
+      return NextResponse.json(
+        { success: false, error: 'No pertanys a cap empresa' },
+        { status: 403 }
+      );
+    }
+
+    console.log('📊 [Plan API] Getting plan for company:', companyId);
 
     // Obtener plan y estadísticas de uso
-    const planInfo = await getCompanyPlan(session.user.companyId);
-    const usageStats = await getPlanUsageStats(session.user.companyId);
+    const planInfo = await getCompanyPlan(companyId);
+    const usageStats = await getPlanUsageStats(companyId);
 
     // IMPORTANTE: Verificar que config existe
     if (!planInfo.config) {

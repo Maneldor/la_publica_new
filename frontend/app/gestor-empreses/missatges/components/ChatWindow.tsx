@@ -2,7 +2,7 @@
 
 import { useRef } from 'react';
 import { User, Message, Conversation } from '../types/chatTypes';
-import { EmojiPicker } from './EmojiPicker';
+import { EmojiPicker } from '../../../dashboard/missatges/components/EmojiPicker';
 
 interface ChatWindowProps {
   activeConversation: Conversation;
@@ -230,7 +230,7 @@ export function ChatWindow({
                 justifyContent: isOwn ? 'flex-end' : 'flex-start',
                 marginBottom: '4px'
               }}
-              onMouseEnter={() => setHoveredMessage(message.id)}
+              onMouseEnter={() => setHoveredMessage(parseInt(message.id) || 0)}
               onMouseLeave={() => setHoveredMessage(null)}
             >
               <div style={{
@@ -406,7 +406,7 @@ export function ChatWindow({
                   </div>
 
                   {/* Acciones del mensaje en hover */}
-                  {hoveredMessage === message.id && (
+                  {hoveredMessage === (parseInt(message.id) || 0) && (
                     <div style={{
                       position: 'absolute',
                       top: '-8px',
@@ -435,7 +435,7 @@ export function ChatWindow({
                         ↩️
                       </button>
                       <button
-                        onClick={() => starMessage(message.id)}
+                        onClick={() => starMessage(parseInt(message.id) || 0)}
                         style={{
                           backgroundColor: 'transparent',
                           border: 'none',
@@ -450,7 +450,10 @@ export function ChatWindow({
                       </button>
                       <div style={{ position: 'relative' }}>
                         <button
-                          onClick={() => setHoveredMessage(message.id === hoveredMessage ? null : message.id)}
+                          onClick={() => {
+                            const msgId = parseInt(message.id) || 0;
+                            setHoveredMessage(hoveredMessage === msgId ? null : msgId);
+                          }}
                           style={{
                             backgroundColor: 'transparent',
                             border: 'none',
@@ -465,7 +468,7 @@ export function ChatWindow({
                         </button>
 
                         {/* Mini emoji picker para reacciones */}
-                        {hoveredMessage === message.id && (
+                        {hoveredMessage === (parseInt(message.id) || 0) && (
                           <div style={{
                             position: 'absolute',
                             top: '100%',
@@ -534,7 +537,7 @@ export function ChatWindow({
                       </div>
                       {isOwn && (
                         <button
-                          onClick={() => deleteMessage(message.id)}
+                          onClick={() => deleteMessage(parseInt(message.id) || 0)}
                           style={{
                             backgroundColor: 'transparent',
                             border: 'none',
@@ -654,7 +657,7 @@ export function ChatWindow({
           <EmojiPicker
             isOpen={showEmojiPicker}
             onClose={() => setShowEmojiPicker(false)}
-            onSelectEmoji={(emoji) => setMessageText(prev => prev + emoji)}
+            onSelectEmoji={(emoji: string) => setMessageText(messageText + emoji)}
           />
         </div>
 

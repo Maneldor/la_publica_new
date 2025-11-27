@@ -199,7 +199,7 @@ export default function LeadsPage() {
       case 'email':
         console.log(`📧 Preparando email para ${lead.companyName}...`);
         const subject = `Seguimiento - ${lead.companyName}`;
-        let body = `Estimado/a ${contactName},\n\nGracias por su interés en nuestros servicios...\n\nSaludos cordiales`;
+        const body = `Estimado/a ${contactName},\n\nGracias por su interés en nuestros servicios...\n\nSaludos cordiales`;
 
         if (contactEmail) {
           const mailto = `mailto:${contactEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;

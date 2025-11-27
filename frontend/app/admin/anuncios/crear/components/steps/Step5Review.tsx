@@ -1,16 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { CheckCircle, AlertCircle, Eye, Send } from 'lucide-react';
+import { CheckCircle, Eye, Send } from 'lucide-react';
 import { AdminAnunciFormData } from '../../hooks/useAdminCreateAnunci';
 
 interface Step5Props {
   formData: AdminAnunciFormData;
-  errors: Record<string, string>;
   onPublish: () => void;
 }
 
-export const Step5Review = ({ formData, errors, onPublish }: Step5Props) => {
+export const Step5Review = ({ formData, onPublish }: Step5Props) => {
   const [isPublishing, setIsPublishing] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 

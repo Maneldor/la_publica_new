@@ -7,8 +7,34 @@ import { AssessmentTabs } from '../../../../components/ui/AssessmentTabs';
 import { ViewToggle } from '../../../../components/ui/ViewToggle';
 import { AssessmentCard } from '../../../../components/ui/AssessmentCard';
 
+// Importar el tipo Assessment
+type Assessment = {
+  id: number;
+  slug?: string;
+  title: string;
+  description: string;
+  company: {
+    id: number;
+    name: string;
+    logo: string;
+    plan: string;
+  };
+  type: string;
+  category: string;
+  duration: number;
+  mode: 'presencial' | 'online' | 'hibrid';
+  images: string[];
+  availableSlots: number;
+  isHighlighted: boolean;
+  isFavorite: boolean;
+  totalBooked: number;
+  rating: number;
+  createdAt: string;
+  requirements: string;
+};
+
 // Datos de ejemplo de assessoraments gratuitos
-const sampleAssessments = [
+const sampleAssessments: Assessment[] = [
   {
     id: 1,
     title: 'Assessorament Legal en Contractació Pública',

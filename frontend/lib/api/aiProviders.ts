@@ -38,6 +38,8 @@ export interface AIProvider {
     apiKey?: string;
     model?: string;
     endpoint?: string;
+    baseURL?: string;
+    timeout?: number;
     maxTokens?: number;
     temperature?: number;
   };

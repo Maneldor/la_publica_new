@@ -4,7 +4,6 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { headers } from 'next/headers';
 import {
   UserInfo,
   UserRole,
@@ -14,7 +13,7 @@ import {
   canAccessCommunity,
   CommunityContext
 } from './permissions';
-import { getUserFromHeaders } from '@/src/middleware';
+import { getCurrentUser as getSessionUser } from './auth-helpers';
 
 // Tipos para manejo de errores de autorización
 export class AuthorizationError extends Error {
@@ -39,8 +38,7 @@ export class AuthenticationError extends Error {
  */
 export async function getCurrentUser(): Promise<UserInfo | null> {
   try {
-    const headersList = headers();
-    return getUserFromHeaders(headersList);
+    return await getSessionUser();
   } catch (error) {
     console.error('Error getting current user:', error);
     return null;

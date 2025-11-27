@@ -112,39 +112,72 @@ export async function POST(request: NextRequest) {
     const nextPriority = (maxPriority._max.priority || 0) + 1;
 
     // Crear nuevo plan en la base de datos
+    const slug =
+      data.slug ||
+      (data.name || `plan-${Date.now()}`)
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '-');
+
+    const nombre = data.nombre || data.name;
+    const nombreCorto = data.nombreCorto || data.name;
+    const descripcion = data.descripcion || data.description || 'Sin descripción';
+    const precioMensual = parseFloat(
+      data.precioMensual ?? data.basePrice ?? data.precioAnual ?? '0'
+    );
+    const precioAnual =
+      data.precioAnual !== undefined && data.precioAnual !== null
+        ? parseFloat(data.precioAnual)
+        : null;
+
     const nuevoPlan = await prisma.planConfig.create({
       data: {
         planType: data.planType || `CUSTOM_${Date.now()}`,
-        slug: data.slug || data.name.toLowerCase().replace(/\s+/g, '-'),
+        slug,
         tier: data.tier || 'CUSTOM',
-        name: data.name,
-        nameEs: data.nameEs || data.name,
-        nameEn: data.nameEn || data.name,
-        description: data.description || 'Sin descripción',
-        basePrice: parseFloat(data.basePrice),
-        firstYearDiscount: data.firstYearDiscount ? parseFloat(data.firstYearDiscount) : 0,
-        maxActiveOffers: data.maxActiveOffers || null,
-        maxTeamMembers: data.maxTeamMembers || 1,
-        maxFeaturedOffers: data.maxFeaturedOffers || 0,
-        maxStorage: data.maxStorage || null,
-        features: data.features || {},
+        nombre: nombre || slug,
+        nombreCorto: nombreCorto || nombre || slug,
+        descripcion,
+        precioMensual,
+        precioAnual,
+        limitesJSON: JSON.stringify(data.limites || data.limitesJSON || {}),
+        caracteristicas: JSON.stringify(
+          data.caracteristicas || data.features || {}
+        ),
+        color: data.color || '#3B82F6',
+        icono: data.icono || data.icon || '📦',
+        orden: data.orden ?? nextPriority,
+        destacado: Boolean(data.destacado),
+        activo: data.activo ?? data.isActive ?? true,
+        visible: data.visible ?? data.isVisible ?? true,
+        esSistema: false,
+
+        displayNote: data.displayNote || 'IVA incluido',
+        priceIncludesVAT: data.priceIncludesVAT ?? true,
         badge: data.badge || null,
         badgeColor: data.badgeColor || null,
-        isPioneer: data.isPioneer || false,
-        color: data.color || '#3B82F6',
-        icono: data.icono || '📦',
-        destacado: data.destacado || false,
-        priority: data.priority || nextPriority,
-        hasFreeTrial: data.hasFreeTrial || false,
-        trialDurationDays: data.trialDurationDays || null,
-        isActive: data.isActive !== false, // Por defecto true
-        isVisible: data.isVisible !== false, // Por defecto true
-        displayNote: data.displayNote || 'IVA incluido',
-        funcionalidades: data.funcionalidades || null,
-        priceIncludesVAT: data.priceIncludesVAT !== false,
+        basePrice: parseFloat(data.basePrice ?? precioMensual ?? 0),
+        description: data.description || descripcion,
         durationMonths: data.durationMonths || 12,
-        isDefault: data.isDefault || false,
-        esSistema: false // Los nuevos planes nunca son del sistema
+        features: data.features || {},
+        firstYearDiscount: data.firstYearDiscount
+          ? parseFloat(data.firstYearDiscount)
+          : 0,
+        hasFreeTrial: data.hasFreeTrial ?? false,
+        isActive: data.isActive ?? true,
+        isDefault: data.isDefault ?? false,
+        isPioneer: data.isPioneer ?? false,
+        isVisible: data.isVisible ?? true,
+        maxActiveOffers: data.maxActiveOffers ?? null,
+        maxFeaturedOffers: data.maxFeaturedOffers ?? 0,
+        maxStorage: data.maxStorage ?? null,
+        maxTeamMembers: data.maxTeamMembers ?? 1,
+        name: data.name || nombre || slug,
+        nameEn: data.nameEn || data.name || nombre || slug,
+        nameEs: data.nameEs || data.name || nombre || slug,
+        priority: data.priority ?? nextPriority,
+        trialDurationDays: data.trialDurationDays ?? null,
+        funcionalidades: data.funcionalidades || null,
       }
     });
 

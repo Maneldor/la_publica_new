@@ -490,7 +490,16 @@ export default function MonitorPage() {
       <div className="space-y-4">
         {selectedTab === 'active' && (
           <ActiveJobsList
-            jobs={activeJobs}
+            jobs={activeJobs.map(job => ({
+              id: job.id,
+              type: 'SCRAPING' as const,
+              sourceName: job.source?.name,
+              status: 'RUNNING' as const,
+              startedAt: job.startedAt || job.createdAt,
+              progress: job.progress,
+              currentStep: `Processant ${job.source?.name || 'job'}`,
+              estimatedTimeRemaining: 0
+            }))}
             onCancel={handleCancelJob}
             onViewDetails={handleViewJobDetails}
           />

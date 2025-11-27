@@ -171,7 +171,7 @@ export const createInteraction = async (req: Request, res: Response) => {
 export const listInteractions = async (req: Request, res: Response) => {
   try {
     const {
-      companyLeadId,
+      company_leadsId,
       companyId,
       contactId,
       type,
@@ -180,7 +180,7 @@ export const listInteractions = async (req: Request, res: Response) => {
     } = req.query;
 
     const interactions = await crmService.listInteractions({
-      companyLeadId: companyLeadId as string,
+      companyLeadId: company_leadsId as string,
       companyId: companyId as string,
       contactId: contactId as string,
       type: type as string,
@@ -263,14 +263,14 @@ export const createContact = async (req: Request, res: Response) => {
 export const listContacts = async (req: Request, res: Response) => {
   try {
     const {
-      companyLeadId,
+      company_leadsId,
       companyId,
       limit,
       offset
     } = req.query;
 
     const contacts = await crmService.listContacts({
-      companyLeadId: companyLeadId as string,
+      companyLeadId: company_leadsId as string,
       companyId: companyId as string,
       limit: limit ? Number(limit) : undefined,
       offset: offset ? Number(offset) : undefined

@@ -64,7 +64,7 @@ export default function InfinitePostsFeed() {
     }
   };
 
-  if (status === 'loading') {
+  if (isFetching && !data) {
     return <PostsSkeletonList count={3} />;
   }
 
@@ -88,7 +88,7 @@ export default function InfinitePostsFeed() {
     );
   }
 
-  const allPosts = data?.pages.flatMap(page => page.content) ?? [];
+  const allPosts = data?.pages.flatMap((page: any) => page.content) ?? [];
 
   return (
     <div className="space-y-6">
@@ -195,7 +195,7 @@ export default function InfinitePostsFeed() {
               <div className="flex space-x-6">
                 <button
                   onClick={() => handleLike(post.id, post.likes)}
-                  disabled={likePostMutation.isLoading}
+                  disabled={likePostMutation.isPending}
                   className="flex items-center space-x-2 text-gray-500 hover:text-red-600 transition-colors p-2 hover:bg-red-50 rounded-lg disabled:opacity-50"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

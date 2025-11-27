@@ -1,38 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import {
-  Upload,
-  X,
-  Plus,
-  Info,
-  User,
-  Settings,
-  FileText,
-  HelpCircle,
-  Image,
-  Trash2,
-  ExternalLink,
-  Phone,
-  Mail,
-  Video,
-  Building2,
-  Eye,
-  Tag,
-  Calendar,
-  ShoppingBag
-} from 'lucide-react';
+import { Tag, Info, FileText, User, ShoppingBag, Calendar, Eye } from 'lucide-react';
 
 type CourseType = 'micro' | 'basic' | 'complet' | 'premium';
 type ModalityType = 'online' | 'presencial' | 'hibrid';
 type CertificateType = 'none' | 'digital' | 'digital_fisic' | 'oficial';
-
-interface Module {
-  id: string;
-  title: string;
-  order: number;
-  lessons: Lesson[];
-}
 
 interface Lesson {
   id: string;
@@ -43,6 +15,21 @@ interface Lesson {
   videoUrl: string;
   isPreview: boolean;
   order: number;
+}
+
+interface Module {
+  id: string;
+  title: string;
+  order: number;
+  lessons: Lesson[];
+}
+
+interface Instructor {
+  id?: string;
+  name: string;
+  institution?: string;
+  email?: string;
+  bio?: string;
 }
 
 interface WizardFormData {
@@ -61,7 +48,7 @@ interface WizardFormData {
   aiFormats: string[];
   modules: Module[];
   hasInstructor: boolean;
-  selectedInstructor: any | null;
+  selectedInstructor: Instructor | null;
   pricingType: 'gratuit' | 'pagament';
   price: number;
   memberPrice: number;
@@ -91,9 +78,14 @@ interface WizardFormData {
 
 interface StepProps {
   formData: WizardFormData;
-  updateField: (field: keyof WizardFormData, value: any) => void;
+  updateField: <K extends keyof WizardFormData>(field: K, value: WizardFormData[K]) => void;
   errors: Record<string, string>;
-  [key: string]: any;
+  courseTypeConfig?: unknown;
+  aiGenerating?: boolean;
+  setAiGenerating?: (value: boolean) => void;
+  aiGeneratedContent?: { lessons: Lesson[]; totalDuration: number } | null;
+  setAiGeneratedContent?: (value: { lessons: Lesson[]; totalDuration: number } | null) => void;
+  calculateTotalDuration?: () => number;
 }
 
 const CATEGORIES = [
@@ -128,7 +120,7 @@ export const Step1TipusCurs: React.FC<StepProps> = ({ formData, updateField, err
       {errors.courseType && <p className="text-sm text-red-600 mb-4">{errors.courseType}</p>}
 
       <div className="space-y-4">
-        {Object.entries(courseTypeConfig).map(([type, config]) => (
+        {Object.entries(courseTypeConfig as Record<string, { name: string; subtitle: string; features: string[] }>).map(([type, config]) => (
           <label key={type} className="block">
             <div className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
               formData.courseType === type
@@ -418,21 +410,23 @@ export const Step3Contingut: React.FC<StepProps> = ({
   };
 
   const addLesson = (moduleId: string) => {
+    const targetModule = formData.modules.find(m => m.id === moduleId);
+    const lessonCount = targetModule?.lessons.length || 0;
     const newLesson: Lesson = {
       id: `lesson-${Date.now()}`,
-      title: `Lliçó ${formData.modules.find(m => m.id === moduleId)?.lessons.length + 1 || 1}`,
+      title: `Lliçó ${lessonCount + 1}`,
       type: 'video',
       duration: 45,
       content: '',
       videoUrl: '',
       isPreview: false,
-      order: formData.modules.find(m => m.id === moduleId)?.lessons.length + 1 || 1
+      order: lessonCount + 1
     };
 
-    const updatedModules = formData.modules.map(module =>
-      module.id === moduleId
-        ? { ...module, lessons: [...module.lessons, newLesson] }
-        : module
+    const updatedModules = formData.modules.map(existingModule =>
+      existingModule.id === moduleId
+        ? { ...existingModule, lessons: [...existingModule.lessons, newLesson] }
+        : existingModule
     );
     updateField('modules', updatedModules);
   };
@@ -573,7 +567,7 @@ export const Step3Contingut: React.FC<StepProps> = ({
             <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
               <h4 className="font-medium text-gray-900 mb-3">Vista prèvia del contingut generat:</h4>
               <div className="space-y-2">
-                {aiGeneratedContent.lessons.map((lesson: any, index: number) => (
+                {aiGeneratedContent.lessons.map((lesson: Lesson, index: number) => (
                   <div key={lesson.id} className="flex items-center justify-between p-2 bg-white rounded border">
                     <div>
                       <span className="text-green-600 mr-2">✓</span>
@@ -1070,7 +1064,7 @@ export const Step5Preus: React.FC<StepProps> = ({ formData, updateField, errors 
 };
 
 // Step 6: Certificat i Extras
-export const Step6Certificat: React.FC<StepProps> = ({ formData, updateField, errors }) => {
+export const Step6Certificat: React.FC<StepProps> = ({ formData, updateField }) => {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-6">
@@ -1196,7 +1190,7 @@ export const Step6Certificat: React.FC<StepProps> = ({ formData, updateField, er
 };
 
 // Step 7: Revisió Final
-export const Step7Review: React.FC<StepProps> = ({ formData, updateField, courseTypeConfig, calculateTotalDuration, aiGeneratedContent }) => {
+export const Step7Review: React.FC<StepProps> = ({ formData, updateField, courseTypeConfig, calculateTotalDuration }) => {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-6">
@@ -1335,7 +1329,7 @@ export const Step7Review: React.FC<StepProps> = ({ formData, updateField, course
   );
 };
 
-export default {
+const FormacioWizardSteps = {
   Step1TipusCurs,
   Step2Informacio,
   Step3Contingut,
@@ -1344,3 +1338,5 @@ export default {
   Step6Certificat,
   Step7Review
 };
+
+export default FormacioWizardSteps;

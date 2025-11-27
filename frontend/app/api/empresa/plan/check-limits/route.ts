@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { prismaClient } from '@/lib/prisma';
 import {
   checkCanCreateOffer,
   checkCanActivateOffer,
@@ -16,10 +17,27 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session?.user?.companyId) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         { success: false, error: 'No autoritzat' },
         { status: 401 }
+      );
+    }
+
+    const sessionUser = await prismaClient.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        ownedCompanyId: true,
+        memberCompanyId: true,
+      },
+    });
+
+    const companyId = sessionUser?.ownedCompanyId || sessionUser?.memberCompanyId;
+
+    if (!companyId) {
+      return NextResponse.json(
+        { success: false, error: 'No pertanys a cap empresa' },
+        { status: 403 }
       );
     }
 
@@ -37,19 +55,19 @@ export async function GET(request: NextRequest) {
 
     switch (action) {
       case 'create_offer':
-        result = await checkCanCreateOffer(session.user.companyId);
+        result = await checkCanCreateOffer(companyId);
         break;
 
       case 'activate_offer':
-        result = await checkCanActivateOffer(session.user.companyId);
+        result = await checkCanActivateOffer(companyId);
         break;
 
       case 'generate_coupon':
-        result = await checkCanGenerateCoupon(session.user.companyId);
+        result = await checkCanGenerateCoupon(companyId);
         break;
 
       case 'add_team_member':
-        result = await checkCanAddTeamMember(session.user.companyId);
+        result = await checkCanAddTeamMember(companyId);
         break;
 
       default:

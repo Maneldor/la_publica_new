@@ -1,4 +1,4 @@
-import { PrismaClient, JobStatus, JobPriority } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 export class JobsService {
   private prisma: PrismaClient;
@@ -9,8 +9,8 @@ export class JobsService {
 
   // GET /api/admin/jobs - Llistar jobs amb filtres
   async getAllJobs(filters?: {
-    status?: JobStatus | JobStatus[];
-    priority?: JobPriority;
+    status?: any | any[];
+    priority?: any;
     sourceId?: string;
     limit?: number;
     offset?: number;
@@ -32,7 +32,7 @@ export class JobsService {
     }
 
     const [jobs, total] = await Promise.all([
-      this.prisma.scrapingJob.findMany({
+      (this.prisma as any).scrapingJob.findMany({
         where,
         include: {
           source: {
@@ -50,7 +50,7 @@ export class JobsService {
         take: filters?.limit || 50,
         skip: filters?.offset || 0,
       }),
-      this.prisma.scrapingJob.count({ where })
+      (this.prisma as any).scrapingJob.count({ where })
     ]);
 
     return {
@@ -63,7 +63,7 @@ export class JobsService {
 
   // GET /api/admin/jobs/:id - Obtenir detalls d'un job
   async getJobById(id: string) {
-    const job = await this.prisma.scrapingJob.findUnique({
+    const job = await (this.prisma as any).scrapingJob.findUnique({
       where: { id },
       include: {
         source: {
@@ -87,7 +87,7 @@ export class JobsService {
     // Obtenir leads generats per aquest job si està completat
     let generatedLeads = null;
     if (job.status === 'COMPLETED' && job.leadsGenerated > 0) {
-      generatedLeads = await this.prisma.lead.findMany({
+      generatedLeads = await (this.prisma as any).company_leads.findMany({
         where: {
           sourceId: job.sourceId,
           createdAt: {
@@ -115,7 +115,7 @@ export class JobsService {
 
   // POST /api/admin/jobs/:id/cancel - Cancel·lar un job
   async cancelJob(id: string) {
-    const job = await this.prisma.scrapingJob.findUnique({
+    const job = await (this.prisma as any).scrapingJob.findUnique({
       where: { id }
     });
 
@@ -127,7 +127,7 @@ export class JobsService {
       throw new Error(`Cannot cancel job with status ${job.status}`);
     }
 
-    const updated = await this.prisma.scrapingJob.update({
+    const updated = await (this.prisma as any).scrapingJob.update({
       where: { id },
       data: {
         status: 'CANCELLED',
@@ -141,7 +141,7 @@ export class JobsService {
 
   // POST /api/admin/jobs/:id/retry - Reintentar un job fallat
   async retryJob(id: string) {
-    const job = await this.prisma.scrapingJob.findUnique({
+    const job = await (this.prisma as any).scrapingJob.findUnique({
       where: { id },
       include: { source: true }
     });
@@ -155,7 +155,7 @@ export class JobsService {
     }
 
     // Crear nou job amb la mateixa configuració
-    const newJob = await this.prisma.scrapingJob.create({
+    const newJob = await (this.prisma as any).scrapingJob.create({
       data: {
         sourceId: job.sourceId,
         status: 'PENDING',
@@ -176,7 +176,7 @@ export class JobsService {
 
   // DELETE /api/admin/jobs/:id - Eliminar un job
   async deleteJob(id: string) {
-    const job = await this.prisma.scrapingJob.findUnique({
+    const job = await (this.prisma as any).scrapingJob.findUnique({
       where: { id }
     });
 
@@ -189,7 +189,7 @@ export class JobsService {
       throw new Error(`Cannot delete ${job.status.toLowerCase()} job. Cancel it first.`);
     }
 
-    await this.prisma.scrapingJob.delete({
+    await (this.prisma as any).scrapingJob.delete({
       where: { id }
     });
 
@@ -212,21 +212,21 @@ export class JobsService {
     }
 
     // Stats per estat
-    const statusStats = await this.prisma.scrapingJob.groupBy({
+    const statusStats = await (this.prisma as any).scrapingJob.groupBy({
       by: ['status'],
       where,
       _count: { status: true },
     });
 
     // Stats per prioritat
-    const priorityStats = await this.prisma.scrapingJob.groupBy({
+    const priorityStats = await (this.prisma as any).scrapingJob.groupBy({
       by: ['priority'],
       where,
       _count: { priority: true },
     });
 
     // Total leads generats
-    const totalLeadsGenerated = await this.prisma.scrapingJob.aggregate({
+    const totalLeadsGenerated = await (this.prisma as any).scrapingJob.aggregate({
       where: {
         ...where,
         status: 'COMPLETED',
@@ -236,7 +236,7 @@ export class JobsService {
     });
 
     // Jobs recents (últimes 24h)
-    const recentJobs = await this.prisma.scrapingJob.count({
+    const recentJobs = await (this.prisma as any).scrapingJob.count({
       where: {
         ...where,
         createdAt: {
@@ -246,7 +246,7 @@ export class JobsService {
     });
 
     // Temps mitjà d'execució (només completats)
-    const completedJobs = await this.prisma.scrapingJob.findMany({
+    const completedJobs = await (this.prisma as any).scrapingJob.findMany({
       where: {
         ...where,
         status: 'COMPLETED',
@@ -261,7 +261,7 @@ export class JobsService {
 
     let averageExecutionTime = 0;
     if (completedJobs.length > 0) {
-      const totalTime = completedJobs.reduce((sum, job) => {
+      const totalTime = completedJobs.reduce((sum: any, job: any) => {
         const duration = job.completedAt!.getTime() - job.startedAt!.getTime();
         return sum + duration;
       }, 0);
@@ -269,17 +269,17 @@ export class JobsService {
     }
 
     // Tasa d'èxit
-    const totalCompleted = statusStats.find(s => s.status === 'COMPLETED')?._count.status || 0;
-    const totalFailed = statusStats.find(s => s.status === 'FAILED')?._count.status || 0;
+    const totalCompleted = statusStats.find((s: any) => s.status === 'COMPLETED')?._count.status || 0;
+    const totalFailed = statusStats.find((s: any) => s.status === 'FAILED')?._count.status || 0;
     const totalJobs = totalCompleted + totalFailed;
     const successRate = totalJobs > 0 ? (totalCompleted / totalJobs) * 100 : 0;
 
     return {
-      statusStats: statusStats.map(stat => ({
+      statusStats: statusStats.map((stat: any) => ({
         status: stat.status,
         count: stat._count.status,
       })),
-      priorityStats: priorityStats.map(stat => ({
+      priorityStats: priorityStats.map((stat: any) => ({
         priority: stat.priority,
         count: stat._count.priority,
       })),
@@ -295,7 +295,7 @@ export class JobsService {
 
   // GET /api/admin/jobs/active - Jobs actius (PENDING + RUNNING)
   async getActiveJobs() {
-    const jobs = await this.prisma.scrapingJob.findMany({
+    const jobs = await (this.prisma as any).scrapingJob.findMany({
       where: {
         status: { in: ['PENDING', 'RUNNING'] }
       },
@@ -319,7 +319,7 @@ export class JobsService {
 
   // GET /api/admin/jobs/history - Historial amb paginació
   async getJobHistory(options: {
-    status?: JobStatus[];
+    status?: any[];
     sourceId?: string;
     page?: number;
     pageSize?: number;
@@ -339,7 +339,7 @@ export class JobsService {
     }
 
     const [jobs, total] = await Promise.all([
-      this.prisma.scrapingJob.findMany({
+      (this.prisma as any).scrapingJob.findMany({
         where,
         include: {
           source: {
@@ -354,7 +354,7 @@ export class JobsService {
         take: pageSize,
         skip: offset,
       }),
-      this.prisma.scrapingJob.count({ where })
+      (this.prisma as any).scrapingJob.count({ where })
     ]);
 
     return {
@@ -373,7 +373,7 @@ export class JobsService {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
 
-    const result = await this.prisma.scrapingJob.deleteMany({
+    const result = await (this.prisma as any).scrapingJob.deleteMany({
       where: {
         status: { in: ['COMPLETED', 'FAILED', 'CANCELLED'] },
         completedAt: { lte: cutoffDate }

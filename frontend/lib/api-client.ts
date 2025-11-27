@@ -21,8 +21,8 @@ export async function apiClient(
   const session = await getSession();
 
   // Configurar headers
-  const headers: HeadersInit = {
-    ...customOptions.headers,
+  const headers: Record<string, string> = {
+    ...(customOptions.headers as Record<string, string>),
   };
 
   // Añadir Content-Type si hay body
@@ -65,9 +65,9 @@ export async function apiClient(
         role: session.user.role
       });
       // Fallback: enviar headers de usuario para debug
-      headers['X-User-Email'] = session.user.email || '';
-      headers['X-User-Id'] = session.user.id || '';
-      headers['X-User-Role'] = session.user.role || '';
+      if (session.user.email) headers['X-User-Email'] = session.user.email;
+      if (session.user.id) headers['X-User-Id'] = session.user.id;
+      if (session.user.role) headers['X-User-Role'] = session.user.role;
     } else {
       console.log('❌ No hay sesión ni token disponible');
     }

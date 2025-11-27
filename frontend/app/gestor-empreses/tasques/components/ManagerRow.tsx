@@ -88,7 +88,7 @@ export default function ManagerRow({
   const getProgressPercentage = (task: Task) => {
     if (task.status === 'COMPLETED') return 100;
     if (task.status === 'IN_PROGRESS') return 60;
-    if (task.status === 'WAITING') return 30;
+    if (task.status === 'PENDING') return 30;
     return 10;
   };
 

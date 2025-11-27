@@ -55,6 +55,8 @@ const TEMP_PLAN_CONFIGS: Record<PlanTier, PlanLimits> = {
   }
 };
 
+const isUnlimitedValue = (value: number | string) => value === 'unlimited' || value === -1;
+
 export interface ProrationCalculation {
   creditAmount: number;
   newPlanCost: number;
@@ -170,12 +172,13 @@ export function comparePlans(currentPlan: PlanTier, newPlan: PlanTier): PlanComp
       new: newPlanConfig.maxActiveOffers,
       improvement: formatLimitImprovement(current.maxActiveOffers, newPlanConfig.maxActiveOffers)
     },
-    {
-      label: 'Cupons per mes',
-      current: current.maxCouponsPerMonth,
-      new: newPlanConfig.maxCouponsPerMonth,
-      improvement: formatLimitImprovement(current.maxCouponsPerMonth, newPlanConfig.maxCouponsPerMonth)
-    },
+    // Cupones no están implementados en PlanLimits actualmente
+    // {
+    //   label: 'Cupons per mes',
+    //   current: current.maxCouponsPerMonth,
+    //   new: newPlanConfig.maxCouponsPerMonth,
+    //   improvement: formatLimitImprovement(current.maxCouponsPerMonth, newPlanConfig.maxCouponsPerMonth)
+    // },
     {
       label: 'Membres d\'equip',
       current: current.maxTeamMembers,
@@ -184,8 +187,11 @@ export function comparePlans(currentPlan: PlanTier, newPlan: PlanTier): PlanComp
     }
   ].filter(item => {
     // Només mostrar els que milloren realment
-    if (item.current === 'unlimited' || item.new === item.current) return false;
-    if (item.new === 'unlimited') return true;
+    if (isUnlimitedValue(item.current) && isUnlimitedValue(item.new)) return false;
+    if (isUnlimitedValue(item.new) && !isUnlimitedValue(item.current)) return true;
+    if (isUnlimitedValue(item.current) && !isUnlimitedValue(item.new)) return false;
+    if (String(item.new) === String(item.current)) return false;
+
     return typeof item.new === 'number' && typeof item.current === 'number' && item.new > item.current;
   });
 
@@ -204,7 +210,7 @@ export function comparePlans(currentPlan: PlanTier, newPlan: PlanTier): PlanComp
  * Formata la millora d'un límit per mostrar-la a l'usuari
  */
 function formatLimitImprovement(current: number | string, newLimit: number | string): string {
-  if (newLimit === 'unlimited') {
+  if (isUnlimitedValue(newLimit)) {
     return '→ Il·limitat';
   }
 
@@ -220,7 +226,7 @@ function formatLimitImprovement(current: number | string, newLimit: number | str
  * Determina si és un upgrade o downgrade
  */
 export function isUpgrade(currentPlan: PlanTier, newPlan: PlanTier): boolean {
-  const planOrder: PlanTier[] = ['PIONERES', 'ESTANDAR', 'ESTRATEGIC', 'ENTERPRISE'];
+  const planOrder: PlanTier[] = ['PIONERES', 'STANDARD', 'STRATEGIC', 'ENTERPRISE'];
   const currentIndex = planOrder.indexOf(currentPlan);
   const newIndex = planOrder.indexOf(newPlan);
 

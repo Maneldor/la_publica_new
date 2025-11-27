@@ -1,4 +1,8 @@
-import type { JobStatus, AIOperation } from '@prisma/client';
+// Tipos locales para reemplazar imports de Prisma que no existen
+export type JobStatus = 'QUEUED' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED' | 'RETRYING';
+export type AIOperation = 'ANALYZE' | 'SCORE' | 'GENERATE_PITCH' | 'ENRICH' | 'CLASSIFY' | 'VALIDATE';
+export type ScheduleFrequency = 'HOURLY' | 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY' | 'CUSTOM';
+export type AIProviderType = 'OPENAI' | 'ANTHROPIC' | 'GOOGLE' | 'AZURE' | 'CUSTOM';
 
 export interface JobData {
   id: string;
@@ -21,6 +25,9 @@ export interface ScrapingJobData {
   sourceName: string;
   config: any;
   maxResults?: number;
+  location?: string;
+  industry?: string;
+  keywords?: string[];
 }
 
 export interface AIProcessingJobData {

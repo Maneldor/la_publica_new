@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { generateInvoicePDF, type InvoiceData } from '@/lib/pdf/invoicePDF';
 
 // ============================================
@@ -26,12 +26,17 @@ interface Invoice {
   company: {
     id: string;
     name: string;
+    cif?: string;
+    address?: string;
+    city?: string;
+    postalCode?: string;
   };
   items: InvoiceItem[];
   payments: Payment[];
   totalPaid: number;
   pending: number;
   isOverdue: boolean;
+  notes?: string;
 }
 
 interface InvoiceItem {
@@ -218,15 +223,11 @@ export default function FacturacioPage() {
   // EFECTOS
   // ============================================
 
-  useEffect(() => {
-    fetchData();
-  }, [statusFilter, showOverdueOnly]);
-
   // ============================================
   // FUNCIONES API
   // ============================================
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -257,7 +258,11 @@ export default function FacturacioPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter, showOverdueOnly]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const viewDetails = (id: string) => {
     const invoice = invoices.find(inv => inv.id === id);

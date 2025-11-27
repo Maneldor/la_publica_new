@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prismaClient } from '@/lib/prisma';
 import { z } from 'zod';
+import { NotificationType, Prisma } from '@prisma/client';
 
 // Schema de validación para query parameters
 const walletQuerySchema = z.object({
@@ -52,7 +53,7 @@ export async function GET(req: NextRequest) {
         {
           success: false,
           error: 'Paràmetres de consulta invàlids',
-          details: validation.error.errors
+          details: validation.error.issues
         },
         { status: 400 }
       );
@@ -66,20 +67,16 @@ export async function GET(req: NextRequest) {
     });
 
     if (!userWallet) {
-      // Crear wallet si no existe
       userWallet = await prismaClient.userWallet.create({
         data: {
-          userId: session.user.id,
-          balance: 0,
-          totalEarned: 0,
-          totalSpent: 0
+          userId: session.user.id
         }
       });
     }
 
     // 4. Construir filtros para transacciones
-    const transactionFilters: any = {
-      userId: session.user.id
+    const transactionFilters: Prisma.WalletTransactionWhereInput = {
+      walletId: userWallet.id
     };
 
     if (type) {
@@ -109,7 +106,6 @@ export async function GET(req: NextRequest) {
           id: true,
           type: true,
           amount: true,
-          balance: true,
           description: true,
           createdAt: true,
           metadata: true
@@ -126,37 +122,40 @@ export async function GET(req: NextRequest) {
       const [creditSum, debitSum, lastMonthTransactions, thisWeekTransactions] = await Promise.all([
         // Total de créditos
         prismaClient.walletTransaction.aggregate({
-          where: { userId: session.user.id, type: 'CREDIT' },
+          where: { walletId: userWallet.id, type: 'CREDIT' },
           _sum: { amount: true }
         }),
         // Total de débitos
         prismaClient.walletTransaction.aggregate({
-          where: { userId: session.user.id, type: 'DEBIT' },
+          where: { walletId: userWallet.id, type: 'DEBIT' },
           _sum: { amount: true }
         }),
         // Transacciones último mes
         prismaClient.walletTransaction.count({
           where: {
-            userId: session.user.id,
+            walletId: userWallet.id,
             createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
           }
         }),
         // Transacciones esta semana
         prismaClient.walletTransaction.count({
           where: {
-            userId: session.user.id,
+            walletId: userWallet.id,
             createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
           }
         })
       ]);
 
+      const creditTotal = creditSum._sum?.amount ? Number(creditSum._sum.amount) : 0;
+      const debitTotal = debitSum._sum?.amount ? Number(debitSum._sum.amount) : 0;
+
       additionalStats = {
-        totalCredits: creditSum._sum.amount?.toString() || '0',
-        totalDebits: debitSum._sum.amount?.toString() || '0',
+        totalCredits: creditSum._sum?.amount?.toString() || '0',
+        totalDebits: debitSum._sum?.amount?.toString() || '0',
         lastMonthTransactions,
         thisWeekTransactions,
         averageTransactionAmount: totalTransactions > 0
-          ? ((parseFloat(userWallet.totalEarned.toString()) + parseFloat(userWallet.totalSpent.toString())) / totalTransactions).toFixed(2)
+          ? ((creditTotal + debitTotal) / totalTransactions).toFixed(2)
           : '0'
       };
     }
@@ -166,7 +165,6 @@ export async function GET(req: NextRequest) {
       id: transaction.id,
       type: transaction.type,
       amount: transaction.amount.toString(),
-      balance: transaction.balance.toString(),
       description: transaction.description,
       createdAt: transaction.createdAt.toISOString(),
       metadata: transaction.metadata || {}
@@ -180,7 +178,7 @@ export async function GET(req: NextRequest) {
     // 9. Crear audit log
     await prismaClient.notification.create({
       data: {
-        type: 'AUDIT_LOG',
+        type: NotificationType.SYSTEM,
         title: 'USER_ACCESS: Consulta wallet',
         message: `Usuario consultó su monedero digital - ${totalTransactions} transacciones`,
         priority: 'LOW',
@@ -204,11 +202,9 @@ export async function GET(req: NextRequest) {
       data: {
         wallet: {
           balance: userWallet.balance.toString(),
-          totalEarned: userWallet.totalEarned.toString(),
-          totalSpent: userWallet.totalSpent.toString(),
-          lastTransactionAt: userWallet.lastTransactionAt?.toISOString() || null,
+          currency: userWallet.currency,
           createdAt: userWallet.createdAt.toISOString(),
-          isActive: userWallet.isActive
+          updatedAt: userWallet.updatedAt.toISOString()
         },
         transactions: formattedTransactions,
         pagination: {
@@ -234,7 +230,10 @@ export async function GET(req: NextRequest) {
         {
           success: false,
           error: 'Paràmetres invàlids',
-          details: error.errors
+          details: error.issues.map(issue => ({
+            field: issue.path.join('.'),
+            message: issue.message
+          }))
         },
         { status: 400 }
       );

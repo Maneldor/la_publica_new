@@ -2,12 +2,12 @@
 
 import { useState } from 'react';
 import { Euro, Package, Plus, X } from 'lucide-react';
-import { AdminAnunciFormData } from '../../hooks/useAdminCreateAnunci';
+import { AdminAnunciFormData, UpdateAdminAnunciField } from '../../hooks/useAdminCreateAnunci';
 
 interface Step2Props {
   formData: AdminAnunciFormData;
   errors: Record<string, string>;
-  updateField: (field: keyof AdminAnunciFormData, value: any) => void;
+  updateField: UpdateAdminAnunciField;
 }
 
 export const Step2Details = ({ formData, errors, updateField }: Step2Props) => {
@@ -40,7 +40,7 @@ export const Step2Details = ({ formData, errors, updateField }: Step2Props) => {
           Detalls i Preu
         </h2>
         <p className="text-gray-600">
-          Afegeix informació sobre el preu i l'estat del producte
+          Afegeix informació sobre el preu i l&apos;estat del producte
         </p>
       </div>
 
@@ -213,8 +213,8 @@ export const Step2Details = ({ formData, errors, updateField }: Step2Props) => {
         </p>
         <ul className="text-sm text-green-700 space-y-1">
           <li>• Investiga preus similars abans de publicar</li>
-          <li>• Sigues realista amb l'estat del producte</li>
-          <li>• Considera els costos d'enviament</li>
+          <li>• Sigues realista amb l&apos;estat del producte</li>
+          <li>• Considera els costos d&apos;enviament</li>
           <li>• La negociació pot accelerar la venda</li>
         </ul>
       </div>

@@ -272,7 +272,7 @@ export const Step8Review = ({ formData, errors, onSave, isSaving = false }: Step
                           <Star
                             key={i}
                             className={`w-3 h-3 ${
-                              i < getLevelStars(lang.proficiency)
+                              i < getLevelStars(lang.level)
                                 ? 'text-yellow-400 fill-current'
                                 : 'text-gray-300'
                             }`}

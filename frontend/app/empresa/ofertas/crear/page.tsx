@@ -82,7 +82,7 @@ export default function CrearOfertaPage() {
       title: 'Tipus redempció',
       description: 'Com accediran els usuaris a l\'oferta',
       component: <Step2RedemptionType formData={formData} onChange={setFormData} />,
-      isValid: formData.redemptionType === 'ONLINE' ? !!formData.externalUrl : true
+      isValid: (formData.redemptionType as string) === 'ONLINE' ? !!formData.externalUrl : true
     },
     {
       id: 'preus',

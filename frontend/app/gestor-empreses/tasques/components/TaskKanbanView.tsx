@@ -31,7 +31,7 @@ const columns: Column[] = [
     icon: 'M13 10V3L4 14h7v7l9-11h-7z',
   },
   {
-    id: 'WAITING',
+    id: 'PENDING',
     title: 'Esperant',
     color: 'bg-purple-100 border-purple-300 text-purple-700',
     icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',

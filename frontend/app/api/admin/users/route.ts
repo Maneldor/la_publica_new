@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prismaClient } from '@/lib/prisma';
+import { UserRole, UserType } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 /**
  * GET /api/admin/users
@@ -165,8 +167,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Mapear userType del frontend al esquema de Prisma
-    let prismaUserType = 'EMPLOYEE'; // default
-    let role = 'USER'; // default
+    let prismaUserType: UserType = 'EMPLOYEE'; // default
+    let role: UserRole = 'USER'; // default
 
     switch (userType) {
       case 'SUPER_ADMIN':
@@ -200,7 +202,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Hash password
-    const bcrypt = require('bcryptjs');
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Crear nombre completo basado en userData

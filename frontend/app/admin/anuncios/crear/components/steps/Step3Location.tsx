@@ -1,12 +1,12 @@
 'use client';
 
 import { MapPin, Package, Truck } from 'lucide-react';
-import { AdminAnunciFormData } from '../../hooks/useAdminCreateAnunci';
+import { AdminAnunciFormData, UpdateAdminAnunciField } from '../../hooks/useAdminCreateAnunci';
 
 interface Step3Props {
   formData: AdminAnunciFormData;
   errors: Record<string, string>;
-  updateField: (field: keyof AdminAnunciFormData, value: any) => void;
+  updateField: UpdateAdminAnunciField;
 }
 
 export const Step3Location = ({ formData, errors, updateField }: Step3Props) => {
@@ -104,7 +104,7 @@ export const Step3Location = ({ formData, errors, updateField }: Step3Props) => 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-4">
           <Truck className="w-4 h-4 inline mr-2" />
-          Opcions d'entrega *
+          Opcions d&apos;entrega *
         </label>
         <p className="text-sm text-gray-600 mb-4">
           Selecciona com els compradors poden obtenir el producte
@@ -154,7 +154,7 @@ export const Step3Location = ({ formData, errors, updateField }: Step3Props) => 
                 </span>
               </div>
               <p className="text-sm text-gray-600 mt-1">
-                Pots enviar el producte (el comprador paga l'enviament)
+                Pots enviar el producte (el comprador paga l&apos;enviament)
               </p>
             </div>
           </label>
@@ -178,7 +178,7 @@ export const Step3Location = ({ formData, errors, updateField }: Step3Props) => 
                 </span>
               </div>
               <p className="text-sm text-gray-600 mt-1">
-                L'enviament està inclòs en el preu
+                L&apos;enviament està inclòs en el preu
               </p>
             </div>
           </label>

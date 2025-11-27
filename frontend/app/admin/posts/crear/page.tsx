@@ -52,7 +52,7 @@ export default function CrearPostSocialPage() {
       const token = localStorage.getItem('token');
 
       // Upload images first if any
-      let imageUrls: string[] = [];
+      const imageUrls: string[] = [];
       if (formData.images.length > 0) {
         for (const image of formData.images) {
           const imageFormData = new FormData();

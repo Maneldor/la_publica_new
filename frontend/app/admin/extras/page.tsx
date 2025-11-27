@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback } from 'react';
 
 // ============================================
 // TIPOS
@@ -73,7 +72,6 @@ const PRICE_TYPES: { value: PriceType; label: string }[] = [
 // ============================================
 
 export default function ExtrasPage() {
-  const router = useRouter();
 
   // Estados
   const [extras, setExtras] = useState<Extra[]>([]);
@@ -103,15 +101,11 @@ export default function ExtrasPage() {
   // EFECTOS
   // ============================================
 
-  useEffect(() => {
-    fetchExtras();
-  }, [categoryFilter, activeFilter]);
-
   // ============================================
   // FUNCIONES API
   // ============================================
 
-  const fetchExtras = async () => {
+  const fetchExtras = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -135,7 +129,11 @@ export default function ExtrasPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [categoryFilter, activeFilter, searchTerm]);
+
+  useEffect(() => {
+    fetchExtras();
+  }, [fetchExtras]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -229,7 +227,7 @@ export default function ExtrasPage() {
       if (!res.ok) throw new Error('Error al cambiar estado');
 
       fetchExtras();
-    } catch (err) {
+    } catch {
       alert('Error al cambiar estado del extra');
     }
   };

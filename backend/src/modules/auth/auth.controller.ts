@@ -130,7 +130,7 @@ export const login = async (req: Request, res: Response) => {
       // Intentar buscar usuario en la base de datos
       const user = await prisma.user.findUnique({ where: { email } });
 
-      if (user && user.isActive) {
+      if (user && user.isActive && user.password) {
         const validPassword = await bcrypt.compare(password, user.password);
         if (validPassword) {
           // Generar token JWT

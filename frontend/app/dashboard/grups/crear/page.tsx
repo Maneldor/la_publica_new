@@ -7,14 +7,23 @@ import { PageTemplate } from '../../../../components/ui/PageTemplate';
 export default function CreateGroupPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    description: string;
+    purpose: string;
+    category: string;
+    privacy: 'public' | 'private' | 'secret';
+    coverImage: string;
+    tags: string[];
+    newTag: string;
+  }>({
     name: '',
     description: '',
     purpose: '', // Nuevo campo: finalidad
     category: '',
-    privacy: 'public' as const, // Solo público permitido
+    privacy: 'public', // Solo público permitido
     coverImage: '',
-    tags: [] as string[],
+    tags: [],
     newTag: ''
   });
   const [errors, setErrors] = useState<Record<string, string>>({});

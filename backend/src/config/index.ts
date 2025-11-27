@@ -5,14 +5,28 @@ import path from 'path';
 const envPath = path.resolve(__dirname, '../../.env');
 dotenv.config({ path: envPath });
 
-console.log('📄 Configuración cargada desde:', envPath);
+// Validar variables críticas en producción
+const isProduction = process.env.NODE_ENV === 'production';
+const jwtSecret = process.env.JWT_SECRET;
+
+if (isProduction && !jwtSecret) {
+  throw new Error('JWT_SECRET is required in production environment');
+}
+
+if (isProduction && jwtSecret === 'your-secret-key-change-in-production') {
+  throw new Error('JWT_SECRET must be changed from default value in production');
+}
+
+if (!isProduction) {
+  console.log('📄 Configuración cargada desde:', envPath);
+}
 
 export const config = {
   env: process.env.NODE_ENV || 'development',
   port: parseInt(process.env.PORT || '3001', 10),
   
   jwt: {
-    secret: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
+    secret: jwtSecret || (isProduction ? '' : 'your-secret-key-change-in-production'),
     expiresIn: process.env.JWT_EXPIRES_IN || '7d',
   },
   
@@ -81,4 +95,6 @@ export const config = {
   },
 };
 
-console.log('✅ Configuración cargada para entorno:', config.env);
+if (!isProduction) {
+  console.log('✅ Configuración cargada para entorno:', config.env);
+}

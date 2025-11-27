@@ -23,22 +23,25 @@ const convertApiConversation = (apiConv: ApiConversation): Conversation => {
   return {
     id: apiConv.id,
     name: apiConv.name,
-    type: apiConv.type as 'individual' | 'group',
+    type: (apiConv.type === 'company' ? 'company' : apiConv.type) as 'individual' | 'group' | 'company',
     avatar: apiConv.avatar,
     lastMessage: apiConv.lastMessage ? {
       id: apiConv.lastMessage.id,
+      conversationId: apiConv.id,
       senderId: apiConv.lastMessage.senderId,
       content: apiConv.lastMessage.content,
       timestamp: new Date(apiConv.lastMessage.timestamp),
-      type: apiConv.lastMessage.type as 'text' | 'image' | 'file' | 'audio',
-      status: apiConv.lastMessage.status as 'sent' | 'delivered' | 'read',
-      replyTo: apiConv.lastMessage.replyTo ? {
-        id: apiConv.lastMessage.replyTo.id,
-        content: apiConv.lastMessage.replyTo.content,
-        sender: apiConv.lastMessage.replyTo.sender
-      } : undefined,
-      attachments: apiConv.lastMessage.attachments || []
-    } : undefined,
+      type: (apiConv.lastMessage.type === 'file' ? 'document' : apiConv.lastMessage.type) as 'text' | 'image' | 'document' | 'audio' | 'video' | 'link' | 'system',
+      status: apiConv.lastMessage.status as 'sending' | 'sent' | 'delivered' | 'read',
+      replyTo: apiConv.lastMessage.replyTo ? parseInt(apiConv.lastMessage.replyTo.id) : undefined,
+      attachments: (apiConv.lastMessage.attachments || []).map(att => ({
+        id: att.id || '',
+        type: att.type === 'file' ? 'document' : att.type as 'image' | 'document' | 'audio' | 'video',
+        url: att.url || '',
+        name: att.name,
+        size: att.size
+      }))
+    } : null,
     unreadCount: apiConv.unreadCount,
     isPinned: apiConv.isPinned,
     isMuted: apiConv.isMuted,
@@ -47,27 +50,37 @@ const convertApiConversation = (apiConv: ApiConversation): Conversation => {
       id: p.id,
       name: p.name,
       avatar: p.avatar,
-      isOnline: p.isOnline
+      isOnline: p.isOnline,
+      lastSeen: new Date().toISOString()
     }))
   };
 };
 
 const convertApiMessage = (apiMsg: ApiMessage, conversationId?: string): Message => {
+  // Mapear tipos de mensaje
+  let messageType: 'text' | 'image' | 'document' | 'audio' | 'video' | 'link' | 'system' = 'text';
+  if (apiMsg.type === 'file') messageType = 'document';
+  else if (apiMsg.type === 'image') messageType = 'image';
+  else if (apiMsg.type === 'audio') messageType = 'audio';
+  else messageType = apiMsg.type as 'text' | 'link' | 'system';
+
   return {
     id: apiMsg.id,
     conversationId: apiMsg.conversationId || conversationId || '',
     senderId: apiMsg.senderId,
     content: apiMsg.content,
     timestamp: new Date(apiMsg.timestamp),
-    type: apiMsg.type as 'text' | 'image' | 'file' | 'audio',
-    status: apiMsg.status as 'sent' | 'delivered' | 'read',
+    type: messageType,
+    status: apiMsg.status as 'sending' | 'sent' | 'delivered' | 'read',
     isEdited: apiMsg.isEdited || false,
-    replyTo: apiMsg.replyTo ? {
-      id: apiMsg.replyTo.id,
-      content: apiMsg.replyTo.content,
-      sender: apiMsg.replyTo.sender
-    } : undefined,
-    attachments: apiMsg.attachments || []
+    replyTo: apiMsg.replyTo ? parseInt(apiMsg.replyTo.id) : undefined,
+    attachments: (apiMsg.attachments || []).map(att => ({
+      id: att.id || '',
+      type: att.type === 'file' ? 'document' : att.type as 'image' | 'document' | 'audio' | 'video',
+      url: att.url || '',
+      name: att.name,
+      size: att.size
+    }))
   };
 };
 
@@ -78,12 +91,12 @@ export default function EmpresaMissatgesPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageText, setMessageText] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeFilter, setActiveFilter] = useState<'all' | 'starred' | 'muted' | 'archived' | 'gestors' | 'equip'>('all');
+  const [activeFilter, setActiveFilter] = useState<'all' | 'starred' | 'muted' | 'archived' | 'gestors' | 'companies' | 'admins'>('all');
   const [isTyping, setIsTyping] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
-  const [selectedMessages, setSelectedMessages] = useState<number[]>([]);
+  const [selectedMessages, setSelectedMessages] = useState<string[]>([]);
   const [showSearchInChat, setShowSearchInChat] = useState(false);
   const [searchInChatTerm, setSearchInChatTerm] = useState('');
   const [showGroupInfo, setShowGroupInfo] = useState(false);
@@ -218,7 +231,7 @@ export default function EmpresaMissatgesPage() {
       type: 'text',
       timestamp: new Date(),
       status: 'sending',
-      replyTo: replyingTo?.id
+      replyTo: replyingTo?.id ? parseInt(replyingTo.id) : undefined
     };
 
     // Afegir missatge temporal a la UI
@@ -255,9 +268,9 @@ export default function EmpresaMissatgesPage() {
       }
     } catch (err) {
       console.error('Error enviant missatge:', err);
-      // Marcar el missatge com a error
+      // Marcar el missatge com a error (usar 'sending' como fallback ya que 'error' no existe)
       setMessages(prev => prev.map(msg =>
-        msg.id === tempMessage.id ? { ...msg, status: 'error' } : msg
+        msg.id === tempMessage.id ? { ...msg, status: 'sending' } : msg
       ));
     }
   };
@@ -271,11 +284,11 @@ export default function EmpresaMissatgesPage() {
     }
   };
 
-  const togglePin = async (conversationId: number) => {
+  const togglePin = async (conversationId: string) => {
     try {
       const conversation = conversations.find(c => c.id === conversationId);
       if (conversation) {
-        await empresaConversationsApi.pinConversation(conversationId.toString(), !conversation.isPinned);
+        await empresaConversationsApi.pinConversation(conversationId, !conversation.isPinned);
         setConversations(prev => prev.map(conv =>
           conv.id === conversationId ? { ...conv, isPinned: !conv.isPinned } : conv
         ));
@@ -285,11 +298,11 @@ export default function EmpresaMissatgesPage() {
     }
   };
 
-  const toggleMute = async (conversationId: number) => {
+  const toggleMute = async (conversationId: string) => {
     try {
       const conversation = conversations.find(c => c.id === conversationId);
       if (conversation) {
-        await empresaConversationsApi.muteConversation(conversationId.toString(), !conversation.isMuted);
+        await empresaConversationsApi.muteConversation(conversationId, !conversation.isMuted);
         setConversations(prev => prev.map(conv =>
           conv.id === conversationId ? { ...conv, isMuted: !conv.isMuted } : conv
         ));
@@ -299,11 +312,11 @@ export default function EmpresaMissatgesPage() {
     }
   };
 
-  const archiveConversation = async (conversationId: number) => {
+  const archiveConversation = async (conversationId: string) => {
     try {
       const conversation = conversations.find(c => c.id === conversationId);
       if (conversation) {
-        await empresaConversationsApi.archiveConversation(conversationId.toString(), !conversation.isArchived);
+        await empresaConversationsApi.archiveConversation(conversationId, !conversation.isArchived);
         setConversations(prev => prev.map(conv =>
           conv.id === conversationId ? { ...conv, isArchived: true } : conv
         ));
@@ -314,13 +327,21 @@ export default function EmpresaMissatgesPage() {
   };
 
   const deleteMessage = (messageId: number) => {
-    setMessages(prev => prev.filter(msg => msg.id !== messageId));
+    const messageIdStr = messageId.toString();
+    setMessages(prev => prev.filter(msg => {
+      // Intentar convertir el ID del mensaje a número para comparar
+      const msgIdNum = parseInt(msg.id);
+      return !isNaN(msgIdNum) ? msgIdNum !== messageId : msg.id !== messageIdStr;
+    }));
   };
 
   const starMessage = (messageId: number) => {
-    setMessages(prev => prev.map(msg =>
-      msg.id === messageId ? { ...msg, isStarred: !msg.isStarred } : msg
-    ));
+    const messageIdStr = messageId.toString();
+    setMessages(prev => prev.map(msg => {
+      const msgIdNum = parseInt(msg.id);
+      const matches = !isNaN(msgIdNum) ? msgIdNum === messageId : msg.id === messageIdStr;
+      return matches ? { ...msg, isStarred: !msg.isStarred } : msg;
+    }));
   };
 
   // Filtrar conversaciones (adaptado para empresa)
@@ -339,10 +360,10 @@ export default function EmpresaMissatgesPage() {
         filtered = filtered.filter(c => c.isArchived);
         break;
       case 'gestors':
-        filtered = filtered.filter(c => c.type === 'gestor' || c.type === 'admin');
+        filtered = filtered.filter(c => (c.type as string) === 'gestor' || (c.type as string) === 'admin');
         break;
-      case 'equip':
-        filtered = filtered.filter(c => c.type === 'company' || c.type === 'team');
+      case 'companies':
+        filtered = filtered.filter(c => c.type === 'company' || (c.type as string) === 'team');
         break;
       default:
         filtered = filtered.filter(c => !c.isArchived);
@@ -458,7 +479,7 @@ export default function EmpresaMissatgesPage() {
                 </div>
                 <div className="mt-1 flex items-baseline justify-between">
                   <span className="text-2xl font-semibold text-gray-900">
-                    {conversations.filter(c => c.type === 'gestor' || c.type === 'admin').length}
+                    {conversations.filter(c => (c.type as string) === 'gestor' || (c.type as string) === 'admin').length}
                   </span>
                   <span className="text-sm font-medium text-green-600">+1</span>
                 </div>
@@ -474,7 +495,7 @@ export default function EmpresaMissatgesPage() {
                 </div>
                 <div className="mt-1 flex items-baseline justify-between">
                   <span className="text-2xl font-semibold text-gray-900">
-                    {conversations.filter(c => c.type === 'company' || c.type === 'team').length}
+                    {conversations.filter(c => c.type === 'company' || (c.type as string) === 'team').length}
                   </span>
                 </div>
               </div>
@@ -515,7 +536,7 @@ export default function EmpresaMissatgesPage() {
                 searchTerm={searchTerm}
                 setSearchTerm={setSearchTerm}
                 activeFilter={activeFilter}
-                setActiveFilter={setActiveFilter}
+                setActiveFilter={setActiveFilter as (filter: 'all' | 'starred' | 'muted' | 'archived' | 'gestors' | 'companies' | 'admins') => void}
                 totalUnread={totalUnread}
               />
             )}

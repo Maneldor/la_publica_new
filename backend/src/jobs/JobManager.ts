@@ -5,7 +5,7 @@ import { ScrapingWorker } from './workers/ScrapingWorker';
 import { AIProcessingWorker } from './workers/AIProcessingWorker';
 import { JobScheduler } from './scheduler/JobScheduler';
 import { ScraperManager } from '../scraping/ScraperManager';
-import { AIProviderManager } from '../ai/manager/AIProviderManager';
+import { AIProviderManager } from '../services/admin/AIProviderService';
 import type {
   WorkerConfig,
   SchedulerConfig,
@@ -64,7 +64,7 @@ export class JobManager {
   ) {
     this.prisma = prisma;
     this.scraperManager = scraperManager;
-    this.aiManager = aiManager;
+    this.aiManager = aiManager || AIProviderManager.getInstance();
 
     this.config = {
       autoStart: true,
@@ -442,15 +442,15 @@ export class JobManager {
   private async getDatabaseStats() {
     try {
       const [totalLeads, todayLeads, scrapingJobs] = await Promise.all([
-        this.prisma.lead.count(),
-        this.prisma.lead.count({
+        this.prisma.company_leads.count(),
+        this.prisma.company_leads.count({
           where: {
             createdAt: {
               gte: new Date(new Date().setHours(0, 0, 0, 0))
             }
           }
         }),
-        this.prisma.scrapingJob.groupBy({
+        (this.prisma as any).scrapingJob?.groupBy({
           by: ['status'],
           _count: true,
           where: {
@@ -458,13 +458,13 @@ export class JobManager {
               gte: new Date(Date.now() - 24 * 60 * 60 * 1000) // Last 24 hours
             }
           }
-        }),
+        }) || Promise.resolve([]),
       ]);
 
       return {
         totalLeads,
         todayLeads,
-        scrapingJobs: scrapingJobs.reduce((acc, item) => {
+        scrapingJobs: (scrapingJobs || []).reduce((acc: Record<string, number>, item: any) => {
           acc[item.status] = item._count;
           return acc;
         }, {} as Record<string, number>),
@@ -551,7 +551,7 @@ export class JobManager {
 
   private setupEventListeners(): void {
     // Listen to scraping queue events
-    this.scrapingQueue.on((event) => {
+    this.scrapingQueue.on((event: any) => {
       // Re-emit with context
       this.emit({
         ...event,
@@ -574,7 +574,7 @@ export class JobManager {
     });
 
     // Listen to AI queue events
-    this.aiQueue.on((event) => {
+    this.aiQueue.on((event: any) => {
       this.emit({
         ...event,
         data: { ...event.data, queue: 'ai' },

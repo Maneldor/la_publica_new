@@ -35,7 +35,7 @@ const assessoramentMock = {
 
   modalitats: [
     {
-      tipus: 'presencial',
+      tipus: 'presencial' as const,
       activa: true,
       config: {
         adreca: 'Carrer de la Llei, 45, 08001 Barcelona',
@@ -46,7 +46,7 @@ const assessoramentMock = {
       }
     },
     {
-      tipus: 'online',
+      tipus: 'online' as const,
       activa: true,
       config: {
         plataforma: 'Zoom/Meet/Teams',
@@ -56,7 +56,7 @@ const assessoramentMock = {
       }
     },
     {
-      tipus: 'telefonica',
+      tipus: 'telefonica' as const,
       activa: true,
       config: {
         telefon: '+34 93 456 78 90',
@@ -65,7 +65,7 @@ const assessoramentMock = {
       }
     },
     {
-      tipus: 'email',
+      tipus: 'email' as const,
       activa: true,
       config: {
         email: 'info@cpuig.cat',

@@ -1,4 +1,4 @@
-import { UserRole, AdministrationType, CustomFieldType } from '@prisma/client';
+import { UserRole, AdministrationType } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import prisma from '../config/database';
 import { RoleService } from './role.service';
@@ -29,7 +29,7 @@ export class AdminService {
     const hashedPassword = await bcrypt.hash(data.password, 10);
 
     // Verificar que el email no existe
-    const existingUser = await prisma.user.findUnique({
+    const existingUser = await (prisma as any).user.findUnique({
       where: { email: data.email }
     });
 
@@ -53,10 +53,10 @@ export class AdminService {
       case UserRole.EMPLEADO_PUBLICO:
         profile = await this.createEmployeeProfile(user.id, data.userData, data.customFields, data.customFieldsPrivacy);
         break;
-      case UserRole.EMPRESA:
+      case (UserRole as any).EMPRESA:
         profile = await this.createCompanyProfile(user.id, data.userData, data.customFields, data.customFieldsPrivacy);
         break;
-      case UserRole.ADMINISTRACION_PUBLICA:
+      case (UserRole as any).ADMINISTRACION_PUBLICA:
         profile = await this.createPublicAdminProfile(user.id, data.userData, data.customFields, data.customFieldsPrivacy);
         break;
       // Para ADMIN, SUPER_ADMIN, etc. no se crea perfil adicional
@@ -85,7 +85,7 @@ export class AdminService {
     customFields?: Record<string, any>,
     customFieldsPrivacy?: Record<string, 'public' | 'private'>
   ) {
-    return prisma.employee.create({
+    return (prisma.employee.create as any)({
       data: {
         userId,
         firstName: userData.firstName,
@@ -122,7 +122,7 @@ export class AdminService {
     customFields?: Record<string, any>,
     customFieldsPrivacy?: Record<string, 'public' | 'private'>
   ) {
-    return prisma.company.create({
+    return (prisma.companies.create as any)({
       data: {
         userId,
         name: userData.name,
@@ -155,7 +155,7 @@ export class AdminService {
     customFields?: Record<string, any>,
     customFieldsPrivacy?: Record<string, 'public' | 'private'>
   ) {
-    return prisma.publicAdministration.create({
+    return (prisma as any).publicAdministration.create({
       data: {
         userId,
         name: userData.name,
@@ -190,7 +190,7 @@ export class AdminService {
     }
 
     const [users, total] = await Promise.all([
-      prisma.user.findMany({
+      (prisma as any).user.findMany({
         where,
         include: {
           employee: true,
@@ -203,7 +203,7 @@ export class AdminService {
         take: limit,
         orderBy: { createdAt: 'desc' }
       }),
-      prisma.user.count({ where })
+      (prisma as any).user.count({ where })
     ]);
 
     return {
@@ -216,7 +216,7 @@ export class AdminService {
 
   // Obtener usuario por ID con toda su información
   async getUserById(userId: string) {
-    return prisma.user.findUnique({
+    return (prisma.user.findUnique as any)({
       where: { id: userId },
       include: {
         employee: true,
@@ -230,13 +230,13 @@ export class AdminService {
 
   // Actualizar usuario
   async updateUser(userId: string, data: UpdateUserData) {
-    const user = await prisma.user.findUnique({
+    const user = await (prisma as any).user.findUnique({
       where: { id: userId },
       include: {
         employee: true,
         company: true,
         publicAdministration: true
-      }
+      } as any
     });
 
     if (!user) {
@@ -244,7 +244,7 @@ export class AdminService {
     }
 
     // Actualizar datos del usuario base
-    const updatedUser = await prisma.user.update({
+    const updatedUser = await (prisma as any).user.update({
       where: { id: userId },
       data: {
         email: data.email,
@@ -254,11 +254,11 @@ export class AdminService {
 
     // Actualizar perfil específico si hay datos
     if (data.userData) {
-      if (user.employee) {
+      if ((user as any).employee) {
         await this.updateEmployeeProfile(userId, data.userData, data.customFields, data.customFieldsPrivacy);
-      } else if (user.company) {
+      } else if ((user as any).company) {
         await this.updateCompanyProfile(userId, data.userData, data.customFields, data.customFieldsPrivacy);
-      } else if (user.publicAdministration) {
+      } else if ((user as any).publicAdministration) {
         await this.updatePublicAdminProfile(userId, data.userData, data.customFields, data.customFieldsPrivacy);
       }
     }
@@ -280,8 +280,8 @@ export class AdminService {
     if (customFields) updateData.customFields = JSON.stringify(customFields);
     if (customFieldsPrivacy) updateData.customFieldsPrivacy = JSON.stringify(customFieldsPrivacy);
 
-    return prisma.employee.update({
-      where: { userId },
+    return (prisma.employee.update as any)({
+      where: { userId } as any,
       data: updateData
     });
   }
@@ -298,8 +298,8 @@ export class AdminService {
     if (customFields) updateData.customFields = JSON.stringify(customFields);
     if (customFieldsPrivacy) updateData.customFieldsPrivacy = JSON.stringify(customFieldsPrivacy);
 
-    return prisma.company.update({
-      where: { userId },
+    return (prisma.companies.update as any)({
+      where: { userId } as any,
       data: updateData
     });
   }
@@ -319,8 +319,8 @@ export class AdminService {
     if (customFields) updateData.customFields = JSON.stringify(customFields);
     if (customFieldsPrivacy) updateData.customFieldsPrivacy = JSON.stringify(customFieldsPrivacy);
 
-    return prisma.publicAdministration.update({
-      where: { userId },
+    return (prisma as any).publicAdministration.update({
+      where: { userId } as any,
       data: updateData
     });
   }
@@ -328,14 +328,14 @@ export class AdminService {
   // Eliminar usuario
   async deleteUser(userId: string) {
     // Prisma manejará la eliminación en cascada de los perfiles relacionados
-    return prisma.user.delete({
+    return (prisma as any).user.delete({
       where: { id: userId }
     });
   }
 
   // Activar/Desactivar usuario
   async toggleUserStatus(userId: string) {
-    const user = await prisma.user.findUnique({
+    const user = await (prisma as any).user.findUnique({
       where: { id: userId }
     });
 
@@ -343,7 +343,7 @@ export class AdminService {
       throw new Error('Usuario no encontrado');
     }
 
-    return prisma.user.update({
+    return (prisma as any).user.update({
       where: { id: userId },
       data: {
         isActive: !user.isActive
@@ -359,13 +359,13 @@ export class AdminService {
       usersByRole,
       recentUsers
     ] = await Promise.all([
-      prisma.user.count(),
-      prisma.user.count({ where: { isActive: true } }),
+      (prisma as any).user.count(),
+      (prisma as any).user.count({ where: { isActive: true } }),
       prisma.user.groupBy({
         by: ['primaryRole'],
         _count: { primaryRole: true }
       }),
-      prisma.user.count({
+      (prisma as any).user.count({
         where: {
           createdAt: {
             gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Últimos 30 días

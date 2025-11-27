@@ -447,7 +447,6 @@ export function UniversalCard({
             {bottomZone.primaryAction && (
               <button style={{
                 fontSize: '12px',
-                color: '#3b82f6',
                 fontWeight: '500',
                 border: bottomZone.primaryAction.style === 'button' ? '1px solid #3b82f6' : 'none',
                 backgroundColor: bottomZone.primaryAction.style === 'button' ? '#3b82f6' : 'transparent',

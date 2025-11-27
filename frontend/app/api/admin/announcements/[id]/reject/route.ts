@@ -61,7 +61,7 @@ export async function PATCH(
         id: params.id
       },
       data: {
-        status: 'REJECTED',
+        status: 'ARCHIVED', // AnuncioStatus no tiene REJECTED, usar ARCHIVED
         // TODO: Podríamos agregar un campo para la razón del rechazo
         // rejectionReason: reason,
         updatedAt: new Date()

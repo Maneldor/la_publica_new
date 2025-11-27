@@ -45,13 +45,15 @@ interface AILeadCardProps {
   onApprove: (leadId: string) => void;
   onReject: (leadId: string, reason: string) => void;
   onEdit: (leadId: string, data: any) => void;
+  isLoading?: boolean;
 }
 
 export default function AILeadCard({
   lead,
   onApprove,
   onReject,
-  onEdit
+  onEdit,
+  isLoading = false
 }: AILeadCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -266,6 +268,7 @@ export default function AILeadCard({
             onApprove={onApprove}
             onReject={onReject}
             onEdit={onEdit}
+            disabled={isLoading}
           />
         </div>
       </CardContent>

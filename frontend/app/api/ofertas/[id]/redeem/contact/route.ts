@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prismaClient } from '@/lib/prisma';
 import { z } from 'zod';
+import { EventType, NotificationType } from '@prisma/client';
 
 const redeemContactSchema = z.object({
   name: z.string()
@@ -145,16 +146,15 @@ export async function POST(
           email: validated.email.toLowerCase().trim(),
           phone: validated.phone.replace(/\s+/g, ''),
           message: sanitizeText(validated.message),
-          source: 'OFFER_REDEMPTION',
           status: 'NEW',
-          acceptsMarketing: validated.acceptsMarketing,
           metadata: {
             offerTitle: offer.title,
             userAgent: validated.userAgent || request.headers.get('user-agent'),
             ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
             referrer: validated.referrer,
             timestamp: new Date().toISOString(),
-            redemptionType: 'CONTACT_FORM'
+            redemptionType: 'CONTACT_FORM',
+            acceptsMarketing: validated.acceptsMarketing ?? false
           }
         },
         include: {
@@ -173,16 +173,10 @@ export async function POST(
           offerId: offer.id,
           userId: session.user.id,
           companyId: offer.companyId,
-          eventType: 'CONTACT_FORM_SUBMIT',
+          eventType: EventType.CONTACT_CLICK,
           userAgent: validated.userAgent || request.headers.get('user-agent'),
           ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
-          referrer: validated.referrer,
-          metadata: {
-            leadId: lead.id,
-            contactEmail: validated.email,
-            contactPhone: validated.phone,
-            timestamp: new Date().toISOString()
-          }
+          referrer: validated.referrer
         }
       });
 
@@ -190,7 +184,7 @@ export async function POST(
       await prisma.offer.update({
         where: { id: offer.id },
         data: {
-          contacts: { increment: 1 }
+          applications: { increment: 1 }
         }
       });
 
@@ -201,7 +195,7 @@ export async function POST(
     await prismaClient.notification.create({
       data: {
         userId: offer.companyId,
-        type: 'LEAD_NOTIFICATION',
+        type: NotificationType.SYSTEM,
         title: 'Nou lead generat',
         message: `Nou contacte interessat en la teva oferta "${offer.title}": ${validated.name} (${validated.email})`,
         priority: 'HIGH',
@@ -221,7 +215,7 @@ export async function POST(
     await prismaClient.notification.create({
       data: {
         userId: session.user.id,
-        type: 'SYSTEM_NOTIFICATION',
+        type: NotificationType.SYSTEM,
         title: 'Sol·licitud de contacte enviada',
         message: `La teva sol·licitud de contacte per "${offer.title}" s'ha enviat correctament. L'empresa es posarà en contacte amb tu aviat.`,
         priority: 'NORMAL',
@@ -275,9 +269,9 @@ export async function POST(
         {
           success: false,
           error: 'Dades del formulari invàlides',
-          details: error.errors.map(e => ({
-            field: e.path.join('.'),
-            message: e.message
+          details: error.issues.map(issue => ({
+            field: issue.path.join('.'),
+            message: issue.message
           }))
         },
         { status: 400 }

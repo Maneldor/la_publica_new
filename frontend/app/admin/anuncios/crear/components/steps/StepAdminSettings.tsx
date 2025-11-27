@@ -1,15 +1,14 @@
 'use client';
 
-import { Star, AlertTriangle, Zap, Crown } from 'lucide-react';
-import { AdminAnunciFormData } from '../../hooks/useAdminCreateAnunci';
+import { Star, AlertTriangle, Crown } from 'lucide-react';
+import { AdminAnunciFormData, UpdateAdminAnunciField } from '../../hooks/useAdminCreateAnunci';
 
 interface StepAdminSettingsProps {
   formData: AdminAnunciFormData;
-  errors: Record<string, string>;
-  updateField: (field: keyof AdminAnunciFormData, value: any) => void;
+  updateField: UpdateAdminAnunciField;
 }
 
-export const StepAdminSettings = ({ formData, errors, updateField }: StepAdminSettingsProps) => {
+export const StepAdminSettings = ({ formData, updateField }: StepAdminSettingsProps) => {
   return (
     <div className="space-y-6">
       {/* Header */}

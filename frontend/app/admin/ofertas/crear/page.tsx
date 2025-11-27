@@ -170,13 +170,17 @@ export default function CrearOfertaAdminPage() {
     setFormData(prev => {
       if (field.includes('.')) {
         const [parent, child] = field.split('.');
-        return {
-          ...prev,
-          [parent]: {
-            ...prev[parent as keyof OfferFormData],
-            [child]: value
-          }
-        };
+        const parentValue = prev[parent as keyof OfferFormData];
+        if (typeof parentValue === 'object' && parentValue !== null && !Array.isArray(parentValue)) {
+          return {
+            ...prev,
+            [parent]: {
+              ...parentValue,
+              [child]: value
+            }
+          };
+        }
+        return { ...prev, [field]: value };
       }
       return { ...prev, [field]: value };
     });

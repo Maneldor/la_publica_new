@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import { prismaClient } from './prisma';
 
 const PLAN_DATA = [

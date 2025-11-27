@@ -6,9 +6,7 @@ import { z } from 'zod';
 
 // SEGURIDAD: Schema de validación
 const AsignacionSchema = z.object({
-  gestorId: z.string({
-    required_error: 'El gestor és obligatori'
-  }).cuid('ID de gestor invàlid'),
+  gestorId: z.string().cuid('ID de gestor invàlid'),
   notes: z.string()
     .max(1000, 'Les notes no poden superar 1000 caràcters')
     .optional(),
@@ -93,12 +91,12 @@ export async function POST(
     const validationResult = AsignacionSchema.safeParse(body);
 
     if (!validationResult.success) {
-      console.warn(`[VALIDATION] Datos de asignación inválidos:`, validationResult.error.errors);
+      console.warn(`[VALIDATION] Datos de asignación inválidos:`, validationResult.error.issues);
       return NextResponse.json(
         {
           success: false,
           error: 'Dades d\'assignació invàlides',
-          details: validationResult.error.errors.map(e => ({
+          details: validationResult.error.issues.map(e => ({
             field: e.path.join('.'),
             message: e.message
           }))
@@ -155,7 +153,7 @@ export async function POST(
 
     if (isReassignment) {
       // Extraer info del gestor anterior de las notas internas
-      const match = existingRequest.internalNotes.match(/ASSIGNAT A: (.+) \((.+)\)/);
+      const match = existingRequest.internalNotes?.match(/ASSIGNAT A: (.+) \((.+)\)/);
       if (match) {
         previousGestorInfo = { name: match[1], email: match[2] };
       }
@@ -201,7 +199,7 @@ export async function POST(
       // Notificación al gestor asignado
       prismaClient.notification.create({
         data: {
-          type: 'GROUP_REQUEST_ASSIGNED',
+        type: 'SYSTEM',
           title: isReassignment ? 'Sol·licitud reassignada' : 'Nova sol·licitud assignada',
           message: `Se t'ha assignat la gestió de la sol·licitud "${existingRequest.title}" de ${existingRequest.requester.ownedCompany?.name || 'empresa'}`,
           priority: 'HIGH',
@@ -223,7 +221,7 @@ export async function POST(
       // Notificación a la empresa
       prismaClient.notification.create({
         data: {
-          type: 'SYSTEM_NOTIFICATION',
+        type: 'SYSTEM',
           title: 'Sol·licitud assignada a gestor',
           message: `La teva sol·licitud "${existingRequest.title}" ha estat assignada a ${gestor.name}, que es posarà en contacte amb tu aviat per iniciar el procés.`,
           priority: 'NORMAL',
@@ -241,7 +239,7 @@ export async function POST(
       // AUDIT LOG usando notificaciones
       prismaClient.notification.create({
         data: {
-          type: 'AUDIT_LOG',
+        type: 'SYSTEM',
           title: `ADMIN_ASSIGNMENT: ${isReassignment ? 'REASSIGNED' : 'ASSIGNED'}`,
           message: `${admin.email} ${isReassignment ? 'reasignó' : 'asignó'} solicitud ${requestId} a gestor ${gestor.email}`,
           priority: 'LOW',

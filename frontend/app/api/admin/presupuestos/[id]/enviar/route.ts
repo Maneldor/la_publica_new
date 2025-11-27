@@ -21,7 +21,7 @@ export async function POST(
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.user.accessToken}`,
+          'Authorization': `Bearer ${(session.user as any).backendToken || (session.user as any).apiToken || ''}`,
         },
         body: JSON.stringify(body)
       }

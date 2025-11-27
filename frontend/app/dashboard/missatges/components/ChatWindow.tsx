@@ -654,7 +654,7 @@ export function ChatWindow({
           <EmojiPicker
             isOpen={showEmojiPicker}
             onClose={() => setShowEmojiPicker(false)}
-            onSelectEmoji={(emoji) => setMessageText(prev => prev + emoji)}
+            onSelectEmoji={(emoji) => setMessageText(messageText + emoji)}
           />
         </div>
 

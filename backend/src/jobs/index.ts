@@ -13,7 +13,8 @@ export { AIProcessingWorker } from './workers/AIProcessingWorker';
 export { JobScheduler } from './scheduler/JobScheduler';
 
 // Main Manager
-export { JobManager, type JobManagerConfig } from './JobManager';
+import { JobManager, type JobManagerConfig } from './JobManager';
+export { JobManager, type JobManagerConfig };
 
 // Factory function for easy setup
 export function createJobManager(

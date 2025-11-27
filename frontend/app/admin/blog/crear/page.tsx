@@ -681,12 +681,14 @@ export default function CrearBlogPage() {
             <BlogCardPreview
               title={mode === 'manual' ? title : generatedContent?.title || ''}
               excerpt={mode === 'manual' ? excerpt : generatedContent?.excerpt || ''}
+              content={mode === 'manual' ? content : generatedContent?.content || ''}
               featuredImage={mode === 'manual' ? featuredImage : selectedImage?.url || ''}
               tags={mode === 'manual' ? selectedTags : generatedContent?.tags || []}
             />
 
             <BlogSinglePreview
               title={mode === 'manual' ? title : generatedContent?.title || ''}
+              excerpt={mode === 'manual' ? excerpt : generatedContent?.excerpt || ''}
               content={mode === 'manual' ? content : generatedContent?.content || ''}
               featuredImage={mode === 'manual' ? featuredImage : selectedImage?.url || ''}
               tags={mode === 'manual' ? selectedTags : generatedContent?.tags || []}

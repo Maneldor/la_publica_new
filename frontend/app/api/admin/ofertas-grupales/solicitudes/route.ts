@@ -71,7 +71,7 @@ export async function GET(req: NextRequest) {
         {
           success: false,
           error: 'Paràmetres de consulta invàlids',
-          details: validationResult.error.errors.map(e => ({
+          details: validationResult.error.issues.map(e => ({
             field: e.path.join('.'),
             message: e.message
           }))
@@ -124,16 +124,19 @@ export async function GET(req: NextRequest) {
                   email: true,
                   phone: true,
                   status: true,
-                  planType: true,
                   cif: true,
                   address: true
                 }
               }
             }
           },
-          _count: {
-            select: {
-              GroupParticipant: true
+          groupOffer: {
+            include: {
+              _count: {
+                select: {
+                  participants: true
+                }
+              }
             }
           }
         },
@@ -195,7 +198,7 @@ export async function GET(req: NextRequest) {
           internalNotes: req.internalNotes,
 
           // Contadores
-          participantCount: req._count.GroupParticipant,
+          participantCount: req.groupOffer?._count?.participants || 0,
 
           // Información de la empresa solicitante
           requester: req.requester,

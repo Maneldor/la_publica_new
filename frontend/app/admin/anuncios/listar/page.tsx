@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Megaphone, CheckCircle, Star, Clock, Check, X, AlertTriangle } from 'lucide-react';
 import StatCard from '@/components/ui/StatCard';
 import { useAnuncios, useDeleteAnuncio, usePendingAnuncios, useApproveAnuncio, useRejectAnuncio } from '@/hooks/useAnuncios';
-import { toast } from 'sonner';
+import { AnnouncementFilters } from '@/lib/validations/anuncios';
 
 
 export default function ListarAnunciosPage() {
@@ -19,10 +19,10 @@ export default function ListarAnunciosPage() {
   const [page, setPage] = useState(1);
 
   // Construir objeto de filtros para la API
-  const filters = {
+  const filters: AnnouncementFilters = {
     search: searchTerm || undefined,
-    type: selectedType !== 'all' ? selectedType.toLowerCase() : undefined,
-    status: selectedStatus !== 'all' ? selectedStatus : undefined,
+    type: selectedType !== 'all' ? selectedType.toLowerCase() as 'general' | 'urgent' | 'event' | 'maintenance' | 'news' | 'alert' | 'promotion' | 'regulation' : undefined,
+    status: selectedStatus !== 'all' ? selectedStatus as 'draft' | 'pending' | 'published' | 'archived' : undefined,
     page,
     limit: 10
   };
@@ -58,10 +58,10 @@ export default function ListarAnunciosPage() {
   // Calcular estadísticas
   const getStats = () => {
     const total = pagination?.total || 0;
-    const activos = announcements.filter((a: any) =>
+    const activos = announcements.filter((a) =>
       a.status === 'approved'
     ).length;
-    const destacados = announcements.filter((a: any) => a.isPinned).length;
+    const destacados = announcements.filter((a) => a.isPinned).length;
     const pendientes = pendingData?.pagination?.total || 0;
 
     return { total, activos, destacados, pendientes };
@@ -95,35 +95,6 @@ export default function ListarAnunciosPage() {
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'HIGH': return 'text-red-600';
-      case 'NORMAL': return 'text-gray-600';
-      case 'LOW': return 'text-gray-400';
-      default: return 'text-gray-600';
-    }
-  };
-
-  const getCategoryLabel = (category: string) => {
-    const categories: Record<string, string> = {
-      'tecnologia': '💻 Tecnología',
-      'vehicles': '🚗 Vehículos',
-      'immobiliaria': '🏠 Inmobiliaria',
-      'moda': '👔 Moda',
-      'esports': '⚽ Deportes',
-      'llar': '🏡 Hogar',
-      'serveis': '🔧 Servicios',
-      'altres': '📦 Otros',
-      'OFERTA': '📤 Oferta',
-      'DEMANDA': '📥 Demanda',
-      'INFO': 'ℹ️ Información',
-      'WARNING': '⚠️ Aviso',
-      'URGENT': '🚨 Urgente',
-      'NEWS': '📰 Noticias',
-      'EVENT': '📅 Evento'
-    };
-    return categories[category] || category;
-  };
 
   if (isLoading) {
     return (
@@ -272,7 +243,7 @@ export default function ListarAnunciosPage() {
           </div>
         ) : (
           <div className="divide-y divide-gray-200">
-            {announcements.map((announcement: any) => (
+            {announcements.map((announcement) => (
               <div key={announcement.id} className="p-6 hover:bg-gray-50">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">

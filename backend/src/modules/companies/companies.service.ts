@@ -14,7 +14,7 @@ export class CompaniesService {
     configuration?: any;
   }, password: string) {
     // Verificar si ya existe una empresa con ese email
-    const existingCompany = await prisma.company.findFirst({
+    const existingCompany = await prisma.companies.findFirst({
       where: {
         email: data.email
       }
@@ -51,7 +51,7 @@ export class CompaniesService {
       });
 
       // Crear la empresa
-      const company = await tx.company.create({
+      const company = await tx.companies.create({
         data: {
           name: data.name,
           description: data.description,
@@ -60,7 +60,7 @@ export class CompaniesService {
           email: data.email,
           isVerified: data.isVerified,
           isActive: data.isActive,
-          configuration: data.configuration ? JSON.stringify(data.configuration) : null,
+          configuration: data.configuration ? JSON.stringify(data.configuration) : undefined,
           userId: user.id
         }
       });
@@ -96,7 +96,7 @@ export class CompaniesService {
     configuration?: any;
     userId: string;
   }) {
-    const existingCompany = await prisma.company.findFirst({
+    const existingCompany = await prisma.companies.findFirst({
       where: {
         OR: [
           { name: data.name },
@@ -109,24 +109,24 @@ export class CompaniesService {
       throw new Error('Ya existe una empresa con ese nombre o CIF');
     }
 
-    const company = await prisma.company.create({
+    const company = await prisma.companies.create({
       data: {
         name: data.name,
         description: data.description,
         sector: data.sector,
         size: data.size,
         cif: data.cif,
-        address: data.address ? JSON.stringify(data.address) : null,
+        address: data.address ? JSON.stringify(data.address) : undefined,
         phone: data.phone,
         email: data.email || '',
         website: data.website,
-        socialMedia: data.socialMedia ? JSON.stringify(data.socialMedia) : null,
+        socialMedia: data.socialMedia ? JSON.stringify(data.socialMedia) : undefined,
         logo: data.logoUrl,
-        certifications: data.certifications ? JSON.stringify(data.certifications) : null,
-        foundedYear: data.foundingYear,
+        certifications: data.certifications ? JSON.stringify(data.certifications) : undefined,
+        foundingYear: data.foundingYear,
         employeeCount: data.employeeCount,
         annualRevenue: data.annualRevenue,
-        configuration: data.configuration ? JSON.stringify(data.configuration) : null,
+        configuration: data.configuration ? JSON.stringify(data.configuration) : undefined,
         userId: data.userId,
         isVerified: false,
         isActive: true
@@ -195,7 +195,7 @@ export class CompaniesService {
     }
 
     const [companies, total] = await Promise.all([
-      prisma.company.findMany({
+      prisma.companies.findMany({
         where,
         orderBy: [
           { isVerified: 'desc' },
@@ -204,7 +204,7 @@ export class CompaniesService {
         take: filters.limit || 20,
         skip: filters.offset || 0
       }),
-      prisma.company.count({ where })
+      prisma.companies.count({ where })
     ]);
 
     return {
@@ -220,7 +220,7 @@ export class CompaniesService {
   }
 
   async getCompanyById(id: string) {
-    const company = await prisma.company.findUnique({
+    const company = await prisma.companies.findUnique({
       where: { id }
     });
 
@@ -260,7 +260,7 @@ export class CompaniesService {
     annualRevenue?: number;
     configuration?: any;
   }) {
-    const company = await prisma.company.findUnique({
+    const company = await prisma.companies.findUnique({
       where: { id }
     });
 
@@ -290,7 +290,7 @@ export class CompaniesService {
     if (data.certifications !== undefined) updateData.certifications = JSON.stringify(data.certifications);
     if (data.configuration !== undefined) updateData.configuration = JSON.stringify(data.configuration);
 
-    const updatedCompany = await prisma.company.update({
+    const updatedCompany = await prisma.companies.update({
       where: { id },
       data: updateData
     });
@@ -318,7 +318,7 @@ export class CompaniesService {
     order?: number;
     userId: string;
   }) {
-    const company = await prisma.company.findUnique({
+    const company = await prisma.companies.findUnique({
       where: { id: data.companyId }
     });
 
@@ -337,11 +337,11 @@ export class CompaniesService {
         description: data.description,
         category: data.category,
         subcategory: data.subcategory,
-        features: data.features ? JSON.stringify(data.features) : null,
-        pricing: data.pricing ? JSON.stringify(data.pricing) : null,
+        features: data.features ? JSON.stringify(data.features) : undefined,
+        pricing: data.pricing ? JSON.stringify(data.pricing) : undefined,
         duration: data.duration,
         modality: data.modality,
-        availability: data.availability ? JSON.stringify(data.availability) : null,
+        availability: data.availability ? JSON.stringify(data.availability) : undefined,
         order: data.order || 0,
         isActive: true
       }
@@ -418,7 +418,7 @@ export class CompaniesService {
     order?: number;
     userId: string;
   }) {
-    const company = await prisma.company.findUnique({
+    const company = await prisma.companies.findUnique({
       where: { id: data.companyId }
     });
 
@@ -438,8 +438,8 @@ export class CompaniesService {
         category: data.category,
         subcategory: data.subcategory,
         price: data.price,
-        features: data.features ? JSON.stringify(data.features) : null,
-        images: data.images ? JSON.stringify(data.images) : null,
+        features: data.features ? JSON.stringify(data.features) : undefined,
+        images: data.images || [],
         stock: data.stock,
         isAvailable: data.isAvailable,
         order: data.order || 0,
@@ -450,7 +450,7 @@ export class CompaniesService {
     return {
       ...producto,
       features: producto.features ? JSON.parse(producto.features as string) : [],
-      images: producto.images ? JSON.parse(producto.images as string) : []
+      images: producto.images || []
     };
   }
 
@@ -504,7 +504,7 @@ export class CompaniesService {
       productos: productos.map(producto => ({
         ...producto,
         features: producto.features ? JSON.parse(producto.features as string) : [],
-        images: producto.images ? JSON.parse(producto.images as string) : []
+        images: producto.images || []
       })),
       total
     };
@@ -521,7 +521,7 @@ export class CompaniesService {
     deadline?: Date;
     contact?: any;
   }) {
-    const company = await prisma.company.findUnique({
+    const company = await prisma.companies.findUnique({
       where: { id: data.companyId }
     });
 
@@ -534,12 +534,13 @@ export class CompaniesService {
         companyId: data.companyId,
         serviceId: data.serviceId,
         clientId: data.clientId,
+        title: data.subject,
         subject: data.subject,
         description: data.description,
         urgency: data.urgency,
         estimatedBudget: data.estimatedBudget,
         deadline: data.deadline,
-        contact: data.contact ? JSON.stringify(data.contact) : null,
+        contact: data.contact ? JSON.stringify(data.contact) : undefined,
         status: 'pendiente',
         requestDate: new Date()
       }
@@ -560,7 +561,7 @@ export class CompaniesService {
     limit?: number;
     offset?: number;
   }) {
-    const company = await prisma.company.findUnique({
+    const company = await prisma.companies.findUnique({
       where: { id: empresaId }
     });
 
@@ -598,7 +599,7 @@ export class CompaniesService {
     ]);
 
     return {
-      asesoramientos: asesoramientos.map(asesoramiento => ({
+      asesoramientos: asesoramientos.map((asesoramiento: any) => ({
         ...asesoramiento,
         contact: asesoramiento.contact ? JSON.parse(asesoramiento.contact as string) : null
       })),

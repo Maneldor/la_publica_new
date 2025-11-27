@@ -79,12 +79,12 @@ export async function GET(req: NextRequest) {
     const validationResult = QueryParamsSchema.safeParse(queryParams);
 
     if (!validationResult.success) {
-      console.warn(`[VALIDATION] Parámetros inválidos de ${user.email}:`, validationResult.error.errors);
+      console.warn(`[VALIDATION] Parámetros inválidos de ${user.email}:`, validationResult.error.issues);
       return NextResponse.json(
         {
           success: false,
           error: 'Paràmetres de consulta invàlids',
-          details: validationResult.error.errors.map(e => ({
+          details: validationResult.error.issues.map(e => ({
             field: e.path.join('.'),
             message: e.message
           }))
@@ -149,10 +149,13 @@ export async function GET(req: NextRequest) {
               }
             }
           },
-          // Incluir configuraciones relacionadas si existen
-          _count: {
-            select: {
-              GroupParticipant: true
+          groupOffer: {
+            include: {
+              _count: {
+                select: {
+                  participants: true
+                }
+              }
             }
           }
         }
@@ -172,25 +175,31 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        data: requests.map(request => ({
-          id: request.id,
-          title: request.title,
-          description: request.description,
-          category: request.category,
-          location: request.location,
-          minParticipants: request.minParticipants,
-          maxParticipants: request.maxParticipants,
-          targetPrice: request.targetPrice,
-          status: request.status,
-          contactEmail: request.contactEmail,
-          contactPhone: request.contactPhone,
-          tags: request.tags,
-          priority: request.priority,
-          participantCount: request._count.GroupParticipant,
-          createdAt: request.createdAt,
-          updatedAt: request.updatedAt,
-          requester: request.requester
-        })),
+        data: requests.map(request => {
+          const enrichedRequest = request as typeof request & {
+            requester?: any;
+            groupOffer?: { _count?: { participants: number } };
+          };
+          return {
+            id: request.id,
+            title: request.title,
+            description: request.description,
+            category: request.category,
+            location: request.location,
+            minParticipants: request.minParticipants,
+            maxParticipants: request.maxParticipants,
+            targetPrice: request.targetPrice,
+            status: request.status,
+            contactEmail: request.contactEmail,
+            contactPhone: request.contactPhone,
+            tags: request.tags,
+            priority: request.priority,
+            participantCount: enrichedRequest.groupOffer?._count?.participants || 0,
+            createdAt: request.createdAt,
+            updatedAt: request.updatedAt,
+            requester: enrichedRequest.requester
+          };
+        }),
         pagination: {
           currentPage: page,
           totalPages,

@@ -25,7 +25,7 @@ export default function ListarEmpresasPage() {
 
     // Filtrar por búsqueda
     if (searchTerm) {
-      filtered = filtered.filter(company =>
+      filtered = filtered.filter((company: Empresa) =>
         company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         company.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
         company.sector.toLowerCase().includes(searchTerm.toLowerCase())
@@ -34,14 +34,14 @@ export default function ListarEmpresasPage() {
 
     // Filtrar por categoría/sector
     if (selectedCategory !== 'all') {
-      filtered = filtered.filter(company =>
+      filtered = filtered.filter((company: Empresa) =>
         company.sector === selectedCategory
       );
     }
 
     // Filtrar por estado
     if (selectedStatus !== 'all') {
-      filtered = filtered.filter(company => {
+      filtered = filtered.filter((company: Empresa) => {
         if (selectedStatus === 'verified') {
           return company.isVerified;
         } else if (selectedStatus === 'pending') {
@@ -82,7 +82,7 @@ export default function ListarEmpresasPage() {
     }
   };
 
-  const handleToggleVerification = async (id: string, currentStatus: boolean) => {
+  const handleToggleVerification = async (id: string) => {
     try {
       const response = await fetch(`/api/admin/companies/${id}/toggle-verification`, {
         method: 'PATCH'
@@ -104,7 +104,7 @@ export default function ListarEmpresasPage() {
     }
   };
 
-  const handleToggleActive = async (id: string, currentStatus: boolean) => {
+  const handleToggleActive = async (id: string) => {
     try {
       const response = await fetch(`/api/admin/companies/${id}/toggle-active`, {
         method: 'PATCH'
@@ -129,9 +129,9 @@ export default function ListarEmpresasPage() {
   // Calcular estadísticas
   const getStats = () => {
     const total = companies.length;
-    const verificadas = companies.filter(c => c.isVerified).length;
-    const activas = companies.filter(c => c.isActive).length;
-    const pendientes = companies.filter(c => !c.isVerified).length;
+    const verificadas = companies.filter((c: Empresa) => c.isVerified).length;
+    const activas = companies.filter((c: Empresa) => c.isActive).length;
+    const pendientes = companies.filter((c: Empresa) => !c.isVerified).length;
 
     return { total, verificadas, activas, pendientes };
   };
@@ -285,7 +285,7 @@ export default function ListarEmpresasPage() {
 
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-          Error al cargar empresas: {(error as any)?.message || 'Error desconocido'}
+          Error al cargar empresas: {(error instanceof Error ? error.message : 'Error desconocido')}
         </div>
       )}
 

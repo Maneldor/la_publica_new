@@ -15,9 +15,11 @@ import { useAnuncios } from '../../../hooks/useAnuncios';
 export default function AnuncisPage() {
   const router = useRouter();
 
-  // Obtenir anuncis REALS del backend (només aprovats)
+  // Obtenir anuncis REALS del backend (només publicats)
   const { data: anunciosResponse, isLoading, error } = useAnuncios({
-    status: 'approved'
+    page: 1,
+    limit: 20,
+    status: 'pending' as const
   });
 
   // Convertir anuncis del backend al format local
@@ -27,16 +29,9 @@ export default function AnuncisPage() {
     console.log('📊 Resposta anuncis del backend:', anunciosResponse);
 
     if (anunciosResponse?.data && Array.isArray(anunciosResponse.data)) {
-      const convertedAnuncis: Anunci[] = anunciosResponse.data.map((anuncio: any) => {
-        // Log per depurar el configuration
-        console.log('🔍 Anunci del backend:', {
-          title: anuncio.title,
-          configuration: anuncio.configuration,
-          marketplace: anuncio.configuration?.marketplace
-        });
-
-        // Extreure el preu i tipus de configuration.marketplace
-        const marketplace = anuncio.configuration?.marketplace;
+      const convertedAnuncis = anunciosResponse.data.map((anuncio: any) => {
+        // Extraer datos de marketplace desde metadata si existe
+        const marketplace = (anuncio.metadata as any)?.marketplace || (anuncio.metadata as any);
         const price = marketplace?.price || 0;
         const priceType = marketplace?.priceType || 'gratuït';
 
@@ -48,17 +43,20 @@ export default function AnuncisPage() {
           finalPriceType = 'gratuït';
         }
 
+        // Convertir id de string a number para el tipo Anunci
+        const anunciId = parseInt(anuncio.id.replace(/[^0-9]/g, '')) || 0;
+
         return {
-          id: anuncio.id,
+          id: anunciId,
           title: anuncio.title,
           description: anuncio.content || anuncio.summary || '',
-          type: anuncio.type === 'urgente' || anuncio.type === 'demanda' ? 'demanda' : 'oferta',
-          category: marketplace?.category || anuncio.type || 'general',
+          type: anuncio.type === 'urgent' ? 'demanda' : 'oferta',
+          category: marketplace?.category || 'general',
           price: price,
           priceType: finalPriceType,
-          location: marketplace?.location?.city || anuncio.comunidad || 'La Pública',
+          location: marketplace?.location?.city || 'La Pública',
           images: [
-            marketplace?.coverImage || marketplace?.images?.[0] || 'https://via.placeholder.com/300x200?text=Sense+imatge',
+            anuncio.imageUrl || marketplace?.coverImage || marketplace?.images?.[0] || 'https://via.placeholder.com/300x200?text=Sense+imatge',
             ...(marketplace?.galleryImages || marketplace?.images?.slice(1) || [])
           ].filter(Boolean),
           author: anuncio.author?.name || anuncio.author?.email || 'Usuari',
@@ -66,7 +64,7 @@ export default function AnuncisPage() {
           authorDepartment: anuncio.community?.nombre || 'Comunitat',
           contactPhone: marketplace?.contact?.phone || '',
           contactEmail: marketplace?.contact?.email || anuncio.author?.email || '',
-          status: anuncio.status === 'published' ? 'actiu' : 'inactiu' as const,
+          status: anuncio.status === 'active' ? 'actiu' : 'inactiu' as const,
           createdAt: new Date(anuncio.createdAt).toLocaleDateString('ca'),
           expiresAt: anuncio.expiresAt ? new Date(anuncio.expiresAt).toLocaleDateString('ca') : 'Sense caducitat',
           views: anuncio.views || 0,
@@ -81,7 +79,7 @@ export default function AnuncisPage() {
         price: a.price,
         priceType: a.priceType
       })));
-      setAllAnuncis(convertedAnuncis);
+      setAllAnuncis(convertedAnuncis as Anunci[]);
     }
   }, [anunciosResponse]);
 
@@ -161,14 +159,14 @@ export default function AnuncisPage() {
         {/* Cerca i filtres */}
         <AnunciSearchFilters
           onSearch={setSearchTerm}
-          onFilterChange={setFilters}
+          onFilterChange={(filters) => setFilters(filters)}
           totalResults={anuncisFiltrats.length}
         />
 
         {/* Tabs de navegació */}
         <AnunciTabs
           activeTab={activeTab}
-          onTabChange={setActiveTab}
+          onTabChange={(tab) => setActiveTab(tab as typeof activeTab)}
           counts={tabCounts}
         />
 

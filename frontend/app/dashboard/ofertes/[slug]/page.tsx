@@ -287,7 +287,11 @@ export default function OfferSinglePage({ params }: { params: { slug: string } }
   // Loading state
   if (loading) {
     return (
-      <PageTemplate>
+      <PageTemplate
+        title="Oferta"
+        subtitle="Carregant..."
+        statsData={[]}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="animate-pulse">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -315,7 +319,11 @@ export default function OfferSinglePage({ params }: { params: { slug: string } }
   // Error state
   if (error || !offer) {
     return (
-      <PageTemplate>
+      <PageTemplate
+        title="Error"
+        subtitle={error || 'Oferta no trobada'}
+        statsData={[]}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center">
           <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
@@ -338,7 +346,11 @@ export default function OfferSinglePage({ params }: { params: { slug: string } }
   const discountPercentage = getDiscountPercentage();
 
   return (
-    <PageTemplate>
+    <PageTemplate
+      title={offer.title}
+      subtitle={offer.description || ''}
+      statsData={[]}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
         <nav className="flex mb-6" aria-label="Breadcrumb">
@@ -409,11 +421,7 @@ export default function OfferSinglePage({ params }: { params: { slug: string } }
                     ⭐ DESTACADA
                   </span>
                 )}
-                {offer.exclusive && (
-                  <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
-                    👑 EXCLUSIVA
-                  </span>
-                )}
+                {/* Exclusive badge removed - property doesn't exist in Offer model */}
                 {discountPercentage > 0 && (
                   <span className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
                     -{discountPercentage}%
@@ -700,7 +708,20 @@ export default function OfferSinglePage({ params }: { params: { slug: string } }
 
                       {/* Nuevo botón dinámico para otros tipos */}
                       <RedeemButton
-                        offer={offer}
+                        offer={{
+                          id: offer.id,
+                          title: offer.title,
+                          redemptionType: offer.redemptionType,
+                          externalUrl: offer.externalUrl,
+                          discountPercentage: offer.discountPercentage,
+                          originalPrice: offer.originalPrice ?? undefined,
+                          price: offer.price,
+                          company: {
+                            id: offer.company.id,
+                            name: offer.company.name,
+                            logo: offer.company.logo
+                          }
+                        }}
                         onRedeemSuccess={() => {
                           // Opcional: refetch de la oferta, analytics, etc.
                           console.log('Redempció exitosa!');

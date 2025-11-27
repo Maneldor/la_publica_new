@@ -160,7 +160,7 @@ export default function CalendarioEditarPage() {
         dataInici: `${formData.dataInici}T${formData.horaInici || '00:00'}:00`,
         dataFi: `${formData.dataFi}T${formData.horaFi || '23:59'}:00`,
         totElDia: formData.totElDia,
-        modalitat: formData.modalitat,
+        modalitat: formData.modalitat as 'presencial' | 'online' | 'hibrid' | undefined,
         ubicacio: formData.ubicacio,
         linkOnline: formData.linkOnline,
         descripcio: formData.descripcio,

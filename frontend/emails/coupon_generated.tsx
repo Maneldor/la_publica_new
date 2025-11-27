@@ -60,7 +60,7 @@ export default function CouponGeneratedEmail({
   return (
     <Html>
       <Head />
-      <Preview>¡Tu cupón para {coupon.offerTitle} está listo!</Preview>
+      <Preview>¡Tu cupón para {coupon.offerTitle || 'la oferta'} está listo!</Preview>
       <Body style={main}>
         <Container style={container}>
           {/* Header */}

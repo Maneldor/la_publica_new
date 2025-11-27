@@ -12,10 +12,12 @@ export class GroupsService {
     const group = await prisma.group.create({
       data: {
         name: data.name,
+        slug: data.name.toLowerCase().replace(/\s+/g, '-'),
         description: data.description,
         type: data.type,
-        creatorId: data.creatorId
-      }
+        creatorId: data.creatorId,
+        createdBy: data.creatorId
+      } as any
     });
 
     await prisma.groupMember.create({
@@ -317,19 +319,18 @@ export class GroupsService {
         groupId: data.groupId,
         title: data.title,
         content: data.content,
-        type: data.type,
         userId: data.userId,
-        tags: data.tags ? JSON.stringify(data.tags) : null,
-        multimedia: data.multimedia ? JSON.stringify(data.multimedia) : null,
+        tags: data.tags || [],
+        multimedia: data.multimedia || null,
         isPublished: data.publishImmediately !== false,
         publishedAt: data.publishImmediately !== false ? new Date() : null,
         isActive: true
-      }
+      } as any
     });
 
     return {
       ...post,
-      tags: post.tags ? JSON.parse(post.tags as string) : [],
+      tags: post.tags || [],
       multimedia: post.multimedia ? JSON.parse(post.multimedia as string) : null
     };
   }
@@ -369,7 +370,7 @@ export class GroupsService {
     return {
       posts: posts.map(post => ({
         ...post,
-        tags: post.tags ? JSON.parse(post.tags as string) : [],
+        tags: post.tags || [],
         multimedia: post.multimedia ? JSON.parse(post.multimedia as string) : null
       })),
       total
@@ -410,7 +411,7 @@ export class GroupsService {
 
     return {
       ...updatedPost,
-      tags: updatedPost.tags ? JSON.parse(updatedPost.tags as string) : [],
+      tags: (updatedPost.tags as unknown as string[]) || [],
       multimedia: updatedPost.multimedia ? JSON.parse(updatedPost.multimedia as string) : null
     };
   }

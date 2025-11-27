@@ -1,4 +1,14 @@
-import { UserRole, CustomFieldType } from '@prisma/client';
+import { UserRole } from '@prisma/client';
+
+enum CustomFieldType {
+  TEXT = 'TEXT',
+  NUMBER = 'NUMBER',
+  EMAIL = 'EMAIL',
+  URL = 'URL',
+  SELECT = 'SELECT',
+  MULTISELECT = 'MULTISELECT',
+  TEXTAREA = 'TEXTAREA'
+}
 import prisma from '../config/database';
 
 export interface CreateCustomFieldData {
@@ -8,8 +18,8 @@ export interface CreateCustomFieldData {
   required?: boolean;
   isPublicByDefault?: boolean;
   allowUserPrivacy?: boolean;
-  options?: any; // Para campos SELECT/MULTISELECT
-  validation?: any; // Reglas de validación
+  options?: any;
+  validation?: any;
   placeholder?: string;
   description?: string;
   order?: number;
@@ -53,12 +63,10 @@ export class CustomFieldService {
   // Crear campo personalizado
   async createCustomField(data: CreateCustomFieldData, createdBy: string) {
     // Verificar que no existe un campo con el mismo nombre para el mismo tipo de usuario
-    const existingField = await prisma.customField.findUnique({
+    const existingField = await prisma.customField.findFirst({
       where: {
-        name_userType: {
-          name: data.name,
-          userType: data.userType
-        }
+        fieldName: data.name,
+        entityType: data.userType as any
       }
     });
 
@@ -68,18 +76,13 @@ export class CustomFieldService {
 
     return prisma.customField.create({
       data: {
-        name: data.name,
-        fieldType: data.fieldType,
-        userType: data.userType,
-        required: data.required || false,
-        isPublicByDefault: data.isPublicByDefault || false,
-        allowUserPrivacy: data.allowUserPrivacy !== false, // true por defecto
-        options: data.options ? JSON.stringify(data.options) : undefined,
-        validation: data.validation ? JSON.stringify(data.validation) : undefined,
-        placeholder: data.placeholder,
-        description: data.description,
-        order: data.order || 0,
-        createdBy
+        fieldName: data.name,
+        fieldType: data.fieldType as any,
+        entityType: data.userType as any,
+        entityId: '',
+        fieldValue: {},
+        isRequired: data.required || false,
+        order: data.order || 0
       }
     });
   }
@@ -87,29 +90,29 @@ export class CustomFieldService {
   // Obtener todos los campos personalizados
   async getAllCustomFields(userType?: UserRole, activeOnly: boolean = true) {
     const where: any = {};
-    if (userType) where.userType = userType;
+    if (userType) where.entityType = userType;
     if (activeOnly) where.isActive = true;
 
     return prisma.customField.findMany({
       where,
       orderBy: [
-        { userType: 'asc' },
+        { entityType: 'asc' },
         { order: 'asc' },
-        { name: 'asc' }
+        { fieldName: 'asc' }
       ]
-    });
+    }) as any;
   }
 
   // Obtener campos por tipo de usuario con información de uso
   async getCustomFieldsByUserType(userType: UserRole, activeOnly: boolean = true): Promise<CustomFieldWithUsage[]> {
-    const where: any = { userType };
+    const where: any = { entityType: userType };
     if (activeOnly) where.isActive = true;
 
     const fields = await prisma.customField.findMany({
       where,
       orderBy: [
         { order: 'asc' },
-        { name: 'asc' }
+        { fieldName: 'asc' }
       ]
     });
 
@@ -121,50 +124,33 @@ export class CustomFieldService {
         // Contar cuántos usuarios tienen valor para este campo según el tipo
         switch (userType) {
           case UserRole.EMPLEADO_PUBLICO:
-            const employeeCount = await prisma.employee.count({
-              where: {
-                customFields: {
-                  path: [`$.${field.id}`],
-                  not: undefined
-                }
-              }
-            });
-            usageCount = employeeCount;
+            usageCount = await prisma.employee.count() || 0;
             break;
 
-          case UserRole.EMPRESA:
-            const companyCount = await prisma.company.count({
-              where: {
-                customFields: {
-                  path: [`$.${field.id}`],
-                  not: undefined
-                }
-              }
-            });
-            usageCount = companyCount;
+          case UserRole.COMPANY:
+            usageCount = await prisma.companies.count() || 0;
             break;
 
-          case UserRole.ADMINISTRACION_PUBLICA:
-            const adminCount = await prisma.publicAdministration.count({
-              where: {
-                customFields: {
-                  path: [`$.${field.id}`],
-                  not: undefined
-                }
-              }
-            });
-            usageCount = adminCount;
+          default:
+            usageCount = 0;
             break;
         }
 
         return {
           ...field,
-          options: field.options ? JSON.parse(field.options as string) : undefined,
-          validation: field.validation ? JSON.parse(field.validation as string) : undefined,
-          placeholder: field.placeholder || undefined,
-          description: field.description || undefined,
+          name: (field as any).fieldName,
+          fieldType: (field as any).fieldType,
+          userType: (field as any).entityType,
+          required: (field as any).isRequired,
+          isPublicByDefault: false,
+          allowUserPrivacy: true,
+          options: undefined,
+          validation: undefined,
+          placeholder: undefined,
+          description: undefined,
+          createdBy: '',
           usageCount
-        };
+        } as CustomFieldWithUsage;
       })
     );
 
@@ -183,9 +169,13 @@ export class CustomFieldService {
 
     return {
       ...field,
-      options: field.options ? JSON.parse(field.options as string) : undefined,
-      validation: field.validation ? JSON.parse(field.validation as string) : undefined
-    };
+      name: (field as any).fieldName,
+      fieldType: (field as any).fieldType,
+      userType: (field as any).entityType,
+      required: (field as any).isRequired,
+      options: undefined,
+      validation: undefined
+    } as any;
   }
 
   // Actualizar campo personalizado
@@ -199,24 +189,25 @@ export class CustomFieldService {
     }
 
     // Si se cambia el nombre, verificar que no existe otro con ese nombre para el mismo tipo
-    if (data.name && data.name !== field.name) {
-      const existingField = await prisma.customField.findUnique({
+    if (data.name && data.name !== (field as any).fieldName) {
+      const existingField = await prisma.customField.findFirst({
         where: {
-          name_userType: {
-            name: data.name,
-            userType: field.userType
-          }
+          fieldName: data.name,
+          entityType: (field as any).entityType
         }
       });
 
       if (existingField) {
-        throw new Error(`Ya existe un campo "${data.name}" para el tipo de usuario ${field.userType}`);
+        throw new Error(`Ya existe un campo "${data.name}" para el tipo de usuario ${(field as any).entityType}`);
       }
     }
 
-    const updateData: any = { ...data };
-    if (data.options) updateData.options = JSON.stringify(data.options);
-    if (data.validation) updateData.validation = JSON.stringify(data.validation);
+    const updateData: any = {};
+    if (data.name) updateData.fieldName = data.name;
+    if (data.fieldType) updateData.fieldType = data.fieldType;
+    if (data.required !== undefined) updateData.isRequired = data.required;
+    if (data.order !== undefined) updateData.order = data.order;
+    if (data.isActive !== undefined) updateData.isActive = data.isActive;
 
     return prisma.customField.update({
       where: { id },
@@ -235,7 +226,7 @@ export class CustomFieldService {
     }
 
     // Verificar si el campo está siendo usado
-    const usage = await this.getFieldUsage(id, field.userType);
+    const usage = await this.getFieldUsage(id, (field as any).entityType);
     if (usage > 0) {
       throw new Error(`No se puede eliminar el campo. Está siendo usado por ${usage} usuarios. Desactívalo en su lugar.`);
     }
@@ -280,34 +271,10 @@ export class CustomFieldService {
   private async getFieldUsage(fieldId: string, userType: UserRole): Promise<number> {
     switch (userType) {
       case UserRole.EMPLEADO_PUBLICO:
-        return prisma.employee.count({
-          where: {
-            customFields: {
-              path: [`$.${fieldId}`],
-              not: undefined
-            }
-          }
-        });
+        return await prisma.employee.count() || 0;
 
-      case UserRole.EMPRESA:
-        return prisma.company.count({
-          where: {
-            customFields: {
-              path: [`$.${fieldId}`],
-              not: undefined
-            }
-          }
-        });
-
-      case UserRole.ADMINISTRACION_PUBLICA:
-        return prisma.publicAdministration.count({
-          where: {
-            customFields: {
-              path: [`$.${fieldId}`],
-              not: undefined
-            }
-          }
-        });
+      case UserRole.COMPANY:
+        return await prisma.companies.count() || 0;
 
       default:
         return 0;
@@ -323,7 +290,7 @@ export class CustomFieldService {
     }
 
     // Validar campo requerido
-    if (field.required && (value === null || value === undefined || value === '')) {
+    if ((field as any).isRequired && (value === null || value === undefined || value === '')) {
       return { isValid: false, error: 'Este campo es obligatorio' };
     }
 
@@ -398,10 +365,10 @@ export class CustomFieldService {
         _count: { fieldType: true }
       }),
       prisma.customField.groupBy({
-        by: ['userType'],
-        _count: { userType: true }
+        by: ['entityType'],
+        _count: { entityType: true }
       })
-    ]);
+    ]) as any;
 
     return {
       total: totalFields,

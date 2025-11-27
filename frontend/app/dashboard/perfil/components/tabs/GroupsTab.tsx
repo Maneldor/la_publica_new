@@ -15,7 +15,7 @@ interface Group {
 }
 
 export default function GroupsTab() {
-  const groups: Group[] = mockGroups;
+  const groups: Group[] = mockGroups as Group[];
 
   return (
     <div style={{

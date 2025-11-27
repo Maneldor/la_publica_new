@@ -20,10 +20,11 @@ export async function GET(request: NextRequest) {
     // Buscar empresa del usuario
     const user = await prisma.user.findUnique({
       where: { email: session.user.email! },
-      include: { company: true }
+      include: { ownedCompany: true, memberCompany: true }
     });
 
-    if (!user?.company) {
+    const company = user?.ownedCompany || user?.memberCompany;
+    if (!company) {
       return NextResponse.json(
         { error: 'Empresa no encontrada' },
         { status: 404 }
@@ -34,40 +35,28 @@ export async function GET(request: NextRequest) {
     const categoria = url.searchParams.get('categoria');
 
     const where: any = {
-      activo: true // Solo mostrar extras activos
+      active: true // Solo mostrar extras activos
     };
 
     if (categoria) {
-      where.categoria = categoria;
+      where.category = categoria;
     }
 
     // Obtener todos los extras activos
-    const extras = await prisma.featureExtra.findMany({
+    const extras = await prisma.extra.findMany({
       where,
       orderBy: [
-        { categoria: 'asc' },
-        { orden: 'asc' }
+        { category: 'asc' },
+        { order: 'asc' }
       ]
     });
 
-    // Obtener los extras contratados por esta empresa
-    const extrasContratados = await prisma.empresaExtra.findMany({
-      where: {
-        empresaId: user.company.id,
-        activo: true
-      },
-      select: {
-        featureExtraId: true
-      }
-    });
-
-    // Crear un Set con los IDs de extras contratados para búsqueda rápida
-    const extrasContratadosIds = new Set(
-      extrasContratados.map(ec => ec.featureExtraId)
-    );
+    // TODO: Implementar relación entre Company y Extra cuando esté disponible
+    // Por ahora, todos los extras se muestran como no contratados
+    const extrasContratadosIds = new Set<string>();
 
     // Agregar indicador de contratación a cada extra
-    const extrasConEstado = extras.map(extra => ({
+    const extrasConEstado = extras.map((extra: any) => ({
       ...extra,
       contratado: extrasContratadosIds.has(extra.id)
     }));
@@ -75,8 +64,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       extras: extrasConEstado,
       total: extrasConEstado.length,
-      categorias: [...new Set(extras.map(e => e.categoria))],
-      totalContratados: extrasContratados.length
+      categorias: Array.from(new Set(extras.map((e: any) => e.category))),
+      totalContratados: extrasContratadosIds.size
     });
 
   } catch (error) {

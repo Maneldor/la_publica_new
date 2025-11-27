@@ -1,15 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prismaClient } from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
-  let prismaClient;
-
   try {
-    prismaClient = new PrismaClient();
 
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -26,9 +21,9 @@ export async function GET(request: NextRequest) {
     const finAno = new Date(ahora.getFullYear(), 11, 31);
 
     // Contar facturas del mes
-    const facturasMes = await prismaClient.factura.count({
+    const facturasMes = await prismaClient.invoice.count({
       where: {
-        fechaCreacion: {
+        createdAt: {
           gte: inicioMes,
           lte: finMes
         }
@@ -36,50 +31,50 @@ export async function GET(request: NextRequest) {
     });
 
     // Sumar ingresos del mes (solo facturas pagadas)
-    const ingresosMesResult = await prismaClient.factura.aggregate({
+    const ingresosMesResult = await prismaClient.invoice.aggregate({
       _sum: {
-        total: true
+        totalAmount: true
       },
       where: {
-        fechaCreacion: {
+        createdAt: {
           gte: inicioMes,
           lte: finMes
         },
-        estado: 'PAGADA'
+        status: 'PAID'
       }
     });
 
     // Sumar pendientes de cobro (facturas emitidas pero no pagadas)
-    const pendientesCobroResult = await prismaClient.factura.aggregate({
+    const pendientesCobroResult = await prismaClient.invoice.aggregate({
       _sum: {
-        total: true
+        totalAmount: true
       },
       where: {
-        estado: {
-          in: ['EMITIDA', 'VENCIDA']
+        status: {
+          in: ['SENT', 'OVERDUE']
         }
       }
     });
 
     // Sumar total anual (todas las facturas pagadas del año)
-    const totalAnualResult = await prismaClient.factura.aggregate({
+    const totalAnualResult = await prismaClient.invoice.aggregate({
       _sum: {
-        total: true
+        totalAmount: true
       },
       where: {
-        fechaCreacion: {
+        createdAt: {
           gte: inicioAno,
           lte: finAno
         },
-        estado: 'PAGADA'
+        status: 'PAID'
       }
     });
 
     const estadisticas = {
       facturasMes: facturasMes || 0,
-      ingresosMes: ingresosMesResult._sum.total || 0,
-      pendientesCobro: pendientesCobroResult._sum.total || 0,
-      totalAnual: totalAnualResult._sum.total || 0
+      ingresosMes: (ingresosMesResult._sum?.totalAmount || 0) / 100, // Convertir de centavos a euros
+      pendientesCobro: (pendientesCobroResult._sum?.totalAmount || 0) / 100, // Convertir de centavos a euros
+      totalAnual: (totalAnualResult._sum?.totalAmount || 0) / 100 // Convertir de centavos a euros
     };
 
     return NextResponse.json(estadisticas);
@@ -90,9 +85,5 @@ export async function GET(request: NextRequest) {
       { error: 'Error al obtener estadísticas' },
       { status: 500 }
     );
-  } finally {
-    if (prismaClient) {
-      await prismaClient.$disconnect();
-    }
   }
 }

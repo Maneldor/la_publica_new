@@ -258,13 +258,13 @@ export async function checkCanCreateOffer(companyId: string): Promise<{
     where: { companyId },
   });
 
-  const allowed = canCreateOffer(config.tier, currentOffers, config);
+  const allowed = canCreateOffer(config.tier as PlanTier, currentOffers, config);
 
   return {
     allowed,
-    reason: allowed ? undefined : `Has arribat al límit de ${config.maxActiveOffers} ofertes del teu pla ${config.name}`,
+    reason: allowed ? undefined : `Has arribat al límit de ${config.maxActiveOffers ?? 'ilimitades'} ofertes del teu pla ${config.name}`,
     current: currentOffers,
-    limit: config.maxActiveOffers,
+    limit: config.maxActiveOffers ?? 'unlimited',
   };
 }
 
@@ -286,13 +286,13 @@ export async function checkCanActivateOffer(companyId: string): Promise<{
     },
   });
 
-  const allowed = canActivateOffer(config.tier, activeOffers, config);
+  const allowed = canActivateOffer(config.tier as PlanTier, activeOffers, config);
 
   return {
     allowed,
-    reason: allowed ? undefined : `Has arribat al límit de ${config.maxActiveOffers} ofertes actives del teu pla ${config.name}`,
+    reason: allowed ? undefined : `Has arribat al límit de ${config.maxActiveOffers ?? 'ilimitades'} ofertes actives del teu pla ${config.name}`,
     current: activeOffers,
-    limit: config.maxActiveOffers,
+    limit: config.maxActiveOffers ?? 'unlimited',
   };
 }
 
@@ -327,7 +327,7 @@ export async function checkCanGenerateCoupon(companyId: string): Promise<{
     return 0;
   });
 
-  const allowed = canGenerateCoupon(config.tier, couponsThisMonth, config);
+  const allowed = canGenerateCoupon(config.tier as PlanTier, couponsThisMonth, config);
 
   return {
     allowed,
@@ -358,7 +358,7 @@ export async function checkCanAddTeamMember(companyId: string): Promise<{
     },
   });
 
-  const allowed = canAddTeamMember(config.tier, currentMembers, config);
+  const allowed = canAddTeamMember(config.tier as PlanTier, currentMembers, config);
 
   return {
     allowed,
@@ -454,12 +454,12 @@ export async function getPlanUsageStats(companyId: string) {
     offers: {
       current: totalOffers,
       limit: config.maxActiveOffers === -1 ? 'unlimited' : config.maxActiveOffers,
-      percentage: config.maxActiveOffers === -1 ? 0 : Math.round((totalOffers / config.maxActiveOffers) * 100),
+      percentage: config.maxActiveOffers === -1 || !config.maxActiveOffers ? 0 : Math.round((totalOffers / config.maxActiveOffers) * 100),
     },
     activeOffers: {
       current: activeOffers,
       limit: config.maxActiveOffers === -1 ? 'unlimited' : config.maxActiveOffers,
-      percentage: config.maxActiveOffers === -1 ? 0 : Math.round((activeOffers / config.maxActiveOffers) * 100),
+      percentage: config.maxActiveOffers === -1 || !config.maxActiveOffers ? 0 : Math.round((activeOffers / config.maxActiveOffers) * 100),
     },
     coupons: {
       current: couponsThisMonth,
@@ -485,8 +485,8 @@ export async function canUpgradeToPlan(companyId: string, targetTier: PlanTier):
 
   // Orden de planes para verificar upgrade
   const planOrder: PlanTier[] = ['PIONERES', 'STANDARD', 'STRATEGIC', 'ENTERPRISE'];
-  const currentIndex = planOrder.indexOf(currentConfig.tier);
-  const targetIndex = planOrder.indexOf(targetTier);
+  const currentIndex = planOrder.indexOf(currentConfig.tier as PlanTier);
+  const targetIndex = planOrder.indexOf(targetTier as PlanTier);
 
   if (currentIndex === -1) {
     return { allowed: false, reason: 'Pla actual no reconegut' };
@@ -534,7 +534,6 @@ export async function upgradePlan(companyId: string, newTier: PlanTier): Promise
       await prismaClient.subscription.update({
         where: { id: company.currentPlan.id },
         data: {
-          tier: newTier,
           updatedAt: new Date(),
         },
       });
@@ -543,8 +542,11 @@ export async function upgradePlan(companyId: string, newTier: PlanTier): Promise
       await prismaClient.subscription.create({
         data: {
           companyId: company.id,
-          tier: newTier,
+          planId: newConfig.id,
           status: 'ACTIVE',
+          precioMensual: newConfig.precioMensual || 0,
+          limites: newConfig.limitesJSON ? JSON.parse(newConfig.limitesJSON) : {},
+          startDate: new Date(),
           createdAt: new Date(),
           updatedAt: new Date(),
         },

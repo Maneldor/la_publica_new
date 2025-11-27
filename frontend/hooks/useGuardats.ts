@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { guardarItem, eliminarGuardat, isItemGuardat } from '@/lib/guardats';
 
+type GuardatTipus = 'blog' | 'oferta' | 'forum' | 'anunci' | 'empresa' | 'grup' | 'assessorament';
+
 export const useGuardats = (
   tipus: string,
   itemId: string,
@@ -38,7 +40,7 @@ export const useGuardats = (
         const success = await eliminarGuardat(usuariId, tipus, itemId);
         if (success) setIsGuardat(false);
       } else {
-        const success = await guardarItem(usuariId, tipus, itemId, metadata);
+        const success = await guardarItem(usuariId, tipus as GuardatTipus, itemId, metadata);
         if (success) setIsGuardat(true);
       }
     } catch (error) {

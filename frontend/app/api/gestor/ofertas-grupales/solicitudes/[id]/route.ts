@@ -3,6 +3,19 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prismaClient } from '@/lib/prisma';
 import { z } from 'zod';
+import { NotificationType, Prisma } from '@prisma/client';
+
+const solicitudInclude = {
+  requester: {
+    include: {
+      ownedCompany: true
+    }
+  }
+} satisfies Prisma.GroupOfferRequestInclude;
+
+type SolicitudWithRelations = Prisma.GroupOfferRequestGetPayload<{
+  include: typeof solicitudInclude;
+}>;
 
 // SEGURIDAD: Schema de validación para ID de solicitud
 const ParamsSchema = z.object({
@@ -119,7 +132,7 @@ export async function GET(
         {
           success: false,
           error: 'ID de sol·licitud invàlid',
-          details: validationResult.error.errors
+          details: validationResult.error.issues
         },
         { status: 400 }
       );
@@ -130,33 +143,8 @@ export async function GET(
     // Obtener solicitud con toda la información relacionada
     const solicitud = await prismaClient.groupOfferRequest.findUnique({
       where: { id: requestId },
-      include: {
-        requester: {
-          include: {
-            ownedCompany: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                phone: true,
-                logo: true,
-                category: true,
-                description: true,
-                website: true
-              }
-            }
-          }
-        },
-        reviewedByUser: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            phone: true
-          }
-        }
-      }
-    });
+      include: solicitudInclude
+    }) as SolicitudWithRelations | null;
 
     // Verificar que existe la solicitud
     if (!solicitud) {
@@ -177,18 +165,14 @@ export async function GET(
 
     // Buscar configuración de oferta grupal si existe
     let configuracion = null;
-    try {
-      configuracion = await prismaClient.groupOfferConfig.findFirst({
-        where: {
-          // Buscar por empresa o solicitud relacionada
-          OR: [
-            { relatedRequestId: requestId },
-            { companyId: solicitud.requester.ownedCompany?.id || '' }
-          ]
-        }
+    if (solicitud.groupOfferId) {
+      configuracion = await prismaClient.groupOfferConfig.findUnique({
+        where: { id: solicitud.groupOfferId }
       });
-    } catch (error) {
-      console.log('No se encontró configuración asociada'); // Normal si aún no se ha creado
+    } else if (solicitud.requester.ownedCompany?.id) {
+      configuracion = await prismaClient.groupOfferConfig.findFirst({
+        where: { companyId: solicitud.requester.ownedCompany.id }
+      });
     }
 
     // Obtener historial de notificaciones relacionadas con esta solicitud
@@ -222,7 +206,7 @@ export async function GET(
           // Audit logs relacionados
           {
             AND: [
-              { type: 'AUDIT_LOG' },
+              { type: NotificationType.SYSTEM },
               { message: { contains: requestId } }
             ]
           }
@@ -250,7 +234,7 @@ export async function GET(
         id: solicitud.id,
         empresaId: solicitud.requesterId,
         title: solicitud.title,
-        productCategory: solicitud.productCategory,
+        productCategory: solicitud.category,
         estimatedParticipants: solicitud.minParticipants,
         targetPrice: solicitud.targetPrice,
         description: solicitud.description,
@@ -269,7 +253,7 @@ export async function GET(
         email: solicitud.requester.ownedCompany?.email || solicitud.requester.email,
         phone: solicitud.requester.ownedCompany?.phone || null,
         logo: solicitud.requester.ownedCompany?.logo || null,
-        category: solicitud.requester.ownedCompany?.category || 'General',
+        category: solicitud.category || 'General',
         description: solicitud.requester.ownedCompany?.description || null,
         website: solicitud.requester.ownedCompany?.website || null
       },
@@ -302,7 +286,7 @@ export async function GET(
     // AUDIT LOG para acceso a detalle
     await prismaClient.notification.create({
       data: {
-        type: 'AUDIT_LOG',
+        type: NotificationType.SYSTEM,
         title: 'GESTOR_ACCESS: Detalle solicitud',
         message: `${user.email} accedió al detalle de la solicitud ${requestId}`,
         priority: 'LOW',

@@ -110,8 +110,8 @@ export function ChatWindow({
               color: '#6c757d'
             }}>
               {activeConversation.type === 'company' ? 'Empresa' :
-               activeConversation.type === 'admin' ? 'Administrador' :
-               activeConversation.type === 'gestor' ? 'Gestor Comercial' : 'Usuario'}
+               (activeConversation.type as string) === 'admin' ? 'Administrador' :
+               (activeConversation.type as string) === 'gestor' ? 'Gestor Comercial' : 'Usuario'}
             </p>
           </div>
         </div>

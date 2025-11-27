@@ -14,44 +14,12 @@ import {
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
-
-// Types
-interface AIProvider {
-  id: string;
-  name: string;
-  displayName: string;
-  type: 'CLAUDE' | 'OPENAI' | 'GEMINI' | 'AZURE_OPENAI' | 'COHERE' | 'CUSTOM';
-  isActive: boolean;
-  isDefault: boolean;
-  config: {
-    apiKey: string;
-    model: string;
-    temperature?: number;
-    maxTokens?: number;
-    timeout?: number;
-    baseURL?: string;
-  };
-  capabilities: {
-    lead_analysis?: boolean;
-    scoring?: boolean;
-    pitch_generation?: boolean;
-    data_extraction?: boolean;
-    sentiment_analysis?: boolean;
-    classification?: boolean;
-  };
-  totalRequests: number;
-  successfulRequests: number;
-  failedRequests: number;
-  averageLatency: number | null;
-  totalCost: number;
-  createdAt: string;
-  updatedAt: string;
-}
+import { AIProvider } from '@/lib/api/aiProviders';
 
 interface ProviderCardProps {
   provider: AIProvider;
   onEdit: (provider: AIProvider) => void;
-  onToggleActive: (id: string, active: boolean) => void;
+  onToggleActive: (id: string, active: boolean) => Promise<void> | void;
   onSetDefault: (id: string) => void;
   onTestConnection: (provider: AIProvider) => void;
 }
@@ -121,10 +89,14 @@ export default function ProviderCard({
     onSetDefault(provider.id);
   };
 
-  const maskApiKey = (key: string) => {
+  const maskApiKey = (key?: string) => {
+    if (!key) return '***';
     if (key.length <= 8) return '***';
     return key.substring(0, 8) + '***';
   };
+
+  const formatCapabilityLabel = (capability: string) =>
+    capability.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase()).trim();
 
   return (
     <Card className={`overflow-hidden transition-shadow hover:shadow-md ${
@@ -229,13 +201,13 @@ export default function ProviderCard({
             <div className="flex justify-between">
               <span className="text-gray-600">Model:</span>
               <span className="font-medium font-mono text-xs">
-                {provider.config.model}
+                {provider.config.model || '—'}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Temperature:</span>
               <span className="font-medium">
-                {provider.config.temperature || 'N/A'}
+                {provider.config.temperature ?? 'N/A'}
               </span>
             </div>
             <div className="flex justify-between">
@@ -253,7 +225,7 @@ export default function ProviderCard({
             Capacitats
           </h4>
           <div className="flex flex-wrap gap-1">
-            {Object.entries(provider.capabilities).map(([key, enabled]) => (
+            {Object.entries(provider.capabilities || {}).map(([key, enabled]) => (
               <span
                 key={key}
                 className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -262,9 +234,14 @@ export default function ProviderCard({
                     : 'bg-gray-100 text-gray-500'
                 }`}
               >
-                {key.replace('_', ' ')}
+                {formatCapabilityLabel(key)}
               </span>
             ))}
+            {!provider.capabilities && (
+              <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
+                Sense dades
+              </span>
+            )}
           </div>
         </div>
 

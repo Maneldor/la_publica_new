@@ -158,10 +158,8 @@ export default function FacturacionDashboard() {
         }}
         middleZone={{
           title: 'Últimes Factures',
-          description: 'Resum de les factures més recents'
-        }}
-        bottomZone={{
-          customContent: (
+          description: 'Resum de les factures més recents',
+          content: (
             <div className="space-y-3">
               {loading ? (
                 <div className="text-center py-4">

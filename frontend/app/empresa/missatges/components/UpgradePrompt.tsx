@@ -7,7 +7,7 @@ interface UpgradePromptProps {
   onUpgrade?: () => void;
 }
 
-export function UpgradePrompt({ currentUser, currentPlan }: UpgradePromptProps) {
+export function UpgradePrompt({ currentPlan }: UpgradePromptProps) {
   return (
     <div className="h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-md mx-auto text-center p-8">

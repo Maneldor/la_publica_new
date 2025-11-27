@@ -244,7 +244,7 @@ export async function POST(request: NextRequest) {
           }),
         },
 
-        createdBy: session.user.id,
+        createdById: session.user.id,
       },
       include: {
         company: true,

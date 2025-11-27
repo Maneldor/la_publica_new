@@ -28,18 +28,14 @@ export async function GET(request: NextRequest) {
     } : {};
 
     const empresas = await prismaClient.company.findMany({
-      where,
+      where: where as any, // subscriptionPlan no existe en schema
       select: {
         id: true,
         name: true,
         email: true,
-        nombreFiscal: true,
-        cifFiscal: true,
-        direccionFiscal: true,
-        ciudadFiscal: true,
-        cpFiscal: true,
-        provinciaFiscal: true,
-        subscriptionPlan: true
+        cif: true,
+        address: true,
+        // Campos fiscales no existen en schema, usar campos básicos
       },
       orderBy: {
         name: 'asc'
@@ -221,7 +217,7 @@ export async function POST(request: NextRequest) {
           status: 'ACTIVE',
           precioMensual: planConfig.basePrice,
           precioAnual: planConfig.basePrice * 12 * (1 - planConfig.firstYearDiscount),
-          limites: planConfig.features,
+          limites: planConfig.features as any, // Convertir a InputJsonValue
           startDate: now,
           endDate: endDate
         }
@@ -253,7 +249,7 @@ export async function POST(request: NextRequest) {
         companyId: result.company.id,
         companyName: result.company.name,
         userEmail: result.user.email,
-        username: result.user.username,
+        username: result.user.name || result.user.email, // username no existe, usar name o email
         plan: {
           tier: selectedPlan,
           name: planConfig.name

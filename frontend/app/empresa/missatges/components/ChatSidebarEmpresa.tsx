@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Search, Plus, Settings, X } from 'lucide-react';
-import { Conversation } from '../types/chatTypes';
+import { Conversation } from '../../../gestor-empreses/missatges/types/chatTypes';
 
 interface ChatSidebarEmpresaProps {
   conversations: Conversation[];
@@ -233,7 +233,7 @@ export default function ChatSidebarEmpresa({
                       </h3>
                       {conversation.lastMessage && (
                         <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
-                          {formatLastMessageTime(conversation.lastMessage.timestamp)}
+                          {formatLastMessageTime(conversation.lastMessage.timestamp instanceof Date ? conversation.lastMessage.timestamp.toISOString() : String(conversation.lastMessage.timestamp))}
                         </span>
                       )}
                     </div>
@@ -279,7 +279,7 @@ export default function ChatSidebarEmpresa({
         <div className="text-xs text-gray-600">
           <p>Missatgeria empresarial</p>
           <p className="mt-1">
-            {userPlan !== 'BÀSIC' && `${filteredConversations.length} converses`}
+            {userPlan && userPlan !== 'ESTÀNDARD' && userPlan !== 'EMPRESARIAL' && userPlan !== 'PREMIUM' && `${filteredConversations.length} converses`}
           </p>
         </div>
       </div>

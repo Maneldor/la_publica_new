@@ -1,27 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
   ArrowRight,
-  Save,
-  Eye,
-  Upload,
-  X,
-  Plus,
-  Info,
-  Tag,
-  Calendar,
-  ShoppingBag,
-  Image,
-  CheckCircle,
-  ExternalLink,
-  Phone,
-  Mail,
-  FileText,
-  QrCode,
-  Ticket
+  Save
 } from 'lucide-react';
 
 import WizardSteps from './FormacioWizardSteps';
@@ -58,6 +42,14 @@ interface Lesson {
   order: number;
 }
 
+interface Instructor {
+  id?: string;
+  name: string;
+  institution?: string;
+  email?: string;
+  bio?: string;
+}
+
 interface WizardFormData {
   // Step 1: Tipo de curso
   courseType: CourseType;
@@ -83,7 +75,7 @@ interface WizardFormData {
 
   // Step 4: Instructor
   hasInstructor: boolean;
-  selectedInstructor: any | null;
+  selectedInstructor: Instructor | null;
 
   // Step 5: Precios y modalidad
   pricingType: 'gratuit' | 'pagament';
@@ -127,7 +119,7 @@ export const FormacioWizard: React.FC<FormacioWizardProps> = ({ onClose }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [aiGenerating, setAiGenerating] = useState(false);
-  const [aiGeneratedContent, setAiGeneratedContent] = useState<{lessons: any[], totalDuration: number} | null>(null);
+  const [aiGeneratedContent, setAiGeneratedContent] = useState<{lessons: Lesson[], totalDuration: number} | null>(null);
 
   const [formData, setFormData] = useState<WizardFormData>({
     // Step 1: Tipo de curso
@@ -226,7 +218,7 @@ export const FormacioWizard: React.FC<FormacioWizardProps> = ({ onClose }) => {
     { id: 7, title: 'Revisió', icon: '👁️' }
   ];
 
-  const updateField = (field: keyof WizardFormData, value: any) => {
+  const updateField = <K extends keyof WizardFormData>(field: K, value: WizardFormData[K]) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -358,7 +350,7 @@ export const FormacioWizard: React.FC<FormacioWizardProps> = ({ onClose }) => {
       case 6:
         return <Step6Certificat formData={formData} updateField={updateField} errors={errors} />;
       case 7:
-        return <Step7Review formData={formData} updateField={updateField} courseTypeConfig={courseTypeConfig} calculateTotalDuration={calculateTotalDuration} aiGeneratedContent={aiGeneratedContent} />;
+        return <Step7Review formData={formData} updateField={updateField} courseTypeConfig={courseTypeConfig} calculateTotalDuration={calculateTotalDuration} aiGeneratedContent={aiGeneratedContent} errors={errors} />;
       default:
         return null;
     }

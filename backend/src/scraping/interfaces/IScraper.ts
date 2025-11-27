@@ -1,4 +1,6 @@
+// LeadSource type - usar enum de Prisma
 import { LeadSource } from '@prisma/client';
+export { LeadSource };
 
 export interface ScraperConfig {
   maxResults: number;
@@ -10,6 +12,7 @@ export interface ScraperConfig {
 
 export interface ScrapedData {
   name: string;
+  contactName?: string;
   email?: string;
   phone?: string;
   website?: string;

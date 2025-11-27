@@ -1,8 +1,5 @@
 import { Response } from 'express';
-import { PrismaClient } from '@prisma/client';
 import { AuthenticatedRequest } from '../../middleware/permissions.middleware';
-
-const prisma = new PrismaClient();
 
 // Lista de palabras inapropiadas (puedes expandirla o moverla a la BD)
 const inappropriateWords = [

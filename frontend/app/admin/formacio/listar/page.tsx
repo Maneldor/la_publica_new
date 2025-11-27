@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { BookOpen, Users, Star, CheckCircle2 } from 'lucide-react';
-import { coursesService, Course } from '../../../../lib/courses';
+import { coursesService, Course } from '@/lib/courses';
 
 export default function ListarCursosPage() {
   const router = useRouter();
@@ -298,7 +298,7 @@ export default function ListarCursosPage() {
     );
   };
 
-  const categories = [...new Set(courses.map(c => c.category))];
+  const categories = Array.from(new Set(courses.map(c => c.category)));
 
   if (loading) {
     return (

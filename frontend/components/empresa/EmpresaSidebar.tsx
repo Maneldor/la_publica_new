@@ -177,7 +177,7 @@ export default function EmpresaSidebar({
                   </div>
                 )}
               </div>
-            ) : (
+            ) : item.path ? (
               <Link
                 href={item.path}
                 className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -197,7 +197,7 @@ export default function EmpresaSidebar({
                   </span>
                 )}
               </Link>
-            )}
+            ) : null}
           </div>
         ))}
       </nav>

@@ -147,7 +147,7 @@ export default function NewInteractionModal({ isOpen, onClose, lead, onSuccess }
       type: selectedType as any,
       subject: subject.trim() || undefined,
       content: content.trim(),
-      outcome: outcome || undefined,
+      outcome: outcome ? (outcome as 'positive' | 'neutral' | 'negative' | 'no_response') : undefined,
       nextAction: nextAction.trim() || undefined,
       nextActionDate: nextActionDate || undefined,
       contactId: selectedContact || undefined

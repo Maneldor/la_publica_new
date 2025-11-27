@@ -31,12 +31,15 @@ interface PlanConfig {
   priority: number;
   hasFreeTrial: boolean;
   trialDurationDays: number;
+  durationMonths: number;
   isActive: boolean;
   isVisible: boolean;
   displayNote: string;
   funcionalidades?: string;
   priceIncludesVAT: boolean;
 }
+
+type PlanLike = Omit<PlanConfig, 'id'> & { id?: string };
 
 interface PlanStats {
   totalCompanies: number;
@@ -88,7 +91,7 @@ export default function AdminPlansPage() {
   };
 
   // Función de validación
-  const validatePlan = (plan: PlanConfig) => {
+  const validatePlan = (plan: PlanLike) => {
     const errors: string[] = [];
 
     if (plan.basePrice < 0) {
@@ -762,7 +765,7 @@ export default function AdminPlansPage() {
               if (isCreating) return; // Prevenir múltiples submits
 
               // Crear objeto del nuevo plan
-              const newPlan = {
+              const newPlan: PlanLike = {
                 slug: (e.currentTarget.slug as any).value,
                 tier: (e.currentTarget.tier as any).value,
                 name: (e.currentTarget.name as any).value,
@@ -796,7 +799,7 @@ export default function AdminPlansPage() {
               };
 
               // Validar antes de crear
-              const validationErrors = validatePlan(newPlan as PlanConfig);
+              const validationErrors = validatePlan(newPlan);
               if (validationErrors.length > 0) {
                 toast.error(validationErrors[0]);
                 return;

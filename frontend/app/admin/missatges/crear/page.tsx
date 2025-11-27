@@ -402,7 +402,7 @@ function Step2Recipients({ formData, updateField, errors }: any) {
         {formData.recipientType === 'individual' && (
           <UserSelector
             selectedUsers={formData.selectedUsers}
-            onUsersChange={(users) => updateField('selectedUsers', users)}
+            onUsersChange={(users: any[]) => updateField('selectedUsers', users)}
             error={errors.selectedUsers}
           />
         )}

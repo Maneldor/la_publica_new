@@ -6,6 +6,13 @@ interface OfferPreviewProps {
   formData: any;
 }
 
+// Helper function accessible to all components
+const formatPrice = (price: string | number) => {
+  if (!price) return '0€';
+  const num = typeof price === 'string' ? parseFloat(price) : price;
+  return num.toLocaleString('ca-ES') + '€';
+};
+
 export function OfferPreview({ formData }: OfferPreviewProps) {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
@@ -15,12 +22,6 @@ export function OfferPreview({ formData }: OfferPreviewProps) {
     const current = parseFloat(formData.price);
     if (original <= current) return 0;
     return Math.round(((original - current) / original) * 100);
-  };
-
-  const formatPrice = (price: string | number) => {
-    if (!price) return '0€';
-    const num = typeof price === 'string' ? parseFloat(price) : price;
-    return num.toLocaleString('ca-ES') + '€';
   };
 
   const formatDate = (date: string) => {

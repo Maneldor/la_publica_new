@@ -56,12 +56,17 @@ const initialFormData: AdminAnunciFormData = {
   moderationStatus: 'approved',
 };
 
+export type UpdateAdminAnunciField = <K extends keyof AdminAnunciFormData>(
+  field: K,
+  value: AdminAnunciFormData[K]
+) => void;
+
 export const useAdminCreateAnunci = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<AdminAnunciFormData>(initialFormData);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const updateField = (field: keyof AdminAnunciFormData, value: any) => {
+  const updateField: UpdateAdminAnunciField = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     // Clear error for this field
     if (errors[field]) {

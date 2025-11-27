@@ -86,21 +86,10 @@ export async function GET(req: NextRequest) {
     });
 
     // CÁLCULO 4: Solicitudes con configuración creada
-    const conConfiguracion = await prismaClient.groupOfferConfig.count({
+    const conConfiguracion = await prismaClient.groupOfferRequest.count({
       where: {
-        OR: [
-          // Si existe campo gestorId en GroupOfferConfig
-          { createdBy: session.user.id },
-          // O buscar por solicitudes relacionadas
-          {
-            relatedRequestId: {
-              in: await prismaClient.groupOfferRequest.findMany({
-                where: { reviewedBy: session.user.id },
-                select: { id: true }
-              }).then(requests => requests.map(r => r.id))
-            }
-          }
-        ]
+        reviewedBy: session.user.id,
+        groupOfferId: { not: null }
       }
     });
 
@@ -142,20 +131,11 @@ export async function GET(req: NextRequest) {
           reviewedAt: { gte: unaSemanAtras }
         }
       }),
-      prismaClient.groupOfferConfig.count({
+      prismaClient.groupOfferRequest.count({
         where: {
-          createdAt: { gte: unaSemanAtras },
-          OR: [
-            { createdBy: session.user.id },
-            {
-              relatedRequestId: {
-                in: await prismaClient.groupOfferRequest.findMany({
-                  where: { reviewedBy: session.user.id },
-                  select: { id: true }
-                }).then(requests => requests.map(r => r.id))
-              }
-            }
-          ]
+          reviewedBy: session.user.id,
+          groupOfferId: { not: null },
+          updatedAt: { gte: unaSemanAtras }
         }
       })
     ]);
@@ -171,20 +151,11 @@ export async function GET(req: NextRequest) {
           reviewedAt: { gte: unMesAtras }
         }
       }),
-      prismaClient.groupOfferConfig.count({
+      prismaClient.groupOfferRequest.count({
         where: {
-          createdAt: { gte: unMesAtras },
-          OR: [
-            { createdBy: session.user.id },
-            {
-              relatedRequestId: {
-                in: await prismaClient.groupOfferRequest.findMany({
-                  where: { reviewedBy: session.user.id },
-                  select: { id: true }
-                }).then(requests => requests.map(r => r.id))
-              }
-            }
-          ]
+          reviewedBy: session.user.id,
+          groupOfferId: { not: null },
+          updatedAt: { gte: unMesAtras }
         }
       })
     ]);
@@ -232,23 +203,23 @@ export async function GET(req: NextRequest) {
 
     // CÁLCULO 10: Solicitudes por categoría de producto
     const solicitudesPorCategoria = await prismaClient.groupOfferRequest.groupBy({
-      by: ['productCategory'],
+      by: ['category'],
       where: { reviewedBy: session.user.id },
-      _count: { productCategory: true },
-      orderBy: { _count: { productCategory: 'desc' } },
+      _count: { category: true },
+      orderBy: { _count: { category: 'desc' } },
       take: 5
     });
 
     const categoriaStats = solicitudesPorCategoria.map(stat => ({
-      categoria: stat.productCategory,
-      cantidad: stat._count.productCategory,
-      porcentaje: totalAsignadas > 0 ? (stat._count.productCategory / totalAsignadas) * 100 : 0
+      categoria: stat.category,
+      cantidad: stat._count?.category || 0,
+      porcentaje: totalAsignadas > 0 ? ((stat._count?.category || 0) / totalAsignadas) * 100 : 0
     }));
 
     // AUDIT LOG para acceso a estadísticas
     await prismaClient.notification.create({
       data: {
-        type: 'AUDIT_LOG',
+        type: 'SYSTEM',
         title: 'GESTOR_ACCESS: Consulta estadísticas',
         message: `${user.email} consultó sus estadísticas de gestión`,
         priority: 'LOW',

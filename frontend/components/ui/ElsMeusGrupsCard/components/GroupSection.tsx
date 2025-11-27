@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Group } from '../../../data/groupsData';
+import { Group } from '../../data/groupsData';
 
 interface GroupSectionProps {
   title: string;

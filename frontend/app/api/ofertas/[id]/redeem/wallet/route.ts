@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prismaClient } from '@/lib/prisma';
 import { z } from 'zod';
 import { Decimal } from '@prisma/client/runtime/library';
+import { EventType, NotificationType } from '@prisma/client';
 
 const redeemWalletSchema = z.object({
   userAgent: z.string().optional(),
@@ -68,8 +69,10 @@ export async function POST(
       );
     }
 
+    const discountAmount = Number((offer as unknown as { discount?: number }).discount ?? 0);
+
     // 6. Validar descuento configurado
-    if (!offer.discount || offer.discount <= 0) {
+    if (!discountAmount || discountAmount <= 0) {
       return NextResponse.json(
         { success: false, error: 'Aquesta oferta no té descuento configurat per al monedero' },
         { status: 400 }
@@ -93,15 +96,21 @@ export async function POST(
     }
 
     // 9. Verificar redención duplicada (una vez por oferta por usuario)
-    const existingTransaction = await prismaClient.walletTransaction.findFirst({
-      where: {
-        userId: session.user.id,
-        metadata: {
-          path: ['offerId'],
-          equals: offer.id
-        }
-      }
+    const userWallet = await prismaClient.userWallet.findUnique({
+      where: { userId: session.user.id }
     });
+
+    const existingTransaction = userWallet
+      ? await prismaClient.walletTransaction.findFirst({
+          where: {
+            walletId: userWallet.id,
+            metadata: {
+              path: ['offerId'],
+              equals: offer.id
+            }
+          }
+        })
+      : null;
 
     if (existingTransaction) {
       return NextResponse.json(
@@ -117,44 +126,31 @@ export async function POST(
     // 10. Operación atómica: Crear/Actualizar wallet + Transacción + Eventos
     const result = await prismaClient.$transaction(async (prisma) => {
       // Obtener o crear UserWallet
-      let userWallet = await prisma.userWallet.findUnique({
-        where: { userId: session.user.id }
-      });
-
-      if (!userWallet) {
-        userWallet = await prisma.userWallet.create({
-          data: {
-            userId: session.user.id,
-            balance: new Decimal(0),
-            totalEarned: new Decimal(0),
-            totalSpent: new Decimal(0)
-          }
+      let wallet = userWallet;
+      if (!wallet) {
+        wallet = await prisma.userWallet.create({
+          data: { userId: session.user.id }
         });
       }
 
-      // Calcular nuevo balance
-      const creditAmount = new Decimal(offer.discount);
-      const newBalance = userWallet.balance.add(creditAmount);
-      const newTotalEarned = userWallet.totalEarned.add(creditAmount);
+      const creditAmount = new Decimal(discountAmount);
 
       // Actualizar wallet
       const updatedWallet = await prisma.userWallet.update({
-        where: { userId: session.user.id },
+        where: { id: wallet.id },
         data: {
-          balance: newBalance,
-          totalEarned: newTotalEarned,
-          lastTransactionAt: new Date()
+          balance: { increment: creditAmount }
         }
       });
 
       // Crear transacción
       const transaction = await prisma.walletTransaction.create({
         data: {
-          userId: session.user.id,
+          walletId: wallet.id,
           type: 'CREDIT',
           amount: creditAmount,
-          balance: newBalance,
           description: `Redempció oferta: ${offer.title}`,
+          offerId: offer.id,
           metadata: {
             offerId: offer.id,
             companyId: offer.companyId,
@@ -174,24 +170,18 @@ export async function POST(
           offerId: offer.id,
           userId: session.user.id,
           companyId: offer.companyId,
-          eventType: 'WALLET_REDEEM',
+          eventType: EventType.CLICK,
           userAgent: validated.userAgent || request.headers.get('user-agent'),
           ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
-          referrer: validated.referrer,
-          metadata: {
-            transactionId: transaction.id,
-            creditAmount: creditAmount.toString(),
-            newBalance: newBalance.toString(),
-            timestamp: new Date().toISOString()
-          }
+          referrer: validated.referrer
         }
       });
 
-      // Incrementar contador de redenciones
+      // Incrementar contador de interacciones
       await prisma.offer.update({
         where: { id: offer.id },
         data: {
-          redemptions: { increment: 1 }
+          applications: { increment: 1 }
         }
       });
 
@@ -202,15 +192,15 @@ export async function POST(
     await prismaClient.notification.create({
       data: {
         userId: offer.companyId,
-        type: 'SYSTEM_NOTIFICATION',
+        type: NotificationType.SYSTEM,
         title: 'Oferta utilitzada en monedero',
-        message: `Un usuari ha afegit ${offer.discount}€ al seu monedero utilitzant la teva oferta "${offer.title}"`,
+        message: `Un usuari ha afegit ${discountAmount}€ al seu monedero utilitzant la teva oferta "${offer.title}"`,
         priority: 'NORMAL',
         metadata: JSON.stringify({
           offerId: offer.id,
           userId: session.user.id,
           transactionId: result.transaction.id,
-          amount: offer.discount,
+          amount: discountAmount,
           timestamp: new Date().toISOString()
         })
       }
@@ -220,14 +210,14 @@ export async function POST(
     await prismaClient.notification.create({
       data: {
         userId: session.user.id,
-        type: 'WALLET_CREDIT',
+        type: NotificationType.SYSTEM,
         title: 'Monedero actualitzat',
-        message: `S'han afegit ${offer.discount}€ al teu monedero. Nou saldo: ${result.updatedWallet.balance}€`,
+        message: `S'han afegit ${discountAmount}€ al teu monedero. Nou saldo: ${result.updatedWallet.balance}€`,
         priority: 'NORMAL',
         metadata: JSON.stringify({
           offerId: offer.id,
           transactionId: result.transaction.id,
-          amount: offer.discount,
+          amount: discountAmount,
           newBalance: result.updatedWallet.balance.toString(),
           companyName: offer.company.name
         })
@@ -247,13 +237,12 @@ export async function POST(
         },
         wallet: {
           balance: result.updatedWallet.balance.toString(),
-          totalEarned: result.updatedWallet.totalEarned.toString(),
-          lastTransactionAt: result.updatedWallet.lastTransactionAt?.toISOString()
+          currency: result.updatedWallet.currency
         },
         offer: {
           title: offer.title,
           companyName: offer.company.name,
-          discount: offer.discount
+          discount: discountAmount
         }
       }
     });
@@ -261,7 +250,14 @@ export async function POST(
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { success: false, error: 'Dades invàlides', details: error.errors },
+        {
+          success: false,
+          error: 'Dades invàlides',
+          details: error.issues.map(issue => ({
+            field: issue.path.join('.'),
+            message: issue.message
+          }))
+        },
         { status: 400 }
       );
     }

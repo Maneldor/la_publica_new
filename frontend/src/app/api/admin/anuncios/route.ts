@@ -1,59 +1,60 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { prismaClient } from '@/lib/prisma';
 import { hasPermission } from '@/lib/permissions';
 import { Permission } from '@/lib/permissions';
 import { createAnnouncementSchema, announcementFiltersSchema } from '@/lib/validations/anuncios';
 import { z } from 'zod';
+import { AnuncioType, AudienceType, NotificationChannel, AnuncioStatus } from '@prisma/client';
 
 // Mapeo de enums entre Zod y Prisma
-const mapAnnouncementType = (type: string) => {
-  const mapping: Record<string, string> = {
-    'general': 'GENERAL',
-    'urgent': 'URGENT',
-    'event': 'EVENT',
-    'maintenance': 'MAINTENANCE',
-    'news': 'NEWS',
-    'alert': 'ALERT',
-    'promotion': 'PROMOTION',
-    'regulation': 'REGULATION'
+const mapAnnouncementType = (type: string): AnuncioType => {
+  const mapping: Record<string, AnuncioType> = {
+    general: 'GENERAL',
+    urgent: 'URGENT',
+    event: 'EVENT',
+    maintenance: 'MAINTENANCE',
+    news: 'NEWS',
+    alert: 'ALERT',
+    promotion: 'PROMOTION',
+    regulation: 'REGULATION'
   };
-  return mapping[type] || 'GENERAL';
+  return mapping[type] ?? 'GENERAL';
 };
 
-const mapAudienceType = (audience: string) => {
-  const mapping: Record<string, string> = {
-    'all': 'ALL',
-    'employees': 'EMPLOYEES',
-    'companies': 'COMPANIES',
-    'specific': 'SPECIFIC',
-    'community': 'COMMUNITY'
+const mapAudienceType = (audience: string): AudienceType => {
+  const mapping: Record<string, AudienceType> = {
+    all: 'ALL',
+    employees: 'EMPLOYEES',
+    companies: 'COMPANIES',
+    specific: 'SPECIFIC',
+    community: 'COMMUNITY'
   };
-  return mapping[audience] || 'ALL';
+  return mapping[audience] ?? 'ALL';
 };
 
-const mapNotificationChannel = (channels?: string[]) => {
+const mapNotificationChannel = (channels?: string[]): NotificationChannel[] => {
   if (!channels) return [];
-  const mapping: Record<string, string> = {
-    'platform': 'PLATFORM',
-    'email': 'EMAIL',
-    'sms': 'SMS',
-    'push': 'PUSH',
-    'all_channels': 'ALL_CHANNELS'
+  const mapping: Record<string, NotificationChannel> = {
+    platform: 'PLATFORM',
+    email: 'EMAIL',
+    sms: 'SMS',
+    push: 'PUSH',
+    all_channels: 'ALL_CHANNELS'
   };
-  return channels.map(ch => mapping[ch] || 'PLATFORM');
+  return channels.map(ch => mapping[ch] ?? 'PLATFORM');
 };
 
-const mapStatus = (status?: string) => {
-  const mapping: Record<string, string> = {
-    'draft': 'DRAFT',
-    'pending': 'PENDING',
-    'published': 'PUBLISHED',
-    'archived': 'ARCHIVED',
-    'expired': 'EXPIRED'
+const mapStatus = (status?: string): AnuncioStatus => {
+  const mapping: Record<string, AnuncioStatus> = {
+    draft: 'DRAFT',
+    pending: 'PENDING',
+    published: 'PUBLISHED',
+    archived: 'ARCHIVED',
+    expired: 'EXPIRED'
   };
-  return mapping[status || 'draft'] || 'DRAFT';
+  return mapping[status ?? 'draft'] ?? 'DRAFT';
 };
 
 // GET /api/admin/anuncios - Listar anuncios con filtros
@@ -157,7 +158,7 @@ export async function GET(request: NextRequest) {
 
     // Consultar anuncios
     const [anuncios, total] = await Promise.all([
-      prisma.anuncio.findMany({
+      prismaClient.anuncio.findMany({
         where,
         skip,
         take: limit,
@@ -188,7 +189,7 @@ export async function GET(request: NextRequest) {
           }
         }
       }),
-      prisma.anuncio.count({ where })
+      prismaClient.anuncio.count({ where })
     ]);
 
     return NextResponse.json({
@@ -206,7 +207,7 @@ export async function GET(request: NextRequest) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({
         error: 'Datos de filtrado inválidos',
-        details: error.errors
+        details: error.issues
       }, { status: 400 });
     }
     return NextResponse.json({
@@ -247,7 +248,7 @@ export async function POST(request: NextRequest) {
       .replace(/^-|-$/g, '');
 
     // Crear anuncio
-    const anuncio = await prisma.anuncio.create({
+    const anuncio = await prismaClient.anuncio.create({
       data: {
         title: validatedData.title,
         content: validatedData.content,
@@ -303,7 +304,7 @@ export async function POST(request: NextRequest) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({
         error: 'Datos de anuncio inválidos',
-        details: error.errors
+        details: error.issues
       }, { status: 400 });
     }
     return NextResponse.json({

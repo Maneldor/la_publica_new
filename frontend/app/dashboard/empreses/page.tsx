@@ -7,8 +7,30 @@ import { CompanyTabs } from '../../../components/ui/CompanyTabs';
 import { ViewToggle } from '../../../components/ui/ViewToggle';
 import { CompanyCard } from '../../../components/ui/CompanyCard';
 
+// Tipo para Company
+type Company = {
+  id: number;
+  name: string;
+  description: string;
+  sector: string;
+  location: string;
+  logo: string;
+  coverImage: string;
+  collaborationType: string;
+  status: 'Activa' | 'Verificada' | 'Premium';
+  contactEmail: string;
+  contactPhone: string;
+  website: string;
+  rating: number;
+  reviewsCount: number;
+  certifications: string[];
+  isHighlighted: boolean;
+  yearEstablished: number;
+  employeeCount: string;
+};
+
 // Datos de ejemplo de empresas colaboradoras
-const sampleCompanies = [
+const sampleCompanies: Company[] = [
   {
     id: 1,
     name: 'TechSolutions BCN',
@@ -220,7 +242,7 @@ export default function EmpresesesPage() {
     { label: 'Total Empreses', value: allCompanies.length.toString(), trend: '+12%' },
     { label: 'Noves Aquest Mes', value: '8', trend: '+3' },
     { label: 'Verificades', value: allCompanies.filter(c => c.status === 'Verificada').length.toString(), trend: '+8%' },
-    { label: 'Actives', value: allCompanies.filter(c => c.status !== 'Suspesa').length.toString(), trend: '+5%' }
+    { label: 'Actives', value: allCompanies.filter(c => c.status === 'Activa' || c.status === 'Verificada' || c.status === 'Premium').length.toString(), trend: '+5%' }
   ], [allCompanies]);
 
   // Lista extensible de categorías disponibles

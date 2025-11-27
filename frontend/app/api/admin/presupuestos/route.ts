@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
       `${process.env.NEXT_PUBLIC_API_URL}/api/admin/presupuestos${queryString}`,
       {
         headers: {
-          'Authorization': `Bearer ${session.user.accessToken}`,
+          'Authorization': `Bearer ${(session.user as any).backendToken || (session.user as any).apiToken || ''}`,
           'Content-Type': 'application/json',
         },
       }
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.user.accessToken}`,
+          'Authorization': `Bearer ${(session.user as any).backendToken || (session.user as any).apiToken || ''}`,
         },
         body: JSON.stringify(body)
       }

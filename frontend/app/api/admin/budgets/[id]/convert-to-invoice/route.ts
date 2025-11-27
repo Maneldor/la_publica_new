@@ -100,12 +100,12 @@ export async function POST(
         issueDate: new Date(),
         dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // +30 días
 
-        // Importes
-        subtotalAmount: budget.subtotal,
-        taxRate: budget.taxRate,
-        taxAmount: budget.taxAmount,
-        totalAmount: budget.total,
-        discountAmount: budget.discountAmount,
+        // Importes (convertir Decimal a number)
+        subtotalAmount: Number(budget.subtotal),
+        taxRate: Number(budget.taxRate),
+        taxAmount: Number(budget.taxAmount),
+        totalAmount: Number(budget.total),
+        discountAmount: budget.discountAmount ? Number(budget.discountAmount) : 0,
         pricesIncludeVAT: true,
 
         // Datos fiscales cliente
@@ -113,12 +113,12 @@ export async function POST(
         clientCif: budget.clientNIF || budget.company.cif,
         clientEmail: budget.clientEmail || budget.company.email,
         clientAddress: budget.company.address || '',
-        clientCity: budget.company.city || '',
-        clientPostalCode: budget.company.postalCode || '',
+        clientCity: (budget.company as any).city || '',
+        clientPostalCode: (budget.company as any).postalCode || '',
 
         // Campos requeridos faltantes
         concept: `Factura per pressupost ${budget.budgetNumber}`,
-        pendingAmount: budget.total,
+        pendingAmount: Number(budget.total),
 
         // Datos fiscales emisor (La Pública)
         issuerName: 'La Pública',
@@ -137,12 +137,12 @@ export async function POST(
             planId: item.planId,
             extraId: item.extraId,
             description: item.description,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            subtotalAmount: item.subtotal,
-            taxAmount: Math.round((item.subtotal * 21) / 100), // IVA 21%
-            totalAmount: Math.round(item.subtotal * 1.21), // Subtotal con IVA 21%
-            discountPercent: item.discountPercent,
+            quantity: Number(item.quantity),
+            unitPrice: Number(item.unitPrice),
+            subtotalAmount: Number(item.subtotal),
+            taxAmount: Math.round((Number(item.subtotal) * 21) / 100), // IVA 21%
+            totalAmount: Math.round(Number(item.subtotal) * 1.21), // Subtotal con IVA 21%
+            discountPercent: item.discountPercent ? Number(item.discountPercent) : null,
           })),
         },
 

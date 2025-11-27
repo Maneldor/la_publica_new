@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { QrCodeIcon, CheckCircleIcon, XCircleIcon, ClockIcon, EuroIcon } from '@heroicons/react/24/outline';
+import { QrCodeIcon, CheckCircleIcon, XCircleIcon, ClockIcon, CurrencyEuroIcon } from '@heroicons/react/24/outline';
 
 interface CouponValidationResult {
   success: boolean;
@@ -259,7 +259,7 @@ export default function ValidacionCuponesPage() {
 
                   <div className="space-y-3">
                     <div className="flex items-center space-x-2">
-                      <EuroIcon className="h-4 w-4 text-gray-400" />
+                      <CurrencyEuroIcon className="h-4 w-4 text-gray-400" />
                       <div>
                         <span className="text-sm font-medium text-gray-500">Descompte:</span>
                         <p className="text-lg font-semibold text-green-600">

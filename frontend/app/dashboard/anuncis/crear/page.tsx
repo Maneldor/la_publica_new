@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { useCreateAnunci } from './hooks/useCreateAnunci';
 import { useCreateAnuncio } from '@/hooks/useAnuncios';
@@ -16,6 +17,7 @@ import { Step6Review } from './components/steps/Step6Review';
 
 export default function CrearAnunciPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const [isPublishing, setIsPublishing] = useState(false);
 
   const {
@@ -63,45 +65,52 @@ export default function CrearAnunciPage() {
       console.log('✅ Imágenes convertidas - Portada: 1, Galería:', galleryImagesBase64.length, 'Total:', allImages.length);
 
       // Mapear dades del formulari al format del backend
+      // Almacenar datos de marketplace en metadata para preservarlos
+      const marketplaceData = {
+        category: formData.category,
+        adType: formData.type,
+        price: formData.price,
+        priceType: formData.priceType,
+        condition: formData.condition,
+        location: {
+          province: formData.province,
+          city: formData.city,
+          postalCode: formData.postalCode
+        },
+        delivery: {
+          pickup: formData.pickupAvailable,
+          shipping: formData.shippingAvailable,
+          shippingIncluded: formData.shippingIncluded
+        },
+        contact: {
+          name: formData.contactName,
+          phone: formData.contactPhone,
+          email: formData.contactEmail,
+          preferredSchedule: formData.contactSchedule
+        },
+        coverImage: coverImageBase64,
+        galleryImages: galleryImagesBase64,
+        images: allImages,
+        mainImageIndex: 0
+      };
+
       const apiData = {
         title: formData.title,
         content: `${formData.description}\n\n**Detalls:**\n- Tipus: ${formData.type === 'oferta' ? 'Oferta' : 'Demanda'}\n- Categoria: ${formData.category}${formData.price ? `\n- Preu: ${formData.price}€ (${formData.priceType})` : ''}\n- Estat: ${formData.condition === 'nou' ? 'Nou' : formData.condition === 'com_nou' ? 'Com nou' : 'Usat'}\n- Ubicació: ${formData.city}, ${formData.province}${formData.postalCode ? ` (${formData.postalCode})` : ''}`,
-        type: formData.type === 'oferta' ? 'general' : 'urgente',
-        priority: 'media', // Prioritat mitjana per defecte per usuaris
-        scope: 'global',
-        targets: [],
-        startDate: new Date(), // Data d'inici immediata
-        expiresAt: undefined, // Sense caducitat per defecte
-        status: 'pending_review', // ESTAT DE MODERACIÓ
-        configuration: {
-          marketplace: {
-            category: formData.category,
-            adType: formData.type,
-            price: formData.price,
-            priceType: formData.priceType,
-            condition: formData.condition,
-            location: {
-              province: formData.province,
-              city: formData.city,
-              postalCode: formData.postalCode
-            },
-            delivery: {
-              pickup: formData.pickupAvailable,
-              shipping: formData.shippingAvailable,
-              shippingIncluded: formData.shippingIncluded
-            },
-            contact: {
-              name: formData.contactName,
-              phone: formData.contactPhone,
-              email: formData.contactEmail,
-              preferredSchedule: formData.contactSchedule
-            },
-            coverImage: coverImageBase64,           // ✅ IMAGEN DE PORTADA
-            galleryImages: galleryImagesBase64,     // ✅ GALERÍA ADICIONAL
-            images: allImages,                      // ✅ TODAS LAS IMÁGENES (LEGACY)
-            mainImageIndex: 0                       // ✅ PORTADA SIEMPRE ES LA PRIMERA
-          }
-        }
+        type: (formData.type === 'oferta' ? 'general' : 'urgent') as 'general' | 'urgent' | 'event' | 'maintenance' | 'news' | 'alert' | 'promotion' | 'regulation',
+        priority: 5, // Número para priority según el schema de Prisma
+        status: 'draft' as 'draft' | 'pending' | 'published' | 'archived',
+        audience: 'all' as 'all' | 'employees' | 'companies' | 'specific' | 'community',
+        targetCommunities: [],
+        targetRoles: [],
+        sendNotification: false,
+        notificationChannels: [] as ('platform' | 'email' | 'sms' | 'push' | 'all_channels')[],
+        tags: [] as string[],
+        isSticky: false,
+        allowComments: true,
+        imageUrl: coverImageBase64,
+        authorId: session?.user?.id || '',
+        metadata: marketplaceData
       };
 
       console.log('📤 Enviant anunci per revisió:', apiData);

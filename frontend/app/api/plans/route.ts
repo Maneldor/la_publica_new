@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
-
 /**
  * GET /api/plans
  * Obtenir tots els plans actius (PÚBLIC - sense autenticació)
  * Usat tant per Admin com per Empresa
  */
 export async function GET(request: NextRequest) {
+  let prismaClient;
+
   try {
-    const planes = await prisma.planConfig.findMany({
+    prismaClient = new PrismaClient();
+    
+    const planes = await prismaClient.planConfig.findMany({
       where: {
         isActive: true,
         isVisible: true
@@ -59,5 +61,9 @@ export async function GET(request: NextRequest) {
       { success: false, error: 'Error al obtenir plans' },
       { status: 500 }
     );
+  } finally {
+    if (prismaClient) {
+      await prismaClient.$disconnect();
+    }
   }
 }

@@ -130,11 +130,11 @@ export default function EditarOfertaPage() {
         duration: formData.duration || null,
         location: formData.location || null,
         remote: formData.remote,
-        tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()) : [],
-        images: formData.images ? formData.images.split(',').map(img => img.trim()) : [],
+        tags: formData.tags ? formData.tags.split(',').map((tag: string) => tag.trim()) : [],
+        images: formData.images ? formData.images.split(',').map((img: string) => img.trim()) : [],
         seoTitle: formData.seoTitle || null,
         seoDescription: formData.seoDescription || null,
-        seoKeywords: formData.seoKeywords ? formData.seoKeywords.split(',').map(kw => kw.trim()) : [],
+        seoKeywords: formData.seoKeywords ? formData.seoKeywords.split(',').map((kw: string) => kw.trim()) : [],
         internalNotes: formData.internalNotes || null
       };
 

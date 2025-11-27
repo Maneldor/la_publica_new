@@ -1,51 +1,36 @@
-'use client';
-
+ 'use client';
+ 
 import { useState, useEffect } from 'react';
-import { X, Eye, EyeOff, TestTube } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
+ import { X, Eye, EyeOff, TestTube } from 'lucide-react';
+ import { useToast } from '@/components/ui/use-toast';
+ import {
+   AIProvider,
+   CreateAIProviderData,
+   UpdateAIProviderData,
+ } from '@/lib/api/aiProviders';
+ 
+ type CapabilityKey = keyof NonNullable<AIProvider['capabilities']>;
 
-// Types
-interface AIProvider {
-  id: string;
-  name: string;
-  displayName: string;
-  type: 'CLAUDE' | 'OPENAI' | 'GEMINI' | 'AZURE_OPENAI' | 'COHERE' | 'CUSTOM';
-  isActive: boolean;
-  isDefault: boolean;
-  config: {
-    apiKey: string;
-    model: string;
-    temperature?: number;
-    maxTokens?: number;
-    timeout?: number;
-    baseURL?: string;
-  };
-  capabilities: {
-    lead_analysis?: boolean;
-    scoring?: boolean;
-    pitch_generation?: boolean;
-    data_extraction?: boolean;
-    sentiment_analysis?: boolean;
-    classification?: boolean;
-  };
-  totalRequests: number;
-  successfulRequests: number;
-  failedRequests: number;
-  averageLatency: number | null;
-  totalCost: number;
-  createdAt: string;
-  updatedAt: string;
-}
+const DEFAULT_CAPABILITIES: Record<CapabilityKey, boolean> = {
+  leadAnalysis: true,
+  scoring: true,
+  pitchGeneration: true,
+  dataEnrichment: true,
+  classification: true,
+  validation: true,
+};
 
-interface ProviderConfigModalProps {
-  open: boolean;
-  onClose: () => void;
-  provider: AIProvider | null; // null = create new
-  onSave: () => void;
-}
+const createCapabilityState = (): Record<CapabilityKey, boolean> => ({ ...DEFAULT_CAPABILITIES });
+ 
+ interface ProviderConfigModalProps {
+   open: boolean;
+   onClose: () => void;
+   provider: AIProvider | null; // null = create new
+   onSave: (data: CreateAIProviderData | UpdateAIProviderData) => Promise<void> | void;
+ }
 
 interface FormData {
-  type: string;
+  type: AIProvider['type'];
   name: string;
   displayName: string;
   apiKey: string;
@@ -56,14 +41,7 @@ interface FormData {
   maxTokens: number;
   timeout: number;
   baseURL: string;
-  capabilities: {
-    lead_analysis: boolean;
-    scoring: boolean;
-    pitch_generation: boolean;
-    data_extraction: boolean;
-    sentiment_analysis: boolean;
-    classification: boolean;
-  };
+  capabilities: Record<CapabilityKey, boolean>;
 }
 
 export default function ProviderConfigModal({
@@ -91,14 +69,7 @@ export default function ProviderConfigModal({
     maxTokens: 2048,
     timeout: 60000,
     baseURL: '',
-    capabilities: {
-      lead_analysis: true,
-      scoring: true,
-      pitch_generation: true,
-      data_extraction: true,
-      sentiment_analysis: true,
-      classification: true,
-    },
+    capabilities: createCapabilityState(),
   });
 
   // Provider type options
@@ -112,7 +83,7 @@ export default function ProviderConfigModal({
   ];
 
   // Model options based on provider type
-  const getModelOptions = (type: string) => {
+  const getModelOptions = (type: AIProvider['type']): string[] => {
     const options = {
       'CLAUDE': [
         'claude-sonnet-4-20250514',
@@ -148,22 +119,18 @@ export default function ProviderConfigModal({
         type: provider.type,
         name: provider.name,
         displayName: provider.displayName,
-        apiKey: provider.config.apiKey,
-        model: provider.config.model,
+        apiKey: provider.config.apiKey || '',
+        model: provider.config.model || '',
         isActive: provider.isActive,
         isDefault: provider.isDefault,
-        temperature: provider.config.temperature || 0.3,
-        maxTokens: provider.config.maxTokens || 2048,
-        timeout: provider.config.timeout || 60000,
-        baseURL: provider.config.baseURL || '',
+        temperature: provider.config.temperature ?? 0.3,
+        maxTokens: provider.config.maxTokens ?? 2048,
+        timeout: provider.config.timeout ?? 60000,
+        baseURL: provider.config.baseURL || provider.config.endpoint || '',
         capabilities: {
-          lead_analysis: provider.capabilities.lead_analysis || false,
-          scoring: provider.capabilities.scoring || false,
-          pitch_generation: provider.capabilities.pitch_generation || false,
-          data_extraction: provider.capabilities.data_extraction || false,
-          sentiment_analysis: provider.capabilities.sentiment_analysis || false,
-          classification: provider.capabilities.classification || false,
-        },
+          ...createCapabilityState(),
+          ...provider.capabilities,
+        } as Record<CapabilityKey, boolean>,
       });
     } else {
       // Reset form for new provider
@@ -179,14 +146,7 @@ export default function ProviderConfigModal({
         maxTokens: 2048,
         timeout: 60000,
         baseURL: '',
-        capabilities: {
-          lead_analysis: true,
-          scoring: true,
-          pitch_generation: true,
-          data_extraction: true,
-          sentiment_analysis: true,
-          classification: true,
-        },
+        capabilities: createCapabilityState(),
       });
     }
   }, [provider]);
@@ -203,7 +163,7 @@ export default function ProviderConfigModal({
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleCapabilityChange = (capability: string, enabled: boolean) => {
+  const handleCapabilityChange = (capability: CapabilityKey, enabled: boolean) => {
     setFormData(prev => ({
       ...prev,
       capabilities: {
@@ -212,6 +172,9 @@ export default function ProviderConfigModal({
       },
     }));
   };
+
+  const formatCapabilityLabel = (capability: string) =>
+    capability.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase()).trim();
 
   const validateForm = () => {
     const errors: string[] = [];
@@ -272,20 +235,62 @@ export default function ProviderConfigModal({
     }
   };
 
+  const buildCapabilities = () => ({
+    leadAnalysis: formData.capabilities.leadAnalysis ?? false,
+    scoring: formData.capabilities.scoring ?? false,
+    pitchGeneration: formData.capabilities.pitchGeneration ?? false,
+    dataEnrichment: formData.capabilities.dataEnrichment ?? false,
+    classification: formData.capabilities.classification ?? false,
+    validation: formData.capabilities.validation ?? false,
+  });
+
   const handleSave = async () => {
     if (!validateForm()) return;
 
     setIsSaving(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (provider) {
+        const payload: UpdateAIProviderData = {
+          displayName: formData.displayName,
+          config: {
+            apiKey: formData.apiKey || undefined,
+            model: formData.model || undefined,
+            temperature: formData.temperature,
+            maxTokens: formData.maxTokens,
+            endpoint: formData.baseURL || undefined,
+            timeout: formData.timeout,
+          },
+          capabilities: buildCapabilities(),
+          isActive: formData.isActive,
+          isDefault: formData.isDefault,
+        };
+        await onSave(payload);
+      } else {
+        const payload: CreateAIProviderData = {
+          name: formData.name.trim(),
+          displayName: formData.displayName.trim(),
+          type: formData.type,
+          config: {
+            apiKey: formData.apiKey,
+            model: formData.model,
+            temperature: formData.temperature,
+            maxTokens: formData.maxTokens,
+            endpoint: formData.baseURL || undefined,
+            timeout: formData.timeout,
+          },
+          capabilities: buildCapabilities(),
+          isActive: formData.isActive,
+          isDefault: formData.isDefault,
+        };
+        await onSave(payload);
+      }
 
       toast({
         title: provider ? 'Provider actualitzat' : 'Provider creat',
         description: `${formData.displayName} s'ha ${provider ? 'actualitzat' : 'creat'} correctament`,
       });
 
-      onSave();
+      onClose();
     } catch (error) {
       toast({
         title: 'Error',
@@ -350,7 +355,7 @@ export default function ProviderConfigModal({
                   </label>
                   <select
                     value={formData.type}
-                    onChange={(e) => handleInputChange('type', e.target.value)}
+                    onChange={(e) => handleInputChange('type', e.target.value as AIProvider['type'])}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                   >
                     {providerTypes.map((type) => (
@@ -555,12 +560,12 @@ export default function ProviderConfigModal({
                   <input
                     type="checkbox"
                     id={capability}
-                    checked={enabled}
-                    onChange={(e) => handleCapabilityChange(capability, e.target.checked)}
+                    checked={Boolean(enabled)}
+                    onChange={(e) => handleCapabilityChange(capability as CapabilityKey, e.target.checked)}
                     className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
                   />
                   <label htmlFor={capability} className="ml-2 block text-sm text-gray-700 capitalize">
-                    {capability.replace('_', ' ')}
+                    {formatCapabilityLabel(capability)}
                   </label>
                 </div>
               ))}

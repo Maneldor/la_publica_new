@@ -5,43 +5,19 @@ import { X, TestTube } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import ScheduleConfig from './ScheduleConfig';
 import SourceTestDialog from './SourceTestDialog';
+import { LeadSource } from '@/lib/api/leadSources';
 
-// Types
-type LeadSourceType =
-  | 'GOOGLE_MAPS'
-  | 'WEB_SCRAPING'
-  | 'API_INTEGRATION'
-  | 'LINKEDIN'
-  | 'CSV_IMPORT'
-  | 'CUSTOM';
+type LeadSourceType = LeadSource['type'];
+type ScheduleFrequency = NonNullable<
+  LeadSource['frequency'] | (LeadSource['schedule'] extends { frequency: infer F } ? F : never)
+>;
 
-type ScheduleFrequency =
-  | 'MANUAL'
-  | 'HOURLY'
-  | 'DAILY'
-  | 'WEEKLY'
-  | 'MONTHLY';
-
-interface LeadSource {
-  id: string;
-  name: string;
-  description: string | null;
-  type: LeadSourceType;
-  isActive: boolean;
-  config: any;
+interface ScheduleFormState {
   frequency: ScheduleFrequency;
-  lastRun: string | null;
-  nextRun: string | null;
-  aiProviderId: string | null;
-  aiProvider: {
-    name: string;
-    displayName: string;
-  } | null;
-  leadsGenerated: number;
-  leadsApproved: number;
-  successRate: number;
-  createdAt: string;
-  updatedAt?: string;
+  time?: string;
+  daysOfWeek?: number[];
+  dayOfMonth?: number;
+  isActive: boolean;
 }
 
 interface SourceFormModalProps {
@@ -57,22 +33,8 @@ interface FormData {
   type: LeadSourceType;
   isActive: boolean;
   aiProviderId: string;
-  frequency: ScheduleFrequency;
-  time: string;
-  dayOfWeek?: number;
-  dayOfMonth?: number;
-  config: {
-    // Google Maps
-    query?: string;
-    location?: string;
-    radius?: number;
-    maxResults?: number;
-    // Web Scraping
-    url?: string;
-    selectors?: string;
-    // Custom
-    custom?: boolean;
-  };
+  schedule: ScheduleFormState;
+  config: Record<string, any>;
   aiTasks: {
     analysis: boolean;
     scoring: boolean;
@@ -83,6 +45,32 @@ interface FormData {
   };
   analysisDepth: 'basic' | 'detailed' | 'comprehensive';
 }
+
+const createDefaultSchedule = (overrides: Partial<ScheduleFormState> = {}): ScheduleFormState => ({
+  frequency: 'WEEKLY',
+  time: '08:00',
+  daysOfWeek: [1],
+  dayOfMonth: 1,
+  isActive: true,
+  ...overrides,
+});
+
+const buildScheduleFromSource = (source: LeadSource | null): ScheduleFormState => {
+  if (!source) {
+    return createDefaultSchedule();
+  }
+
+  const schedule = (source.schedule ?? {}) as Partial<NonNullable<LeadSource['schedule']>>;
+  return createDefaultSchedule({
+    frequency: (schedule.frequency || source.frequency || 'MANUAL') as ScheduleFrequency,
+    time: schedule.time || source.time || '08:00',
+    daysOfWeek:
+      schedule.daysOfWeek ||
+      (schedule.dayOfWeek !== undefined ? [schedule.dayOfWeek] : undefined),
+    dayOfMonth: schedule.dayOfMonth ?? 1,
+    isActive: schedule.isActive ?? source.isActive,
+  });
+};
 
 export default function SourceFormModal({
   open,
@@ -102,10 +90,7 @@ export default function SourceFormModal({
     type: 'GOOGLE_MAPS',
     isActive: true,
     aiProviderId: '',
-    frequency: 'WEEKLY',
-    time: '08:00',
-    dayOfWeek: 1, // Monday
-    dayOfMonth: 1,
+    schedule: createDefaultSchedule(),
     config: {
       maxResults: 50,
       radius: 5,
@@ -147,10 +132,7 @@ export default function SourceFormModal({
         type: source.type,
         isActive: source.isActive,
         aiProviderId: source.aiProviderId || '',
-        frequency: source.frequency,
-        time: '08:00', // Default, would come from source
-        dayOfWeek: 1,
-        dayOfMonth: 1,
+        schedule: buildScheduleFromSource(source),
         config: source.config || {},
         aiTasks: {
           analysis: true,
@@ -170,10 +152,7 @@ export default function SourceFormModal({
         type: 'GOOGLE_MAPS',
         isActive: true,
         aiProviderId: mockProviders.find(p => p.isDefault)?.id || '',
-        frequency: 'WEEKLY',
-        time: '08:00',
-        dayOfWeek: 1,
-        dayOfMonth: 1,
+        schedule: createDefaultSchedule(),
         config: {
           maxResults: 50,
           radius: 5,
@@ -192,7 +171,23 @@ export default function SourceFormModal({
   }, [source]);
 
   const handleInputChange = (field: string, value: any) => {
+    if (field === 'isActive') {
+      setFormData(prev => ({
+        ...prev,
+        isActive: value,
+        schedule: { ...prev.schedule, isActive: value },
+      }));
+      return;
+    }
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleScheduleChange = (config: ScheduleFormState) => {
+    setFormData(prev => ({
+      ...prev,
+      schedule: config,
+      isActive: config.isActive,
+    }));
   };
 
   const handleConfigChange = (field: string, value: any) => {
@@ -221,14 +216,14 @@ export default function SourceFormModal({
     if (!formData.name.trim()) errors.push('El nom és obligatori');
     if (!formData.type) errors.push('El tipus és obligatori');
     if (!formData.aiProviderId) errors.push('L\'AI Provider és obligatori');
-    if (!formData.frequency) errors.push('La freqüència és obligatòria');
+    if (!formData.schedule.frequency) errors.push('La freqüència és obligatòria');
 
     // Type-specific validations
     switch (formData.type) {
       case 'GOOGLE_MAPS':
         if (!formData.config.query?.trim()) errors.push('La query és obligatòria');
         if (!formData.config.location?.trim()) errors.push('La ubicació és obligatòria');
-        if (formData.config.maxResults <= 0) errors.push('El màxim de resultats ha de ser positiu');
+        if (!formData.config.maxResults || formData.config.maxResults <= 0) errors.push('El màxim de resultats ha de ser positiu');
         break;
       case 'WEB_SCRAPING':
         if (!formData.config.url?.trim()) errors.push('La URL és obligatòria');
@@ -362,7 +357,7 @@ export default function SourceFormModal({
                     </label>
                     <select
                       value={formData.type}
-                      onChange={(e) => handleInputChange('type', e.target.value)}
+                      onChange={(e) => handleInputChange('type', e.target.value as LeadSourceType)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                     >
                       {sourceTypes.map((type) => (
@@ -557,14 +552,8 @@ export default function SourceFormModal({
             {activeTab === 'schedule' && (
               <div className="space-y-4">
                 <ScheduleConfig
-                  frequency={formData.frequency}
-                  onFrequencyChange={(freq) => handleInputChange('frequency', freq)}
-                  time={formData.time}
-                  onTimeChange={(time) => handleInputChange('time', time)}
-                  dayOfWeek={formData.dayOfWeek}
-                  onDayOfWeekChange={(day) => handleInputChange('dayOfWeek', day)}
-                  dayOfMonth={formData.dayOfMonth}
-                  onDayOfMonthChange={(day) => handleInputChange('dayOfMonth', day)}
+                  value={formData.schedule}
+                  onChange={handleScheduleChange}
                 />
               </div>
             )}

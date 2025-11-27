@@ -1,6 +1,6 @@
 import { LeadSource } from '@prisma/client';
 import { BaseScraper, ScraperResult, ScrapedData, SearchFilters, ScraperConfig } from '../interfaces/IScraper';
-import { ScraperError, NetworkError, ParseError, SCRAPER_CONSTANTS } from '../types';
+import { ScraperError, NetworkError, SCRAPER_CONSTANTS } from '../types';
 
 export interface WebScrapingSelectors {
   name: string;
@@ -33,7 +33,7 @@ export interface MockWebsite {
 
 export class GenericWebScraper extends BaseScraper {
   readonly name = 'Generic Web Scraper';
-  readonly source = LeadSource.WEB_SCRAPING;
+  readonly source = LeadSource.WEB_FORM; // Usar WEB_FORM para Web Scraping
 
   private readonly mockWebsites: MockWebsite[] = [
     {
@@ -255,7 +255,7 @@ export class GenericWebScraper extends BaseScraper {
     website: MockWebsite,
     query: string,
     filters?: SearchFilters,
-    config?: GenericWebConfig
+    _config?: Partial<GenericWebConfig>
   ): Promise<ScrapedData[]> {
     console.log(`[${this.name}] Scraping ${website.name} (${website.url})`);
 
@@ -263,7 +263,7 @@ export class GenericWebScraper extends BaseScraper {
 
     let businesses = this.filterBusinessesByQuery(website.businesses, query, filters);
 
-    return businesses.map((business, index) => {
+    return businesses.map((business) => {
       const confidence = this.calculateConfidence(business);
 
       return {

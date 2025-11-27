@@ -13,7 +13,7 @@ export class DataExtractor {
     if (!text) return [];
 
     const emails = text.match(this.EMAIL_REGEX) || [];
-    return [...new Set(emails)]
+    return Array.from(new Set(emails))
       .filter(email => this.isValidEmail(email))
       .slice(0, 5); // Limit to 5 emails max
   }
@@ -22,7 +22,7 @@ export class DataExtractor {
     if (!text) return [];
 
     const phones = text.match(this.PHONE_REGEX) || [];
-    return [...new Set(phones)]
+    return Array.from(new Set(phones))
       .map(phone => this.normalizePhone(phone))
       .filter(phone => this.isValidPhone(phone))
       .slice(0, 3); // Limit to 3 phones max
@@ -32,7 +32,7 @@ export class DataExtractor {
     if (!text) return [];
 
     const urls = text.match(this.URL_REGEX) || [];
-    return [...new Set(urls)]
+    return Array.from(new Set(urls))
       .filter(url => this.isValidWebsite(url))
       .slice(0, 3); // Limit to 3 websites max
   }

@@ -70,7 +70,7 @@ export const Step5Images = ({ formData, errors, updateField }: Step5ImagesProps)
     }
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
+  const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
@@ -78,7 +78,7 @@ export const Step5Images = ({ formData, errors, updateField }: Step5ImagesProps)
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleFiles(e.dataTransfer.files);
     }
-  }, [formData.images]);
+  };
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -87,7 +87,7 @@ export const Step5Images = ({ formData, errors, updateField }: Step5ImagesProps)
   };
 
   const removeImage = (index: number) => {
-    const newImages = formData.images.filter((_, i) => i !== index);
+    const newImages = formData.images.filter((_: File, i: number) => i !== index);
     updateField('images', newImages);
 
     // Ajustar el índice de la imagen principal
@@ -213,7 +213,7 @@ export const Step5Images = ({ formData, errors, updateField }: Step5ImagesProps)
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {formData.images.map((file, index) => (
+            {formData.images.map((file: File, index: number) => (
               <div
                 key={`${file.name}-${index}`}
                 className={`

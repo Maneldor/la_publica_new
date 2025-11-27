@@ -125,17 +125,20 @@ export async function POST(
     const paymentNumber = `PAY-${invoice.invoiceNumber}-${paymentCount}`;
 
     // Crear pago
+    const cents = Math.round(amount * 100);
     const payment = await prismaClient.payment.create({
       data: {
         paymentNumber,
         invoiceId: params.id,
-        amount: Math.round(amount * 100), // Convertir a centavos
+        amount: cents,
+        netAmount: cents,
         paymentDate: body.paymentDate ? new Date(body.paymentDate) : new Date(),
         method: body.method,
         reference: body.reference || null,
+        description: body.description || null,
         status: 'COMPLETED',
         notes: body.notes || null,
-        createdBy: session.user.id,
+        processedById: session.user.id,
       },
     });
 

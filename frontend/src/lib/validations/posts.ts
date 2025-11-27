@@ -40,9 +40,7 @@ export const PostTypeEnum = z.enum([
   'video',         // Video
   'podcast',       // Podcast
   'infographic'    // Infografía
-], {
-  errorMap: () => ({ message: 'Tipo de post inválido' })
-});
+]);
 
 export const PostStatusEnum = z.enum([
   'draft',         // Borrador
@@ -51,9 +49,7 @@ export const PostStatusEnum = z.enum([
   'published',     // Publicado
   'archived',      // Archivado
   'trashed'        // Papelera
-], {
-  errorMap: () => ({ message: 'Estado de post inválido' })
-});
+]);
 
 export const PostVisibilityEnum = z.enum([
   'public',        // Público
@@ -61,26 +57,20 @@ export const PostVisibilityEnum = z.enum([
   'password',      // Protegido por contraseña
   'members',       // Solo miembros
   'premium'        // Solo premium
-], {
-  errorMap: () => ({ message: 'Visibilidad de post inválida' })
-});
+]);
 
 export const ContentFormatEnum = z.enum([
   'html',          // HTML
   'markdown',      // Markdown
   'rich_text',     // Editor rich text
   'blocks'         // Sistema de bloques
-], {
-  errorMap: () => ({ message: 'Formato de contenido inválido' })
-});
+]);
 
 export const CommentStatusEnum = z.enum([
   'open',          // Comentarios abiertos
   'closed',        // Comentarios cerrados
   'moderated'      // Comentarios moderados
-], {
-  errorMap: () => ({ message: 'Estado de comentarios inválido' })
-});
+]);
 
 // ==================== SCHEMAS BASE ====================
 
@@ -220,7 +210,7 @@ const postBaseSchema = z.object({
 export const createPostSchema = postBaseSchema
   .omit({ status: true, publishedAt: true })
   .extend({
-    status: z.literal('draft').default('draft'),
+    status: PostStatusEnum.default('draft'),
     createdBy: z.string().trim().min(1, 'ID de creador requerido')
   })
   .refine((data) => {

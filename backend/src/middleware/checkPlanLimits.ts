@@ -83,8 +83,8 @@ const RESOURCE_NAMES = {
  */
 function getCompanyIdFromRequest(req: Request): string | null {
   // Desde el usuario autenticado
-  if (req.user && req.user.companyId) {
-    return req.user.companyId;
+  if (req.user && (req.user as any).companyId) {
+    return (req.user as any).companyId;
   }
 
   // Desde los parámetros de la URL

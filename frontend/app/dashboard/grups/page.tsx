@@ -208,9 +208,10 @@ export default function GrupsPage() {
   }, [searchTerm, filters, activeTab]);
 
   const tabCounts = {
+    all: sampleGroups.length,
     myGroups: sampleGroups.filter(g => g.isMember).length,
-    public: sampleGroups.filter(g => g.privacy === 'public').length,
-    professional: sampleGroups.filter(g => g.privacy === 'private').length
+    recommended: sampleGroups.filter((g: any) => g.isRecommended || false).length,
+    popular: sampleGroups.filter((g: any) => g.isPopular || false).length
   };
 
   return (

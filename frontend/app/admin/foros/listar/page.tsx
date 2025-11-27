@@ -147,7 +147,7 @@ export default function ListarForosPage() {
 
   // Obtener categorías únicas
   const getCategories = () => {
-    const categories = [...new Set(forums.map(f => f.category))].filter(Boolean);
+    const categories = Array.from(new Set(forums.map(f => f.category))).filter(Boolean);
     return categories.sort();
   };
 

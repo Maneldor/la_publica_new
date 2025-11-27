@@ -1,4 +1,5 @@
-import { PrismaClient, LeadSource, Prisma } from '@prisma/client';
+import { PrismaClient, LeadSource } from '@prisma/client';
+import { LeadGenerationAdapter } from './db-adapter';
 import { IScraper, ScraperResult, ScrapedData, SearchFilters, ScraperConfig } from './interfaces/IScraper';
 import { GoogleMapsScraper } from './scrapers/GoogleMapsScraper';
 import { GenericWebScraper } from './scrapers/GenericWebScraper';
@@ -34,7 +35,7 @@ export interface ScrapingJobConfig extends SearchFilters {
 }
 
 export class ScraperManager {
-  private readonly prisma: PrismaClient;
+  private readonly adapter: LeadGenerationAdapter;
   private readonly scrapers: Map<LeadSource, IScraper>;
   private readonly config: ScraperManagerConfig;
   private readonly metrics: ScrapingMetrics;
@@ -44,7 +45,7 @@ export class ScraperManager {
     prisma: PrismaClient,
     config?: Partial<ScraperManagerConfig>
   ) {
-    this.prisma = prisma;
+    this.adapter = new LeadGenerationAdapter(prisma);
     this.config = {
       maxConcurrentScrapers: 3,
       globalRateLimit: 100,
@@ -107,21 +108,13 @@ export class ScraperManager {
 
   async getLeadSourcesFromDatabase(): Promise<Array<{ id: string; type: LeadSource; config: any }>> {
     try {
-      const leadSources = await this.prisma.leadSource.findMany({
-        where: {
-          isActive: true
-        },
-        select: {
-          id: true,
-          type: true,
-          config: true
-        }
-      });
+      // Usar el adaptador en lugar de acceder directamente a un modelo inexistente
+      const leadSources = await this.adapter.getLeadSources();
 
-      return leadSources.map(source => ({
+      return leadSources.map((source: any) => ({
         id: source.id,
         type: source.type as LeadSource,
-        config: source.config
+        config: source.config || {}
       }));
     } catch (error) {
       console.error('[ScraperManager] Error fetching lead sources from database:', error);
@@ -279,10 +272,9 @@ export class ScraperManager {
     filters?: SearchFilters
   ): Promise<ScraperResult[]> {
     const priorityOrder: LeadSource[] = [
-      LeadSource.GOOGLE_MAPS,
-      LeadSource.WEB_SCRAPING,
-      LeadSource.LINKEDIN,
-      LeadSource.FACEBOOK,
+      LeadSource.AI_PROSPECTING,  // para GOOGLE_MAPS
+      LeadSource.WEB_FORM,        // para WEB_SCRAPING
+      LeadSource.REFERRAL,        // para LINKEDIN/FACEBOOK
       LeadSource.MANUAL
     ];
 
@@ -338,7 +330,7 @@ export class ScraperManager {
         const query = config.queries[i];
 
         const sourceResults = await this.scrapeMultipleSources(
-          [LeadSource.GOOGLE_MAPS, LeadSource.WEB_SCRAPING],
+          [LeadSource.AI_PROSPECTING, LeadSource.WEB_FORM],
           query.term,
           {
             location: query.location,
@@ -481,7 +473,7 @@ export class ScraperManager {
     console.log(`[ScraperManager] Session ${sessionId} completed with ${session.results.totalLeads} leads`);
   }
 
-  private async notifyError(sessionId: string, session: ScrapingSession, error: any): Promise<void> {
+  private async notifyError(sessionId: string, _session: ScrapingSession, error: any): Promise<void> {
     // Implementation for error notifications
     console.error(`[ScraperManager] Session ${sessionId} failed:`, error);
   }
@@ -493,7 +485,7 @@ export class ScraperManager {
   async getHealthCheck(): Promise<Record<LeadSource, ScraperHealthCheck>> {
     const healthChecks: Record<string, ScraperHealthCheck> = {};
 
-    for (const [source, scraper] of this.scrapers.entries()) {
+    for (const [source, scraper] of Array.from(this.scrapers.entries())) {
       const startTime = Date.now();
 
       try {
@@ -527,7 +519,7 @@ export class ScraperManager {
     // Clean up active sessions older than 24 hours
     const cutoffTime = Date.now() - (24 * 60 * 60 * 1000);
 
-    for (const [sessionId, session] of this.activeSessions.entries()) {
+    for (const [sessionId, session] of Array.from(this.activeSessions.entries())) {
       if (session.startTime.getTime() < cutoffTime) {
         this.activeSessions.delete(sessionId);
       }

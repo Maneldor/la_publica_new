@@ -2,6 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 
+const isCompanyUser = (user: any) => {
+  if (!user) return false;
+  const role = (user.role || '').toUpperCase();
+  const userType = (user.userType || '').toUpperCase();
+  return role === 'COMPANY' || ['COMPANY_OWNER', 'COMPANY_MEMBER'].includes(userType);
+};
+
+const getAuthToken = (user: any) => user?.backendToken || user?.apiToken || null;
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -9,8 +18,13 @@ export async function POST(
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session?.user || session.user.role !== 'EMPRESA') {
+    if (!session || !isCompanyUser(session.user)) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
+    const authToken = getAuthToken(session.user);
+    if (!authToken) {
+      return NextResponse.json({ error: 'Token no disponible' }, { status: 401 });
     }
 
     const body = await request.json().catch(() => ({}));
@@ -21,7 +35,7 @@ export async function POST(
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.user.accessToken}`,
+          'Authorization': `Bearer ${authToken}`,
         },
         body: JSON.stringify(body)
       }

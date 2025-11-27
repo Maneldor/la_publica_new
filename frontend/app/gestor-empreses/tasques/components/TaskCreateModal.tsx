@@ -120,7 +120,7 @@ export default function TaskCreateModal({ isOpen, onClose, onSubmit, editTask }:
   };
 
   const removeTag = (tag: string) => {
-    setFormData({ ...formData, tags: formData.tags.filter(t => t !== tag) });
+    setFormData({ ...formData, tags: formData.tags.filter((t: string) => t !== tag) });
   };
 
   return (
@@ -437,7 +437,7 @@ export default function TaskCreateModal({ isOpen, onClose, onSubmit, editTask }:
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {formData.tags.map((tag) => (
+                  {formData.tags.map((tag: string) => (
                     <span
                       key={tag}
                       className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm"

@@ -91,10 +91,18 @@ export function useUsers(filters?: UsersFilters) {
 export function useUserById(userId: string | undefined) {
   const url = userId ? `/api/admin/users/${userId}` : null;
 
+  const userFetcher = async (url: string): Promise<{ success: boolean; data: User }> => {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error('Failed to fetch user');
+    }
+    return response.json();
+  };
+
   const { data, error, mutate, isLoading } = useSWR<{
     success: boolean;
     data: User;
-  }>(url, fetcher, {
+  }>(url, userFetcher, {
     refreshInterval: 0, // No auto-refresh for single user
     revalidateOnFocus: false,
   });

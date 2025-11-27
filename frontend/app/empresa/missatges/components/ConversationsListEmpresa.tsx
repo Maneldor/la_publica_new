@@ -219,7 +219,7 @@ export function ConversationsList({
                     right: '-2px',
                     width: '20px',
                     height: '20px',
-                    backgroundColor: conversation.type === 'gestor' ? '#3b82f6' : '#10b981',
+                    backgroundColor: (conversation.type as string) === 'gestor' ? '#3b82f6' : '#10b981',
                     borderRadius: '50%',
                     display: 'flex',
                     alignItems: 'center',

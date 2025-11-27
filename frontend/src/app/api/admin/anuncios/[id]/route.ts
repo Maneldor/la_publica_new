@@ -1,60 +1,61 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { prismaClient } from '@/lib/prisma';
 import { hasPermission } from '@/lib/permissions';
 import { Permission } from '@/lib/permissions';
 import { updateAnnouncementSchema } from '@/lib/validations/anuncios';
 import { z } from 'zod';
+import { AnuncioType, AudienceType, NotificationChannel, AnuncioStatus } from '@prisma/client';
 
 // Mapeo de enums entre Zod y Prisma
-const mapAnnouncementType = (type?: string) => {
+const mapAnnouncementType = (type?: string): AnuncioType | undefined => {
   if (!type) return undefined;
-  const mapping: Record<string, string> = {
-    'general': 'GENERAL',
-    'urgent': 'URGENT',
-    'event': 'EVENT',
-    'maintenance': 'MAINTENANCE',
-    'news': 'NEWS',
-    'alert': 'ALERT',
-    'promotion': 'PROMOTION',
-    'regulation': 'REGULATION'
+  const mapping: Record<string, AnuncioType> = {
+    general: 'GENERAL',
+    urgent: 'URGENT',
+    event: 'EVENT',
+    maintenance: 'MAINTENANCE',
+    news: 'NEWS',
+    alert: 'ALERT',
+    promotion: 'PROMOTION',
+    regulation: 'REGULATION'
   };
   return mapping[type];
 };
 
-const mapAudienceType = (audience?: string) => {
+const mapAudienceType = (audience?: string): AudienceType | undefined => {
   if (!audience) return undefined;
-  const mapping: Record<string, string> = {
-    'all': 'ALL',
-    'employees': 'EMPLOYEES',
-    'companies': 'COMPANIES',
-    'specific': 'SPECIFIC',
-    'community': 'COMMUNITY'
+  const mapping: Record<string, AudienceType> = {
+    all: 'ALL',
+    employees: 'EMPLOYEES',
+    companies: 'COMPANIES',
+    specific: 'SPECIFIC',
+    community: 'COMMUNITY'
   };
   return mapping[audience];
 };
 
-const mapNotificationChannel = (channels?: string[]) => {
+const mapNotificationChannel = (channels?: string[]): NotificationChannel[] | undefined => {
   if (!channels) return undefined;
-  const mapping: Record<string, string> = {
-    'platform': 'PLATFORM',
-    'email': 'EMAIL',
-    'sms': 'SMS',
-    'push': 'PUSH',
-    'all_channels': 'ALL_CHANNELS'
+  const mapping: Record<string, NotificationChannel> = {
+    platform: 'PLATFORM',
+    email: 'EMAIL',
+    sms: 'SMS',
+    push: 'PUSH',
+    all_channels: 'ALL_CHANNELS'
   };
-  return channels.map(ch => mapping[ch] || 'PLATFORM');
+  return channels.map(ch => mapping[ch] ?? 'PLATFORM');
 };
 
-const mapStatus = (status?: string) => {
+const mapStatus = (status?: string): AnuncioStatus | undefined => {
   if (!status) return undefined;
-  const mapping: Record<string, string> = {
-    'draft': 'DRAFT',
-    'pending': 'PENDING',
-    'published': 'PUBLISHED',
-    'archived': 'ARCHIVED',
-    'expired': 'EXPIRED'
+  const mapping: Record<string, AnuncioStatus> = {
+    draft: 'DRAFT',
+    pending: 'PENDING',
+    published: 'PUBLISHED',
+    archived: 'ARCHIVED',
+    expired: 'EXPIRED'
   };
   return mapping[status];
 };
@@ -83,7 +84,7 @@ export async function GET(
     }
 
     // Buscar anuncio
-    const anuncio = await prisma.anuncio.findUnique({
+    const anuncio = await prismaClient.anuncio.findUnique({
       where: {
         id: params.id,
         deletedAt: null
@@ -147,7 +148,7 @@ export async function GET(
     }
 
     // Incrementar contador de vistas
-    await prisma.anuncio.update({
+    await prismaClient.anuncio.update({
       where: { id: params.id },
       data: {
         views: { increment: 1 }
@@ -182,7 +183,7 @@ export async function PATCH(
     }
 
     // Verificar que el anuncio existe y obtener datos actuales
-    const anuncioActual = await prisma.anuncio.findUnique({
+    const anuncioActual = await prismaClient.anuncio.findUnique({
       where: {
         id: params.id,
         deletedAt: null
@@ -246,7 +247,7 @@ export async function PATCH(
     }
 
     // Actualizar anuncio
-    const anuncio = await prisma.anuncio.update({
+    const anuncio = await prismaClient.anuncio.update({
       where: { id: params.id },
       data: updateData,
       include: {
@@ -284,7 +285,7 @@ export async function PATCH(
     if (error instanceof z.ZodError) {
       return NextResponse.json({
         error: 'Datos de actualización inválidos',
-        details: error.errors
+        details: error.issues
       }, { status: 400 });
     }
     return NextResponse.json({
@@ -311,7 +312,7 @@ export async function DELETE(
     }
 
     // Verificar que el anuncio existe
-    const anuncio = await prisma.anuncio.findUnique({
+    const anuncio = await prismaClient.anuncio.findUnique({
       where: {
         id: params.id,
         deletedAt: null
@@ -332,7 +333,7 @@ export async function DELETE(
     }
 
     // Soft delete
-    await prisma.anuncio.update({
+    await prismaClient.anuncio.update({
       where: { id: params.id },
       data: {
         deletedAt: new Date(),

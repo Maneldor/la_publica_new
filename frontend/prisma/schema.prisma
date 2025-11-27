@@ -66,6 +66,9 @@ model User {
   @@index([userType])
   @@index([ownedCompanyId])
   @@index([memberCompanyId])
+  @@index([isActive])
+  @@index([createdAt])
+  @@index([isActive, createdAt])
 }
 
 model Comunidad {
@@ -220,6 +223,8 @@ model Company {
   @@index([accountManagerId])
   @@index([status])
   @@index([createdAt])
+  @@index([isActive])
+  @@index([status, isActive])
   @@map("companies")
 }
 
@@ -640,6 +645,7 @@ model Offer {
   @@index([companyId, status])
   @@index([categoryId, status])
   @@index([status, publishedAt])
+  @@index([status])
   @@index([featured, featuredUntil])
   @@index([slug])
   @@index([priority])
@@ -768,6 +774,7 @@ model OfferEvent {
   @@index([companyId], map: "idx_event_company")
   @@index([eventType], map: "idx_event_type")
   @@index([createdAt], map: "idx_event_created")
+  @@index([eventType, createdAt], map: "idx_event_type_created")
   @@index([sessionId], map: "idx_event_session")
   @@map("offer_events")
 }

@@ -276,7 +276,7 @@ export default function CoursePage() {
       } else {
         setError('Curs no trobat');
       }
-    } catch {
+    } catch (err) {
       console.error('Error loading course:', err);
       setError('Error al carregar el curs');
     } finally {

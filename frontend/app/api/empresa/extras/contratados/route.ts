@@ -20,30 +20,20 @@ export async function GET(request: NextRequest) {
     // Buscar empresa del usuario
     const user = await prisma.user.findUnique({
       where: { email: session.user.email! },
-      include: { company: true }
+      include: { ownedCompany: true, memberCompany: true }
     });
 
-    if (!user?.company) {
+    const company = user?.ownedCompany || user?.memberCompany;
+    if (!company) {
       return NextResponse.json(
         { error: 'Empresa no encontrada' },
         { status: 404 }
       );
     }
 
-    // Obtener extras contratados
-    const extrasContratados = await prisma.empresaExtra.findMany({
-      where: {
-        empresaId: user.company.id
-      },
-      include: {
-        featureExtra: true
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
-    });
-
-    return NextResponse.json(extrasContratados);
+    // TODO: Implementar relación entre Company y Extra cuando esté disponible
+    // Por ahora, retornar array vacío
+    return NextResponse.json([]);
 
   } catch (error) {
     console.error('Error:', error);

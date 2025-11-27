@@ -17,15 +17,15 @@ router.get('/', authMiddleware, async (req: AuthenticatedRequest, res: Response)
   try {
     const userId = req.user!.id;
 
-    const empresa = await prisma.company.findUnique({
-      where: { userId },
+    const empresa = await (prisma.companies.findUnique as any)({
+      where: { userId } as any,
     });
 
     if (!empresa) {
       return res.status(404).json({ error: 'Empresa no encontrada' });
     }
 
-    const solicitudes = await prisma.solicitudExtra.findMany({
+    const solicitudes = await (prisma as any).solicitudExtra.findMany({
       where: { empresaId: empresa.id },
       include: {
         usuario: {
@@ -59,15 +59,15 @@ router.post('/', authMiddleware, async (req: AuthenticatedRequest, res: Response
     const userId = req.user!.id;
     const { extrasIds, mensaje, telefono } = req.body;
 
-    const empresa = await prisma.company.findUnique({
-      where: { userId },
+    const empresa = await (prisma.companies.findUnique as any)({
+      where: { userId } as any,
     });
 
     if (!empresa) {
       return res.status(404).json({ error: 'Empresa no encontrada' });
     }
 
-    const solicitud = await prisma.solicitudExtra.create({
+    const solicitud = await (prisma as any).solicitudExtra.create({
       data: {
         empresaId: empresa.id,
         usuarioId: userId,

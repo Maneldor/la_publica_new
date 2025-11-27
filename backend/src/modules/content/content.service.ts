@@ -26,8 +26,8 @@ export class ContentService {
         autorId: data.autorId,
         autorNombre: data.autorNombre,
         estado: data.publicarInmediatamente ? 'publicado' : 'borrador',
-        metadatos: data.metadatos ? JSON.stringify(data.metadatos) : null
-      }
+        metadatos: data.metadatos || null
+      } as any
     });
 
     const idiomasNecesarios = new Set<string>();
@@ -56,6 +56,9 @@ export class ContentService {
       const traduccionGuardada = await prisma.traduccion.create({
         data: {
           contenidoId: contenidoMaestro.id,
+          language: idioma,
+          key: `content_${contenidoMaestro.id}_${idioma}`,
+          value: traduccion.contenido,
           idiomaDestino: idioma,
           tituloTraducido: traduccion.titulo,
           contenidoTraducido: traduccion.contenido,
@@ -88,7 +91,7 @@ export class ContentService {
             fechaPublicacion: data.publicarInmediatamente ? new Date() : null,
             slug,
             urlPublica
-          }
+          } as any
         });
 
         publicaciones.push({

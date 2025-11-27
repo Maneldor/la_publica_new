@@ -47,7 +47,7 @@ export class SettingsService {
     }
 
     // Buscar settings a la DB (assumint model SystemSettings)
-    const settings = await this.prisma.systemSettings.findFirst({
+    const settings = await (this.prisma as any).systemSettings.findFirst({
         where: { key: GLOBAL_SETTINGS_KEY }
     });
 
@@ -95,7 +95,7 @@ export class SettingsService {
     this.validateSettings(updated);
 
     // Guardar a DB (usando upsert con la clave 'key')
-    const settings = await this.prisma.systemSettings.upsert({
+    const settings = await (this.prisma as any).systemSettings.upsert({
       where: { key: GLOBAL_SETTINGS_KEY }, // Usar key única
       create: {
         key: GLOBAL_SETTINGS_KEY,
@@ -120,7 +120,7 @@ export class SettingsService {
   async resetSettings(userId: string): Promise<GlobalSettings> {
     const defaults = this.getDefaultSettings();
 
-    await this.prisma.systemSettings.upsert({
+    await (this.prisma as any).systemSettings.upsert({
       where: { key: GLOBAL_SETTINGS_KEY }, // Usar key única
       create: {
         key: GLOBAL_SETTINGS_KEY,

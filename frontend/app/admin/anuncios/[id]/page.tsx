@@ -12,11 +12,9 @@ export default function AnuncioDetailPage() {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
 
-  const { data: anuncioResponse, isLoading, error } = useAnuncio(params.id as string);
+  const { data: anuncio, isLoading, error } = useAnuncio(params.id as string);
   const approveAnuncioMutation = useApproveAnuncio();
   const rejectAnuncioMutation = useRejectAnuncio();
-
-  const anuncio = anuncioResponse?.data || anuncioResponse;
 
   const handleApprove = async () => {
     if (!anuncio?.id) return;
@@ -179,29 +177,7 @@ export default function AnuncioDetailPage() {
                 </p>
               </div>
 
-              {/* Configuración de marketplace si existe */}
-              {anuncio.configuration && (
-                <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                  <h3 className="font-medium text-gray-900 mb-2">Configuración adicional:</h3>
-                  <pre className="text-sm text-gray-600 overflow-x-auto">
-                    {JSON.stringify(anuncio.configuration, null, 2)}
-                  </pre>
-                </div>
-              )}
             </div>
-
-            {/* Razón de rechazo si existe */}
-            {anuncio.status === 'rejected' && anuncio.configuration?.rejectionReason && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <div className="flex items-start gap-2">
-                  <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5" />
-                  <div>
-                    <h3 className="font-medium text-red-900">Razón del rechazo:</h3>
-                    <p className="text-red-700 mt-1">{anuncio.configuration.rejectionReason}</p>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Sidebar con metadatos */}
@@ -214,13 +190,13 @@ export default function AnuncioDetailPage() {
               </h3>
               <div className="space-y-2">
                 <p className="text-sm">
-                  <span className="text-gray-600">Nombre:</span> {anuncio.user?.name || anuncio.user?.email}
+                  <span className="text-gray-600">Nombre:</span> {anuncio.author?.name || anuncio.author?.email || 'N/A'}
                 </p>
                 <p className="text-sm">
-                  <span className="text-gray-600">Email:</span> {anuncio.user?.email}
+                  <span className="text-gray-600">Email:</span> {anuncio.author?.email || 'N/A'}
                 </p>
                 <p className="text-sm">
-                  <span className="text-gray-600">ID:</span> {anuncio.userId}
+                  <span className="text-gray-600">ID:</span> {anuncio.authorId}
                 </p>
               </div>
             </div>
@@ -241,16 +217,16 @@ export default function AnuncioDetailPage() {
                   <span className="ml-2 font-medium">{anuncio.priority}/10</span>
                 </div>
                 <div>
-                  <span className="text-gray-600">Alcance:</span>
-                  <span className="ml-2 font-medium">{anuncio.scope}</span>
+                  <span className="text-gray-600">Audiencia:</span>
+                  <span className="ml-2 font-medium">{anuncio.audience}</span>
                 </div>
                 <div>
                   <span className="text-gray-600">Fijado:</span>
-                  <span className="ml-2">{anuncio.isPinned ? '📌 Sí' : 'No'}</span>
+                  <span className="ml-2">{anuncio.isSticky ? '📌 Sí' : 'No'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-600">Activo:</span>
-                  <span className="ml-2">{anuncio.isActive ? '✅ Sí' : '❌ No'}</span>
+                  <span className="text-gray-600">Estado:</span>
+                  <span className="ml-2">{anuncio.status === 'PUBLISHED' ? '✅ Publicado' : anuncio.status === 'DRAFT' ? '📝 Borrador' : anuncio.status === 'ARCHIVED' ? '📦 Archivado' : '⏳ Pendiente'}</span>
                 </div>
               </div>
             </div>
@@ -274,12 +250,14 @@ export default function AnuncioDetailPage() {
                     {new Date(anuncio.updatedAt).toLocaleString('es-ES')}
                   </p>
                 </div>
-                <div>
-                  <span className="text-gray-600">Inicio:</span>
-                  <p className="text-gray-900 mt-1">
-                    {new Date(anuncio.startDate).toLocaleString('es-ES')}
-                  </p>
-                </div>
+                {anuncio.publishAt && (
+                  <div>
+                    <span className="text-gray-600">Publicación:</span>
+                    <p className="text-gray-900 mt-1">
+                      {new Date(anuncio.publishAt).toLocaleString('es-ES')}
+                    </p>
+                  </div>
+                )}
                 {anuncio.expiresAt && (
                   <div>
                     <span className="text-gray-600">Expira:</span>
@@ -292,20 +270,30 @@ export default function AnuncioDetailPage() {
             </div>
 
             {/* Estadísticas */}
-            {anuncio.totalReads !== undefined && (
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  <Eye className="w-5 h-5" />
-                  Estadísticas
-                </h3>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">
-                    {anuncio.totalReads || 0}
-                  </div>
-                  <div className="text-sm text-gray-600">lecturas</div>
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Eye className="w-5 h-5" />
+                Estadísticas
+              </h3>
+              <div className="space-y-3 text-sm">
+                <div>
+                  <span className="text-gray-600">Vistas:</span>
+                  <span className="ml-2 font-medium">{anuncio.views || 0}</span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Reacciones:</span>
+                  <span className="ml-2 font-medium">{anuncio.reactions || 0}</span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Comentarios:</span>
+                  <span className="ml-2 font-medium">{anuncio.commentsCount || 0}</span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Compartidos:</span>
+                  <span className="ml-2 font-medium">{anuncio.sharesCount || 0}</span>
                 </div>
               </div>
-            )}
+            </div>
           </div>
         </div>
 

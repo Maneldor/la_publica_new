@@ -32,9 +32,7 @@ export const AnnouncementTypeEnum = z.enum([
   'alert',         // Alerta
   'promotion',     // Promoción
   'regulation'     // Normativa
-], {
-  errorMap: () => ({ message: 'Tipo de anuncio inválido' })
-});
+]);
 
 export const AnnouncementAudienceEnum = z.enum([
   'all',           // Todos los usuarios
@@ -42,9 +40,7 @@ export const AnnouncementAudienceEnum = z.enum([
   'companies',     // Solo empresas
   'specific',      // Audiencia específica
   'community'      // Solo una comunidad
-], {
-  errorMap: () => ({ message: 'Audiencia inválida' })
-});
+]);
 
 export const NotificationChannelEnum = z.enum([
   'platform',      // Solo en plataforma
@@ -52,9 +48,7 @@ export const NotificationChannelEnum = z.enum([
   'sms',          // Solo SMS
   'push',         // Solo notificación push
   'all_channels'   // Todos los canales
-], {
-  errorMap: () => ({ message: 'Canal de notificación inválido' })
-});
+]);
 
 // ==================== SCHEMAS BASE ====================
 
@@ -156,9 +150,11 @@ export const createAnnouncementSchema = announcementBaseSchema
   });
 
 // Actualizar anuncio
+const partialAnnouncementSchema = announcementBaseSchema.partial();
+
 export const updateAnnouncementSchema = withIdSchema(
-  announcementBaseSchema.partial()
-).refine((data) => {
+  partialAnnouncementSchema
+).refine((data: z.infer<typeof partialAnnouncementSchema>) => {
   // Mismas validaciones que crear pero opcionales
   if (data.publishAt && data.status === 'pending') {
     const publishDate = new Date(data.publishAt);
@@ -321,9 +317,7 @@ export const announcementCommentSchema = z.object({
 // Moderar comentario
 export const moderateCommentSchema = z.object({
   id: z.string().trim().min(1, 'ID de comentario requerido'),
-  action: z.enum(['approve', 'reject', 'hide'], {
-    errorMap: () => ({ message: 'Acción de moderación inválida' })
-  }),
+  action: z.enum(['approve', 'reject', 'hide']),
   reason: z
     .string()
     .trim()
@@ -378,9 +372,7 @@ export const importAnnouncementsSchema = z.object({
 
 // Exportar anuncios
 export const exportAnnouncementsSchema = z.object({
-  format: z.enum(['csv', 'excel', 'json'], {
-    errorMap: () => ({ message: 'Formato de exportación inválido' })
-  }),
+  format: z.enum(['csv', 'excel', 'json']),
 
   includeMetrics: z.boolean().default(false),
   includeComments: z.boolean().default(false),

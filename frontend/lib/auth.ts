@@ -72,7 +72,7 @@ export const authOptions: NextAuthOptions = {
           type: "password"
         }
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         console.log('🔵 [AUTHORIZE] Iniciando autenticación');
         console.log('🔵 [AUTHORIZE] Email recibido:', credentials?.email);
 
@@ -194,13 +194,21 @@ export const authOptions: NextAuthOptions = {
           console.log('🔵 [AUTHORIZE] CompanyId asignado:', companyId);
 
           // Retornar usuario en formato compatible con NextAuth
+          const legacyBackendToken = (user as any).backendToken;
+          const legacyBackendRefreshToken = (user as any).backendRefreshToken;
+
           return {
             id: user.id,
             email: user.email,
             name: user.name,
-            role: role,
+            role: role as UserRole,
             image: user.image,
-            companyId: companyId
+            companyId,
+            communityId: user.communityId ?? undefined,
+            isActive: user.isActive ?? true,
+            apiToken: legacyBackendToken ?? undefined,
+            backendToken: legacyBackendToken ?? undefined,
+            backendRefreshToken: legacyBackendRefreshToken ?? undefined
           };
 
         } catch (error) {
@@ -253,20 +261,23 @@ export const authOptions: NextAuthOptions = {
         } else {
           // Para credentials provider, ya tenemos los datos del usuario
           token.role = user.role;
-          token.communityId = user.communityId;
-          token.isActive = user.isActive;
-          token.companyId = user.companyId;
+          token.communityId = (user as any).communityId;
+          token.isActive = (user as any).isActive;
+          (token as any).companyId = (user as any).companyId;
 
           // Si ya tiene token del backend, usarlo; si no, generar uno nuevo
-          if (user.backendToken) {
-            token.apiToken = user.backendToken;
+          const legacyBackendToken = (user as any).backendToken;
+          const legacyBackendRefreshToken = (user as any).backendRefreshToken;
+
+          if (legacyBackendToken) {
+            token.apiToken = legacyBackendToken;
           } else {
             // Generar token JWT duradero
             const backendJWT = generateBackendJWT(user);
             token.apiToken = backendJWT;
           }
 
-          token.backendRefreshToken = user.backendRefreshToken;
+          token.backendRefreshToken = legacyBackendRefreshToken;
         }
 
         token.accessToken = account?.access_token;
@@ -283,7 +294,7 @@ export const authOptions: NextAuthOptions = {
         session.user.role = token.role as UserRole;
         session.user.communityId = token.communityId;
         session.user.isActive = token.isActive;
-        session.user.companyId = token.companyId;
+        session.user.companyId = (token as any).companyId;
 
         // Exponer el token JWT duradero para el API
         session.user.apiToken = token.apiToken as string;
@@ -332,7 +343,6 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: "/login",
-    signUp: "/register",
     error: "/login", // Error code passed in query string as ?error=
   },
   session: {

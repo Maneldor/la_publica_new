@@ -1,15 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-
-interface AnunciFilters {
-  category: string;
-  type: string;
-  priceMin: string;
-  priceMax: string;
-  province: string;
-  condition: string;
-}
+import type { AnunciFilters } from '../../app/dashboard/anuncis/hooks/useAnuncis';
 
 interface AnunciSearchFiltersProps {
   onSearch: (searchTerm: string) => void;

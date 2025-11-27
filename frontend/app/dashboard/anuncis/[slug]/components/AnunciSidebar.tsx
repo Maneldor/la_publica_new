@@ -32,7 +32,7 @@ export interface AnunciSidebarProps {
   onEmailClick?: () => void;
   onShareClick: () => void;
   onReportClick: () => void;
-  onToggleGuardar: () => void;
+  onToggleGuardar: (data?: { titol: string; imatge: string; url: string; description: string }) => void;
   onSecurityTipsClick?: () => void;
   slug: string;
 }

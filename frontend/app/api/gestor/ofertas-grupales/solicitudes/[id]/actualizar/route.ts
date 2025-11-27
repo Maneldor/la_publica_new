@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prismaClient } from '@/lib/prisma';
 import { z } from 'zod';
+import { NotificationType } from '@prisma/client';
 
 // SEGURIDAD: Schema de validación para parámetros
 const ParamsSchema = z.object({
@@ -14,16 +15,12 @@ const UpdateSchema = z.object({
   internalNotes: z.string()
     .max(2000, 'Les notes internes no poden superar 2000 caràcters')
     .optional(),
-  priority: z.enum(['HIGH', 'MEDIUM', 'LOW'], {
-    errorMap: () => ({ message: 'Prioritat ha de ser HIGH, MEDIUM o LOW' })
-  }).optional(),
+  priority: z.enum(['HIGH', 'MEDIUM', 'LOW']).optional(),
   negotiationNote: z.string()
     .min(10, 'La nota de negociació ha de tenir almenys 10 caràcters')
     .max(1000, 'La nota de negociació no pot superar 1000 caràcters')
     .optional(),
-  action: z.enum(['update', 'add_note'], {
-    errorMap: () => ({ message: 'Acció ha de ser update o add_note' })
-  }).default('update')
+  action: z.enum(['update', 'add_note']).default('update')
 }).refine(data => {
   // Al menos un campo debe ser proporcionado
   return data.internalNotes || data.priority || data.negotiationNote;
@@ -130,7 +127,7 @@ export async function PATCH(
         {
           success: false,
           error: 'ID de sol·licitud invàlid',
-          details: paramsValidation.error.errors
+          details: paramsValidation.error.issues
         },
         { status: 400 }
       );
@@ -155,12 +152,12 @@ export async function PATCH(
     const validationResult = UpdateSchema.safeParse(body);
 
     if (!validationResult.success) {
-      console.warn(`[VALIDATION] Datos de actualización inválidos:`, validationResult.error.errors);
+      console.warn(`[VALIDATION] Datos de actualización inválidos:`, validationResult.error.issues);
       return NextResponse.json(
         {
           success: false,
           error: 'Dades d\'actualització invàlides',
-          details: validationResult.error.errors.map(e => ({
+          details: validationResult.error.issues.map(e => ({
             field: e.path.join('.'),
             message: e.message
           }))
@@ -274,7 +271,7 @@ export async function PATCH(
       if (cambios.priority) {
         await prisma.notification.create({
           data: {
-            type: 'SYSTEM_NOTIFICATION',
+            type: NotificationType.SYSTEM,
             title: 'Prioritat de sol·licitud actualitzada',
             message: `${user.name} ha canviat la prioritat de la sol·licitud "${existingSolicitud.title}" a ${updateData.priority}`,
             priority: 'NORMAL',
@@ -294,7 +291,7 @@ export async function PATCH(
       if (cambios.negotiationNote) {
         await prisma.notification.create({
           data: {
-            type: 'SYSTEM_NOTIFICATION',
+            type: NotificationType.SYSTEM,
             title: 'Actualització del gestor',
             message: `El gestor ${user.name} ha actualitzat la informació de la vostra sol·licitud "${existingSolicitud.title}".`,
             priority: 'NORMAL',
@@ -313,7 +310,7 @@ export async function PATCH(
       // 3. AUDIT LOG
       await prisma.notification.create({
         data: {
-          type: 'AUDIT_LOG',
+          type: NotificationType.SYSTEM,
           title: 'GESTOR_UPDATE: Solicitud actualizada',
           message: `${user.email} actualizó solicitud ${requestId} - Cambios: ${Object.keys(cambios).filter(key => cambios[key as keyof typeof cambios]).join(', ')}`,
           priority: 'LOW',
@@ -363,9 +360,9 @@ export async function PATCH(
         {
           success: false,
           error: 'Dades invàlides',
-          details: error.errors.map(e => ({
-            field: e.path.join('.'),
-            message: e.message
+          details: error.issues.map((issue) => ({
+            field: issue.path.join('.'),
+            message: issue.message
           }))
         },
         { status: 400 }

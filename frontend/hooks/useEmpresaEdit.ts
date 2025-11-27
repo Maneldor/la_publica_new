@@ -204,10 +204,11 @@ export const useEmpresaForm = (initialData: EmpresaEditData) => {
       if (field.includes('.')) {
         // Para campos anidados como address.street
         const [parent, child] = field.split('.');
+        const parentValue = prev[parent as keyof EmpresaEditData];
         return {
           ...prev,
           [parent]: {
-            ...prev[parent as keyof EmpresaEditData],
+            ...(parentValue && typeof parentValue === 'object' ? parentValue : {}),
             [child]: value
           }
         };

@@ -1,15 +1,14 @@
 'use client';
 
-import { useState } from 'react';
 import { Users, Plus, X, Upload, Linkedin, Twitter, Facebook } from 'lucide-react';
 import { AdminEmpresaFormData, TeamMember } from '../../hooks/useAdminCreateEmpresa';
 
 interface Step6Props {
   formData: AdminEmpresaFormData;
   errors: Record<string, string>;
-  updateField: (field: keyof AdminEmpresaFormData, value: any) => void;
+  updateField: <K extends keyof AdminEmpresaFormData>(field: K, value: AdminEmpresaFormData[K]) => void;
   addTeamMember: () => void;
-  updateTeamMember: (id: string, field: keyof TeamMember, value: any) => void;
+  updateTeamMember: <K extends keyof TeamMember>(id: string, field: K, value: TeamMember[K]) => void;
   removeTeamMember: (id: string) => void;
 }
 
@@ -21,7 +20,6 @@ export const Step6Team = ({
   updateTeamMember,
   removeTeamMember
 }: Step6Props) => {
-  const [draggedMember, setDraggedMember] = useState<string | null>(null);
 
   const commonPositions = [
     'CEO / Director General',

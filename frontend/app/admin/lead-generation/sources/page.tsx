@@ -98,7 +98,7 @@ export default function SourcesPage() {
   const activeSources = sources.filter(s => s.isActive).length;
   const totalLeads = sources.reduce((sum, s) => sum + s.totalLeads, 0);
   const successfulRuns = sources.reduce((sum, s) => sum + s.successfulRuns, 0);
-  const totalRuns = sources.reduce((sum, s) => sum + s.successfulRuns + s.failedRuns, 0);
+  const totalRuns = sources.reduce((sum, s) => sum + s.successfulRuns + (s.failedRuns ?? 0), 0);
   const overallSuccessRate = totalRuns > 0 ? (successfulRuns / totalRuns) * 100 : 0;
 
   // Get next execution

@@ -75,12 +75,12 @@ export async function GET(req: NextRequest) {
     const validationResult = QuerySchema.safeParse(queryParams);
 
     if (!validationResult.success) {
-      console.warn(`[VALIDATION] Parámetros inválidos en mis-solicitudes:`, validationResult.error.errors);
+      console.warn(`[VALIDATION] Parámetros inválidos en mis-solicitudes:`, validationResult.error.issues);
       return NextResponse.json(
         {
           success: false,
           error: 'Paràmetres de cerca invàlids',
-          details: validationResult.error.errors.map(e => ({
+          details: validationResult.error.issues.map(e => ({
             field: e.path.join('.'),
             message: e.message
           }))
@@ -135,7 +135,7 @@ export async function GET(req: NextRequest) {
           }
         },
         {
-          productCategory: {
+          category: {
             contains: searchTerm,
             mode: 'insensitive'
           }
@@ -188,17 +188,9 @@ export async function GET(req: NextRequest) {
                   name: true,
                   email: true,
                   logo: true,
-                  category: true,
                   description: true
                 }
               }
-            }
-          },
-          reviewedByUser: {
-            select: {
-              id: true,
-              name: true,
-              email: true
             }
           }
         },
@@ -243,35 +235,50 @@ export async function GET(req: NextRequest) {
     });
 
     // Formatear respuesta
-    const solicitudesFormateadas = solicitudes.map(solicitud => ({
-      id: solicitud.id,
-      empresaId: solicitud.requesterId,
-      empresa: {
-        id: solicitud.requester.ownedCompany?.id || null,
-        name: solicitud.requester.ownedCompany?.name || 'Sin empresa',
-        email: solicitud.requester.ownedCompany?.email || solicitud.requester.email,
-        logo: solicitud.requester.ownedCompany?.logo || null,
-        category: solicitud.requester.ownedCompany?.category || 'General'
-      },
-      title: solicitud.title,
-      productCategory: solicitud.productCategory,
-      estimatedParticipants: solicitud.minParticipants,
-      targetPrice: solicitud.targetPrice,
-      additionalRequirements: solicitud.description,
-      status: solicitud.status,
-      priority: mapPriorityToString(solicitud.priority),
-      assignedAt: solicitud.reviewedAt?.toISOString() || null,
-      internalNotes: solicitud.internalNotes,
-      createdAt: solicitud.createdAt.toISOString(),
-      updatedAt: solicitud.updatedAt.toISOString()
-    }));
+    const solicitudesFormateadas = solicitudes.map(solicitud => {
+      const enriched = solicitud as typeof solicitud & {
+        requester: {
+          email: string | null;
+          ownedCompany?: {
+            id: string | null;
+            name: string | null;
+            email: string | null;
+            logo: string | null;
+            description: string | null;
+          } | null;
+        };
+      };
+
+      return {
+        id: solicitud.id,
+        empresaId: solicitud.requesterId,
+        empresa: {
+          id: enriched.requester.ownedCompany?.id || null,
+          name: enriched.requester.ownedCompany?.name || 'Sense empresa',
+          email: enriched.requester.ownedCompany?.email || enriched.requester.email,
+          logo: enriched.requester.ownedCompany?.logo || null,
+          description: enriched.requester.ownedCompany?.description || null
+        },
+        title: solicitud.title,
+        category: solicitud.category,
+        estimatedParticipants: solicitud.minParticipants,
+        targetPrice: solicitud.targetPrice,
+        additionalRequirements: solicitud.description,
+        status: solicitud.status,
+        priority: mapPriorityToString(solicitud.priority),
+        assignedAt: solicitud.reviewedAt?.toISOString() || null,
+        internalNotes: solicitud.internalNotes,
+        createdAt: solicitud.createdAt.toISOString(),
+        updatedAt: solicitud.updatedAt.toISOString()
+      };
+    });
 
     const totalPages = Math.ceil(totalCount / filters.limit);
 
     // AUDIT LOG para consulta de solicitudes
     await prismaClient.notification.create({
       data: {
-        type: 'AUDIT_LOG',
+        type: 'SYSTEM',
         title: 'GESTOR_ACCESS: Consulta solicitudes',
         message: `${user.email} consultó sus solicitudes asignadas`,
         priority: 'LOW',

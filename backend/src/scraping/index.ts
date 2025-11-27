@@ -52,11 +52,8 @@ export {
 export { DataExtractor } from './utils/DataExtractor';
 
 // Scraper Manager
-export {
-  ScraperManager,
-  ScraperManagerConfig,
-  ScrapingJobConfig
-} from './ScraperManager';
+import { ScraperManager, type ScraperManagerConfig, type ScrapingJobConfig } from './ScraperManager';
+export { ScraperManager, type ScraperManagerConfig, type ScrapingJobConfig };
 
 // Convenience factory function for creating a ScraperManager with default scrapers
 export function createScraperManager(
@@ -118,11 +115,16 @@ export function validateScraperConfig(
   };
 }
 
+// Import constants for default export
+import { SCRAPER_CONSTANTS, ERROR_CODES } from './types';
+
 // Export default instance creator for easier usage
-export default {
+const scrapingExports = {
   createScraperManager,
   getAvailableScraperTypes,
   validateScraperConfig,
   SCRAPER_CONSTANTS,
   ERROR_CODES
 };
+
+export default scrapingExports;

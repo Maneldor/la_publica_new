@@ -174,7 +174,7 @@ export async function POST(
             },
             coupon: {
               code: coupon.code,
-              qrCodeUrl: coupon.qrCodeData, // Base64 data URL
+              qrCodeUrl: coupon.qrCodeData || undefined, // Base64 data URL
               expiresAt: coupon.expiresAt,
               offerTitle: offer.title,
               offerDescription: offer.shortDescription || offer.description,

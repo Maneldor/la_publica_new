@@ -18,7 +18,7 @@ export async function GET(
       `${process.env.NEXT_PUBLIC_API_URL}/api/admin/solicitudes/${params.id}`,
       {
         headers: {
-          'Authorization': `Bearer ${session.user.accessToken}`,
+          'Authorization': `Bearer ${(session.user as any).backendToken || (session.user as any).apiToken || ''}`,
           'Content-Type': 'application/json',
         },
       }
@@ -67,7 +67,7 @@ export async function PUT(
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.user.accessToken}`,
+          'Authorization': `Bearer ${(session.user as any).backendToken || (session.user as any).apiToken || ''}`,
         },
         body: JSON.stringify(body)
       }
@@ -108,7 +108,7 @@ export async function POST(
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.user.accessToken}`,
+          'Authorization': `Bearer ${(session.user as any).backendToken || (session.user as any).apiToken || ''}`,
         },
       }
     );

@@ -35,9 +35,7 @@ export const CompanySizeEnum = z.enum([
   'medium',        // 51-200 empleados
   'large',         // 201-1000 empleados
   'enterprise'     // 1000+ empleados
-], {
-  errorMap: () => ({ message: 'Tamaño de empresa inválido' })
-});
+]);
 
 export const CompanyTypeEnum = z.enum([
   'sl',           // Sociedad Limitada
@@ -49,9 +47,7 @@ export const CompanyTypeEnum = z.enum([
   'publica',      // Empresa pública
   'mixta',        // Empresa mixta
   'otra'          // Otra forma jurídica
-], {
-  errorMap: () => ({ message: 'Tipo de empresa inválido' })
-});
+]);
 
 export const IndustryEnum = z.enum([
   'tecnologia',
@@ -74,9 +70,7 @@ export const IndustryEnum = z.enum([
   'cultura',
   'ong',
   'otra'
-], {
-  errorMap: () => ({ message: 'Sector industrial inválido' })
-});
+]);
 
 export const CompanyStatusEnum = z.enum([
   'pending',      // Pendiente de verificación
@@ -85,9 +79,7 @@ export const CompanyStatusEnum = z.enum([
   'suspended',    // Suspendida
   'rejected',     // Rechazada
   'inactive'      // Inactiva
-], {
-  errorMap: () => ({ message: 'Estado de empresa inválido' })
-});
+]);
 
 export const VerificationStatusEnum = z.enum([
   'pending',      // Pendiente
@@ -95,9 +87,7 @@ export const VerificationStatusEnum = z.enum([
   'approved',     // Aprobada
   'rejected',     // Rechazada
   'expired'       // Expirada
-], {
-  errorMap: () => ({ message: 'Estado de verificación inválido' })
-});
+]);
 
 export const PlanTypeEnum = z.enum([
   'free',         // Plan gratuito
@@ -105,9 +95,7 @@ export const PlanTypeEnum = z.enum([
   'premium',      // Plan premium
   'enterprise',   // Plan enterprise
   'custom'        // Plan personalizado
-], {
-  errorMap: () => ({ message: 'Tipo de plan inválido' })
-});
+]);
 
 // ==================== SCHEMAS BASE ====================
 

@@ -5,39 +5,75 @@ import Link from 'next/link';
 import { RefreshCw } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 
-interface DashboardStats {
-  contenidos: number;
-  usuarios: number;
-  publicaciones: number;
-  traducciones: number;
+interface DashboardMetrics {
+  users?: {
+    total: number;
+    active: number;
+    newToday: number;
+    byRole: Record<string, number>;
+    growth: number;
+    growthPercent: number;
+  };
+  companies?: {
+    total: number;
+    active: number;
+    pending: number;
+    approved: number;
+    approvalRate: number;
+  };
+  offers?: {
+    total: number;
+    published: number;
+    pending: number;
+    draft: number;
+    publishRate: number;
+  };
+  coupons?: {
+    total: number;
+    active: number;
+    used: number;
+    redeemed: number;
+    conversionRate: number;
+  };
+  activity?: {
+    eventsLast7Days: number;
+    viewsLast7Days: number;
+    avgViewsPerDay: number;
+  };
+  notifications?: {
+    total: number;
+    unread: number;
+  };
+  invoices?: {
+    total: number;
+    paid: number;
+  };
 }
 
 export default function AdminDashboard() {
   const { data: session } = useSession();
-  const [stats, setStats] = useState<DashboardStats>({
-    contenidos: 0,
-    usuarios: 0,
-    publicaciones: 0,
-    traducciones: 0
-  });
+  const [stats, setStats] = useState<DashboardMetrics>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [partialData, setPartialData] = useState<DashboardMetrics | null>(null);
 
-  // Cargar al montar y auto-refresh cada 30s
+  // Cargar al montar y auto-refresh cada 60s (reducido para mejor rendimiento)
   useEffect(() => {
     cargarEstadisticas();
 
     const interval = setInterval(() => {
       cargarEstadisticas();
-    }, 30000); // 30 segundos
+    }, 60000); // 60 segundos (reducido de 30s)
 
     return () => clearInterval(interval);
   }, []);
 
-  const cargarEstadisticas = async () => {
+  const cargarEstadisticas = async (showPartial = false) => {
     try {
-      setLoading(true);
+      if (!showPartial) {
+        setLoading(true);
+      }
       setError(null);
 
       const response = await fetch('/api/admin/dashboard');
@@ -49,61 +85,34 @@ export default function AdminDashboard() {
       const data = await response.json();
 
       if (data.success) {
-        setStats(data.stats);
+        const metrics = data.metrics || {};
+        
+        // Si hay datos parciales, actualizar progresivamente
+        if (showPartial && partialData) {
+          setPartialData(prev => ({ ...prev, ...metrics }));
+        } else {
+          setPartialData(metrics);
+        }
+        
+        setStats(metrics);
         setLastUpdated(new Date());
-        console.log('✅ Dashboard metrics loaded:', data.meta?.queryTime || 'N/A');
+        
+        // Log solo en desarrollo
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ Dashboard metrics loaded:', data.queryTime || 'N/A', data.cached ? '(cached)' : '');
+        }
       } else {
         throw new Error(data.error || 'Error desconegut');
       }
 
     } catch (err) {
-      console.error('Error loading dashboard metrics:', err);
+      // Siempre log errores, pero sin detalles sensibles
+      console.error('Error loading dashboard metrics');
       setError(err instanceof Error ? err.message : 'Error al carregar dades');
       // Mantener datos anteriores si los hay
     } finally {
       setLoading(false);
     }
-  };
-
-  // Función para debuggear el token
-  const debugToken = () => {
-    console.log('🔍 === DEBUG SESSION & TOKEN ===');
-    console.log('📝 Session completa:', session);
-    console.log('📝 User:', session?.user);
-    console.log('📝 API Token presente:', !!session?.user?.apiToken);
-
-    if (session?.user?.apiToken) {
-      console.log('🔑 API Token:', session.user.apiToken.substring(0, 50) + '...');
-
-      // Decodificar JWT para ver fechas
-      try {
-        const tokenParts = session.user.apiToken.split('.');
-        const payload = JSON.parse(atob(tokenParts[1]));
-        console.log('🕐 Payload del token:', payload);
-
-        const now = Math.floor(Date.now() / 1000);
-        const issuedAt = new Date(payload.iat * 1000);
-        const expiresAt = new Date(payload.exp * 1000);
-
-        console.log('🕐 Ahora:', new Date().toLocaleString());
-        console.log('🕐 Token creado:', issuedAt.toLocaleString());
-        console.log('🕐 Token expira:', expiresAt.toLocaleString());
-        console.log('⏰ Token válido:', now < payload.exp ? '✅ SÍ' : '❌ NO (EXPIRADO)');
-        console.log('⏳ Tiempo restante:', Math.max(0, payload.exp - now), 'segundos');
-
-      } catch (error) {
-        console.error('❌ Error decodificando token:', error);
-      }
-
-      localStorage.setItem('token', session.user.apiToken);
-      console.log('✅ Token guardado en localStorage');
-    } else {
-      console.log('❌ NO HAY API TOKEN EN LA SESIÓN');
-      console.log('📝 Propiedades disponibles:', Object.keys(session?.user || {}));
-    }
-
-    console.log('🔍 Token en localStorage:', localStorage.getItem('token'));
-    console.log('🔍 === FIN DEBUG ===');
   };
 
   const cards = [
@@ -125,7 +134,7 @@ export default function AdminDashboard() {
             </div>
           )}
           <button
-            onClick={cargarEstadisticas}
+            onClick={() => cargarEstadisticas()}
             disabled={loading}
             className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
           >
@@ -140,7 +149,7 @@ export default function AdminDashboard() {
           <div className="flex items-center justify-between">
             <p className="text-red-800">❌ {error}</p>
             <button
-              onClick={cargarEstadisticas}
+              onClick={() => cargarEstadisticas()}
               className="text-red-600 hover:text-red-800 font-medium"
             >
               Tornar a intentar
@@ -149,13 +158,26 @@ export default function AdminDashboard() {
         </div>
       )}
 
+      {/* Loading inicial - mostrar skeleton */}
       {loading && !lastUpdated && (
-        <div className="flex items-center justify-center h-64 mb-8">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {[1, 2, 3, 4].map((idx) => (
+            <div key={idx} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 animate-pulse">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
+                  <div className="h-8 bg-gray-200 rounded w-16 mt-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-32 mt-1"></div>
+                </div>
+                <div className="w-14 h-14 bg-gray-200 rounded-lg"></div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
-      {!loading && (
+      {/* Mostrar datos cuando están disponibles */}
+      {!loading || lastUpdated ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {cards.map((card, idx) => (
             <div key={idx} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
@@ -174,7 +196,7 @@ export default function AdminDashboard() {
             </div>
           ))}
         </div>
-      )}
+      ) : null}
 
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="text-xl font-bold mb-4">Accesos Rápidos</h2>
@@ -244,20 +266,6 @@ export default function AdminDashboard() {
             <div className="text-3xl mb-2">🏢</div>
             <div className="font-medium">Gestionar Empresas</div>
           </Link>
-        </div>
-
-        {/* Botón de Debug Token */}
-        <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <h3 className="font-medium text-yellow-800 mb-2">🔧 Debug Lead Generation Token</h3>
-          <p className="text-sm text-yellow-700 mb-3">
-            Si Lead Generation no funciona, usa este botón para verificar y arreglar el token:
-          </p>
-          <button
-            onClick={debugToken}
-            className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 transition-colors"
-          >
-            🔍 Debuggear Token
-          </button>
         </div>
       </div>
     </div>

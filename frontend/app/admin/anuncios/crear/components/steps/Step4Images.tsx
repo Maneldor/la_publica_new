@@ -2,24 +2,24 @@
 
 import { useRef, useState, useCallback } from 'react';
 import { Upload, X, Star, StarOff, Image as ImageIcon, AlertCircle } from 'lucide-react';
-import { AdminAnunciFormData } from '../../hooks/useAdminCreateAnunci';
+import { AdminAnunciFormData, UpdateAdminAnunciField } from '../../hooks/useAdminCreateAnunci';
 
 interface Step4Props {
   formData: AdminAnunciFormData;
   errors: Record<string, string>;
-  updateField: (field: keyof AdminAnunciFormData, value: any) => void;
+  updateField: UpdateAdminAnunciField;
 }
+
+const MAX_IMAGES = 8;
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ACCEPTED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'] as const;
 
 export const Step4Images = ({ formData, errors, updateField }: Step4Props) => {
   const [dragActive, setDragActive] = useState(false);
   const [uploadErrors, setUploadErrors] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const MAX_IMAGES = 8;
-  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-  const ACCEPTED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-
-  const validateFiles = (files: FileList): { validFiles: File[]; errors: string[] } => {
+  const validateFiles = useCallback((files: FileList): { validFiles: File[]; errors: string[] } => {
     const validFiles: File[] = [];
     const errors: string[] = [];
 
@@ -43,9 +43,9 @@ export const Step4Images = ({ formData, errors, updateField }: Step4Props) => {
     });
 
     return { validFiles, errors };
-  };
+  }, [formData.images, ACCEPTED_TYPES, MAX_FILE_SIZE, MAX_IMAGES]);
 
-  const handleFiles = (files: FileList) => {
+  const handleFiles = useCallback((files: FileList) => {
     const { validFiles, errors } = validateFiles(files);
     setUploadErrors(errors);
 
@@ -58,7 +58,7 @@ export const Step4Images = ({ formData, errors, updateField }: Step4Props) => {
         updateField('mainImageIndex', 0);
       }
     }
-  };
+  }, [formData.images, updateField, validateFiles]);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -78,7 +78,7 @@ export const Step4Images = ({ formData, errors, updateField }: Step4Props) => {
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleFiles(e.dataTransfer.files);
     }
-  }, [formData.images]);
+  }, [handleFiles]);
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -149,7 +149,7 @@ export const Step4Images = ({ formData, errors, updateField }: Step4Props) => {
           {formData.images.length >= MAX_IMAGES ? (
             <div className="text-gray-500">
               <ImageIcon className="mx-auto h-12 w-12 mb-4" />
-              <p className="text-lg font-medium">Màxim d'imatges assolit</p>
+              <p className="text-lg font-medium">Màxim d&apos;imatges assolit</p>
               <p className="text-sm">Has afegit {MAX_IMAGES} imatges (màxim permès)</p>
             </div>
           ) : (
@@ -207,7 +207,7 @@ export const Step4Images = ({ formData, errors, updateField }: Step4Props) => {
             </h3>
             {formData.images.length > 1 && (
               <p className="text-sm text-gray-600">
-                Fes clic a l'estrella per marcar la imatge principal
+                Fes clic a l&apos;estrella per marcar la imatge principal
               </p>
             )}
           </div>

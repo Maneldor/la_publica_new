@@ -1,7 +1,22 @@
 'use client';
 
 import { useState } from 'react';
-import { CreateTaskInput } from '@/hooks/useTasks';
+// Define CreateTaskInput locally since it's not exported from useTasks
+interface CreateTaskInput {
+  title: string;
+  description?: string;
+  status?: string;
+  priority?: string;
+  type?: string;
+  category?: string;
+  assignedToId?: string;
+  leadId?: string;
+  companyId?: string;
+  dueDate?: string;
+  startDate?: string;
+  estimatedMinutes?: number;
+  tags?: string[];
+}
 
 interface CreateTaskModalProps {
   isOpen: boolean;

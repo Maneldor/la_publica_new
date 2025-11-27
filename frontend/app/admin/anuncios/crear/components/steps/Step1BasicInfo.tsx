@@ -1,12 +1,12 @@
 'use client';
 
 import { FileText, Tag, Type } from 'lucide-react';
-import { AdminAnunciFormData } from '../../hooks/useAdminCreateAnunci';
+import { AdminAnunciFormData, UpdateAdminAnunciField } from '../../hooks/useAdminCreateAnunci';
 
 interface Step1Props {
   formData: AdminAnunciFormData;
   errors: Record<string, string>;
-  updateField: (field: keyof AdminAnunciFormData, value: any) => void;
+  updateField: UpdateAdminAnunciField;
 }
 
 export const Step1BasicInfo = ({ formData, errors, updateField }: Step1Props) => {
@@ -38,7 +38,7 @@ export const Step1BasicInfo = ({ formData, errors, updateField }: Step1Props) =>
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
           <Type className="w-4 h-4 inline mr-2" />
-          Títol de l'anunci *
+          Títol de l&apos;anunci *
         </label>
         <input
           type="text"
@@ -68,7 +68,7 @@ export const Step1BasicInfo = ({ formData, errors, updateField }: Step1Props) =>
       {/* Tipo: Oferta / Demanda */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-3">
-          Tipus d'anunci *
+          Tipus d&apos;anunci *
         </label>
         <div className="grid grid-cols-2 gap-4">
           <button
@@ -171,8 +171,8 @@ export const Step1BasicInfo = ({ formData, errors, updateField }: Step1Props) =>
         <ul className="text-sm text-blue-700 space-y-1">
           <li>• Usa un títol clar i descriptiu</li>
           <li>• Inclou totes les característiques importants</li>
-          <li>• Sigues honest sobre l'estat del producte</li>
-          <li>• Revisa l'ortografia abans de publicar</li>
+          <li>• Sigues honest sobre l&apos;estat del producte</li>
+          <li>• Revisa l&apos;ortografia abans de publicar</li>
         </ul>
       </div>
     </div>

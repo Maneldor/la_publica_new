@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { prismaClient } from '@/lib/prisma';
 import { TaskStatus, TaskPriority, TaskType, TaskCategory } from '@prisma/client';
 
 // GET /api/admin/tasks - Listar tareas con filtros avanzados
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
 
     // EJECUTAR QUERY
     const [tasks, total] = await Promise.all([
-      prisma.task.findMany({
+      prismaClient.task.findMany({
         where,
         include: {
           assignedTo: {
@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
         skip,
         take: limit,
       }),
-      prisma.task.count({ where }),
+      prismaClient.task.count({ where }),
     ]);
 
     return NextResponse.json({
@@ -181,7 +181,7 @@ export async function POST(request: NextRequest) {
     });
 
     // CREAR TAREA
-    const task = await prisma.task.create({
+    const task = await prismaClient.task.create({
       data: {
         title: title.trim(),
         description: description?.trim(),
@@ -216,7 +216,7 @@ export async function POST(request: NextRequest) {
     });
 
     // REGISTRAR ACTIVIDAD
-    await prisma.taskActivity.create({
+    await prismaClient.taskActivity.create({
       data: {
         taskId: task.id,
         userId: session.user.id,

@@ -274,14 +274,11 @@ export class RoleController {
       const roleDescriptions = {
         [UserRole.SUPER_ADMIN]: 'Super Administrador - Acceso completo al sistema',
         [UserRole.ADMIN]: 'Administrador - Gestión general de la plataforma',
-        [UserRole.EMPLEADO_PUBLICO]: 'Empleado Público - Usuario estándar',
-        [UserRole.ADMINISTRADOR_GRUPO]: 'Administrador de Grupo - Gestiona grupos específicos',
-        [UserRole.MODERADOR_GRUPO]: 'Moderador de Grupo - Modera contenido de grupos',
-        [UserRole.GESTOR_CONTENIDO]: 'Gestor de Contenido - Gestiona contenido del blog',
-        [UserRole.GESTOR_EMPRESAS]: 'Gestor de Empresas - Administra perfiles de empresas',
-        [UserRole.GESTOR_ADMINISTRACIONES]: 'Gestor de Administraciones - Administra administraciones públicas',
-        [UserRole.EMPRESA]: 'Empresa - Perfil empresarial',
-        [UserRole.ADMINISTRACION_PUBLICA]: 'Administración Pública - Perfil institucional'
+        [UserRole.USER]: 'Usuario estándar',
+        [UserRole.MODERATOR]: 'Moderador - Modera contenido',
+        [UserRole.COMMUNITY_MANAGER]: 'Community Manager - Gestiona comunidad',
+        [UserRole.COMPANY]: 'Empresa - Perfil empresarial',
+        [UserRole.COMPANY_MANAGER]: 'Gestor de Empresa - Administra empresa'
       };
 
       // Categorías de permisos

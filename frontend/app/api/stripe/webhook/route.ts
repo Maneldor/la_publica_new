@@ -3,6 +3,7 @@ import { headers } from 'next/headers';
 import { stripe } from '@/lib/stripe';
 import { prismaClient } from '@/lib/prisma';
 import Stripe from 'stripe';
+import { PaymentMethod } from '@prisma/client';
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -12,13 +13,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'No signature' }, { status: 400 });
   }
 
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    console.error('❌ STRIPE_WEBHOOK_SECRET is not configured');
+    return NextResponse.json(
+      { error: 'Webhook secret not configured' },
+      { status: 500 }
+    );
+  }
+
   let event: Stripe.Event;
 
   try {
     event = stripe.webhooks.constructEvent(
       body,
       signature,
-      process.env.STRIPE_WEBHOOK_SECRET!
+      webhookSecret
     );
   } catch (err: any) {
     console.error('⚠️  Webhook signature verification failed:', err.message);
@@ -92,55 +102,66 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     }
 
     // 2. Update subscription
+    const defaultLimits = newPlan.limitesJSON ? JSON.parse(newPlan.limitesJSON) : {};
+
     if (company.subscriptions && company.subscriptions.length > 0) {
       await prismaClient.subscription.update({
         where: { id: company.subscriptions[0].id },
         data: {
           planId: newPlan.id,
-          isTrial: false,
-          trialEndsAt: null,
-          currentPeriodStart: new Date(),
-          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // +30 días
+          precioMensual: newPlan.precioMensual,
+          precioAnual: newPlan.precioAnual,
+          startDate: new Date(),
+          endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          limites: defaultLimits
         }
       });
     } else {
-      // Create subscription if doesn't exist
       await prismaClient.subscription.create({
         data: {
           companyId: company.id,
           planId: newPlan.id,
-          isTrial: false,
-          currentPeriodStart: new Date(),
-          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          precioMensual: newPlan.precioMensual,
+          precioAnual: newPlan.precioAnual,
+          startDate: new Date(),
+          endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          limites: defaultLimits
         }
       });
     }
 
     // 3. Get next invoice number
-    const lastInvoice = await prismaClient.invoice.findFirst({
-      orderBy: { invoiceNumber: 'desc' }
-    });
-
-    const nextInvoiceNumber = `FP${String((lastInvoice?.invoiceNumber.replace('FP', '') || 0) + 1).padStart(6, '0')}`;
-
     // 4. Create invoice
     const invoice = await prismaClient.invoice.create({
       data: {
-        invoiceNumber: nextInvoiceNumber,
         companyId: company.id,
-        planConfigId: newPlan.id,
-        amount: session.amount_total! / 100, // Convert from cents
-        currency: session.currency!.toUpperCase(),
+        subscriptionId: company.subscriptions[0]?.id || undefined,
+        invoiceNumber: `FP-${Date.now()}`,
+        concept: `Actualización a plan ${newPlan.tier}`,
+        totalAmount: session.amount_total ?? 0,
+        subtotalAmount: session.amount_total ?? 0,
+        taxAmount: 0,
+        pendingAmount: 0,
+        paidAmount: session.amount_total ?? 0,
         status: 'PAID',
         issueDate: new Date(),
-        dueDate: new Date(), // Paid immediately
-        paidAt: new Date(),
-        description: `Actualización a plan ${newPlan.tier}`,
-        details: {
-          planName: newPlan.tier,
-          planPrice: newPlan.monthlyPrice,
-          upgradeType: metadata.upgradeType || 'plan_upgrade',
-          prorationAmount: session.amount_total! / 100
+        dueDate: new Date(),
+        paidDate: new Date(),
+        clientName: company.name,
+        clientCif: company.cif,
+        clientEmail: company.email,
+        clientAddress: company.address || 'N/D',
+        items: {
+          create: [
+            {
+              description: `Plan ${newPlan.tier}`,
+              quantity: 1,
+              unitPrice: session.amount_total ?? 0,
+              subtotalAmount: session.amount_total ?? 0,
+              taxAmount: 0,
+              totalAmount: session.amount_total ?? 0
+            }
+          ]
         }
       }
     });
@@ -148,21 +169,20 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     // 5. Create payment record
     await prismaClient.payment.create({
       data: {
-        companyId: company.id,
         invoiceId: invoice.id,
-        amount: session.amount_total! / 100,
-        currency: session.currency!.toUpperCase(),
-        method: 'STRIPE',
+        paymentNumber: `PAY-${Date.now()}`,
+        amount: session.amount_total ?? 0,
+        netAmount: session.amount_total ?? 0,
+        method: PaymentMethod.CREDIT_CARD,
         status: 'COMPLETED',
-        transactionId: session.payment_intent as string,
+        paymentDate: new Date(),
         stripePaymentId: session.payment_intent as string,
-        stripeSessionId: session.id,
-        processedAt: new Date()
+        stripeSessionId: session.id
       }
     });
 
     console.log(`✅ Company ${company.name} upgraded to ${newPlan.tier}`);
-    console.log(`📧 Invoice ${nextInvoiceNumber} created for €${session.amount_total! / 100}`);
+    console.log(`📧 Invoice ${invoice.invoiceNumber} created for €${(session.amount_total ?? 0) / 100}`);
 
   } catch (error) {
     console.error('Error updating subscription:', error);

@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import {
-  Upload,
   X,
   Plus,
   Info,
@@ -11,12 +10,6 @@ import {
   FileText,
   HelpCircle,
   Image,
-  Trash2,
-  ExternalLink,
-  Phone,
-  Mail,
-  Video,
-  Building2,
   Eye,
   Tag,
   Calendar,
@@ -78,7 +71,7 @@ interface WizardFormData {
 
 interface StepProps {
   formData: WizardFormData;
-  updateField: (field: keyof WizardFormData, value: any) => void;
+  updateField: <K extends keyof WizardFormData>(field: K, value: WizardFormData[K]) => void;
   addArrayItem?: (field: 'que_inclou' | 'dirigit_a' | 'badges', value: string) => void;
   removeArrayItem?: (field: 'que_inclou' | 'dirigit_a' | 'badges', value: string) => void;
   companies?: Company[];
@@ -460,7 +453,7 @@ export const Step3Modalitats: React.FC<StepProps> = ({ formData, updateField, er
 };
 
 // Step 4: Contingut
-export const Step4Contingut: React.FC<StepProps> = ({ formData, updateField, addArrayItem, removeArrayItem, errors }) => {
+export const Step4Contingut: React.FC<StepProps> = ({ formData, addArrayItem, removeArrayItem }) => {
   const [newInclude, setNewInclude] = useState('');
   const [newTargetAudience, setNewTargetAudience] = useState('');
 
@@ -621,7 +614,7 @@ export const Step5Gratuit: React.FC<StepProps> = ({ formData, updateField, error
 };
 
 // Step 6: Imatge i Final
-export const Step6Imatge: React.FC<StepProps> = ({ formData, updateField, addArrayItem, removeArrayItem, errors }) => {
+export const Step6Imatge: React.FC<StepProps> = ({ formData, updateField, addArrayItem, removeArrayItem }) => {
   const [newBadge, setNewBadge] = useState('');
 
   const handleAddBadge = () => {
@@ -848,7 +841,7 @@ export const Step7Review: React.FC<StepProps> = ({ formData, updateField, compan
   );
 };
 
-export default {
+const AssessoramentWizardSteps = {
   Step1Basic,
   Step2Expert,
   Step3Modalitats,
@@ -857,3 +850,5 @@ export default {
   Step6Imatge,
   Step7Review
 };
+
+export default AssessoramentWizardSteps;

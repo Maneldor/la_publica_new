@@ -47,10 +47,14 @@ export async function GET(request: NextRequest) {
       prismaClient.invoice.findMany({
         where,
         include: {
-          planConfig: {
-            select: {
-              tier: true,
-              monthlyPrice: true
+          subscription: {
+            include: {
+              plan: {
+                select: {
+                  planType: true,
+                  precioMensual: true
+                }
+              }
             }
           },
           payments: {
@@ -59,10 +63,11 @@ export async function GET(request: NextRequest) {
               amount: true,
               method: true,
               status: true,
-              processedAt: true,
-              stripePaymentId: true
+              paymentDate: true,
+              externalId: true
             }
-          }
+          },
+          items: true
         },
         orderBy: { createdAt: 'desc' },
         skip,
@@ -76,25 +81,25 @@ export async function GET(request: NextRequest) {
       by: ['status'],
       where: { companyId },
       _sum: {
-        amount: true
+        totalAmount: true
       },
       _count: {
         _all: true
       }
     });
 
-    const statisticsMap = stats.reduce((acc, stat) => {
+    const statisticsMap = stats.reduce((acc: any, stat: any) => {
       acc[stat.status] = {
-        count: stat._count._all,
-        total: stat._sum.amount || 0
+        count: (stat._count as any)?._all || 0,
+        total: (stat._sum as any)?.totalAmount || 0
       };
       return acc;
     }, {} as any);
 
     const statistics = {
       total: {
-        count: stats.reduce((sum, s) => sum + s._count._all, 0),
-        amount: stats.reduce((sum, s) => sum + (s._sum.amount || 0), 0)
+        count: stats.reduce((sum: number, s: any) => sum + ((s._count as any)?._all || 0), 0),
+        amount: stats.reduce((sum: number, s: any) => sum + ((s._sum as any)?.totalAmount || 0), 0)
       },
       paid: statisticsMap.PAID || { count: 0, total: 0 },
       pending: statisticsMap.PENDING || { count: 0, total: 0 },
@@ -108,18 +113,18 @@ export async function GET(request: NextRequest) {
         id: invoice.id,
         invoiceNumber: invoice.invoiceNumber,
         status: invoice.status,
-        amount: invoice.amount,
-        currency: invoice.currency,
-        description: invoice.description,
+        amount: invoice.totalAmount,
+        currency: 'EUR',
+        description: invoice.concept,
         issueDate: invoice.issueDate,
         dueDate: invoice.dueDate,
-        paidAt: invoice.paidAt,
-        details: invoice.details,
-        plan: {
-          tier: invoice.planConfig?.tier,
-          monthlyPrice: invoice.planConfig?.monthlyPrice
-        },
-        payments: invoice.payments
+        paidAt: invoice.paidDate,
+        details: invoice.items,
+        plan: invoice.subscription ? {
+          tier: invoice.subscription.plan?.planType,
+          monthlyPrice: invoice.subscription.plan?.precioMensual
+        } : null,
+        payments: invoice.payments || []
       })),
       pagination: {
         page,

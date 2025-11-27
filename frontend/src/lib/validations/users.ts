@@ -36,18 +36,14 @@ export const UserStatusEnum = z.enum([
   'suspended',     // Suspendido temporalmente
   'banned',        // Baneado permanentemente
   'deleted'        // Marcado para eliminación
-], {
-  errorMap: () => ({ message: 'Estado de usuario inválido' })
-});
+]);
 
 export const GenderEnum = z.enum([
   'male',
   'female',
   'other',
   'prefer_not_to_say'
-], {
-  errorMap: () => ({ message: 'Género inválido' })
-});
+]);
 
 export const EmploymentStatusEnum = z.enum([
   'employed',      // Empleado
@@ -56,9 +52,7 @@ export const EmploymentStatusEnum = z.enum([
   'student',       // Estudiante
   'retired',       // Jubilado
   'other'          // Otro
-], {
-  errorMap: () => ({ message: 'Estado laboral inválido' })
-});
+]);
 
 export const EducationLevelEnum = z.enum([
   'primary',       // Educación primaria
@@ -68,27 +62,21 @@ export const EducationLevelEnum = z.enum([
   'master',        // Máster
   'doctorate',     // Doctorado
   'other'          // Otro
-], {
-  errorMap: () => ({ message: 'Nivel educativo inválido' })
-});
+]);
 
 export const NotificationPreferenceEnum = z.enum([
   'all',          // Todas las notificaciones
   'important',    // Solo importantes
   'minimal',      // Mínimas
   'none'          // Ninguna
-], {
-  errorMap: () => ({ message: 'Preferencia de notificación inválida' })
-});
+]);
 
 export const LanguageProficiencyEnum = z.enum([
   'basic',
   'intermediate',
   'advanced',
   'native'
-], {
-  errorMap: () => ({ message: 'Nivel de idioma inválido' })
-});
+]);
 
 // ==================== SCHEMAS BASE ====================
 

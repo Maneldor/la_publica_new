@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
 
     // Calcular precio total
     const basePremium = 299;
-    const precioExtras = items.reduce((sum, item) => sum + item.precioSnapshot, 0);
+    const precioExtras = items.reduce((sum: number, item: any) => sum + item.precioSnapshot, 0);
     const precioTotal = basePremium + precioExtras;
 
     // Crear presupuesto mock

@@ -37,7 +37,7 @@ export const ProfileWizard = ({ onClose, onSave, initialData }: ProfileWizardPro
     updateLanguage,
     removeLanguage,
     validateStep,
-    resetForm
+    // resetForm removed - not in hook
   } = useProfileWizard(initialData);
 
   const steps = [
@@ -158,9 +158,9 @@ export const ProfileWizard = ({ onClose, onSave, initialData }: ProfileWizardPro
           </div>
 
           <ProgressIndicator
-            steps={steps}
+            steps={steps.map(s => s.title)}
             currentStep={currentStep}
-            onStepClick={setCurrentStep}
+            totalSteps={steps.length}
           />
         </div>
 

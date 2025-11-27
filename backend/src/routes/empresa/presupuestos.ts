@@ -17,15 +17,15 @@ router.get('/', authMiddleware, async (req: AuthenticatedRequest, res: Response)
   try {
     const userId = req.user!.id;
 
-    const empresa = await prisma.company.findUnique({
-      where: { userId },
+    const empresa = await (prisma.companies.findUnique as any)({
+      where: { userId } as any,
     });
 
     if (!empresa) {
       return res.status(404).json({ error: 'Empresa no encontrada' });
     }
 
-    const presupuestos = await prisma.presupuesto.findMany({
+    const presupuestos = await (prisma as any).presupuesto.findMany({
       where: { empresaId: empresa.id },
       include: {
         empresa: {
@@ -55,15 +55,15 @@ router.get('/:id', authMiddleware, async (req: AuthenticatedRequest, res: Respon
     const userId = req.user!.id;
     const { id } = req.params;
 
-    const empresa = await prisma.company.findUnique({
-      where: { userId },
+    const empresa = await (prisma.companies.findUnique as any)({
+      where: { userId } as any,
     });
 
     if (!empresa) {
       return res.status(404).json({ error: 'Empresa no encontrada' });
     }
 
-    const presupuesto = await prisma.presupuesto.findFirst({
+    const presupuesto = await (prisma as any).presupuesto.findFirst({
       where: {
         id,
         empresaId: empresa.id
@@ -99,15 +99,15 @@ router.patch('/:id/aprobar', authMiddleware, async (req: AuthenticatedRequest, r
     const userId = req.user!.id;
     const { id } = req.params;
 
-    const empresa = await prisma.company.findUnique({
-      where: { userId },
+    const empresa = await (prisma.companies.findUnique as any)({
+      where: { userId } as any,
     });
 
     if (!empresa) {
       return res.status(404).json({ error: 'Empresa no encontrada' });
     }
 
-    const presupuesto = await prisma.presupuesto.findFirst({
+    const presupuesto = await (prisma as any).presupuesto.findFirst({
       where: {
         id,
         empresaId: empresa.id,
@@ -119,7 +119,7 @@ router.patch('/:id/aprobar', authMiddleware, async (req: AuthenticatedRequest, r
       return res.status(404).json({ error: 'Presupuesto no encontrado o no puede ser aprobado' });
     }
 
-    const presupuestoAprobado = await prisma.presupuesto.update({
+    const presupuestoAprobado = await (prisma as any).presupuesto.update({
       where: { id },
       data: {
         estado: 'APROBADO',
@@ -149,15 +149,15 @@ router.patch('/:id/rechazar', authMiddleware, async (req: AuthenticatedRequest, 
     const userId = req.user!.id;
     const { id } = req.params;
 
-    const empresa = await prisma.company.findUnique({
-      where: { userId },
+    const empresa = await (prisma.companies.findUnique as any)({
+      where: { userId } as any,
     });
 
     if (!empresa) {
       return res.status(404).json({ error: 'Empresa no encontrada' });
     }
 
-    const presupuesto = await prisma.presupuesto.findFirst({
+    const presupuesto = await (prisma as any).presupuesto.findFirst({
       where: {
         id,
         empresaId: empresa.id,
@@ -169,7 +169,7 @@ router.patch('/:id/rechazar', authMiddleware, async (req: AuthenticatedRequest, 
       return res.status(404).json({ error: 'Presupuesto no encontrado o no puede ser rechazado' });
     }
 
-    const presupuestoRechazado = await prisma.presupuesto.update({
+    const presupuestoRechazado = await (prisma as any).presupuesto.update({
       where: { id },
       data: {
         estado: 'RECHAZADO',

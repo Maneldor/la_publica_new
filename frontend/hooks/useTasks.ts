@@ -117,12 +117,12 @@ export function useTasks(filters?: TaskFilters) {
     completionRate: data?.tasks.length
       ? Math.round((data.tasks.filter(t => t.status === 'COMPLETED').length / data.tasks.length) * 100)
       : 0,
-    avgCompletionTime: data?.tasks
-      .filter(t => t.completedAt && t.createdAt)
-      .reduce((acc, t) => {
+    avgCompletionTime: (data?.tasks
+      ?.filter(t => t.completedAt && t.createdAt)
+      ?.reduce((acc, t) => {
         const diff = new Date(t.completedAt!).getTime() - new Date(t.createdAt).getTime();
         return acc + (diff / (1000 * 60 * 60)); // horas
-      }, 0) / (data?.tasks.filter(t => t.completedAt).length || 1) || 0,
+      }, 0) ?? 0) / (data?.tasks?.filter(t => t.completedAt).length || 1) || 0,
     dueToday: data?.tasks.filter(t => {
       if (!t.dueDate || t.status === 'COMPLETED') return false;
       const today = new Date();
