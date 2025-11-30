@@ -2,17 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+// import { translateUserType } from '@/lib/role-translations';
 
 // Tipos de usuario disponibles
 const USER_TYPES = [
-  { value: 'SUPER_ADMIN', label: 'Super Administrador' },
+  { value: 'EMPLOYEE', label: 'Usuari' },
+  { value: 'COMPANY_OWNER', label: 'Empresa' },
+  { value: 'COMPANY_MEMBER', label: 'Membre Empresa' },
+  { value: 'ACCOUNT_MANAGER', label: 'Gestor Empreses' },
   { value: 'ADMIN', label: 'Administrador' },
-  { value: 'EMPLEADO_PUBLICO', label: 'Empleado Público' },
-  { value: 'EMPRESA', label: 'Empresa' },
-  { value: 'ADMINISTRACION_PUBLICA', label: 'Administración Pública' },
-  { value: 'GESTOR_CONTENIDO', label: 'Gestor de Contenido' },
-  { value: 'GESTOR_EMPRESAS', label: 'Gestor de Empresas' },
-  { value: 'GESTOR_ADMINISTRACIONES', label: 'Gestor de Administraciones Públicas' },
 ];
 
 // Tipos de administración
@@ -35,8 +33,9 @@ interface CustomField {
 export default function CrearUsuarioPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [selectedUserType, setSelectedUserType] = useState('EMPLEADO_PUBLICO');
+  const [selectedUserType, setSelectedUserType] = useState('');
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
+  const [availablePlans, setAvailablePlans] = useState<any[]>([]);
 
   // Datos base del usuario
   const [baseData, setBaseData] = useState({
@@ -54,6 +53,24 @@ export default function CrearUsuarioPage() {
   useEffect(() => {
     fetchCustomFields();
   }, [selectedUserType]);
+
+  // Cargar planes disponibles al montar el componente
+  useEffect(() => {
+    loadAvailablePlans();
+  }, []);
+
+  const loadAvailablePlans = async () => {
+    try {
+      const response = await fetch('/api/plans');
+      const data = await response.json();
+
+      if (data.success) {
+        setAvailablePlans(data.data || []);
+      }
+    } catch (error) {
+      console.error('Error loading plans:', error);
+    }
+  };
 
   const fetchCustomFields = async () => {
     try {
@@ -92,28 +109,39 @@ export default function CrearUsuarioPage() {
     setLoading(true);
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/v1/admin/users', {
+      const payload: any = {
+        userType: selectedUserType,
+        email: baseData.email,
+        password: baseData.password,
+        userData: userData,
+        customFields: customFieldValues,
+        customFieldsPrivacy: customFieldsPrivacy
+      };
+
+      // Para empresas, agregar datos específicos
+      if (selectedUserType === 'COMPANY_OWNER') {
+        payload.companyName = userData.name;
+        payload.selectedPlan = userData.selectedPlan;
+      }
+
+      const response = await fetch('/api/admin/users', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          userType: selectedUserType,
-          email: baseData.email,
-          password: baseData.password,
-          userData: userData,
-          customFields: customFieldValues,
-          customFieldsPrivacy: customFieldsPrivacy
-        })
+        body: JSON.stringify(payload)
       });
 
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
-          alert('Usuario creado exitosamente');
-          router.push('/admin/usuarios/listar');
+          if (selectedUserType === 'COMPANY_OWNER') {
+            alert(`Empresa creada exitosamente!\n\nCredencials generades:\n📧 Email: ${baseData.email}\n🔑 Contrasenya: ${baseData.password}\n\nPodràs completar les dades addicionals des de la llista d'empreses.`);
+            router.push('/admin/empresas/listar');
+          } else {
+            alert('Usuario creado exitosamente');
+            router.push('/admin/usuarios/listar');
+          }
         } else {
           alert(result.message || 'Error al crear el usuario');
         }
@@ -130,7 +158,7 @@ export default function CrearUsuarioPage() {
 
   const renderUserTypeFields = () => {
     switch (selectedUserType) {
-      case 'EMPLEADO_PUBLICO':
+      case 'EMPLOYEE':
         return (
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-gray-900">Datos del Empleado Público</h3>
@@ -241,124 +269,134 @@ export default function CrearUsuarioPage() {
           </div>
         );
 
-      case 'EMPRESA':
+      case 'COMPANY_OWNER':
         return (
           <div className="space-y-6">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0">
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <span className="text-2xl">🏢</span>
-                  </div>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                  <span className="text-xl">🚀</span>
                 </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-medium text-blue-900 mb-2">
-                    🏢 Crear Empresa Col·laboradora (Nou)
-                  </h3>
-                  <p className="text-blue-700 mb-4">
-                    Per a crear una empresa col·laboradora, utilitza l'assistent especialitzat que inclou:
-                  </p>
-                  <ul className="text-blue-600 text-sm space-y-1 mb-4">
-                    <li>• Validació automàtica de dades</li>
-                    <li>• Generació de credencials segures</li>
-                    <li>• Assignació de pla de col·laboració</li>
-                    <li>• Enviament automàtic de credencials</li>
-                  </ul>
-                  <button
-                    type="button"
-                    onClick={() => router.push('/admin/usuarios/crear-empresa')}
-                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                  >
-                    Obrir Assistent d'Empresa
-                  </button>
-                </div>
+                <h3 className="text-lg font-medium text-blue-900">Fase 1: Dades Bàsiques d'Empresa</h3>
               </div>
+              <p className="text-sm text-blue-700">
+                Primera fase per crear una nova empresa col·laboradora. Omple les dades essencials i genera les credencials inicials.
+              </p>
             </div>
 
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <h4 className="text-sm font-medium text-gray-900 mb-2">
-                Formulari Bàsic (No Recomanat per Empreses)
-              </h4>
-              <p className="text-sm text-gray-600 mb-4">
-                Si prefereixes usar el formulari bàsic, omple les dades següents.
-                Recorda que no inclou generació automàtica de credencials ni enviament d'emails.
-              </p>
+            <div className="space-y-6">
+              {/* Nom de l'empresa */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nom de l'Empresa *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={userData.name || ''}
+                  onChange={(e) => {
+                    const newUserData = { ...userData, name: e.target.value };
+                    setUserData(newUserData);
 
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nombre de la Empresa *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={userData.name || ''}
-                      onChange={(e) => setUserData({ ...userData, name: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
+                    // Generar contraseña automáticamente
+                    if (newUserData.name && newUserData.selectedPlan) {
+                      const password = generatePassword(newUserData.name, newUserData.selectedPlan);
+                      setBaseData({ ...baseData, password, confirmPassword: password });
+                    }
+                  }}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Ex: Empresa Col·laboradora SL"
+                />
+              </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      CIF/NIF
-                    </label>
-                    <input
-                      type="text"
-                      value={userData.cif || ''}
-                      onChange={(e) => setUserData({ ...userData, cif: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
+              {/* Email de l'empresa */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email de contacte *
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={baseData.email || ''}
+                  onChange={(e) => setBaseData({ ...baseData, email: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="contacte@empresa.cat"
+                />
+              </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Sector *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={userData.sector || ''}
-                      onChange={(e) => setUserData({ ...userData, sector: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
+              {/* Selección de plan */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Pla de Col·laboració *
+                </label>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {availablePlans.map(plan => (
+                    <div
+                      key={plan.id}
+                      className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                        userData.selectedPlan === plan.tier
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                      onClick={() => {
+                        const newUserData = { ...userData, selectedPlan: plan.tier };
+                        setUserData(newUserData);
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Tamaño de la Empresa
-                    </label>
-                    <select
-                      value={userData.size || 'pequeña'}
-                      onChange={(e) => setUserData({ ...userData, size: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        // Generar contraseña automáticamente
+                        if (newUserData.name && newUserData.selectedPlan) {
+                          const password = generatePassword(newUserData.name, newUserData.selectedPlan);
+                          setBaseData({ ...baseData, password, confirmPassword: password });
+                        }
+                      }}
                     >
-                      <option value="pequeña">Pequeña</option>
-                      <option value="mediana">Mediana</option>
-                      <option value="grande">Grande</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Descripción
-                  </label>
-                  <textarea
-                    value={userData.description || ''}
-                    onChange={(e) => setUserData({ ...userData, description: e.target.value })}
-                    rows={3}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium text-gray-900">{plan.name}</h4>
+                        <span className="text-sm font-medium text-blue-600">
+                          {plan.basePrice === 0 ? 'Gratis' : `${plan.basePrice}€/any`}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-600 mb-2">
+                        Ofertes: {plan.maxActiveOffers === -1 ? 'Il·limitades' : plan.maxActiveOffers}
+                      </p>
+                      {plan.firstYearDiscount > 0 && (
+                        <span className="inline-block px-2 py-1 bg-green-100 text-green-800 text-xs rounded">
+                          -{Math.round(plan.firstYearDiscount * 100)}% 1r any
+                        </span>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
+
+              {/* Contraseña generada */}
+              {baseData.password && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xl">🔑</span>
+                    <h4 className="font-medium text-yellow-900">Contrasenya Generada</h4>
+                  </div>
+                  <div className="font-mono text-lg bg-white px-3 py-2 border rounded mb-2">
+                    {baseData.password}
+                  </div>
+                  <p className="text-sm text-yellow-700 mb-3">
+                    Format: {userData.name?.slice(0,3).toUpperCase()}DDMMYY{userData.selectedPlan?.slice(-1).toUpperCase()}
+                  </p>
+                  <div className="bg-white rounded-lg p-3 border-l-4 border-blue-500">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">ℹ️</span>
+                      <span className="text-sm font-medium text-blue-900">Següent pas:</span>
+                    </div>
+                    <p className="text-sm text-blue-700 mt-1">
+                      L'empresa apareixerà en estat "Pendent" fins completar totes les dades addicionals des del wizard complet.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         );
 
-      case 'ADMINISTRACION_PUBLICA':
+      case 'ADMIN':
         return (
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-gray-900">Datos de la Administración Pública</h3>
@@ -421,6 +459,124 @@ export default function CrearUsuarioPage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
+            </div>
+          </div>
+        );
+
+      case 'COMPANY_MEMBER':
+        return (
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-gray-900">Datos del Membre d'Empresa</h3>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm text-blue-700">
+                Aquest membre serà associat a una empresa existent. Només cal email i contrasenya.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nom *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={userData.firstName || ''}
+                  onChange={(e) => setUserData({ ...userData, firstName: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Cognoms *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={userData.lastName || ''}
+                  onChange={(e) => setUserData({ ...userData, lastName: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Càrrec
+              </label>
+              <input
+                type="text"
+                value={userData.position || ''}
+                onChange={(e) => setUserData({ ...userData, position: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Ex: Responsable de Màrqueting"
+              />
+            </div>
+          </div>
+        );
+
+      case 'ACCOUNT_MANAGER':
+        return (
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-gray-900">Datos del Gestor d'Empreses</h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nom *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={userData.firstName || ''}
+                  onChange={(e) => setUserData({ ...userData, firstName: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Cognoms *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={userData.lastName || ''}
+                  onChange={(e) => setUserData({ ...userData, lastName: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Departament
+              </label>
+              <input
+                type="text"
+                value={userData.department || ''}
+                onChange={(e) => setUserData({ ...userData, department: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Ex: Gestió Empresarial"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Especialització
+              </label>
+              <select
+                value={userData.specialization || ''}
+                onChange={(e) => setUserData({ ...userData, specialization: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">Seleccionar...</option>
+                <option value="pimes">PIMES</option>
+                <option value="startups">Startups</option>
+                <option value="corporacions">Corporacions</option>
+                <option value="sector_public">Sector Públic</option>
+              </select>
             </div>
           </div>
         );
@@ -522,35 +678,90 @@ export default function CrearUsuarioPage() {
     );
   };
 
+  // Función para generar contraseña automática
+  const generatePassword = (companyName: string, planTier: string) => {
+    const today = new Date();
+    const day = today.getDate().toString().padStart(2, '0');
+    const month = (today.getMonth() + 1).toString().padStart(2, '0');
+    const year = today.getFullYear().toString().slice(-2);
+
+    const companyPrefix = companyName.slice(0, 3).toUpperCase();
+    const planSuffix = planTier.slice(-1).toUpperCase();
+
+    return `${companyPrefix}${day}${month}${year}${planSuffix}`;
+  };
+
+  const handleUserTypeSelection = (userType: string) => {
+    if (userType === 'COMPANY_OWNER') {
+      // Redirigir al wizard específico de empresa
+      router.push('/admin/usuarios/crear/empresa');
+      return;
+    }
+
+    setSelectedUserType(userType);
+    setUserData({});
+    setCustomFieldValues({});
+    setCustomFieldsPrivacy({});
+  };
+
   return (
-    <div className="max-w-4xl">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Crear Usuario</h1>
+    <div className="max-w-6xl mx-auto">
+      <h1 className="text-3xl font-bold text-gray-900 mb-8">Crear Usuario</h1>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-8">
+      {/* Selección por botones */}
+      {!selectedUserType && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {USER_TYPES.map(type => (
+            <button
+              key={type.value}
+              onClick={() => handleUserTypeSelection(type.value)}
+              className="bg-white rounded-xl shadow-md border-2 border-gray-200 hover:border-blue-500 hover:shadow-lg transition-all p-6 text-left group"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+                  {type.value === 'EMPLOYEE' && <span className="text-2xl">👤</span>}
+                  {type.value === 'COMPANY_OWNER' && <span className="text-2xl">🏢</span>}
+                  {type.value === 'COMPANY_MEMBER' && <span className="text-2xl">👥</span>}
+                  {type.value === 'ACCOUNT_MANAGER' && <span className="text-2xl">🤝</span>}
+                  {type.value === 'ADMIN' && <span className="text-2xl">⚙️</span>}
+                </div>
+                <svg className="w-6 h-6 text-gray-400 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
 
-        {/* Selección del tipo de usuario */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Tipo de Usuario *
-          </label>
-          <select
-            required
-            value={selectedUserType}
-            onChange={(e) => {
-              setSelectedUserType(e.target.value);
-              setUserData({}); // Reset user data when changing type
-              setCustomFieldValues({});
-              setCustomFieldsPrivacy({});
-            }}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            {USER_TYPES.map(type => (
-              <option key={type.value} value={type.value}>
-                {type.label}
-              </option>
-            ))}
-          </select>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">{type.label}</h3>
+
+              <p className="text-sm text-gray-600">
+                {type.value === 'EMPLOYEE' && 'Crear un usuari del sistema'}
+                {type.value === 'COMPANY_OWNER' && 'Crear nova empresa col·laboradora'}
+                {type.value === 'COMPANY_MEMBER' && 'Afegir membre a empresa existent'}
+                {type.value === 'ACCOUNT_MANAGER' && 'Crear gestor d\'empreses'}
+                {type.value === 'ADMIN' && 'Crear administrador del sistema'}
+              </p>
+            </button>
+          ))}
         </div>
+      )}
+
+      {/* Formularios específicos */}
+      {selectedUserType && (
+        <div className="bg-white rounded-xl shadow-lg p-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-semibold text-gray-900">
+              Crear {USER_TYPES.find(t => t.value === selectedUserType)?.label}
+            </h2>
+            <button
+              onClick={() => setSelectedUserType('')}
+              className="text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+      <form onSubmit={handleSubmit} className="space-y-8">
 
         {/* Datos básicos */}
         <div className="space-y-4">
@@ -614,7 +825,8 @@ export default function CrearUsuarioPage() {
             disabled={loading}
             className="flex-1 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50"
           >
-            {loading ? 'Creando...' : 'Crear Usuario'}
+            {loading ? (selectedUserType === 'COMPANY_OWNER' ? 'Generant credencials...' : 'Creant usuari...') :
+             selectedUserType === 'COMPANY_OWNER' ? 'Generar contrasenya i listar empresa' : 'Crear Usuario'}
           </button>
           <button
             type="button"
@@ -625,6 +837,8 @@ export default function CrearUsuarioPage() {
           </button>
         </div>
       </form>
+        </div>
+      )}
     </div>
   );
 }

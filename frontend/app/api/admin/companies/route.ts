@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Obtener todas las empresas
+    // Obtener todas las empresas con su plan actual
     const companies = await prismaClient.company.findMany({
       select: {
         id: true,
@@ -46,6 +46,16 @@ export async function GET(request: NextRequest) {
         status: true,
         createdAt: true,
         updatedAt: true,
+        currentPlan: {
+          select: {
+            id: true,
+            name: true,
+            tier: true,
+            badge: true,
+            badgeColor: true
+          }
+        },
+        currentPlanId: true
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -65,6 +75,8 @@ export async function GET(request: NextRequest) {
       isVerified: company.status !== 'PENDING', // Verificada si no está pendiente
       isActive: company.isActive,
       status: company.status, // Incluir el status real
+      currentPlan: company.currentPlan, // Incluir el plan actual
+      currentPlanId: company.currentPlanId,
       createdAt: company.createdAt.toISOString(),
       updatedAt: company.updatedAt.toISOString(),
       foundedYear: null,

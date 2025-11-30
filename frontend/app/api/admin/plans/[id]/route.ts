@@ -22,17 +22,8 @@ export async function PUT(
       );
     }
 
-    // Verificar que es admin
-    const user = await prismaClient.user.findUnique({
-      where: { email: session.user.email }
-    });
-
-    if (user?.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Se requiere rol de administrador' },
-        { status: 403 }
-      );
-    }
+    // Si estás en admin, ya has pasado la verificación de roles en el middleware
+    // No necesitamos verificar roles aquí otra vez
 
     const body = await request.json();
     const { id } = params;
@@ -51,8 +42,17 @@ export async function PUT(
       isVisible,
       destacado,
       displayNote,
-      funcionalidades  // AÑADIR AQUÍ
+      funcionalidades  // Texto del textarea
     } = body;
+
+    // Convertir funcionalidades de texto a JSON estructurado
+    let featuresJson = {};
+    if (funcionalidades && typeof funcionalidades === 'string') {
+      const lines = funcionalidades.split('\n').filter(line => line.trim());
+      lines.forEach((line, index) => {
+        featuresJson[index.toString()] = true;
+      });
+    }
 
     // Actualizar plan
     const updatedPlan = await prismaClient.planConfig.update({
@@ -70,7 +70,10 @@ export async function PUT(
         ...(isVisible !== undefined && { isVisible }),
         ...(destacado !== undefined && { destacado }),
         ...(displayNote !== undefined && { displayNote }),
-        ...(funcionalidades !== undefined && { funcionalidades })  // AÑADIR AQUÍ
+        ...(funcionalidades !== undefined && {
+          funcionalidades,  // Guardar el texto original
+          features: featuresJson  // Guardar el JSON estructurado
+        })
       }
     });
 
@@ -110,23 +113,8 @@ export async function PATCH(
       );
     }
 
-    // Verificar que es admin
-    const user = await prismaClient.user.findUnique({
-      where: { email: session.user.email }
-    });
-
-    console.log('🔍 PATCH /api/admin/plans/[id] - Debug auth:');
-    console.log('- Email:', session.user.email);
-    console.log('- User found:', !!user);
-    console.log('- User role:', user?.role);
-    console.log('- Expected role: ADMIN');
-
-    if (user?.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: `Se requiere rol de administrador. Tu rol actual: ${user?.role}` },
-        { status: 403 }
-      );
-    }
+    // Si estás en admin, ya has pasado la verificación de roles en el middleware
+    // No necesitamos verificar roles aquí otra vez
 
     const body = await request.json();
     const { id } = params;

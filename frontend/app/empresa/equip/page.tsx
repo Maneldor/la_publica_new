@@ -668,33 +668,6 @@ export default function EmpresaEquipPage() {
           </p>
         </div>
 
-        {/* Botón temporal para testing */}
-        <div className="flex items-center gap-2 bg-yellow-100 border border-yellow-300 rounded-lg p-3">
-          <span className="text-sm text-yellow-800 font-medium">🧪 TESTING:</span>
-          <div className="flex bg-white rounded-md">
-            <button
-              onClick={() => setSimulatedUser('gestor')}
-              className={`px-3 py-1 text-sm font-medium rounded-l ${
-                simulatedUser === 'gestor'
-                  ? 'bg-blue-500 text-white'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              👑 Gestor
-            </button>
-            <button
-              onClick={() => setSimulatedUser('membre')}
-              className={`px-3 py-1 text-sm font-medium rounded-r ${
-                simulatedUser === 'membre'
-                  ? 'bg-blue-500 text-white'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              👤 Membre
-            </button>
-          </div>
-          <span className="text-xs text-yellow-700">({currentUser.name})</span>
-        </div>
       </div>
 
       {/* Gestor de La Pública Card */}

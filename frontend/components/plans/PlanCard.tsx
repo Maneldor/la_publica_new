@@ -47,10 +47,11 @@ export default function PlanCard({
   onSelectPlan
 }: PlanCardProps) {
 
-  // Calcular precio con descuento (igual que admin)
-  // firstYearDiscount viene como porcentaje (ej: 50), hay que convertir a decimal (0.5)
-  const discountDecimal = plan.firstYearDiscount / 100;
+  // Calcular precio con descuento
+  // firstYearDiscount ya viene como decimal desde el API (0.5 para 50%)
+  const discountDecimal = plan.firstYearDiscount;
   const firstYearPrice = plan.basePrice * (1 - discountDecimal);
+  const discountPercentage = Math.round(discountDecimal * 100);
 
   // Parsear funcionalidades (igual que admin)
   const funcionalitats = plan.funcionalidades
@@ -112,7 +113,7 @@ export default function PlanCard({
               {plan.basePrice}€
             </span>
             <span className="text-xs font-medium text-green-600">
-              50% 1r any (per a noves empreses)
+              {discountPercentage}% 1r any (per a noves empreses)
             </span>
           </div>
         )}

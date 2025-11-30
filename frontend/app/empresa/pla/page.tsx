@@ -32,6 +32,10 @@ interface PlanData {
     };
     features: Record<string, boolean>;
   };
+  config: {
+    funcionalidades?: string;
+    [key: string]: any;
+  };
   usage: {
     offers: { current: number; limit: number | string; percentage: number };
     activeOffers: { current: number; limit: number | string; percentage: number };
@@ -151,7 +155,7 @@ export default function ElMeuPlaPage() {
     );
   }
 
-  const { plan, usage } = planData;
+  const { plan, config, usage } = planData;
 
 
   return (
@@ -273,13 +277,27 @@ export default function ElMeuPlaPage() {
           </h3>
 
           <div className="space-y-2">
-            {Object.entries(plan.features).map(([key, value]) => (
-              <FeatureItem
-                key={key}
-                label={formatFeatureName(key)}
-                active={value}
-              />
-            ))}
+            {Object.entries(plan.features)
+              .filter(([key, value]) => {
+                // Solo mostrar si está activa Y tiene contenido real
+                if (!value) return false;
+
+                // Verificar que existe línea correspondiente en funcionalidades
+                if (config?.funcionalidades) {
+                  const lines = config.funcionalidades.split('\n').filter((line: string) => line.trim());
+                  const index = parseInt(key);
+                  return !isNaN(index) && lines[index];
+                }
+
+                return true; // Fallback para claves no numéricas
+              })
+              .map(([key, value]) => (
+                <FeatureItem
+                  key={key}
+                  label={formatFeatureName(key, { config })}
+                  active={!!value}
+                />
+              ))}
           </div>
         </div>
       </div>
@@ -367,7 +385,17 @@ function UsageBar({
 }
 
 // Función para formatear nombres de features
-function formatFeatureName(key: string): string {
+function formatFeatureName(key: string, planData?: any): string {
+  // Si tenemos el texto original de funcionalidades, usar esas líneas
+  if (planData?.config?.funcionalidades) {
+    const lines = planData.config.funcionalidades.split('\n').filter((line: string) => line.trim());
+    const index = parseInt(key);
+    if (!isNaN(index) && lines[index]) {
+      return lines[index].trim();
+    }
+  }
+
+  // Traducciones por clave descriptiva (fallback)
   const translations: Record<string, string> = {
     canCreateOffers: 'Crear ofertes',
     canManageTeam: 'Gestionar equip',
@@ -381,7 +409,23 @@ function formatFeatureName(key: string): string {
     canUseCustomFields: 'Camps personalitzats'
   };
 
-  return translations[key] || key;
+  // Si es una clave descriptiva, usarla
+  if (translations[key]) {
+    return translations[key];
+  }
+
+  // Fallback para índices numéricos
+  const featuresByIndex: Record<string, string> = {
+    '0': 'Crear ofertes bàsiques',
+    '1': 'Gestió d\'equip',
+    '2': 'Analítiques bàsiques',
+    '3': 'Suport per email',
+    '4': 'Exportar dades CSV',
+    '5': 'Filtres avançats',
+    '6': 'Ofertes destacades'
+  };
+
+  return featuresByIndex[key] || `Funcionalitat ${key}`;
 }
 
 // Item de feature con check/cross

@@ -44,11 +44,22 @@ export interface Empresa {
   address?: any;
   foundedYear?: number;
   employeeCount?: number;
+  employees?: number;
   logo?: string;
   configuration?: any;
   isVerified: boolean;
   isActive: boolean;
   status?: string;
+  currentPlan?: {
+    id: string;
+    name: string;
+    tier: string;
+    badge?: string;
+    badgeColor?: string;
+  };
+  currentPlanId?: string;
+  planTier?: string;
+  subscription?: any;
   createdAt: string;
   updatedAt: string;
 }

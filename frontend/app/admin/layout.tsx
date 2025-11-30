@@ -173,7 +173,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </header>
 
       <div className="flex pt-16">
-        <aside className={`${menuOpen ? 'w-64' : 'w-0'} bg-white border-r border-gray-200 fixed left-0 top-16 bottom-0 overflow-y-auto transition-all duration-300`}>
+        <aside className={`${menuOpen ? 'w-64' : 'w-0'} bg-white border-r border-gray-200 fixed left-0 top-16 bottom-0 overflow-y-auto transition-all duration-300 z-20`}>
           {menuOpen && (
             <nav className="p-4">
               {menuSections.map((section, sectionIndex) => (

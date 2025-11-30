@@ -5,6 +5,21 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { signOut } from 'next-auth/react';
+import Icon from '@mdi/react';
+import {
+  mdiViewDashboard,
+  mdiDomain,
+  mdiTagMultiple,
+  mdiFileDocument,
+  mdiRobot,
+  mdiChartLine,
+  mdiMessageText,
+  mdiBell,
+  mdiBookOpenVariant,
+  mdiLogout,
+  mdiStar,
+  mdiCrown
+} from '@mdi/js';
 
 interface EmpresaSidebarProps {
   plan: 'BÀSIC' | 'ESTÀNDARD' | 'PREMIUM' | 'EMPRESARIAL';
@@ -27,13 +42,13 @@ function PlanBadge({ plan }: PlanBadgeProps) {
   const icons = {
     BÀSIC: '',
     ESTÀNDARD: '',
-    PREMIUM: '⭐',
-    EMPRESARIAL: '👑'
+    PREMIUM: <Icon path={mdiStar} size={0.5} className="text-white" />,
+    EMPRESARIAL: <Icon path={mdiCrown} size={0.5} className="text-gray-900" />
   };
 
   return (
     <div className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${styles[plan]}`}>
-      {icons[plan] && <span>{icons[plan]}</span>}
+      {icons[plan] && icons[plan]}
       <span>Pla {plan}</span>
     </div>
   );
@@ -62,13 +77,13 @@ export default function EmpresaSidebar({
     {
       id: 'dashboard',
       label: 'Dashboard',
-      icon: '📊',
+      icon: <Icon path={mdiViewDashboard} size={0.9} className="text-gray-300" />,
       path: '/empresa/dashboard'
     },
     {
       id: 'empresa',
       label: 'Empresa',
-      icon: '🏢',
+      icon: <Icon path={mdiDomain} size={0.9} className="text-gray-300" />,
       hasSubmenu: true,
       children: [
         { label: 'Perfil', path: '/empresa/perfil' },
@@ -79,19 +94,19 @@ export default function EmpresaSidebar({
     {
       id: 'ofertes',
       label: 'Ofertes',
-      icon: '🏷️',
+      icon: <Icon path={mdiTagMultiple} size={0.9} className="text-gray-300" />,
       path: '/empresa/ofertas'
     },
     {
       id: 'facturacio',
       label: 'Facturació',
-      icon: '📄',
+      icon: <Icon path={mdiFileDocument} size={0.9} className="text-gray-300" />,
       path: '/empresa/facturacio'
     },
     ...(plan !== 'BÀSIC' ? [{
       id: 'agents',
       label: 'Agents IA',
-      icon: '🤖',
+      icon: <Icon path={mdiRobot} size={0.9} className="text-gray-300" />,
       path: '/empresa/agents',
       badge: 'NEW',
       badgeStyle: 'bg-green-500 text-white'
@@ -99,13 +114,13 @@ export default function EmpresaSidebar({
     {
       id: 'estadistiques',
       label: 'Estadístiques',
-      icon: '📈',
+      icon: <Icon path={mdiChartLine} size={0.9} className="text-gray-300" />,
       path: '/empresa/estadistiques'
     },
     {
       id: 'missatges',
       label: 'Missatges',
-      icon: '💬',
+      icon: <Icon path={mdiMessageText} size={0.9} className="text-gray-300" />,
       path: '/empresa/missatges',
       badge: missatgesCount > 0 ? missatgesCount.toString() : undefined,
       badgeStyle: 'bg-red-500 text-white'
@@ -113,7 +128,7 @@ export default function EmpresaSidebar({
     {
       id: 'notificacions',
       label: 'Notificacions',
-      icon: '🔔',
+      icon: <Icon path={mdiBell} size={0.9} className="text-gray-300" />,
       path: '/empresa/notificacions',
       badge: notificacionsCount > 0 ? notificacionsCount.toString() : undefined,
       badgeStyle: 'bg-red-500 text-white'
@@ -121,7 +136,7 @@ export default function EmpresaSidebar({
     {
       id: 'recursos',
       label: 'Recursos',
-      icon: '📚',
+      icon: <Icon path={mdiBookOpenVariant} size={0.9} className="text-gray-300" />,
       path: '/empresa/recursos'
     }
   ];
@@ -148,7 +163,7 @@ export default function EmpresaSidebar({
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-lg">{item.icon}</span>
+                    <span className="flex items-center justify-center w-5 h-5">{item.icon}</span>
                     <span>{item.label}</span>
                   </div>
                   {expandedMenus.includes(item.id) ? (
@@ -187,7 +202,7 @@ export default function EmpresaSidebar({
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-lg">{item.icon}</span>
+                  <span className="flex items-center justify-center w-5 h-5">{item.icon}</span>
                   <span>{item.label}</span>
                 </div>
 
@@ -209,7 +224,7 @@ export default function EmpresaSidebar({
           onClick={() => signOut({ callbackUrl: '/login' })}
           className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
         >
-          <span className="text-lg">🚪</span>
+          <Icon path={mdiLogout} size={0.9} className="text-gray-300" />
           <span>Sortir</span>
         </button>
       </div>

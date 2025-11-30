@@ -1,26 +1,51 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Building2, CheckCircle, Activity, Clock } from 'lucide-react';
 import StatCard from '@/components/ui/StatCard';
+import ExpandableFilters from '@/components/ui/ExpandableFilters';
 import { useEmpresas, Empresa } from '@/hooks/useEmpresas';
+import { createCompanySlug } from '@/lib/utils/slugs';
 
 
 export default function ListarEmpresasPage() {
   const router = useRouter();
-  const [filteredCompanies, setFilteredCompanies] = useState<Empresa[]>([]);
 
   // Filtros
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>({
+    estado: [],
+    sector: [],
+    plan: []
+  });
+  const [availablePlans, setAvailablePlans] = useState<any[]>([]);
 
   // Usar el hook para obtener empresas del backend
   const { data: companies = [], isLoading, error, refetch } = useEmpresas();
 
+  // Cargar planes disponibles al montar el componente
   useEffect(() => {
+    const fetchPlans = async () => {
+      try {
+        const response = await fetch('/api/plans');
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            setAvailablePlans(result.data || []);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading plans:', error);
+      }
+    };
+
+    fetchPlans();
+  }, []);
+
+  // Empresas filtradas usando useMemo para evitar loops infinitos
+  const filteredCompanies = useMemo(() => {
     let filtered = companies;
 
     // Filtrar por búsqueda
@@ -32,31 +57,116 @@ export default function ListarEmpresasPage() {
       );
     }
 
-    // Filtrar por categoría/sector
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter((company: Empresa) =>
-        company.sector === selectedCategory
-      );
-    }
-
     // Filtrar por estado
-    if (selectedStatus !== 'all') {
+    if (selectedFilters.estado.length > 0) {
       filtered = filtered.filter((company: Empresa) => {
-        if (selectedStatus === 'verified') {
-          return company.isVerified;
-        } else if (selectedStatus === 'pending') {
-          return !company.isVerified;
-        } else if (selectedStatus === 'active') {
-          return company.isActive;
-        } else if (selectedStatus === 'suspended') {
-          return !company.isActive;
-        }
-        return true;
+        return selectedFilters.estado.some(status => {
+          switch (status) {
+            case 'verified': return company.isVerified;
+            case 'pending': return !company.isVerified && company.status === 'PENDING';
+            case 'active': return company.isActive;
+            case 'suspended': return !company.isActive || company.status === 'SUSPENDED';
+            case 'approved': return company.status === 'APPROVED';
+            default: return false;
+          }
+        });
       });
     }
 
-    setFilteredCompanies(filtered);
-  }, [companies, searchTerm, selectedCategory, selectedStatus]);
+    // Filtrar por sector
+    if (selectedFilters.sector.length > 0) {
+      filtered = filtered.filter((company: Empresa) =>
+        selectedFilters.sector.includes(company.sector)
+      );
+    }
+
+    // Filtrar por plan
+    if (selectedFilters.plan.length > 0) {
+      filtered = filtered.filter((company: Empresa) => {
+        return selectedFilters.plan.some(planTier => {
+          // Buscar si la empresa tiene un plan asignado que coincida
+          return company.currentPlan?.tier === planTier ||
+                 company.planTier === planTier ||
+                 company.subscription?.planConfig?.tier === planTier;
+        });
+      });
+    }
+
+    return filtered;
+  }, [companies, searchTerm, selectedFilters]);
+
+  // Funciones para manejar filtros
+  const handleFilterChange = (filterKey: string, value: string, checked: boolean) => {
+    setSelectedFilters(prev => ({
+      ...prev,
+      [filterKey]: checked
+        ? [...prev[filterKey], value]
+        : prev[filterKey].filter(v => v !== value)
+    }));
+  };
+
+  const handleClearFilters = () => {
+    setSelectedFilters({
+      estado: [],
+      sector: [],
+      plan: []
+    });
+    setSearchTerm('');
+  };
+
+  const getActiveFiltersCount = () => {
+    return Object.values(selectedFilters).flat().length + (searchTerm ? 1 : 0);
+  };
+
+  // Configuración de filtros (dinámica)
+  const filterConfig = [
+    {
+      title: 'ESTADO',
+      key: 'estado',
+      type: 'checkbox' as const,
+      options: [
+        { value: 'pending', label: 'Pendiente', color: '#f59e0b' },
+        { value: 'verified', label: 'Verificada', color: '#10b981' },
+        { value: 'approved', label: 'Aprobada', color: '#3b82f6' },
+        { value: 'suspended', label: 'Suspendida', color: '#ef4444' },
+        { value: 'active', label: 'Activa', color: '#8b5cf6' }
+      ]
+    },
+    {
+      title: 'PLAN',
+      key: 'plan',
+      type: 'checkbox' as const,
+      options: availablePlans.map(plan => ({
+        value: plan.tier,
+        label: plan.name || plan.tier,
+        color: plan.badgeColor || '#6366f1'
+      }))
+    },
+    {
+      title: 'SECTOR',
+      key: 'sector',
+      type: 'checkbox' as const,
+      collapsible: true,
+      initialCollapsed: true,
+      maxVisibleOptions: 8,
+      layout: 'quad',
+      options: [
+        { value: 'tecnologia', label: 'Tecnología', color: '#3b82f6' },
+        { value: 'salud', label: 'Salud', color: '#ef4444' },
+        { value: 'educacion', label: 'Educación', color: '#f59e0b' },
+        { value: 'construccion', label: 'Construcción', color: '#f97316' },
+        { value: 'alimentacion', label: 'Alimentación', color: '#84cc16' },
+        { value: 'servicios', label: 'Servicios', color: '#8b5cf6' },
+        { value: 'comercio', label: 'Comercio', color: '#06b6d4' },
+        { value: 'turismo', label: 'Turismo', color: '#10b981' },
+        { value: 'transporte', label: 'Transporte', color: '#6366f1' },
+        { value: 'finanzas', label: 'Finanzas', color: '#eab308' },
+        { value: 'agricultura', label: 'Agricultura', color: '#22c55e' },
+        { value: 'energia', label: 'Energía', color: '#dc2626' },
+        { value: 'otros', label: 'Otros', color: '#64748b' }
+      ]
+    }
+  ];
 
   const handleDelete = async (id: string) => {
     if (!confirm('¿Estás seguro de eliminar esta empresa?')) return;
@@ -210,78 +320,18 @@ export default function ListarEmpresasPage() {
       </div>
 
       {/* Filtros */}
-      <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Buscar
-            </label>
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Nombre, descripción o categoría..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Sector
-            </label>
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">Todos los sectores</option>
-              <option value="tecnologia">💻 Tecnología</option>
-              <option value="salud">🏥 Salud</option>
-              <option value="educacion">🎓 Educación</option>
-              <option value="construccion">🏗️ Construcción</option>
-              <option value="alimentacion">🍽️ Alimentación</option>
-              <option value="servicios">🛠️ Servicios</option>
-              <option value="comercio">🛒 Comercio</option>
-              <option value="turismo">🏖️ Turismo</option>
-              <option value="transporte">🚛 Transporte</option>
-              <option value="finanzas">💰 Finanzas</option>
-              <option value="agricultura">🌾 Agricultura</option>
-              <option value="energia">⚡ Energía</option>
-              <option value="otros">🏢 Otros</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Estado
-            </label>
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">Todos los estados</option>
-              <option value="verified">✅ Verificada</option>
-              <option value="pending">⏳ Pendiente verificación</option>
-              <option value="active">🟢 Activa</option>
-              <option value="suspended">🔴 Suspendida</option>
-            </select>
-          </div>
-
-          <div className="flex items-end">
-            <button
-              onClick={() => {
-                setSearchTerm('');
-                setSelectedCategory('all');
-                setSelectedStatus('all');
-              }}
-              className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-            >
-              Limpiar filtros
-            </button>
-          </div>
-        </div>
-      </div>
+      <ExpandableFilters
+        title="Filtros"
+        subtitle="Filtra empresas por estado, prioridad y tipo"
+        searchValue={searchTerm}
+        onSearchChange={setSearchTerm}
+        searchPlaceholder="Buscar empresas por nombre, descripción o sector..."
+        filters={filterConfig}
+        selectedFilters={selectedFilters}
+        onFilterChange={handleFilterChange}
+        onClearAll={handleClearFilters}
+        activeFiltersCount={getActiveFiltersCount()}
+      />
 
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
@@ -308,87 +358,65 @@ export default function ListarEmpresasPage() {
           <div className="divide-y divide-gray-200">
             {filteredCompanies.map((company) => (
               <div key={company.id} className="p-6 hover:bg-gray-50">
-                <div className="flex items-start justify-between">
+                <div className="flex items-center justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      {company.logo ? (
-                        <img
-                          src={company.logo}
-                          alt={company.name}
-                          className="w-12 h-12 object-contain rounded-lg border border-gray-200"
-                        />
-                      ) : (
-                        <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-2xl">
-                          {getCategoryIcon(company.sector)}
-                        </div>
-                      )}
+                    <div className="flex items-center gap-8">
+                      {/* Nombre Empresa */}
+                      <h3 className="text-lg font-medium text-gray-900 min-w-[200px]">
+                        {company.name}
+                      </h3>
 
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="text-lg font-medium text-gray-900">
-                            {company.name}
-                          </h3>
-                          {company.isVerified && (
-                            <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                              ✓ Verificada
-                            </span>
-                          )}
-                          {company.status && (
-                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                              company.status === 'PENDING'
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : company.status === 'APPROVED'
-                                ? 'bg-green-100 text-green-800'
-                                : company.status === 'SUSPENDED'
-                                ? 'bg-red-100 text-red-800'
-                                : 'bg-gray-100 text-gray-800'
-                            }`}>
-                              {company.status === 'PENDING' && '⏳ Pendiente'}
-                              {company.status === 'APPROVED' && '✅ Aprobada'}
-                              {company.status === 'SUSPENDED' && '🚫 Suspendida'}
-                              {!['PENDING', 'APPROVED', 'SUSPENDED'].includes(company.status) && company.status}
-                            </span>
-                          )}
-                          {company.website && (
-                            <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                              🌐 Web
-                            </span>
-                          )}
-                        </div>
-
-                        <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-                          {company.description}
-                        </p>
-
-                        <div className="flex items-center gap-4 text-sm text-gray-500">
-                          <span className="flex items-center gap-1">
-                            {getCategoryIcon(company.sector)} {company.sector}
-                          </span>
-                          <span>📅 {new Date(company.createdAt).toLocaleDateString('es-ES')}</span>
-                          {company.website && (
-                            <a
-                              href={company.website}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:text-blue-800"
-                            >
-                              🔗 Sitio web
-                            </a>
-                          )}
-                        </div>
+                      {/* Estado */}
+                      <div className="min-w-[120px]">
+                        <span className={`px-3 py-1 text-sm font-medium rounded-full ${
+                          company.status === 'PENDING'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : company.status === 'APPROVED'
+                            ? 'bg-green-100 text-green-800'
+                            : company.status === 'SUSPENDED'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {company.status === 'PENDING' && 'Pendiente'}
+                          {company.status === 'APPROVED' && 'Aprobada'}
+                          {company.status === 'SUSPENDED' && 'Suspendida'}
+                          {!['PENDING', 'APPROVED', 'SUSPENDED'].includes(company.status) && (company.status || 'Activa')}
+                        </span>
                       </div>
+
+                      {/* Plan */}
+                      <div className="min-w-[120px]">
+                        <span className={`px-3 py-1 text-sm font-medium rounded-full ${
+                          company.currentPlan?.tier === 'PIONERES'
+                            ? 'bg-purple-100 text-purple-800'
+                            : company.currentPlan?.tier === 'STANDARD'
+                            ? 'bg-blue-100 text-blue-800'
+                            : company.currentPlan?.tier === 'STRATEGIC'
+                            ? 'bg-indigo-100 text-indigo-800'
+                            : company.currentPlan?.tier === 'ENTERPRISE'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {company.currentPlan?.name || company.currentPlan?.tier || 'Sin Plan'}
+                        </span>
+                      </div>
+
+                      {/* Fecha */}
+                      <span className="text-sm text-gray-500 min-w-[100px]">
+                        {new Date(company.createdAt).toLocaleDateString('es-ES')}
+                      </span>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 ml-4">
                     <button
-                      onClick={() => router.push(`/admin/empresas/${company.id}`)}
+                      onClick={() => router.push(`/admin/empresas/${createCompanySlug(company.name)}`)}
                       className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
                     >
                       Ver
                     </button>
                     <Link
-                      href={`/admin/empresas/editar/${company.id}`}
+                      href={`/admin/empresas/editar/${createCompanySlug(company.name)}`}
                       className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
                     >
                       Editar

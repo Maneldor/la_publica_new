@@ -573,19 +573,20 @@ export default function AdminPlansPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Descompte 1r Any (0-1)
+                    Descompte 1r Any (%)
                   </label>
                   <input
                     type="number"
-                    step="0.1"
+                    step="1"
                     min="0"
-                    max="1"
-                    value={editingPlan.firstYearDiscount}
+                    max="100"
+                    value={Math.round((editingPlan.firstYearDiscount || 0) * 100)}
                     onChange={(e) => setEditingPlan({
                       ...editingPlan,
-                      firstYearDiscount: parseFloat(e.target.value) || 0
+                      firstYearDiscount: (parseFloat(e.target.value) || 0) / 100
                     })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    placeholder="50 = 50%"
                   />
                 </div>
               </div>
@@ -775,7 +776,7 @@ export default function AdminPlansPage() {
                 basePrice: parseFloat((e.currentTarget.basePrice as any).value) || 0,
                 precioMensual: parseFloat((e.currentTarget.precioMensual as any).value) || 0,
                 precioAnual: parseFloat((e.currentTarget.precioAnual as any).value) || 0,
-                firstYearDiscount: parseFloat((e.currentTarget.firstYearDiscount as any).value) || 0,
+                firstYearDiscount: (parseFloat((e.currentTarget.firstYearDiscount as any).value) || 0) / 100,
                 maxActiveOffers: parseInt((e.currentTarget.maxActiveOffers as any).value) || -1,
                 maxTeamMembers: parseInt((e.currentTarget.maxTeamMembers as any).value) || -1,
                 maxFeaturedOffers: parseInt((e.currentTarget.maxFeaturedOffers as any).value) || -1,
@@ -937,16 +938,16 @@ export default function AdminPlansPage() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Descompte 1r Any (0-1)
+                        Descompte 1r Any (%)
                       </label>
                       <input
                         type="number"
                         name="firstYearDiscount"
-                        step="0.01"
+                        step="1"
                         min="0"
-                        max="1"
+                        max="100"
                         defaultValue="0"
-                        placeholder="0.50 = 50%"
+                        placeholder="50 = 50%"
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>

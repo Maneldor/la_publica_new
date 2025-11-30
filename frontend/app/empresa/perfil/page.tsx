@@ -4,6 +4,18 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Eye, Bookmark, Globe, Star } from 'lucide-react';
 import StatCard from '@/components/ui/StatCard';
+import Icon from '@mdi/react';
+import {
+  mdiPencil,
+  mdiStar,
+  mdiCrown,
+  mdiMapMarker,
+  mdiEmail,
+  mdiWeb,
+  mdiPhone,
+  mdiCheckCircle,
+  mdiEye
+} from '@mdi/js';
 
 export default function EmpresaPerfilPage() {
   // Mock data for stats usando StatCard
@@ -12,7 +24,7 @@ export default function EmpresaPerfilPage() {
       title: 'Vistes',
       value: '1,234',
       icon: <Eye className="w-10 h-10" />,
-      color: 'blue' as const,
+      color: 'gray' as const,
       trend: {
         value: '+12%',
         label: 'vs mes anterior',
@@ -23,19 +35,19 @@ export default function EmpresaPerfilPage() {
       title: 'Guardats',
       value: '89',
       icon: <Bookmark className="w-10 h-10" />,
-      color: 'green' as const
+      color: 'gray' as const
     },
     {
       title: 'Clics web',
       value: '156',
       icon: <Globe className="w-10 h-10" />,
-      color: 'purple' as const
+      color: 'gray' as const
     },
     {
       title: 'Valoració',
       value: '4.8/5',
       icon: <Star className="w-10 h-10" />,
-      color: 'orange' as const
+      color: 'gray' as const
     }
   ];
 
@@ -73,13 +85,13 @@ export default function EmpresaPerfilPage() {
     const icons = {
       BÀSIC: '',
       ESTÀNDARD: '',
-      PREMIUM: '⭐',
-      EMPRESARIAL: '👑'
+      PREMIUM: <Icon path={mdiStar} size={0.6} className="text-white" />,
+      EMPRESARIAL: <Icon path={mdiCrown} size={0.6} className="text-gray-900" />
     };
 
     return (
       <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${styles[plan as keyof typeof styles]}`}>
-        {icons[plan as keyof typeof icons] && <span>{icons[plan as keyof typeof icons]}</span>}
+        {icons[plan as keyof typeof icons] && icons[plan as keyof typeof icons]}
         <span>{plan}</span>
       </span>
     );
@@ -97,7 +109,7 @@ export default function EmpresaPerfilPage() {
           href="/empresa/perfil/editar"
           className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-sm"
         >
-          <span>✏️</span>
+          <Icon path={mdiPencil} size={0.8} className="text-white" />
           Editar perfil
         </Link>
       </div>
@@ -136,7 +148,7 @@ export default function EmpresaPerfilPage() {
                 </div>
                 <p className="text-gray-600">Sector: {companyData.sector}</p>
                 <div className="flex items-center gap-1 mt-1">
-                  <span className="text-yellow-500">⭐</span>
+                  <Icon path={mdiStar} size={0.8} className="text-gray-700" />
                   <span className="font-semibold text-gray-900">{companyData.valoracio}</span>
                   <span className="text-gray-600">({companyData.numValoracions} valoracions)</span>
                 </div>
@@ -158,28 +170,28 @@ export default function EmpresaPerfilPage() {
             <h3 className="text-xl font-semibold text-gray-900 mb-4">Informació de contacte</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-                <span className="text-2xl">📍</span>
+                <Icon path={mdiMapMarker} size={1} className="text-gray-700" />
                 <div>
                   <p className="font-medium text-gray-900">Ubicació</p>
                   <p className="text-gray-600">{companyData.ubicacio}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-                <span className="text-2xl">📧</span>
+                <Icon path={mdiEmail} size={1} className="text-gray-700" />
                 <div>
                   <p className="font-medium text-gray-900">Email</p>
                   <p className="text-gray-600">{companyData.email}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-                <span className="text-2xl">🌐</span>
+                <Icon path={mdiWeb} size={1} className="text-gray-700" />
                 <div>
                   <p className="font-medium text-gray-900">Web</p>
                   <p className="text-gray-600">{companyData.web}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-                <span className="text-2xl">📞</span>
+                <Icon path={mdiPhone} size={1} className="text-gray-700" />
                 <div>
                   <p className="font-medium text-gray-900">Telèfon</p>
                   <p className="text-gray-600">{companyData.telefon}</p>
@@ -194,7 +206,7 @@ export default function EmpresaPerfilPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {companyData.productes.map((producte, idx) => (
                 <div key={idx} className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                  <span className="text-blue-600">✓</span>
+                  <Icon path={mdiCheckCircle} size={0.8} className="text-gray-700" />
                   <span className="text-gray-900 font-medium">{producte}</span>
                 </div>
               ))}
@@ -206,7 +218,7 @@ export default function EmpresaPerfilPage() {
         <div className="bg-blue-50 px-8 py-4 border-t border-blue-100">
           <div className="flex items-center justify-center">
             <p className="text-blue-700 font-medium text-center">
-              👁️ Així et veuen els empleats públics
+              <Icon path={mdiEye} size={0.8} className="text-gray-700 inline mr-1" />Així et veuen els empleats públics
             </p>
           </div>
         </div>

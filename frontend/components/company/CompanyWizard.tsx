@@ -335,7 +335,7 @@ export const CompanyWizard: React.FC<CompanyWizardProps> = ({
 
           <div className="grid gap-4">
             {availablePlans.map(plan => {
-              const discountedPrice = plan.basePrice * (1 - plan.firstYearDiscount / 100);
+              const discountedPrice = plan.basePrice * (1 - plan.firstYearDiscount);
               return (
                 <div
                   key={plan.tier}
@@ -431,10 +431,10 @@ export const CompanyWizard: React.FC<CompanyWizardProps> = ({
                 <h4 className="font-medium text-gray-700">Pla Seleccionat</h4>
                 <p className="text-lg font-semibold">{selectedPlan.name}</p>
                 <p className="text-green-600 font-medium">
-                  {selectedPlan.basePrice * (1 - selectedPlan.firstYearDiscount / 100)}€/any
+                  {selectedPlan.basePrice * (1 - selectedPlan.firstYearDiscount)}€/any
                   {selectedPlan.firstYearDiscount > 0 && (
                     <span className="text-gray-500 text-sm ml-2">
-                      (Descompte del {selectedPlan.firstYearDiscount}% el primer any)
+                      (Descompte del {Math.round(selectedPlan.firstYearDiscount * 100)}% el primer any)
                     </span>
                   )}
                 </p>

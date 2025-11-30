@@ -141,6 +141,7 @@ export async function POST(request: NextRequest) {
       userData = {},
       // Nuevos campos opcionales para empresas
       companyName,
+      selectedPlan,
       cif,
       phone,
       address
@@ -237,20 +238,35 @@ export async function POST(request: NextRequest) {
           throw new Error('Nombre de empresa requerido para usuarios tipo EMPRESA');
         }
 
-        // Buscar plan PIONERES (plan por defecto para nuevas empresas)
-        const defaultPlan = await tx.planConfig.findFirst({
-          where: {
-            OR: [
-              { slug: 'empreses-pioneres' },
-              { isDefault: true },
-              { tier: 'PIONERES' }
-            ],
-            isActive: true
-          }
-        });
+        // Buscar plan seleccionado o usar plan por defecto PIONERES
+        let planToAssign;
 
-        if (!defaultPlan) {
-          throw new Error('Plan Pioneres no encontrado. Ejecute: npx tsx scripts/seed-plans.ts');
+        if (selectedPlan) {
+          // Buscar plan específico seleccionado
+          planToAssign = await tx.planConfig.findFirst({
+            where: {
+              tier: selectedPlan,
+              isActive: true
+            }
+          });
+        }
+
+        // Si no se encontró el plan seleccionado o no se especificó, usar plan por defecto
+        if (!planToAssign) {
+          planToAssign = await tx.planConfig.findFirst({
+            where: {
+              OR: [
+                { slug: 'empreses-pioneres' },
+                { isDefault: true },
+                { tier: 'PIONERES' }
+              ],
+              isActive: true
+            }
+          });
+        }
+
+        if (!planToAssign) {
+          throw new Error('Plan no encontrado. Verificar configuración de planes.');
         }
 
         newCompany = await tx.company.create({
@@ -265,33 +281,33 @@ export async function POST(request: NextRequest) {
             // NUEVOS CAMPOS - usar los que existen en el schema
             status: 'PENDING', // Empresa pendiente de aprobación
             isActive: true,    // Activa por defecto
-            currentPlanId: defaultPlan.id, // Asignar plan PIONERES
+            currentPlanId: planToAssign.id, // Asignar plan seleccionado o por defecto
             owner: {
               connect: { id: newUser.id } // Conectar con el usuario propietario
             }
           }
         });
 
-        // Plan Pioneres: 6 meses (180 días) gratis
+        // Determinar duración del trial según el plan
         const trialEndDate = new Date();
-        trialEndDate.setDate(trialEndDate.getDate() + (defaultPlan.trialDurationDays || 180));
+        trialEndDate.setDate(trialEndDate.getDate() + (planToAssign.trialDurationDays || 180));
 
         // 3. Crear subscription con trial gratuito
         await tx.subscription.create({
           data: {
             companyId: newCompany.id,
-            planId: defaultPlan.id,
+            planId: planToAssign.id,
             status: 'ACTIVE', // Estado activo durante trial
             precioMensual: 0, // Gratis durante trial
-            precioAnual: defaultPlan.basePrice,
+            precioAnual: planToAssign.basePrice,
             startDate: new Date(),
             endDate: trialEndDate,
             isAutoRenew: false, // No renovar automáticamente durante trial
             limites: {
-              maxMembers: defaultPlan.maxTeamMembers,
-              maxStorage: defaultPlan.maxStorage,
-              maxActiveOffers: defaultPlan.maxActiveOffers,
-              maxFeaturedOffers: defaultPlan.maxFeaturedOffers
+              maxMembers: planToAssign.maxTeamMembers,
+              maxStorage: planToAssign.maxStorage,
+              maxActiveOffers: planToAssign.maxActiveOffers,
+              maxFeaturedOffers: planToAssign.maxFeaturedOffers
             }
           }
         });

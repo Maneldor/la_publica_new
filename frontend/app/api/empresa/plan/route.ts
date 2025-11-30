@@ -70,6 +70,7 @@ export async function GET(request: NextRequest) {
         },
         features: planInfo.config.features,
       },
+      config: planInfo.config, // Añadir config completo para acceso a funcionalidades
       usage: usageStats,
       planDetails: planInfo.plan, // Detalles del registro en BD
     });

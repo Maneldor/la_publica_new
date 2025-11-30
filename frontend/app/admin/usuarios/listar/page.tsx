@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Users, UserCheck, UserX, Calendar } from 'lucide-react';
 import StatCard from '@/components/ui/StatCard';
+// import { translateUserType } from '@/lib/role-translations';
 
 interface User {
   id: string;
@@ -208,14 +209,11 @@ export default function ListarUsuariosPage() {
         <div className="flex gap-2 flex-wrap">
           {[
             'ALL',
-            'SUPER_ADMIN',
-            'ADMIN',
-            'EMPLEADO_PUBLICO',
-            'EMPRESA',
-            'ADMINISTRACION_PUBLICA',
-            'GESTOR_CONTENIDO',
-            'GESTOR_EMPRESAS',
-            'GESTOR_ADMINISTRACIONES'
+            'EMPLOYEE',
+            'COMPANY_OWNER',
+            'COMPANY_MEMBER',
+            'ACCOUNT_MANAGER',
+            'ADMIN'
           ].map(role => (
             <button
               key={role}
@@ -226,15 +224,7 @@ export default function ListarUsuariosPage() {
                   : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
               }`}
             >
-              {role === 'ALL' ? 'Todos' :
-               role === 'SUPER_ADMIN' ? 'Super Admin' :
-               role === 'ADMIN' ? 'Admin' :
-               role === 'EMPLEADO_PUBLICO' ? 'Empleados' :
-               role === 'EMPRESA' ? 'Empresas' :
-               role === 'ADMINISTRACION_PUBLICA' ? 'Admin. Públicas' :
-               role === 'GESTOR_CONTENIDO' ? 'Gest. Contenido' :
-               role === 'GESTOR_EMPRESAS' ? 'Gest. Empresas' :
-               'Gest. Admin.'}
+              {role === 'ALL' ? 'Todos' : role.replace('_', ' ')}
             </button>
           ))}
         </div>
