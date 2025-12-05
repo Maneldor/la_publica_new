@@ -134,6 +134,8 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+    console.log('📝 Datos recibidos para crear empresa:', body);
+
     const {
       userType,
       email,
@@ -144,8 +146,11 @@ export async function POST(request: NextRequest) {
       selectedPlan,
       cif,
       phone,
-      address
+      address,
+      sector
     } = body;
+
+    console.log('🏭 Sector extraído:', sector);
 
     // Validaciones básicas
     if (!email || !password || !userType) {
@@ -215,6 +220,14 @@ export async function POST(request: NextRequest) {
 
     // Usar transacción para crear usuario y empresa atómicamente
     const result = await prismaClient.$transaction(async (tx) => {
+      console.log('🔄 Iniciando transacción para crear usuario/empresa');
+      console.log('📝 Datos a guardar:', {
+        userType: prismaUserType,
+        role: role,
+        sector: sector,
+        cargo: sector || null
+      });
+
       // 1. Crear usuario primero
       const newUser = await tx.user.create({
         data: {
@@ -224,8 +237,11 @@ export async function POST(request: NextRequest) {
           userType: prismaUserType,
           role: role,
           isActive: true,
+          cargo: sector || null, // Guardar el sector en campo cargo
         }
       });
+
+      console.log('✅ Usuario creado con cargo:', newUser.cargo);
 
       let newCompany = null;
 

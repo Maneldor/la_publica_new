@@ -12,6 +12,7 @@ const menuSections = [
     title: 'General',
     items: [
       { title: 'Dashboard', icon: '📊', path: '/admin', exact: true },
+      { title: 'Dashboard Gestió', icon: '🎛️', path: '/gestio', roles: ['SUPER_ADMIN', 'ADMIN'] },
     ]
   },
   {
@@ -193,10 +194,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   {openSections[section.title] && (
                     <nav className="mt-2 space-y-1">
                       {section.items.map((item, itemIndex) => {
+                        // Verificar si l'usuari té accés a aquest element
+                        const itemWithRoles = item as { roles?: string[] };
+                        if (itemWithRoles.roles && !itemWithRoles.roles.includes(userRole)) {
+                          return null; // No mostrar si no té el rol
+                        }
+
                         const isActive = (item as { exact?: boolean }).exact
                           ? pathname === item.path
                           : pathname.startsWith(item.path);
-                        
+
                         return (
                           <Link
                             key={itemIndex}

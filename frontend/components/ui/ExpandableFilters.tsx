@@ -108,7 +108,7 @@ export default function ExpandableFilters({
           </div>
 
           {/* Secciones de filtros */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="flex flex-col lg:flex-row lg:gap-4">
             {filters.map((section) => {
               const isCollapsible = section.collapsible;
               const isExpanded = sectionStates[section.key] !== false;
@@ -116,18 +116,20 @@ export default function ExpandableFilters({
               const visibleOptions = isExpanded ? section.options : section.options.slice(0, maxVisible);
               const hasMore = section.options.length > maxVisible;
 
-              // Asignar espacio según la sección
-              const getColumnSpan = (key: string) => {
+              // Asignar ancho según la sección
+              const getColumnWidth = (key: string) => {
                 switch (key) {
-                  case 'estado': return 'lg:col-span-2';
-                  case 'plan': return 'lg:col-span-2 lg:mr-6'; // Margen derecho para separar de SECTOR
-                  case 'sector': return 'lg:col-span-8';
-                  default: return 'lg:col-span-4';
+                  case 'estado': return 'lg:w-[13%]';
+                  case 'origen': return 'lg:w-[10%]';
+                  case 'plan': return 'lg:w-[15%]';
+                  case 'sector': return 'lg:w-[47%]';
+                  case 'gestor': return 'lg:w-[15%]';
+                  default: return 'lg:w-[15%]';
                 }
               };
 
               return (
-                <div key={section.key} className={getColumnSpan(section.key)}>
+                <div key={section.key} className={getColumnWidth(section.key)}>
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider">
                       {section.title}
@@ -149,10 +151,10 @@ export default function ExpandableFilters({
                     section.layout === 'double'
                       ? 'grid grid-cols-2 gap-x-4 gap-y-2'
                       : section.layout === 'triple'
-                      ? 'grid grid-cols-3 gap-x-3 gap-y-2'
+                      ? 'grid grid-cols-3 gap-x-2 gap-y-1'
                       : section.layout === 'quad'
                       ? 'grid grid-cols-4 gap-x-0'
-                      : 'space-y-2'
+                      : 'space-y-1'
                   }`} style={section.layout === 'quad' ? { rowGap: '0.5rem' } : {}}>
                     {visibleOptions.map((option) => {
                       const isSelected = selectedFilters[section.key]?.includes(option.value) || false;
@@ -161,7 +163,7 @@ export default function ExpandableFilters({
                         <label
                           key={option.value}
                           className={`flex items-center cursor-pointer hover:bg-gray-50 rounded-lg transition-colors ${
-                            section.layout === 'quad' ? 'space-x-1 py-2 px-1' : 'space-x-2 p-2'
+                            section.layout === 'quad' ? 'space-x-1 py-2' : 'space-x-2 py-1'
                           }`}
                         >
                           <input

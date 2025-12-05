@@ -1,0 +1,12 @@
+// components/gestio-empreses/agenda/index.ts
+export { CalendarStats } from './CalendarStats'
+export { WeekView } from './WeekView'
+export { EventModal } from './EventModal'
+export { UpcomingEvents } from './UpcomingEvents'
+export { AgendaViewSelector } from './AgendaViewSelector'
+export { AgendaDayView } from './AgendaDayView'
+export { AgendaMonthView } from './AgendaMonthView'
+export { AgendaQuarterView } from './AgendaQuarterView'
+export { AgendaSemesterView } from './AgendaSemesterView'
+export { AgendaYearView } from './AgendaYearView'
+export { ContactsSidebar } from './ContactsSidebar'

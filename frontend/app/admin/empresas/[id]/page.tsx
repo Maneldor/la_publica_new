@@ -29,6 +29,7 @@ interface CompanyDetails {
   website?: string;
   address?: string;
   cif?: string;
+  sector?: string;
   logo?: string;
   isActive: boolean;
   status: string;
@@ -227,16 +228,61 @@ export default function VerEmpresaPage() {
                 </div>
               </div>
 
-              {/* Para empresas PENDIENTE, mostrar solo información básica */}
-              {company.status === 'PENDING' ? (
-                <div className="space-y-4">
-                  <p className="text-sm text-gray-500 mb-4">
+              {/* Descripción si existe */}
+              {company.description && (
+                <p className="text-gray-600 mb-4">{company.description}</p>
+              )}
+
+              {/* Mensaje de estado para empresas pendientes */}
+              {company.status === 'PENDING' && (
+                <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-sm text-yellow-700">
                     Esta empresa está pendiente de completar su información.
                   </p>
+                </div>
+              )}
 
+              {/* Grid de información completa - SIEMPRE visible */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
                   <div className="flex items-center gap-3">
                     <Mail className="w-5 h-5 text-gray-400" />
                     <span className="text-gray-900">{company.email}</span>
+                  </div>
+
+                  {company.phone && (
+                    <div className="flex items-center gap-3">
+                      <Phone className="w-5 h-5 text-gray-400" />
+                      <span className="text-gray-900">{company.phone}</span>
+                    </div>
+                  )}
+
+                  {company.website && (
+                    <div className="flex items-center gap-3">
+                      <Globe className="w-5 h-5 text-gray-400" />
+                      <a
+                        href={company.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        {company.website}
+                      </a>
+                    </div>
+                  )}
+
+                  {company.address && (
+                    <div className="flex items-center gap-3">
+                      <MapPin className="w-5 h-5 text-gray-400" />
+                      <span className="text-gray-900">{company.address}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <Building2 className="w-5 h-5 text-gray-400" />
+                    <span className="text-gray-900">Sector: {company.sector || 'No especificado'}</span>
                   </div>
 
                   <div className="flex items-center gap-3">
@@ -245,76 +291,22 @@ export default function VerEmpresaPage() {
                       Registrada: {new Date(company.createdAt).toLocaleDateString('es-ES')}
                     </span>
                   </div>
-                </div>
-              ) : (
-                <>
-                  {/* Descripción si existe */}
-                  {company.description && (
-                    <p className="text-gray-600 mb-4">{company.description}</p>
+
+                  {company.cif && (
+                    <div className="flex items-center gap-3">
+                      <Building2 className="w-5 h-5 text-gray-400" />
+                      <span className="text-gray-900">CIF: {company.cif}</span>
+                    </div>
                   )}
 
-                  {/* Grid de información completa */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3">
-                        <Mail className="w-5 h-5 text-gray-400" />
-                        <span className="text-gray-900">{company.email}</span>
-                      </div>
-
-                      {company.phone && (
-                        <div className="flex items-center gap-3">
-                          <Phone className="w-5 h-5 text-gray-400" />
-                          <span className="text-gray-900">{company.phone}</span>
-                        </div>
-                      )}
-
-                      {company.website && (
-                        <div className="flex items-center gap-3">
-                          <Globe className="w-5 h-5 text-gray-400" />
-                          <a
-                            href={company.website}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:text-blue-800"
-                          >
-                            {company.website}
-                          </a>
-                        </div>
-                      )}
-
-                      {company.address && (
-                        <div className="flex items-center gap-3">
-                          <MapPin className="w-5 h-5 text-gray-400" />
-                          <span className="text-gray-900">{company.address}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3">
-                        <Calendar className="w-5 h-5 text-gray-400" />
-                        <span className="text-gray-900">
-                          Registrada: {new Date(company.createdAt).toLocaleDateString('es-ES')}
-                        </span>
-                      </div>
-
-                      {company.cif && (
-                        <div className="flex items-center gap-3">
-                          <Building2 className="w-5 h-5 text-gray-400" />
-                          <span className="text-gray-900">CIF: {company.cif}</span>
-                        </div>
-                      )}
-
-                      <div className="flex items-center gap-3">
-                        <CheckCircle className="w-5 h-5 text-gray-400" />
-                        <span className={`${company.isActive ? 'text-green-600' : 'text-red-600'}`}>
-                          {company.isActive ? 'Activa' : 'Inactiva'}
-                        </span>
-                      </div>
-                    </div>
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-gray-400" />
+                    <span className={`${company.isActive ? 'text-green-600' : 'text-red-600'}`}>
+                      {company.isActive ? 'Activa' : 'Inactiva'}
+                    </span>
                   </div>
-                </>
-              )}
+                </div>
+              </div>
             </div>
           </div>
         </div>

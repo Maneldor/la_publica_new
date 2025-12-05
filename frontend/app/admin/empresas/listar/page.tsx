@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Building2, CheckCircle, Activity, Clock } from 'lucide-react';
 import StatCard from '@/components/ui/StatCard';
@@ -12,6 +12,7 @@ import { createCompanySlug } from '@/lib/utils/slugs';
 
 export default function ListarEmpresasPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Filtros
   const [searchTerm, setSearchTerm] = useState('');
@@ -43,6 +44,15 @@ export default function ListarEmpresasPage() {
 
     fetchPlans();
   }, []);
+
+  // Detectar si viene de crear empresa y refrescar
+  useEffect(() => {
+    if (searchParams.get('refresh') === '1') {
+      refetch();
+      // Limpiar el parámetro de la URL sin recargar la página
+      router.replace('/admin/empresas/listar');
+    }
+  }, [searchParams, refetch, router]);
 
   // Empresas filtradas usando useMemo para evitar loops infinitos
   const filteredCompanies = useMemo(() => {
@@ -138,7 +148,7 @@ export default function ListarEmpresasPage() {
       type: 'checkbox' as const,
       options: availablePlans.map(plan => ({
         value: plan.tier,
-        label: plan.name || plan.tier,
+        label: plan.nombreCorto || plan.tier,
         color: plan.badgeColor || '#6366f1'
       }))
     },
@@ -397,7 +407,7 @@ export default function ListarEmpresasPage() {
                             ? 'bg-red-100 text-red-800'
                             : 'bg-gray-100 text-gray-800'
                         }`}>
-                          {company.currentPlan?.name || company.currentPlan?.tier || 'Sin Plan'}
+                          {company.currentPlan?.nombreCorto || company.currentPlan?.tier || 'Sin Plan'}
                         </span>
                       </div>
 

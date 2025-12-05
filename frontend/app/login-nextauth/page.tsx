@@ -3,7 +3,7 @@
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn, getSession } from 'next-auth/react';
-import { ShieldCheck, UserCheck, Crown, Settings, Users, Eye } from 'lucide-react';
+import { Crown, Settings, Users, FileText, Building, UserCheck, Eye } from 'lucide-react';
 
 function LoginContent() {
   const router = useRouter();
@@ -67,51 +67,103 @@ function LoginContent() {
     }
   };
 
-  const mockUsers = [
+  const quickLoginUsers = [
+    // ============================================
+    // 1. SUPER ADMIN
+    // ============================================
     {
-      email: 'superadmin@lapublica.com',
-      password: 'super123',
+      email: 'super.admin@lapublica.cat',
+      password: 'superadmin123',
       role: 'SUPER_ADMIN',
-      name: 'Super Administrador',
+      name: 'Manel (Super Admin)',
       icon: Crown,
-      color: 'from-purple-500 to-pink-500',
-      description: 'Acceso completo al sistema'
+      color: 'from-red-500 to-pink-600',
+      description: 'Propietat - Accés complet',
+      badge: 'SA'
     },
+
+    // ============================================
+    // 2. ADMIN
+    // ============================================
     {
-      email: 'admin@lapublica.com',
+      email: 'admin@lapublica.cat',
       password: 'admin123',
       role: 'ADMIN',
       name: 'Administrador',
       icon: Settings,
-      color: 'from-blue-500 to-indigo-500',
-      description: 'Gestión general del sistema'
+      color: 'from-orange-500 to-red-600',
+      description: 'Direcció - Gestió general',
+      badge: 'ADM'
     },
+
+    // ============================================
+    // 3. GESTIÓ D'EMPRESES (CRM COMERCIAL)
+    // ============================================
     {
-      email: 'manager@barcelona.com',
-      password: 'manager123',
-      role: 'COMMUNITY_MANAGER',
-      name: 'Community Manager',
+      email: 'crm@gestio.com',
+      password: 'crm123456',
+      role: 'CRM_COMERCIAL',
+      name: 'Gestió d\'Empreses',
       icon: Users,
-      color: 'from-green-500 to-emerald-500',
-      description: 'Gestiona comunidad Barcelona'
+      color: 'from-blue-500 to-indigo-600',
+      description: 'CRM Comercial - Dashboard Gestió',
+      badge: 'CRM'
     },
+
+    // ============================================
+    // 4. GESTOR PRINCIPAL EMPRESA
+    // ============================================
     {
-      email: 'moderator@barcelona.com',
-      password: 'mod123',
-      role: 'MODERATOR',
-      name: 'Moderador',
-      icon: ShieldCheck,
-      color: 'from-orange-500 to-red-500',
-      description: 'Modera contenido Barcelona'
+      email: 'joan.perez@empresadeprova.cat',
+      password: 'owner123',
+      role: 'COMPANY',
+      name: 'Joan Pérez - Gestor Principal',
+      icon: Building,
+      color: 'from-green-500 to-emerald-600',
+      description: 'Propietari Empresa de Prova',
+      badge: 'EMP'
     },
+
+    // ============================================
+    // 5. MIEMBRO EMPRESA
+    // ============================================
     {
-      email: 'user@lapublica.com',
-      password: 'user123',
-      role: 'USER',
-      name: 'Usuario Normal',
+      email: 'anna.marti@empresadeprova.cat',
+      password: 'member123',
+      role: 'COMPANY',
+      name: 'Anna Martí - Miembro',
       icon: UserCheck,
-      color: 'from-gray-500 to-slate-500',
-      description: 'Usuario estándar (sin admin)'
+      color: 'from-teal-500 to-cyan-600',
+      description: 'Miembro Empresa de Prova',
+      badge: 'MBR'
+    },
+
+    // ============================================
+    // 6. EMPLEADO PÚBLICO
+    // ============================================
+    {
+      email: 'laura.garcia@generalitat.cat',
+      password: 'empleat123',
+      role: 'USER',
+      name: 'Laura García - Empleada',
+      icon: UserCheck,
+      color: 'from-purple-500 to-indigo-600',
+      description: 'Empleada Pública',
+      badge: 'USR'
+    },
+
+    // ============================================
+    // 7. CRM CONTINGUT
+    // ============================================
+    {
+      email: 'contingut@lapublica.cat',
+      password: 'contingut123',
+      role: 'CRM_CONTINGUT',
+      name: 'CRM Contingut',
+      icon: FileText,
+      color: 'from-purple-500 to-pink-600',
+      description: 'Gestió contingut i xarxa social',
+      badge: 'CNT'
     }
   ];
 
@@ -174,7 +226,7 @@ function LoginContent() {
           <div className="border-t pt-8">
             <h3 className="text-lg font-semibold mb-6 text-center">Usuarios de Prueba</h3>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {mockUsers.map((user, index) => {
+              {quickLoginUsers.map((user, index) => {
                 const IconComponent = user.icon;
                 return (
                   <div
@@ -182,8 +234,13 @@ function LoginContent() {
                     className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow cursor-pointer"
                     onClick={() => quickLogin(user.email, user.password)}
                   >
-                    <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${user.color} flex items-center justify-center mb-4`}>
-                      <IconComponent className="w-6 h-6 text-white" />
+                    <div className="relative mb-4">
+                      <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${user.color} flex items-center justify-center`}>
+                        <IconComponent className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="absolute -top-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-md">
+                        <span className="text-sm">{user.badge}</span>
+                      </div>
                     </div>
 
                     <h4 className="font-semibold text-gray-900 mb-1">{user.name}</h4>

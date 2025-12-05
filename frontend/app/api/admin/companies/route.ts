@@ -50,6 +50,7 @@ export async function GET(request: NextRequest) {
           select: {
             id: true,
             name: true,
+            nombreCorto: true,
             tier: true,
             badge: true,
             badgeColor: true

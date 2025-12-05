@@ -1,0 +1,10 @@
+// components/gestio-empreses/empreses/index.ts
+export { AdminPendingBanner } from './AdminPendingBanner'
+export { ConversionMetrics } from './ConversionMetrics'
+export { CompanyFilters } from './CompanyFilters'
+export { CompanyCard } from './CompanyCard'
+export { CompanyStats } from './CompanyStats'
+export { CompanyHeader } from './CompanyHeader'
+export { CompanyTimeline } from './CompanyTimeline'
+export { CompanyUsers } from './CompanyUsers'
+export { CompanySubscription } from './CompanySubscription'

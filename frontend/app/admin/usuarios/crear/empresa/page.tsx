@@ -13,6 +13,8 @@ export default function CrearEmpresaPage() {
   const [formData, setFormData] = useState({
     companyName: '',
     email: '',
+    cif: '',
+    sector: '',
     selectedPlan: '',
     generatedPassword: ''
   });
@@ -70,6 +72,12 @@ export default function CrearEmpresaPage() {
         } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
           newErrors.email = 'Format d\'email invàlid';
         }
+        if (!formData.cif.trim()) {
+          newErrors.cif = 'El CIF/NIF és obligatori';
+        }
+        if (!formData.sector.trim()) {
+          newErrors.sector = 'El sector és obligatori';
+        }
         break;
       case 2:
         if (!formData.selectedPlan) {
@@ -103,9 +111,13 @@ export default function CrearEmpresaPage() {
         email: formData.email,
         password: formData.generatedPassword,
         companyName: formData.companyName,
+        cif: formData.cif,
         selectedPlan: formData.selectedPlan,
+        sector: formData.sector, // Añadir sector al nivel principal
         userData: {
-          name: formData.companyName
+          name: formData.companyName,
+          cif: formData.cif,
+          sector: formData.sector
         }
       };
 
@@ -120,8 +132,8 @@ export default function CrearEmpresaPage() {
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
-          alert(`Empresa creada exitosament!\n\nCredencials generades:\n🏢 Empresa: ${formData.companyName}\n📧 Email: ${formData.email}\n🔑 Contrasenya: ${formData.generatedPassword}\n\nPodràs completar les dades addicionals des de la llista d'empreses.`);
-          router.push('/admin/empresas/listar');
+          alert(`Empresa creada exitosament!\n\nCredencials generades:\n🏢 Empresa: ${formData.companyName}\n📧 Email: ${formData.email}\n🏭 Sector: ${formData.sector}\n🔑 Contrasenya: ${formData.generatedPassword}\n\nPodràs completar les dades addicionals des de la llista d'empreses.`);
+          router.push('/admin/empresas/listar?refresh=1');
         } else {
           alert(result.error || 'Error al crear l\'empresa');
         }
@@ -181,6 +193,55 @@ export default function CrearEmpresaPage() {
                 />
                 {errors.email && (
                   <p className="text-sm text-red-600 mt-1">{errors.email}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  CIF/NIF *
+                </label>
+                <input
+                  type="text"
+                  value={formData.cif}
+                  onChange={(e) => setFormData(prev => ({ ...prev, cif: e.target.value.toUpperCase() }))}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    errors.cif ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                  placeholder="B12345678"
+                />
+                {errors.cif && (
+                  <p className="text-sm text-red-600 mt-1">{errors.cif}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Sector *
+                </label>
+                <select
+                  value={formData.sector}
+                  onChange={(e) => setFormData(prev => ({ ...prev, sector: e.target.value }))}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    errors.sector ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                >
+                  <option value="">Selecciona un sector</option>
+                  <option value="tecnologia">Tecnologia</option>
+                  <option value="salut">Salut</option>
+                  <option value="educacio">Educació</option>
+                  <option value="construccio">Construcció</option>
+                  <option value="alimentacio">Alimentació</option>
+                  <option value="serveis">Serveis</option>
+                  <option value="comerc">Comerç</option>
+                  <option value="turisme">Turisme</option>
+                  <option value="transport">Transport</option>
+                  <option value="finances">Finances</option>
+                  <option value="agricultura">Agricultura</option>
+                  <option value="energia">Energia</option>
+                  <option value="altres">Altres</option>
+                </select>
+                {errors.sector && (
+                  <p className="text-sm text-red-600 mt-1">{errors.sector}</p>
                 )}
               </div>
             </div>
@@ -255,6 +316,16 @@ export default function CrearEmpresaPage() {
               <div>
                 <span className="text-sm font-medium text-gray-500">Email</span>
                 <p className="text-lg font-medium text-gray-900">{formData.email}</p>
+              </div>
+
+              <div>
+                <span className="text-sm font-medium text-gray-500">CIF/NIF</span>
+                <p className="text-lg font-medium text-gray-900">{formData.cif}</p>
+              </div>
+
+              <div>
+                <span className="text-sm font-medium text-gray-500">Sector</span>
+                <p className="text-lg font-medium text-gray-900 capitalize">{formData.sector}</p>
               </div>
 
               <div>

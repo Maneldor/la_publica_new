@@ -41,14 +41,16 @@ export async function middleware(request: NextRequest) {
     const role = token.role as string
     console.log(`🔄 [MIDDLEWARE] Usuario logueado en /login, redirigiendo por rol: ${role}`)
 
-    if (role === 'ADMIN') {
+    if (role === 'SUPER_ADMIN' || role === 'ADMIN') {
       return NextResponse.redirect(new URL('/admin', request.url))
-    } else if (role === 'COMPANY_MANAGER') {
-      return NextResponse.redirect(new URL('/gestor-empreses/dashboard', request.url))
+    } else if (role === 'CRM_COMERCIAL' || role === 'CRM_CONTINGUT' ||
+               role === 'GESTOR_ESTANDARD' || role === 'GESTOR_ESTRATEGIC' ||
+               role === 'GESTOR_ENTERPRISE') {
+      return NextResponse.redirect(new URL('/gestio', request.url))
     } else if (role === 'COMPANY') {
       return NextResponse.redirect(new URL('/empresa/dashboard', request.url))
-    } else if (role === 'PUBLIC_EMPLOYEE') {
-      return NextResponse.redirect(new URL('/empleat/dashboard', request.url))
+    } else if (role === 'USER') {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
     } else {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
@@ -58,26 +60,22 @@ export async function middleware(request: NextRequest) {
   if (token) {
     const role = token.role as string
 
-    // Solo ADMIN puede acceder a /admin
-    if (path.startsWith('/admin') && role !== 'ADMIN') {
+    // Solo SUPER_ADMIN y ADMIN pueden acceder a /admin
+    if (path.startsWith('/admin') && role !== 'SUPER_ADMIN' && role !== 'ADMIN') {
       console.log(`🚫 [MIDDLEWARE] Acceso denegado: ${role} no puede acceder a ${path}`)
       return NextResponse.redirect(new URL('/login', request.url))
     }
 
-    // Solo COMPANY_MANAGER puede acceder a /gestor-empreses
-    if (path.startsWith('/gestor-empreses') && role !== 'COMPANY_MANAGER') {
+    // Rols de CRM i gestors poden accedir a /gestio
+    const gestorRoles = ['SUPER_ADMIN', 'ADMIN', 'CRM_COMERCIAL', 'CRM_CONTINGUT',
+                        'GESTOR_ESTANDARD', 'GESTOR_ESTRATEGIC', 'GESTOR_ENTERPRISE']
+    if (path.startsWith('/gestio') && !gestorRoles.includes(role)) {
       console.log(`🚫 [MIDDLEWARE] Acceso denegado: ${role} no puede acceder a ${path}`)
       return NextResponse.redirect(new URL('/login', request.url))
     }
 
     // Solo COMPANY puede acceder a /empresa
     if (path.startsWith('/empresa') && role !== 'COMPANY') {
-      console.log(`🚫 [MIDDLEWARE] Acceso denegado: ${role} no puede acceder a ${path}`)
-      return NextResponse.redirect(new URL('/login', request.url))
-    }
-
-    // Solo PUBLIC_EMPLOYEE puede acceder a /empleat
-    if (path.startsWith('/empleat') && role !== 'PUBLIC_EMPLOYEE') {
       console.log(`🚫 [MIDDLEWARE] Acceso denegado: ${role} no puede acceder a ${path}`)
       return NextResponse.redirect(new URL('/login', request.url))
     }

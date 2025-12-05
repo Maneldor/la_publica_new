@@ -8,57 +8,65 @@ datasource db {
 }
 
 model User {
-  id                     String                  @id @default(cuid())
-  email                  String                  @unique
-  name                   String?
-  image                  String?
-  role                   UserRole                @default(USER)
-  communityId            String?
-  isActive               Boolean                 @default(true)
-  createdAt              DateTime                @default(now())
-  updatedAt              DateTime                @updatedAt
-  userType               UserType                @default(EMPLOYEE)
-  ownedCompanyId         String?                 @unique
-  memberCompanyId        String?
-  companyRole            CompanyRole?
-  cargo                  String?
-  password               String?
-  anunciosCreados        Anuncio[]               @relation("AnunciosCreados")
-  comentariosCreados     AnuncioComment[]        @relation("ComentariosCreados")
-  offersApproved         Offer[]                 @relation("OfferApprovals")
-  offersRejected         Offer[]                 @relation("OfferRejections")
-  community              Comunidad?              @relation(fields: [communityId], references: [id])
-  memberCompany          Company?                @relation("CompanyMembers", fields: [memberCompanyId], references: [id])
-  ownedCompany           Company?                @relation("CompanyOwner", fields: [ownedCompanyId], references: [id])
-  auditLogs              AuditLog[]              @relation("UserAuditLogs")
-  managedCompanies       Company[]               @relation("AccountManager")
-  companiesApproved      Company[]               @relation("CompanyApprovedBy")
-  companiesReviewed      Company[]               @relation("CompanyLastReviewedBy")
-  companiesRejected      Company[]               @relation("CompanyRejectedBy")
-  coupons                Coupon[]                @relation("UserCoupons")
-  emailLogs              EmailLog[]              @relation("UserEmailLogs")
-  groupOfferRequests     GroupOfferRequest[]     @relation("GroupOfferRequests")
-  groupParticipations    GroupParticipant[]      @relation("UserGroupParticipants")
-  invoicesCreated        Invoice[]               @relation("InvoicesCreated")
-  leads                  Lead[]
-  notificationPreference NotificationPreference? @relation("UserNotificationPreferences")
-  sentNotifications      Notification[]          @relation("NotificationSender")
-  notifications          Notification[]          @relation("UserNotifications")
-  offerEvents            OfferEvent[]            @relation("UserOfferEvents")
-  paymentsProcessed      Payment[]               @relation("PaymentsProcessed")
-  redemptions            Redemption[]            @relation("UserRedemptions")
-  favorites              UserFavorite[]          @relation("UserFavorites")
-  wallet                 UserWallet?
-  assignedLeads          CompanyLead[]           @relation("LeadAssignee")
-  leadInteractions       LeadInteraction[]
-  leadActivities         LeadActivity[]
-  leadTasks              LeadTask[]
-  leadDocuments          LeadDocument[]
-  tasksAssigned          Task[]                  @relation("TasksAssigned")
-  tasksCreated           Task[]                  @relation("TasksCreated")
-  taskComments           TaskComment[]           @relation("TaskComments")
-  taskAttachments        TaskAttachment[]        @relation("TaskAttachments")
-  taskActivities         TaskActivity[]          @relation("TaskActivities")
+  id                       String                     @id @default(cuid())
+  email                    String                     @unique
+  name                     String?
+  image                    String?
+  role                     UserRole                   @default(USER)
+  communityId              String?
+  isActive                 Boolean                    @default(true)
+  createdAt                DateTime                   @default(now())
+  updatedAt                DateTime                   @updatedAt
+  userType                 UserType                   @default(EMPLOYEE)
+  ownedCompanyId           String?                    @unique
+  memberCompanyId          String?
+  companyRole              CompanyRole?
+  cargo                    String?
+  password                 String?
+  primaryRole              UserRole?
+  isEmailVerified          Boolean                    @default(false)
+  lastLogin                DateTime?
+  anunciosCreados          Anuncio[]                  @relation("AnunciosCreados")
+  comentariosCreados       AnuncioComment[]           @relation("ComentariosCreados")
+  offersApproved           Offer[]                    @relation("OfferApprovals")
+  offersRejected           Offer[]                    @relation("OfferRejections")
+  community                Comunidad?                 @relation(fields: [communityId], references: [id])
+  memberCompany            Company?                   @relation("CompanyMembers", fields: [memberCompanyId], references: [id])
+  ownedCompany             Company?                   @relation("CompanyOwner", fields: [ownedCompanyId], references: [id])
+  ConversationParticipants ConversationParticipants[]
+  announcement_reads       announcement_reads[]
+  announcements            announcements[]
+  auditLogs                AuditLog[]                 @relation("UserAuditLogs")
+  managedCompanies         Company[]                  @relation("AccountManager")
+  companiesApproved        Company[]                  @relation("CompanyApprovedBy")
+  companiesReviewed        Company[]                  @relation("CompanyLastReviewedBy")
+  companiesRejected        Company[]                  @relation("CompanyRejectedBy")
+  assignedLeads            CompanyLead[]              @relation("LeadAssignee")
+  company_ratings          company_ratings[]
+  coupons                  Coupon[]                   @relation("UserCoupons")
+  emailLogs                EmailLog[]                 @relation("UserEmailLogs")
+  groupOfferRequests       GroupOfferRequest[]        @relation("GroupOfferRequests")
+  groupParticipations      GroupParticipant[]         @relation("UserGroupParticipants")
+  invoicesCreated          Invoice[]                  @relation("InvoicesCreated")
+  leadActivities           LeadActivity[]
+  leadDocuments            LeadDocument[]
+  leadInteractions         LeadInteraction[]
+  leadTasks                LeadTask[]
+  leads                    Lead[]
+  sentMessages             Message[]                  @relation("MessageSender")
+  notificationPreference   NotificationPreference?    @relation("UserNotificationPreferences")
+  sentNotifications        Notification[]             @relation("NotificationSender")
+  notifications            Notification[]             @relation("UserNotifications")
+  offerEvents              OfferEvent[]               @relation("UserOfferEvents")
+  paymentsProcessed        Payment[]                  @relation("PaymentsProcessed")
+  redemptions              Redemption[]               @relation("UserRedemptions")
+  taskActivities           TaskActivity[]             @relation("TaskActivities")
+  taskAttachments          TaskAttachment[]           @relation("TaskAttachments")
+  taskComments             TaskComment[]              @relation("TaskComments")
+  tasksAssigned            Task[]                     @relation("TasksAssigned")
+  tasksCreated             Task[]                     @relation("TasksCreated")
+  favorites                UserFavorite[]             @relation("UserFavorites")
+  wallet                   UserWallet?
 
   @@index([email])
   @@index([role])
@@ -66,7 +74,6 @@ model User {
   @@index([userType])
   @@index([ownedCompanyId])
   @@index([memberCompanyId])
-  @@index([isActive])
   @@index([createdAt])
   @@index([isActive, createdAt])
 }
@@ -178,7 +185,7 @@ model AnuncioMetrics {
 model Company {
   id               String                 @id @default(cuid())
   name             String
-  cif              String                 @unique
+  cif              String?                @unique
   email            String
   phone            String?
   address          String?
@@ -198,6 +205,18 @@ model Company {
   rejectedById     String?
   rejectionReason  String?
   status           CompanyStatus          @default(PENDING)
+  annualRevenue    Decimal?               @db.Decimal(15, 2)
+  certifications   Json?
+  configuration    Json?
+  employeeCount    Int?
+  foundingYear     Int?
+  logoUrl          String?
+  sector           String?
+  size             String?
+  socialMedia      Json?
+  tags             String[]               @default([])
+  userId           String?
+  isVerified       Boolean                @default(false)
   offers           Offer[]
   teamMembers      User[]                 @relation("CompanyMembers")
   owner            User?                  @relation("CompanyOwner")
@@ -207,15 +226,21 @@ model Company {
   currentPlan      PlanConfig?            @relation("CompanyCurrentPlan", fields: [currentPlanId], references: [id])
   lastReviewedBy   User?                  @relation("CompanyLastReviewedBy", fields: [lastReviewedById], references: [id])
   rejectedBy       User?                  @relation("CompanyRejectedBy", fields: [rejectedById], references: [id])
+  company_advisory company_advisory[]
+  originalLead     CompanyLead?           @relation("ConvertedLead")
+  company_products company_products[]
   profileChanges   CompanyProfileChange[]
+  company_ratings  company_ratings[]
+  company_services company_services[]
+  contacts         contacts[]
   coupons          Coupon[]               @relation("CompanyCoupons")
   groupOffers      GroupOfferConfig[]     @relation("CompanyGroupOffers")
   invoices         Invoice[]
   leads            Lead[]
+  notifications    Notification[]
   offerEvents      OfferEvent[]           @relation("CompanyOfferEvents")
   redemptions      Redemption[]           @relation("CompanyRedemptions")
   subscriptions    Subscription[]
-  originalLead     CompanyLead?           @relation("ConvertedLead")
   tasks            Task[]
 
   @@index([cif])
@@ -371,6 +396,7 @@ model Invoice {
   @@index([dueDate])
   @@index([issueDate])
   @@index([clientCif])
+  @@index([status])
   @@map("invoices")
 }
 
@@ -524,24 +550,31 @@ model BudgetItem {
 }
 
 model Notification {
-  id        String               @id @default(cuid())
-  title     String
-  message   String
-  type      NotificationType
-  priority  NotificationPriority @default(NORMAL)
-  isRead    Boolean              @default(false)
-  userId    String
-  senderId  String?
-  companyId String?
-  metadata  Json?
-  createdAt DateTime             @default(now())
-  readAt    DateTime?
-  sender    User?                @relation("NotificationSender", fields: [senderId], references: [id])
-  user      User                 @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  id            String               @id @default(cuid())
+  title         String
+  message       String
+  type          NotificationType
+  priority      NotificationPriority @default(NORMAL)
+  isRead        Boolean              @default(false)
+  userId        String
+  senderId      String?
+  companyId     String?
+  metadata      Json?
+  createdAt     DateTime             @default(now())
+  readAt        DateTime?
+  actionType    String?
+  leadId        String?
+  actionUrl     String?
+  dueDate       DateTime?
+  companies     Company?             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company_leads CompanyLead?         @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  sender        User?                @relation("NotificationSender", fields: [senderId], references: [id])
+  user          User                 @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, isRead])
   @@index([type, priority])
   @@index([createdAt])
+  @@index([isRead])
   @@map("notifications")
 }
 
@@ -699,6 +732,7 @@ model Coupon {
   @@index([status], map: "idx_coupon_status")
   @@index([expiresAt], map: "idx_coupon_expires")
   @@index([generatedAt], map: "idx_coupon_generated")
+  @@index([status])
   @@map("coupons")
 }
 
@@ -774,8 +808,8 @@ model OfferEvent {
   @@index([companyId], map: "idx_event_company")
   @@index([eventType], map: "idx_event_type")
   @@index([createdAt], map: "idx_event_created")
-  @@index([eventType, createdAt], map: "idx_event_type_created")
   @@index([sessionId], map: "idx_event_session")
+  @@index([eventType, createdAt])
   @@map("offer_events")
 }
 
@@ -1068,14 +1102,1066 @@ model Lead {
   @@map("leads")
 }
 
+model CompanyLead {
+  id                    String            @id @default(cuid())
+  companyName           String
+  cif                   String?
+  sector                String?
+  contactName           String?
+  contactRole           String?
+  email                 String?
+  phone                 String?
+  website               String?
+  companySize           String?
+  estimatedRevenue      Decimal?          @db.Decimal(10, 2)
+  currentPlatforms      Json?
+  competitorOffers      Json?
+  discountTypes         Json?
+  status                LeadStatus        @default(NEW)
+  priority              LeadPriority      @default(MEDIUM)
+  score                 Int?
+  scoreGrade            String?
+  source                LeadSource
+  assignedToId          String?
+  lastContactDate       DateTime?
+  nextFollowUpDate      DateTime?
+  convertedToCompanyId  String?           @unique
+  convertedAt           DateTime?
+  tags                  String[]
+  notes                 String?
+  internalNotes         String?
+  lostReason            String?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  aiInsights            Json?
+  aiProcessingStatus    String?
+  aiScore               Int?
+  aiScoreReasoning      String?
+  conversionProbability Float?
+  dataQualityScore      Int?
+  lastAiProcessed       DateTime?
+  qualityScore          Int?
+  suggestedPitch        String?
+  targetAudience        String?
+  aiSummary             String?
+  pitchGeneratedAt      DateTime?
+  validationStatus      String?
+  address               String?
+  city                  String?
+  country               String?
+  state                 String?
+  zipCode               String?
+  classifiedAt          DateTime?
+  confidence            Float?
+  description           String?
+  employeeCount         Int?
+  estimatedSize         String?
+  facebookProfile       String?
+  generationMethod      String?
+  industry              String?
+  linkedinProfile       String?
+  rawData               Json?
+  reviewStatus          String?
+  scrapedAt             DateTime?
+  segment               String?
+  sourceId              String?
+  stage                 String?
+  twitterProfile        String?
+  userId                String?
+  validatedAt           DateTime?
+  aiProviderId          String?
+  employees             Int?
+  estimatedValue        Decimal?          @db.Decimal(10, 2)
+  assignedTo            User?             @relation("LeadAssignee", fields: [assignedToId], references: [id])
+  convertedCompany      Company?          @relation("ConvertedLead", fields: [convertedToCompanyId], references: [id])
+  contacts              contacts[]
+  activities            LeadActivity[]
+  documents             LeadDocument[]
+  interactions          LeadInteraction[]
+  tasks                 LeadTask[]
+  notifications         Notification[]
+  enterpriseTasks       Task[]
+
+  @@index([status])
+  @@index([assignedToId])
+  @@index([source])
+  @@index([createdAt])
+  @@index([score])
+  @@index([convertedAt])
+  @@index([aiProcessingStatus])
+  @@index([aiScore])
+  @@index([dataQualityScore])
+  @@index([lastAiProcessed])
+  @@index([status, createdAt])
+  @@map("company_leads")
+}
+
+model LeadInteraction {
+  id                  String          @id @default(cuid())
+  leadId              String
+  userId              String
+  type                InteractionType
+  title               String?
+  description         String
+  outcome             String?
+  duration            Int?
+  metadata            Json?
+  createdAt           DateTime        @default(now())
+  contactId           String?
+  nextAction          String?
+  nextActionCompleted Boolean?        @default(false)
+  nextActionDate      DateTime?
+  contacts            contacts?       @relation(fields: [contactId], references: [id])
+  lead                CompanyLead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user                User            @relation(fields: [userId], references: [id])
+
+  @@index([leadId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("lead_interactions")
+}
+
+model LeadActivity {
+  id          String      @id @default(cuid())
+  leadId      String
+  userId      String?
+  type        String
+  description String
+  metadata    Json?
+  createdAt   DateTime    @default(now())
+  lead        CompanyLead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user        User?       @relation(fields: [userId], references: [id])
+
+  @@index([leadId])
+  @@index([createdAt])
+  @@map("lead_activities")
+}
+
+model LeadTask {
+  id          String       @id @default(cuid())
+  leadId      String?
+  userId      String
+  title       String
+  description String?
+  dueDate     DateTime?
+  priority    LeadPriority @default(MEDIUM)
+  status      TaskStatus   @default(PENDING)
+  completedAt DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  lead        CompanyLead? @relation(fields: [leadId], references: [id])
+  user        User         @relation(fields: [userId], references: [id])
+
+  @@index([leadId])
+  @@index([userId])
+  @@index([dueDate])
+  @@index([status])
+  @@map("lead_tasks")
+}
+
+model LeadDocument {
+  id         String      @id @default(cuid())
+  leadId     String
+  userId     String
+  name       String
+  fileUrl    String
+  fileType   String
+  fileSize   Int
+  uploadedAt DateTime    @default(now())
+  lead       CompanyLead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user       User        @relation(fields: [userId], references: [id])
+
+  @@index([leadId])
+  @@map("lead_documents")
+}
+
+model Task {
+  id                       String           @id @default(cuid())
+  title                    String
+  description              String?
+  type                     TaskType
+  status                   TaskStatus       @default(PENDING)
+  priority                 TaskPriority
+  category                 TaskCategory?
+  assignedToId             String
+  createdById              String
+  leadId                   String?
+  companyId                String?
+  dueDate                  DateTime?
+  startDate                DateTime?
+  completedAt              DateTime?
+  estimatedMinutes         Int?
+  actualMinutes            Int?
+  reminderDate             DateTime?
+  reminderSent             Boolean          @default(false)
+  isRecurring              Boolean          @default(false)
+  recurrenceRule           String?
+  parentRecurringId        String?
+  urgencyScore             Int              @default(0)
+  impactScore              Int              @default(0)
+  effortScore              Int              @default(0)
+  autoScore                Int              @default(0)
+  parentTaskId             String?
+  tags                     String[]
+  customFields             Json?
+  createdAt                DateTime         @default(now())
+  updatedAt                DateTime         @updatedAt
+  activities               TaskActivity[]
+  attachments              TaskAttachment[]
+  comments                 TaskComment[]
+  assignedTo               User             @relation("TasksAssigned", fields: [assignedToId], references: [id])
+  company                  Company?         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdBy                User             @relation("TasksCreated", fields: [createdById], references: [id])
+  lead                     CompanyLead?     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  parentTask               Task?            @relation("TaskSubtasks", fields: [parentTaskId], references: [id], onDelete: Cascade)
+  subtasks                 Task[]           @relation("TaskSubtasks")
+  tasks_TaskDependencies_A Task[]           @relation("TaskDependencies")
+  tasks_TaskDependencies_B Task[]           @relation("TaskDependencies")
+
+  @@index([assignedToId])
+  @@index([leadId])
+  @@index([companyId])
+  @@index([status])
+  @@index([dueDate])
+  @@index([priority])
+  @@map("tasks")
+}
+
+model TaskComment {
+  id        String   @id @default(cuid())
+  taskId    String
+  userId    String
+  content   String
+  mentions  String[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user      User     @relation("TaskComments", fields: [userId], references: [id])
+
+  @@index([taskId])
+  @@map("task_comments")
+}
+
+model TaskAttachment {
+  id           String   @id @default(cuid())
+  taskId       String
+  fileName     String
+  fileUrl      String
+  fileSize     Int
+  mimeType     String
+  uploadedById String
+  createdAt    DateTime @default(now())
+  task         Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  uploadedBy   User     @relation("TaskAttachments", fields: [uploadedById], references: [id])
+
+  @@index([taskId])
+  @@map("task_attachments")
+}
+
+model TaskActivity {
+  id          String             @id @default(cuid())
+  taskId      String
+  userId      String?
+  action      TaskActivityAction
+  description String
+  metadata    Json?
+  createdAt   DateTime           @default(now())
+  task        Task               @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user        User?              @relation("TaskActivities", fields: [userId], references: [id])
+
+  @@index([taskId])
+  @@index([createdAt])
+  @@map("task_activities")
+}
+
+model Conversation {
+  id                       String                     @id @default(dbgenerated("(gen_random_uuid())::text"))
+  title                    String
+  createdAt                DateTime                   @default(now()) @db.Timestamptz(6)
+  updatedAt                DateTime                   @default(now()) @updatedAt @db.Timestamptz(6)
+  ConversationParticipants ConversationParticipants[]
+  messages                 Message[]
+
+  @@index([updatedAt], map: "idx_conversations_updated_at")
+  @@map("conversations")
+}
+
+model Message {
+  id             String              @id @default(dbgenerated("(gen_random_uuid())::text"))
+  content        String
+  conversationId String
+  senderId       String
+  isRead         Boolean             @default(false)
+  createdAt      DateTime            @default(now()) @db.Timestamptz(6)
+  attachments    MessageAttachment[]
+  conversation   Conversation        @relation(fields: [conversationId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "messages_conversation_id_fkey")
+  sender         User                @relation("MessageSender", fields: [senderId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "messages_sender_id_fkey")
+
+  @@index([conversationId, createdAt], map: "idx_messages_conversation_created")
+  @@index([conversationId], map: "idx_messages_conversation_id")
+  @@index([createdAt], map: "idx_messages_created_at")
+  @@index([senderId], map: "idx_messages_sender_id")
+  @@map("messages")
+}
+
+model MessageAttachment {
+  id        String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  messageId String
+  filename  String
+  url       String
+  mimeType  String
+  size      Int?
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "message_attachments_message_id_fkey")
+
+  @@index([messageId], map: "idx_message_attachments_message_id")
+  @@map("message_attachments")
+}
+
+model ConversationParticipants {
+  A             String
+  B             String
+  conversations Conversation @relation(fields: [A], references: [id], onDelete: Cascade)
+  User          User         @relation(fields: [B], references: [id], onDelete: Cascade)
+
+  @@unique([A, B], map: "_ConversationParticipants_AB_unique")
+  @@index([B], map: "_ConversationParticipants_B_index")
+  @@map("_ConversationParticipants")
+}
+
+// ============================================
+// CONFIGURACIÓ D'IA
+// ============================================
+
+/// Proveïdors d'IA disponibles
+enum AIProviderType {
+  OPENAI
+  ANTHROPIC
+  GEMINI
+}
+
+/// Casos d'ús de la IA
+enum AIUseCase {
+  LEADS           // Generació i anàlisi de leads
+  CONTENT         // Creació de contingut per la web
+}
+
+/// Proveïdor d'IA configurat
+model AIProvider {
+  id              String         @id @default(cuid())
+  type            AIProviderType @unique
+  name            String         // "OpenAI", "Anthropic", "Google Gemini"
+  isActive        Boolean        @default(true)
+  apiKeyEncrypted String?        @db.Text  // API Key encriptada (opcional si s'usa .env)
+  useEnvKey       Boolean        @default(true) // Si true, usa la key de .env
+
+  // Límits globals del proveïdor
+  maxTokensPerRequest   Int      @default(4000)
+  maxTokensPerDay       Int?     // Límit diari (null = sense límit)
+  maxTokensPerMonth     Int?     // Límit mensual (null = sense límit)
+
+  // Relacions
+  models          AIModel[]
+  configurations  AIConfiguration[]
+  usageLogs       AIUsageLog[]
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  createdBy       String?        // ID del user que ho va crear
+
+  @@map("ai_providers_config")
+}
+
+/// Models disponibles per cada proveïdor
+model AIModel {
+  id              String         @id @default(cuid())
+  providerId      String
+  provider        AIProvider     @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  modelId         String         // "gpt-4o", "claude-sonnet-4-20250514", "gemini-1.5-pro"
+  displayName     String         // "GPT-4o", "Claude Sonnet 4", "Gemini 1.5 Pro"
+  description     String?
+  isActive        Boolean        @default(true)
+
+  // Capacitats del model
+  maxContextTokens    Int        @default(128000)
+  maxOutputTokens     Int        @default(4096)
+  supportsVision      Boolean    @default(false)
+  supportsTools       Boolean    @default(true)
+
+  // Cost aproximat (per 1M tokens)
+  inputCostPer1M      Float?
+  outputCostPer1M     Float?
+
+  // Relacions
+  configurations  AIConfiguration[]
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@unique([providerId, modelId])
+  @@map("ai_models_config")
+}
+
+/// Configuració d'IA per cada cas d'ús
+model AIConfiguration {
+  id              String         @id @default(cuid())
+  useCase         AIUseCase      @unique
+  name            String         // "Generació de Leads", "Creació de Contingut"
+  description     String?
+  isActive        Boolean        @default(true)
+
+  // Proveïdor i model per defecte
+  providerId      String
+  provider        AIProvider     @relation(fields: [providerId], references: [id])
+  modelId         String
+  model           AIModel        @relation(fields: [modelId], references: [id])
+
+  // Paràmetres per defecte
+  temperature     Float          @default(0.7)
+  maxTokens       Int            @default(2000)
+
+  // Límits específics del cas d'ús
+  maxRequestsPerDay   Int?       // Límit de peticions diàries
+  maxTokensPerDay     Int?       // Límit de tokens diaris
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  updatedBy       String?        // ID del user que ho va actualitzar
+
+  @@map("ai_configurations_v2")
+}
+
+/// Registre d'ús de la IA
+model AIUsageLog {
+  id              String         @id @default(cuid())
+  providerId      String
+  provider        AIProvider     @relation(fields: [providerId], references: [id])
+
+  useCase         AIUseCase
+  modelId         String         // Model usat (string per si el model s'elimina)
+
+  // Detalls de la petició
+  inputTokens     Int
+  outputTokens    Int
+  totalTokens     Int
+
+  // Cost estimat
+  estimatedCost   Float?
+
+  // Qui i quan
+  userId          String?
+  userEmail       String?
+
+  // Metadades
+  success         Boolean        @default(true)
+  errorMessage    String?
+  durationMs      Int?           // Duració de la petició en ms
+
+  createdAt       DateTime       @default(now())
+
+  @@index([providerId, createdAt])
+  @@index([useCase, createdAt])
+  @@index([userId, createdAt])
+  @@map("ai_usage_logs_v2")
+}
+
+model ai_logs {
+  id           String       @id
+  providerId   String
+  operation    String
+  success      Boolean
+  latency      Int?
+  cost         Decimal?     @db.Decimal(10, 4)
+  createdAt    DateTime     @default(now())
+  ai_providers ai_providers @relation(fields: [providerId], references: [id])
+}
+
+model ai_providers {
+  id                 String         @id
+  name               String         @unique
+  displayName        String
+  type               String
+  config             Json
+  capabilities       Json?
+  isActive           Boolean        @default(true)
+  isDefault          Boolean        @default(false)
+  totalRequests      Int            @default(0)
+  successfulRequests Int            @default(0)
+  failedRequests     Int            @default(0)
+  totalCost          Decimal?       @db.Decimal(10, 4)
+  averageLatency     Float?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime
+  ai_logs            ai_logs[]
+  lead_sources       lead_sources[]
+}
+
+model announcement_reads {
+  id             String        @id
+  announcementId String
+  userId         String
+  readAt         DateTime      @default(now())
+  announcements  announcements @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  User           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([announcementId, userId])
+}
+
+model announcements {
+  id                 String               @id
+  title              String
+  content            String
+  type               String               @default("INFO")
+  priority           Int                  @default(0)
+  startDate          DateTime?
+  endDate            DateTime?
+  isActive           Boolean              @default(true)
+  targetAudience     String?
+  createdBy          String?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime
+  configuration      Json?
+  isPinned           Boolean              @default(false)
+  scope              String?
+  targets            Json?
+  expiresAt          DateTime?
+  userId             String?
+  status             String               @default("approved")
+  isRead             Boolean              @default(false)
+  announcement_reads announcement_reads[]
+  User               User?                @relation(fields: [userId], references: [id])
+}
+
+model company_advisory {
+  id              String    @id
+  companyId       String
+  title           String
+  description     String?
+  category        String?
+  duration        String?
+  price           Decimal?  @db.Decimal(10, 2)
+  contact         Json?
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime
+  requestDate     DateTime?
+  serviceId       String?
+  status          String    @default("pending")
+  urgency         String?
+  clientId        String?
+  response        String?
+  finalBudget     Decimal?  @db.Decimal(10, 2)
+  subject         String?
+  estimatedBudget Decimal?  @db.Decimal(10, 2)
+  responseDate    DateTime?
+  deadline        DateTime?
+  companies       Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+}
+
+model company_products {
+  id          String   @id
+  companyId   String
+  name        String
+  description String?
+  category    String?
+  price       Decimal? @db.Decimal(10, 2)
+  images      String[] @default([])
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+  features    Json?
+  isAvailable Boolean  @default(true)
+  order       Int      @default(0)
+  stock       Int?
+  subcategory String?
+  companies   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+}
+
+model company_ratings {
+  id         String   @id
+  companyId  String
+  userId     String
+  rating     Int
+  comment    String?
+  isVerified Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime
+  isActive   Boolean  @default(true)
+  serviceId  String?
+  advisoryId String?
+  companies  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  User       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, userId])
+  @@index([companyId])
+  @@index([userId])
+}
+
+model company_services {
+  id           String   @id
+  companyId    String
+  name         String
+  description  String?
+  category     String?
+  subcategory  String?
+  price        Decimal? @db.Decimal(10, 2)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime
+  availability Json?
+  features     Json?
+  pricing      Json?
+  duration     String?
+  modality     String?
+  order        Int      @default(0)
+  companies    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+}
+
+model contacts {
+  id                String            @id
+  companyLeadId     String?
+  companyId         String?
+  firstName         String
+  lastName          String?
+  email             String?
+  phone             String?
+  position          String?
+  department        String?
+  notes             String?
+  isActive          Boolean           @default(true)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime
+  isPrimary         Boolean           @default(false)
+  name              String?
+  linkedin          String?
+  companies         Company?          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company_leads     CompanyLead?      @relation(fields: [companyLeadId], references: [id], onDelete: Cascade)
+  lead_interactions LeadInteraction[]
+}
+
+model contenido_maestro {
+  id                      String                    @id
+  title                   String
+  content                 String
+  type                    String
+  category                String?
+  isActive                Boolean                   @default(true)
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime
+  tipo                    String?
+  tituloOriginal          String?
+  contenidoOriginal       String?
+  extracto                String?
+  idiomaOrigen            String?
+  autorId                 String?
+  autorNombre             String?
+  estado                  String?
+  metadatos               Json?
+  publicaciones_comunidad publicaciones_comunidad[]
+  traducciones            traducciones[]
+}
+
+model contents {
+  id          String    @id
+  title       String
+  slug        String    @unique
+  type        String    @default("ARTICLE")
+  body        String
+  excerpt     String?
+  author      String
+  status      String    @default("DRAFT")
+  publishedAt DateTime?
+  tags        String[]  @default([])
+  metadata    Json?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime
+}
+
+model courses {
+  id            String   @id
+  title         String
+  description   String?
+  instructor    String
+  duration      String?
+  price         Decimal? @db.Decimal(10, 2)
+  level         String   @default("BEGINNER")
+  category      String?
+  isActive      Boolean  @default(true)
+  tags          String[] @default([])
+  configuration Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime
+}
+
+model custom_fields {
+  id         String   @id
+  entityType String
+  entityId   String
+  fieldName  String
+  fieldValue Json
+  fieldType  String
+  isRequired Boolean  @default(false)
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime
+  isActive   Boolean  @default(true)
+
+  @@index([entityType, entityId])
+}
+
+model employees {
+  id                 String              @id
+  userId             String
+  companyId          String?
+  department         String?
+  position           String?
+  startDate          DateTime?
+  endDate            DateTime?
+  isActive           Boolean             @default(true)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime
+  firstName          String?
+  nick               String?
+  lastName           String?
+  community          String?
+  administrationType AdministrationType?
+  avatar             String?
+  bio                String?
+  socialNetworks     Json?
+  privacySettings    Json?
+}
+
+model events {
+  id            String   @id
+  title         String
+  description   String?
+  startDate     DateTime
+  endDate       DateTime
+  location      String?
+  type          String   @default("GENERAL")
+  isActive      Boolean  @default(true)
+  organizer     String
+  capacity      Int?
+  configuration Json?
+  tags          String[] @default([])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime
+}
+
+model forum_moderators {
+  id          String   @id
+  forumId     String
+  userId      String
+  permissions String[] @default([])
+  assignedAt  DateTime @default(now())
+  assignedBy  String
+  isActive    Boolean  @default(true)
+  role        String?
+
+  @@unique([forumId, userId])
+}
+
+model forum_replies {
+  id           String       @id
+  topicId      String
+  content      String
+  authorId     String
+  isAccepted   Boolean      @default(false)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime
+  isActive     Boolean      @default(true)
+  userId       String?
+  replyToId    String?
+  forum_topics forum_topics @relation(fields: [topicId], references: [id])
+}
+
+model forum_topics {
+  id            String          @id
+  forumId       String
+  title         String
+  content       String
+  authorId      String
+  views         Int             @default(0)
+  isPinned      Boolean         @default(false)
+  isLocked      Boolean         @default(false)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime
+  tags          String[]        @default([])
+  lastActivity  DateTime?
+  userId        String?
+  isActive      Boolean         @default(true)
+  type          String?
+  forum_replies forum_replies[]
+  forums        forums          @relation(fields: [forumId], references: [id])
+}
+
+model forums {
+  id            String         @id
+  name          String
+  description   String?
+  slug          String         @unique
+  isActive      Boolean        @default(true)
+  order         Int            @default(0)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime
+  title         String?
+  configuration Json?
+  type          String?
+  creatorId     String?
+  isLocked      Boolean        @default(false)
+  category      String?
+  comunidadSlug String?
+  isPinned      Boolean        @default(false)
+  forum_topics  forum_topics[]
+}
+
+model group_members {
+  id            String   @id
+  groupId       String
+  userId        String
+  role          String   @default("MEMBER")
+  joinedAt      DateTime @default(now())
+  updatedAt     DateTime
+  configuration Json?
+  tags          String[] @default([])
+  status        String   @default("ACTIVE")
+
+  @@unique([groupId, userId])
+}
+
+model group_posts {
+  id          String    @id
+  groupId     String
+  authorId    String
+  content     String
+  attachments Json?
+  likes       Int       @default(0)
+  comments    Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime
+  multimedia  Json?
+  publishedAt DateTime?
+  tags        String[]  @default([])
+  title       String?
+  userId      String?
+  isActive    Boolean   @default(true)
+}
+
+model groups {
+  id            String   @id
+  name          String
+  description   String?
+  slug          String   @unique
+  type          String   @default("PUBLIC")
+  isActive      Boolean  @default(true)
+  createdBy     String
+  configuration Json?
+  tags          String[] @default([])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime
+  creatorId     String?
+}
+
+model interactions {
+  id                  String    @id
+  entityType          String
+  entityId            String
+  userId              String
+  type                String
+  content             Json?
+  metadata            Json?
+  createdAt           DateTime  @default(now())
+  companyId           String?
+  companyLeadId       String?
+  nextActionCompleted Boolean   @default(false)
+  subject             String?
+  outcome             String?
+  createdById         String?
+  nextAction          String?
+  nextActionDate      DateTime?
+  contactId           String?
+
+  @@index([entityType, entityId])
+  @@index([userId])
+}
+
+model lead_sources {
+  id                 String        @id
+  name               String
+  type               String
+  searchQuery        String?
+  config             Json?
+  isActive           Boolean       @default(true)
+  frequency          String?
+  userId             String
+  providerId         String?
+  leadsGenerated     Int           @default(0)
+  lastRun            DateTime?
+  lastRunLeadsCount  Int?
+  totalRuns          Int           @default(0)
+  averageLeadsPerRun Float?
+  nextRun            DateTime?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime
+  ai_providers       ai_providers? @relation(fields: [providerId], references: [id])
+}
+
+model multimedia {
+  id         String   @id
+  type       String
+  url        String
+  filename   String?
+  mimeType   String?
+  size       Int?
+  entityType String?
+  entityId   String?
+  uploadedBy String
+  isPublic   Boolean  @default(true)
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime
+
+  @@index([entityType, entityId])
+  @@index([uploadedBy])
+}
+
+model post_comments {
+  id        String   @id
+  postId    String
+  content   String
+  authorId  String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+}
+
+model post_reports {
+  id          String    @id
+  postId      String
+  userId      String
+  reason      String
+  description String?
+  status      String    @default("PENDING")
+  moderatedBy String?
+  moderatedAt DateTime?
+  action      String?
+  createdAt   DateTime  @default(now())
+
+  @@unique([postId, userId])
+}
+
+model posts {
+  id        String   @id
+  title     String
+  content   String
+  authorId  String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+}
+
+model publicaciones_comunidad {
+  id                String             @id
+  title             String
+  content           String
+  authorId          String
+  comunidadId       String?
+  isActive          Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime
+  contenidoId       String?
+  traduccionId      String?
+  comunidadSlug     String?
+  idioma            String?
+  publicado         Boolean            @default(false)
+  fechaPublicacion  DateTime?
+  slug              String?
+  urlPublica        String?
+  contenido_maestro contenido_maestro? @relation(fields: [contenidoId], references: [id], onDelete: Cascade)
+  traducciones      traducciones?      @relation(fields: [traduccionId], references: [id])
+}
+
+model reports {
+  id          String    @id
+  entityType  String
+  entityId    String
+  reporterId  String
+  reason      String
+  description String?
+  status      String    @default("PENDING")
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  resolution  String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime
+
+  @@index([entityType, entityId])
+  @@index([reporterId])
+  @@index([status])
+}
+
+model traducciones {
+  id                      String                    @id
+  language                String
+  key                     String
+  value                   String
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime
+  contenidoId             String?
+  idiomaDestino           String?
+  tituloTraducido         String?
+  contenidoTraducido      String?
+  extractoTraducido       String?
+  estadoTraduccion        String?
+  traducidoPor            String?
+  confianzaTraduccion     Float?
+  publicaciones_comunidad publicaciones_comunidad[]
+  contenido_maestro       contenido_maestro?        @relation(fields: [contenidoId], references: [id], onDelete: Cascade)
+
+  @@unique([language, key])
+}
+
+model user_notifications {
+  id        String   @id
+  userId    String
+  title     String
+  content   String
+  type      String   @default("INFO")
+  isRead    Boolean  @default(false)
+  data      Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+
+  @@index([userId, isRead])
+}
+
 enum UserRole {
-  USER
-  MODERATOR
-  COMMUNITY_MANAGER
-  ADMIN
+  // Nivell 1 - Propietat
   SUPER_ADMIN
+
+  // Nivell 2 - Direcció
+  ADMIN
+
+  // Nivell 3 - Supervisors CRM
+  CRM_COMERCIAL
+  CRM_CONTINGUT
+
+  // Nivell 4 - Gestors Comercials
+  GESTOR_ESTANDARD
+  GESTOR_ESTRATEGIC
+  GESTOR_ENTERPRISE
+
+  // Altres
+  MODERATOR
   COMPANY
-  COMPANY_MANAGER
+  USER
 }
 
 enum AnuncioType {
@@ -1234,6 +2320,7 @@ enum CompanyStatus {
   REJECTED
   SUSPENDED
   INACTIVE
+  APPROVED
 }
 
 enum NotificationType {
@@ -1421,169 +2508,17 @@ enum PaymentStage {
   FULL
 }
 
-// =============================================================================
-// CRM MODELS FOR COMPANY LEAD MANAGEMENT
-// =============================================================================
-
-model CompanyLead {
-  id                   String       @id @default(cuid())
-
-  // Información básica empresa
-  companyName          String
-  cif                  String?
-  sector               String?
-  contactName          String
-  contactRole          String?
-  email                String
-  phone                String?
-  website              String?
-
-  // Clasificación
-  companySize          String?      // "10-50", "50-200", "200+"
-  estimatedRevenue     Decimal?     @db.Decimal(10, 2)
-
-  // 🆕 TRACKING PUBLICIDAD (REQUERIMIENTO NUEVO)
-  currentPlatforms     Json?        // Plataformas donde se publicita: VipDistrict, Groupon, etc.
-  competitorOffers     Json?        // Ofertas que tiene en otras plataformas
-  discountTypes        Json?        // Tipos de descuentos: %, fijo, 2x1, grupal
-
-  // Pipeline CRM
-  status               LeadStatus   @default(NEW)
-  priority             LeadPriority @default(MEDIUM)
-  score                Int?         // Score IA 0-100
-  scoreGrade           String?      // A, B, C
-
-  // Seguimiento
-  source               LeadSource
-  assignedToId         String?
-  lastContactDate      DateTime?
-  nextFollowUpDate     DateTime?
-
-  // Conversión
-  convertedToCompanyId String?      @unique
-  convertedAt          DateTime?
-
-  // Metadata
-  tags                 String[]
-  notes                String?      @db.Text
-  internalNotes        String?      @db.Text
-  lostReason           String?
-
-  // Timestamps
-  createdAt            DateTime     @default(now())
-  updatedAt            DateTime     @updatedAt
-
-  // Relaciones
-  assignedTo           User?        @relation("LeadAssignee", fields: [assignedToId], references: [id])
-  convertedCompany     Company?     @relation("ConvertedLead", fields: [convertedToCompanyId], references: [id])
-  interactions         LeadInteraction[]
-  activities           LeadActivity[]
-  tasks                LeadTask[]
-  documents            LeadDocument[]
-  enterpriseTasks      Task[]
-
-  @@index([status])
-  @@index([assignedToId])
-  @@index([source])
-  @@index([createdAt])
-  @@index([score])
-  @@index([convertedAt])
-  @@map("company_leads")
-}
-
-model LeadInteraction {
-  id          String           @id @default(cuid())
-  leadId      String
-  userId      String
-  type        InteractionType
-  title       String?
-  description String           @db.Text
-  outcome     String?          // Positivo, Neutral, Negativo
-  duration    Int?             // En minutos
-  metadata    Json?
-  createdAt   DateTime         @default(now())
-
-  lead        CompanyLead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  user        User             @relation(fields: [userId], references: [id])
-
-  @@index([leadId])
-  @@index([userId])
-  @@index([createdAt])
-  @@map("lead_interactions")
-}
-
-model LeadActivity {
-  id          String      @id @default(cuid())
-  leadId      String
-  userId      String?
-  type        String
-  description String
-  metadata    Json?
-  createdAt   DateTime    @default(now())
-
-  lead        CompanyLead @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  user        User?       @relation(fields: [userId], references: [id])
-
-  @@index([leadId])
-  @@index([createdAt])
-  @@map("lead_activities")
-}
-
-model LeadTask {
-  id          String        @id @default(cuid())
-  leadId      String?
-  userId      String
-  title       String
-  description String?       @db.Text
-  dueDate     DateTime?
-  priority    LeadPriority  @default(MEDIUM)
-  status      TaskStatus    @default(PENDING)
-  completedAt DateTime?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-
-  lead        CompanyLead?  @relation(fields: [leadId], references: [id], onDelete: SetNull)
-  user        User          @relation(fields: [userId], references: [id])
-
-  @@index([leadId])
-  @@index([userId])
-  @@index([dueDate])
-  @@index([status])
-  @@map("lead_tasks")
-}
-
-model LeadDocument {
-  id          String      @id @default(cuid())
-  leadId      String
-  userId      String
-  name        String
-  fileUrl     String
-  fileType    String
-  fileSize    Int
-  uploadedAt  DateTime    @default(now())
-
-  lead        CompanyLead @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  user        User        @relation(fields: [userId], references: [id])
-
-  @@index([leadId])
-  @@map("lead_documents")
-}
-
-// =============================================================================
-// CRM ENUMS
-// =============================================================================
-
 enum LeadStatus {
-  NEW              // Nuevo, sin contactar
-  PROSPECTING      // En prospección activa
-  CONTACTED        // Primer contacto realizado
-  QUALIFIED        // Cualificado, interesado
-  PROPOSAL_SENT    // Propuesta enviada
-  NEGOTIATION      // En negociación
-  DOCUMENTATION    // Pendiente documentación
-  WON              // Ganado, convertido
-  LOST             // Perdido
-  ON_HOLD          // En pausa
+  NEW
+  PROSPECTING
+  CONTACTED
+  QUALIFIED
+  PROPOSAL_SENT
+  NEGOTIATION
+  DOCUMENTATION
+  WON
+  LOST
+  ON_HOLD
 }
 
 enum LeadPriority {
@@ -1594,23 +2529,23 @@ enum LeadPriority {
 }
 
 enum LeadSource {
-  MANUAL           // Creado manualmente por gestor
-  WEB_FORM         // Formulario "Quiero Colaborar"
-  AI_PROSPECTING   // Encontrado por IA
-  REFERRAL         // Referido por otra empresa
-  EMPLOYEE_SUGGESTION // Sugerido por empleado público
-  INBOUND          // Marketing inbound
-  COLD_OUTREACH    // Outreach en frío
+  MANUAL
+  WEB_FORM
+  AI_PROSPECTING
+  REFERRAL
+  EMPLOYEE_SUGGESTION
+  INBOUND
+  COLD_OUTREACH
 }
 
 enum InteractionType {
-  NOTE           // Nota interna
-  CALL           // Llamada telefónica
-  EMAIL          // Email enviado
-  MEETING        // Reunión
-  WHATSAPP       // WhatsApp/SMS
-  STATUS_CHANGE  // Cambio de estado
-  DOCUMENT       // Documento subido
+  NOTE
+  CALL
+  EMAIL
+  MEETING
+  WHATSAPP
+  STATUS_CHANGE
+  DOCUMENT
 }
 
 enum TaskStatus {
@@ -1620,173 +2555,34 @@ enum TaskStatus {
   CANCELLED
 }
 
-// =============================================================================
-// ENTERPRISE TASK MANAGEMENT SYSTEM
-// =============================================================================
-
-model Task {
-  id          String   @id @default(cuid())
-  title       String
-  description String?  @db.Text
-
-  // Clasificación y contexto
-  type        TaskType
-  status      TaskStatus @default(PENDING)
-  priority    TaskPriority
-  category    TaskCategory?
-
-  // Asignación y ownership
-  assignedToId String
-  assignedTo   User     @relation("TasksAssigned", fields: [assignedToId], references: [id])
-  createdById  String
-  createdBy    User     @relation("TasksCreated", fields: [createdById], references: [id])
-
-  // Relaciones con entidades CRM
-  leadId      String?
-  lead        CompanyLead? @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  companyId   String?
-  company     Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  // Temporalidad
-  dueDate     DateTime?
-  startDate   DateTime?
-  completedAt DateTime?
-  estimatedMinutes Int?    // Estimación de tiempo
-  actualMinutes    Int?    // Tiempo real gastado
-
-  // Recordatorios
-  reminderDate DateTime?
-  reminderSent Boolean  @default(false)
-
-  // Recurrencia
-  isRecurring      Boolean  @default(false)
-  recurrenceRule   String?  // RRULE format
-  parentRecurringId String?
-
-  // Scoring y priorización inteligente
-  urgencyScore    Int      @default(0)  // 0-100
-  impactScore     Int      @default(0)  // 0-100
-  effortScore     Int      @default(0)  // 0-100
-  autoScore       Int      @default(0)  // Calculado automáticamente
-
-  // Dependencias
-  blockedBy       Task[]   @relation("TaskDependencies")
-  blocking        Task[]   @relation("TaskDependencies")
-
-  // Subtareas
-  parentTaskId    String?
-  parentTask      Task?    @relation("TaskSubtasks", fields: [parentTaskId], references: [id], onDelete: Cascade)
-  subtasks        Task[]   @relation("TaskSubtasks")
-
-  // Metadata
-  tags            String[]
-  customFields    Json?    // Campos personalizables
-
-  // Auditoría
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relaciones
-  comments    TaskComment[]
-  attachments TaskAttachment[]
-  activities  TaskActivity[]
-
-  @@index([assignedToId])
-  @@index([leadId])
-  @@index([companyId])
-  @@index([status])
-  @@index([dueDate])
-  @@index([priority])
-  @@map("tasks")
-}
-
 enum TaskType {
-  FOLLOW_UP      // Seguimiento
-  MEETING        // Reunión
-  CALL           // Llamada
-  EMAIL          // Email
-  DEMO           // Demo producto
-  PROPOSAL       // Enviar propuesta
-  CONTRACT       // Gestión contrato
-  ONBOARDING     // Onboarding cliente
-  SUPPORT        // Soporte
-  INTERNAL       // Tarea interna
-  OTHER          // Otros
+  FOLLOW_UP
+  MEETING
+  CALL
+  EMAIL
+  DEMO
+  PROPOSAL
+  CONTRACT
+  ONBOARDING
+  SUPPORT
+  INTERNAL
+  OTHER
 }
 
 enum TaskPriority {
-  URGENT         // Crítico - inmediato
-  HIGH           // Alta
-  MEDIUM         // Media
-  LOW            // Baja
+  URGENT
+  HIGH
+  MEDIUM
+  LOW
 }
 
 enum TaskCategory {
-  SALES          // Ventas
-  MARKETING      // Marketing
-  SUPPORT        // Soporte
-  OPERATIONS     // Operaciones
-  ADMIN          // Administración
-  DEVELOPMENT    // Desarrollo
-}
-
-// Comentarios en tareas
-model TaskComment {
-  id        String   @id @default(cuid())
-  taskId    String
-  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-
-  userId    String
-  user      User     @relation("TaskComments", fields: [userId], references: [id])
-
-  content   String   @db.Text
-  mentions  String[] // IDs de usuarios mencionados
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([taskId])
-  @@map("task_comments")
-}
-
-// Attachments
-model TaskAttachment {
-  id        String   @id @default(cuid())
-  taskId    String
-  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-
-  fileName  String
-  fileUrl   String
-  fileSize  Int
-  mimeType  String
-
-  uploadedById String
-  uploadedBy   User   @relation("TaskAttachments", fields: [uploadedById], references: [id])
-
-  createdAt DateTime @default(now())
-
-  @@index([taskId])
-  @@map("task_attachments")
-}
-
-// Activity log
-model TaskActivity {
-  id          String   @id @default(cuid())
-  taskId      String
-  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-
-  userId      String?
-  user        User?    @relation("TaskActivities", fields: [userId], references: [id])
-
-  action      TaskActivityAction
-  description String
-  metadata    Json?
-
-  createdAt   DateTime @default(now())
-
-  @@index([taskId])
-  @@index([createdAt])
-  @@map("task_activities")
+  SALES
+  MARKETING
+  SUPPORT
+  OPERATIONS
+  ADMIN
+  DEVELOPMENT
 }
 
 enum TaskActivityAction {
@@ -1800,4 +2596,68 @@ enum TaskActivityAction {
   REOPENED
   DELETED
   ATTACHMENT_ADDED
+}
+
+enum AdministrationType {
+  LOCAL
+  AUTONOMICA
+  CENTRAL
+}
+
+enum PermissionType {
+  MANAGE_USERS
+  MANAGE_ROLES
+  MANAGE_PERMISSIONS
+  VIEW_ADMIN_DASHBOARD
+  MANAGE_SYSTEM_CONFIG
+  CREATE_CONTENT
+  EDIT_CONTENT
+  DELETE_CONTENT
+  PUBLISH_CONTENT
+  MODERATE_CONTENT
+  PIN_CONTENT
+  CREATE_POST
+  EDIT_POST
+  DELETE_POST
+  MODERATE_POST
+  PIN_POST
+  CREATE_COMMENT
+  EDIT_COMMENT
+  DELETE_COMMENT
+  MODERATE_COMMENT
+  CREATE_GROUP
+  EDIT_GROUP
+  DELETE_GROUP
+  MANAGE_GROUP_MEMBERS
+  MODERATE_GROUP_CONTENT
+  PIN_GROUP_CONTENT
+  CREATE_FORUM
+  EDIT_FORUM
+  DELETE_FORUM
+  CREATE_FORUM_TOPIC
+  EDIT_FORUM_TOPIC
+  DELETE_FORUM_TOPIC
+  MODERATE_FORUM
+  PIN_FORUM_TOPIC
+  LOCK_FORUM_TOPIC
+  CREATE_ANNOUNCEMENT
+  EDIT_ANNOUNCEMENT
+  DELETE_ANNOUNCEMENT
+  PUBLISH_ANNOUNCEMENT
+  PIN_ANNOUNCEMENT
+  MANAGE_COMPANIES
+  CREATE_COMPANY_PROFILE
+  EDIT_COMPANY_PROFILE
+  MANAGE_COMPANY_SERVICES
+  MANAGE_PUBLIC_ADMINISTRATIONS
+  CREATE_ADMIN_PROFILE
+  EDIT_ADMIN_PROFILE
+  VIEW_REPORTS
+  HANDLE_REPORTS
+  VIEW_MODERATION_STATS
+  BULK_MODERATE
+  IMPERSONATE_USER
+  VIEW_AUDIT_LOGS
+  MANAGE_TRANSLATIONS
+  MANAGE_COMMUNITIES
 }

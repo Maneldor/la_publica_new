@@ -3,6 +3,19 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../../../lib/auth';
 import { prismaClient } from '../../../../../lib/prisma';
 
+// Función para generar contraseña (misma lógica que en crear empresa)
+function generatePassword(companyName: string, planTier: string, createdAt: string): string {
+  const date = new Date(createdAt);
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear().toString().slice(-2);
+
+  const companyPrefix = companyName.slice(0, 3).toUpperCase();
+  const planSuffix = planTier.slice(-1).toUpperCase();
+
+  return `${companyPrefix}${day}${month}${year}${planSuffix}`;
+}
+
 // Función para convertir nombre a slug
 function createSlug(name: string): string {
   return name
@@ -22,23 +35,31 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     console.log('🔍 Buscando empresa con identificador:', identifier);
 
     const session = await getServerSession(authOptions);
+    console.log('🔐 Session user:', session?.user?.email);
 
     if (!session?.user) {
+      console.log('❌ No session found');
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    // Verificar rol de admin
+    // Verificar rol de admin o gestor CRM
     const user = await prismaClient.user.findUnique({
       where: { email: session.user.email! },
       select: { userType: true, isActive: true }
     });
 
-    if (!user || user.userType !== 'ADMIN') {
+    console.log('👤 User type:', user?.userType);
+    console.log('✅ User active:', user?.isActive);
+
+    // Permitir acceso a ADMIN, SUPER_ADMIN y COMPANY_MANAGER (Gestor CRM)
+    const allowedRoles = ['ADMIN', 'SUPER_ADMIN', 'COMPANY_MANAGER', 'ACCOUNT_MANAGER'];
+    if (!user || !allowedRoles.includes(user.userType)) {
+      console.log('❌ User role not allowed:', user?.userType);
       return NextResponse.json(
-        { success: false, error: 'No autorizado. Solo administradores.' },
+        { success: false, error: 'No autoritzat. Només administradors i gestors CRM.' },
         { status: 403 }
       );
     }
@@ -74,16 +95,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
               badgeColor: true
             }
           },
-          currentPlanId: true,
-          // Buscar el usuario propietario de la empresa
-          owner: {
-            select: {
-              id: true,
-              email: true,
-              name: true,
-              password: true
-            }
-          }
+          currentPlanId: true
         }
       });
     }
@@ -154,9 +166,15 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         id: true,
         email: true,
         name: true,
-        password: true
+        cargo: true // Este campo podría contener información del sector
       }
     });
+
+    console.log('👤 Owner encontrado:', owner ? 'Sí' : 'No');
+    console.log('🏭 Sector (cargo) del owner:', owner?.cargo || 'No definido');
+
+    // Determinar si el usuario es admin para mostrar credenciales
+    const isAdmin = user.userType === 'ADMIN' || user.userType === 'SUPER_ADMIN';
 
     // Formatear datos para el frontend
     const formattedCompany = {
@@ -168,11 +186,18 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       website: company.website,
       address: company.address,
       cif: company.cif,
+      sector: owner?.cargo || null, // Usar el campo cargo como sector temporal
       logo: company.logo,
       isActive: company.isActive,
       status: company.status,
       currentPlan: company.currentPlan,
-      owner: owner, // Información del propietario incluyendo contraseña
+      owner: owner ? {
+        ...owner,
+        // Solo incluir contraseña si es admin y empresa PENDING
+        password: isAdmin && company.status === 'PENDING' && company.currentPlan ?
+          generatePassword(company.name, company.currentPlan.tier, company.createdAt.toISOString()) :
+          undefined
+      } : null,
       subscription: null, // Por ahora null, se puede agregar después si se necesita
       createdAt: company.createdAt.toISOString(),
       updatedAt: company.updatedAt.toISOString()

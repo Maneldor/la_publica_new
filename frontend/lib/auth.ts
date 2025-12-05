@@ -2,7 +2,7 @@ import { NextAuthOptions } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
 import GitHubProvider from "next-auth/providers/github"
 import CredentialsProvider from "next-auth/providers/credentials"
-import { UserRole } from '@/lib/permissions'
+import { UserRole } from '@prisma/client'
 import jwt from 'jsonwebtoken'
 import { prismaClient } from '@/lib/prisma'
 import * as bcrypt from 'bcryptjs'
@@ -139,19 +139,25 @@ export const authOptions: NextAuthOptions = {
           // Determinar el rol - priorizar campo 'role' si existe, sino usar 'userType'
           let role = 'USER';
 
-          // Primero verificar si existe el campo 'role' específico
-          if (user.role === 'SUPER_ADMIN') {
-            role = 'SUPER_ADMIN';
-          } else if (user.role === 'ADMIN') {
-            role = 'ADMIN';
+          // Usar el campo 'role' directament si existeix i és vàlid
+          const validRoles = [
+            'SUPER_ADMIN', 'ADMIN',
+            'CRM_COMERCIAL', 'CRM_CONTINGUT',
+            'GESTOR_ESTANDARD', 'GESTOR_ESTRATEGIC', 'GESTOR_ENTERPRISE',
+            'MODERATOR', 'COMPANY', 'USER'
+          ];
+
+          if (user.role && validRoles.includes(user.role)) {
+            role = user.role;
           } else if (user.userType) {
-            // Fallback a userType para compatibilidad
+            // Fallback a userType per compatibilitat legacy
             switch (user.userType) {
               case 'ADMIN':
                 role = 'ADMIN';
                 break;
               case 'ACCOUNT_MANAGER':
-                role = 'COMPANY_MANAGER';
+                // Els Account Managers ara són CRM_COMERCIAL
+                role = 'CRM_COMERCIAL';
                 break;
               case 'COMPANY_OWNER':
                 role = 'COMPANY';
@@ -160,7 +166,7 @@ export const authOptions: NextAuthOptions = {
                 role = 'COMPANY';
                 break;
               case 'EMPLOYEE':
-                role = 'PUBLIC_EMPLOYEE';
+                role = 'USER';
                 break;
               default:
                 role = 'USER';
@@ -202,6 +208,7 @@ export const authOptions: NextAuthOptions = {
             email: user.email,
             name: user.name,
             role: role as UserRole,
+            userType: user.userType, // Añadir userType
             image: user.image,
             companyId,
             communityId: user.communityId ?? undefined,
@@ -261,6 +268,7 @@ export const authOptions: NextAuthOptions = {
         } else {
           // Para credentials provider, ya tenemos los datos del usuario
           token.role = user.role;
+          token.userType = (user as any).userType; // Añadir userType
           token.communityId = (user as any).communityId;
           token.isActive = (user as any).isActive;
           (token as any).companyId = (user as any).companyId;
@@ -292,6 +300,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.id = token.sub!;
         session.user.role = token.role as UserRole;
+        session.user.userType = token.userType; // Añadir userType
         session.user.communityId = token.communityId;
         session.user.isActive = token.isActive;
         session.user.companyId = (token as any).companyId;

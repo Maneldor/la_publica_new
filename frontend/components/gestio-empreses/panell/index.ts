@@ -1,0 +1,5 @@
+export { EvolutionChart } from './EvolutionChart'
+export { UpcomingEvents } from './UpcomingEvents'
+export { RecentMessages } from './RecentMessages'
+export { AlertsWidget } from './AlertsWidget'
+export { PerformanceWidget } from './PerformanceWidget'

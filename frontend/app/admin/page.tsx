@@ -202,6 +202,15 @@ export default function AdminDashboard() {
         <h2 className="text-xl font-bold mb-4">Accesos Rápidos</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Link
+            href="/gestio"
+            className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-center"
+          >
+            <div className="text-3xl mb-2">🎛️</div>
+            <div className="font-medium">Dashboard de Gestió</div>
+            <div className="text-xs text-gray-500 mt-1">CRM Comercial i Gestió d'Empreses</div>
+          </Link>
+
+          <Link
             href="/admin/blog/crear"
             className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-center"
           >
