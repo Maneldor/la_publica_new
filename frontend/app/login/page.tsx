@@ -44,16 +44,20 @@ function LoginContent() {
   };
 
   const quickLogin = async (email: string, password: string, userRole: string) => {
+    console.log('🟡 QuickLogin clicked:', { email, password, userRole });
     setLoading(true);
     setError('');
 
     try {
+      console.log('🟡 Calling signIn with credentials...');
       const result = await signIn('credentials', {
         email,
         password,
         redirect: false,
         callbackUrl
       });
+
+      console.log('🟡 SignIn result:', result);
 
       if (result?.error) {
         setError('Error en login rápido');
@@ -66,8 +70,12 @@ function LoginContent() {
           case 'ADMIN':
             redirectUrl = '/admin';
             break;
+          case 'ADMIN_GESTIO':
           case 'CRM_COMERCIAL':
           case 'CRM_CONTINGUT':
+          case 'GESTOR_ESTANDARD':
+          case 'GESTOR_ESTRATEGIC':
+          case 'GESTOR_ENTERPRISE':
             redirectUrl = '/gestio';
             break;
           case 'COMPANY':
@@ -96,9 +104,9 @@ function LoginContent() {
     // ============================================
     {
       email: 'super.admin@lapublica.cat',
-      password: 'superadmin123',
+      password: 'super123',
       role: 'SUPER_ADMIN',
-      name: 'Manel (Super Admin)',
+      name: 'Manel',
       icon: Crown,
       color: 'from-red-500 to-pink-600',
       description: 'Propietat - Accés complet',
@@ -106,7 +114,21 @@ function LoginContent() {
     },
 
     // ============================================
-    // 2. ADMIN
+    // 2. ADMIN GESTIÓ
+    // ============================================
+    {
+      email: 'gestio@lapublica.cat',
+      password: 'admin123',
+      role: 'ADMIN_GESTIO',
+      name: 'Admin Gestió',
+      icon: UserCheck,
+      color: 'from-purple-500 to-blue-600',
+      description: 'Acceso directo al dashboard de gestión',
+      badge: 'GES'
+    },
+
+    // ============================================
+    // 3. ADMIN
     // ============================================
     {
       email: 'admin@lapublica.cat',
@@ -120,7 +142,7 @@ function LoginContent() {
     },
 
     // ============================================
-    // 3. GESTIÓ D'EMPRESES (CRM COMERCIAL)
+    // 4. GESTIÓ D'EMPRESES (CRM COMERCIAL)
     // ============================================
     {
       email: 'crm@gestio.com',
@@ -134,13 +156,55 @@ function LoginContent() {
     },
 
     // ============================================
-    // 4. GESTOR PRINCIPAL EMPRESA
+    // 5. GESTOR ESTÀNDARD
+    // ============================================
+    {
+      email: 'g-estandar@lapublica.cat',
+      password: 'gestor123',
+      role: 'GESTOR_ESTANDARD',
+      name: 'G-Estandar',
+      icon: Users,
+      color: 'from-green-500 to-emerald-600',
+      description: 'Gestor d\'empreses estàndard',
+      badge: 'GES'
+    },
+
+    // ============================================
+    // 6. GESTOR ESTRATÈGIC
+    // ============================================
+    {
+      email: 'g-strategic@lapublica.cat',
+      password: 'gestor123',
+      role: 'GESTOR_ESTRATEGIC',
+      name: 'G-Estratègic',
+      icon: Users,
+      color: 'from-teal-500 to-cyan-600',
+      description: 'Gestor d\'empreses estratègiques',
+      badge: 'EST'
+    },
+
+    // ============================================
+    // 7. GESTOR ENTERPRISE
+    // ============================================
+    {
+      email: 'g-enterprise@lapublica.cat',
+      password: 'gestor123',
+      role: 'GESTOR_ENTERPRISE',
+      name: 'G-Enterprise',
+      icon: Users,
+      color: 'from-indigo-500 to-purple-600',
+      description: 'Gestor d\'empreses enterprise',
+      badge: 'ENT'
+    },
+
+    // ============================================
+    // 8. GESTOR PRINCIPAL EMPRESA
     // ============================================
     {
       email: 'joan.perez@empresadeprova.cat',
       password: 'owner123',
       role: 'COMPANY',
-      name: 'Joan Pérez - Gestor Principal',
+      name: 'Joan Pérez',
       icon: Building,
       color: 'from-green-500 to-emerald-600',
       description: 'Propietari Empresa de Prova',
@@ -148,45 +212,17 @@ function LoginContent() {
     },
 
     // ============================================
-    // 5. MIEMBRO EMPRESA
-    // ============================================
-    {
-      email: 'anna.marti@empresadeprova.cat',
-      password: 'member123',
-      role: 'COMPANY',
-      name: 'Anna Martí - Miembro',
-      icon: UserCheck,
-      color: 'from-teal-500 to-cyan-600',
-      description: 'Miembro Empresa de Prova',
-      badge: 'MBR'
-    },
-
-    // ============================================
-    // 6. EMPLEADO PÚBLICO
+    // 9. EMPLEADO PÚBLICO
     // ============================================
     {
       email: 'laura.garcia@generalitat.cat',
       password: 'empleat123',
       role: 'USER',
-      name: 'Laura García - Empleada',
+      name: 'Laura García',
       icon: UserCheck,
       color: 'from-purple-500 to-indigo-600',
       description: 'Empleada Pública',
       badge: 'USR'
-    },
-
-    // ============================================
-    // 7. CRM CONTINGUT
-    // ============================================
-    {
-      email: 'contingut@lapublica.cat',
-      password: 'contingut123',
-      role: 'CRM_CONTINGUT',
-      name: 'CRM Contingut',
-      icon: FileText,
-      color: 'from-purple-500 to-pink-600',
-      description: 'Gestió contingut i xarxa social',
-      badge: 'CNT'
     }
   ];
 
@@ -255,7 +291,10 @@ function LoginContent() {
                   <div
                     key={index}
                     className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow cursor-pointer"
-                    onClick={() => quickLogin(user.email, user.password, user.role)}
+                    onClick={() => {
+                      console.log('🟡 Card clicked for user:', user.name);
+                      quickLogin(user.email, user.password, user.role);
+                    }}
                   >
                     <div className="relative mb-4">
                       <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${user.color} flex items-center justify-center`}>

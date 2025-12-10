@@ -81,11 +81,11 @@ export function WizardLayout({
 
       <div className={cn(
         "mx-auto px-4 sm:px-6 lg:px-8 py-8",
-        centerContent ? "max-w-4xl" : "max-w-7xl"
+        centerContent ? "max-w-4xl" : "max-w-5xl"
       )}>
         {/* Steps indicator */}
-        <div className="mb-8">
-          <div className="flex items-center justify-center">
+        <div className="mb-8 overflow-x-auto pb-2">
+          <div className="flex items-center justify-start min-w-max md:justify-center">
             {steps.map((step, index) => {
               const StepIcon = step.icon
               const isCompleted = currentStep > index + 1

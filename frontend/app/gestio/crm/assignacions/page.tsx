@@ -2,6 +2,7 @@
 'use client'
 
 import { useState, useEffect, useTransition } from 'react'
+import { useSession } from 'next-auth/react'
 import { Users, RefreshCw, Wand2, Download } from 'lucide-react'
 import { AssignmentStats } from '@/components/gestio-empreses/assignacions/AssignmentStats'
 import { UnassignedLeads } from '@/components/gestio-empreses/assignacions/UnassignedLeads'
@@ -16,6 +17,7 @@ import {
 } from '@/lib/gestio-empreses/assignment-actions'
 
 export default function AssignacionsPage() {
+  const { data: session, status } = useSession()
   const [stats, setStats] = useState<any>(null)
   const [unassigned, setUnassigned] = useState<any[]>([])
   const [gestors, setGestors] = useState<any[]>([])
@@ -23,8 +25,8 @@ export default function AssignacionsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isPending, startTransition] = useTransition()
 
-  // TODO: Obtenir userId real
-  const currentUserId = 'current-user-id'
+  // Obtener userId real de la sesión
+  const currentUserId = session?.user?.id || ''
 
   const loadData = async () => {
     setIsLoading(true)
@@ -49,13 +51,51 @@ export default function AssignacionsPage() {
   }
 
   useEffect(() => {
-    loadData()
-  }, [])
+    if (session?.user) {
+      loadData()
+    }
+  }, [session])
+
+  // Verificar autenticació i càrrega
+  if (status === 'loading' || isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    )
+  }
+
+  if (!session?.user) {
+    return null
+  }
+
+  // Verificar permisos - solo admin, admin_gestio y roles superiores pueden acceder
+  if (!['ADMIN', 'ADMIN_GESTIO', 'SUPER_ADMIN', 'CRM_COMERCIAL'].includes(session.user.role)) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <div className="text-6xl mb-4">🚫</div>
+          <h2 className="text-xl font-semibold text-slate-900 mb-2">Accés denegat</h2>
+          <p className="text-slate-500">
+            No tens permisos per accedir a aquesta pàgina d'assignacions.
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   const handleAssign = (leadIds: string[], gestorId: string) => {
+    console.log('🔍 handleAssign called:', { leadIds, gestorId, currentUserId })
     startTransition(async () => {
-      await assignLeadsToGestor(leadIds, gestorId, currentUserId)
-      loadData()
+      try {
+        console.log('🔍 Before assignLeadsToGestor')
+        await assignLeadsToGestor(leadIds, gestorId, currentUserId)
+        console.log('🔍 After assignLeadsToGestor - success')
+        loadData()
+      } catch (error) {
+        console.error('❌ Error in handleAssign:', error)
+        alert(`Error assignant leads: ${error.message || error}`)
+      }
     })
   }
 

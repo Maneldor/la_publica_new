@@ -1,14 +1,20 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Building2, Mail, CreditCard, CheckCircle2, Key } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Building2, Mail, CreditCard, CheckCircle2, Key, Info } from 'lucide-react';
+import { getLeadById, marcarLeadGuanyat } from '@/lib/admin/actions/empreses-pendents-actions';
 
 export default function CrearEmpresaPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const leadId = searchParams.get('leadId');
+
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [availablePlans, setAvailablePlans] = useState<any[]>([]);
+  const [leadData, setLeadData] = useState<any>(null);
+  const [loadingLead, setLoadingLead] = useState(false);
 
   const [formData, setFormData] = useState({
     companyName: '',
@@ -16,14 +22,24 @@ export default function CrearEmpresaPage() {
     cif: '',
     sector: '',
     selectedPlan: '',
-    generatedPassword: ''
+    generatedPassword: '',
+    // Camps adicionals del lead
+    phone: '',
+    contactName: '',
+    contactRole: '',
+    website: '',
+    address: '',
+    city: ''
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     loadAvailablePlans();
-  }, []);
+    if (leadId) {
+      loadLeadData(leadId);
+    }
+  }, [leadId]);
 
   const loadAvailablePlans = async () => {
     try {
@@ -35,6 +51,34 @@ export default function CrearEmpresaPage() {
       }
     } catch (error) {
       console.error('Error loading plans:', error);
+    }
+  };
+
+  const loadLeadData = async (id: string) => {
+    setLoadingLead(true);
+    try {
+      const result = await getLeadById(id);
+      if (result.success && result.data) {
+        setLeadData(result.data);
+        // Pre-omplir el formulari amb les dades del lead
+        setFormData(prev => ({
+          ...prev,
+          companyName: result.data.companyName || '',
+          cif: result.data.cif || '',
+          email: result.data.email || '',
+          phone: result.data.phone || '',
+          contactName: result.data.contactName || '',
+          contactRole: result.data.contactRole || '',
+          website: result.data.website || '',
+          address: result.data.address || '',
+          city: result.data.city || '',
+          sector: result.data.sector || '',
+        }));
+      }
+    } catch (error) {
+      console.error('Error carregant lead:', error);
+    } finally {
+      setLoadingLead(false);
     }
   };
 
@@ -132,7 +176,20 @@ export default function CrearEmpresaPage() {
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
-          alert(`Empresa creada exitosament!\n\nCredencials generades:\n🏢 Empresa: ${formData.companyName}\n📧 Email: ${formData.email}\n🏭 Sector: ${formData.sector}\n🔑 Contrasenya: ${formData.generatedPassword}\n\nPodràs completar les dades addicionals des de la llista d'empreses.`);
+          // Si ve d'un lead, marcar-lo com guanyat
+          if (leadId && result.companyId) {
+            try {
+              await marcarLeadGuanyat(leadId, result.companyId);
+            } catch (error) {
+              console.error('Error marcant lead com guanyat:', error);
+            }
+          }
+
+          const successMessage = leadData
+            ? `Empresa creada exitosament des del lead!\n\nCredencials generades:\n🏢 Empresa: ${formData.companyName}\n📧 Email: ${formData.email}\n🏭 Sector: ${formData.sector}\n🔑 Contrasenya: ${formData.generatedPassword}\n\n✅ El lead "${leadData.companyName}" s'ha marcat com guanyat.\n\nPodràs completar les dades addicionals des de la llista d'empreses.`
+            : `Empresa creada exitosament!\n\nCredencials generades:\n🏢 Empresa: ${formData.companyName}\n📧 Email: ${formData.email}\n🏭 Sector: ${formData.sector}\n🔑 Contrasenya: ${formData.generatedPassword}\n\nPodràs completar les dades addicionals des de la llista d'empreses.`;
+
+          alert(successMessage);
           router.push('/admin/empresas/listar?refresh=1');
         } else {
           alert(result.error || 'Error al crear l\'empresa');
@@ -366,6 +423,29 @@ export default function CrearEmpresaPage() {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Crear Nova Empresa</h1>
           <p className="text-gray-600">Assistent per crear empresa col·laboradora</p>
         </div>
+
+        {/* Banner informatiu si ve d'un lead */}
+        {leadData && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div className="flex items-start gap-3">
+              <Info className="h-5 w-5 text-blue-500 mt-0.5" strokeWidth={1.5} />
+              <div>
+                <p className="font-medium text-blue-900">
+                  Creant empresa des del lead
+                </p>
+                <p className="text-sm text-blue-700 mt-1">
+                  Les dades s'han pre-omplert automàticament des del lead "{leadData.companyName}".
+                  Verifica i completa la informació abans de crear l'empresa.
+                </p>
+                {leadData.estimatedValue && (
+                  <p className="text-sm text-blue-600 mt-2 font-medium">
+                    💰 Valor estimat: {leadData.estimatedValue.toLocaleString('ca-ES')} €
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Progress Steps */}
         <div className="flex justify-center mb-8">

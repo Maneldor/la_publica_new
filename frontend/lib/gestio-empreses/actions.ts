@@ -154,6 +154,7 @@ export async function updateLeadStatus(leadId: string, newStatus: string) {
     where: { id: leadId },
     data: {
       status: newStatus as any,
+      stage: newStatus,  // Sincronitzar stage amb status
       lastContactDate: new Date()
     }
   })

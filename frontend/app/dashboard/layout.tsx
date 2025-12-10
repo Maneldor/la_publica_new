@@ -28,7 +28,7 @@
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
-import NotificationBell from '@/components/notifications/NotificationBell';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { useSession } from 'next-auth/react';
 import { CalendarProvider } from '@/lib/context/CalendarContext';
 import { Settings } from 'lucide-react';

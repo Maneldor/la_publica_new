@@ -5,6 +5,7 @@ import { getServerSession } from 'next-auth'
 import { revalidatePath } from 'next/cache'
 import { authOptions } from '@/lib/auth'
 import { prismaClient } from '@/lib/prisma'
+import { notifyLeadAssigned } from '@/lib/notifications/notification-actions'
 
 const MAX_LEADS_PER_GESTOR = 10 // Màxim leads per gestor (configurable)
 
@@ -19,8 +20,8 @@ export async function getGestorsWithWorkload() {
 
   const gestors = await prismaClient.user.findMany({
     where: {
-      userType: {
-        in: ['EMPLOYEE', 'ADMIN', 'ACCOUNT_MANAGER'],
+      role: {
+        in: ['GESTOR_ESTANDARD', 'GESTOR_ESTRATEGIC', 'GESTOR_ENTERPRISE', 'CRM_COMERCIAL'],
       },
       isActive: true,
     },
@@ -30,6 +31,7 @@ export async function getGestorsWithWorkload() {
       email: true,
       image: true,
       userType: true,
+      role: true,
       _count: {
         select: {
           assignedLeads: {
@@ -46,12 +48,22 @@ export async function getGestorsWithWorkload() {
     orderBy: { name: 'asc' },
   })
 
-  return gestors.map((g) => ({
+  // Filtrar para mostrar solo un usuario por rol (el primero)
+  const seenRoles = new Set<string>()
+  const uniqueGestors = gestors.filter(g => {
+    if (seenRoles.has(g.role)) {
+      return false
+    }
+    seenRoles.add(g.role)
+    return true
+  })
+
+  return uniqueGestors.map((g) => ({
     id: g.id,
-    name: g.name,
+    name: formatGestorName(g.role, g.name, g.email),
     email: g.email,
     image: g.image,
-    role: g.userType,
+    role: g.role,
     activeLeads: g._count.assignedLeads,
     activeCompanies: g._count.managedCompanies,
   }))
@@ -135,6 +147,11 @@ export async function assignLeadToGestor(
     throw new Error('No autoritzat')
   }
 
+  // Verificar permisos - solo admin, admin_gestio, CRM_COMERCIAL y roles superiores pueden asignar
+  if (!['ADMIN', 'ADMIN_GESTIO', 'SUPER_ADMIN', 'CRM_COMERCIAL'].includes(session.user.role)) {
+    throw new Error('No tens permisos per assignar leads')
+  }
+
   const assignedById = session.user.id
 
   const lead = await prismaClient.companyLead.update({
@@ -143,6 +160,11 @@ export async function assignLeadToGestor(
       assignedToId: gestorId,
       updatedAt: new Date(),
     },
+    include: {
+      assignedTo: {
+        select: { name: true, email: true }
+      }
+    }
   })
 
   // Crear activitat d'assignació
@@ -154,6 +176,16 @@ export async function assignLeadToGestor(
       userId: assignedById,
     },
   })
+
+  // Enviar notificació al gestor assignat
+  if (lead.assignedTo) {
+    await notifyLeadAssigned(
+      gestorId,
+      leadId,
+      lead.companyName,
+      assignedById
+    )
+  }
 
   revalidatePath('/gestio/crm/assignacions')
   revalidatePath('/gestio/leads')
@@ -188,6 +220,11 @@ export async function autoAssignLeads() {
   const session = await getServerSession(authOptions)
   if (!session?.user) {
     throw new Error('No autoritzat')
+  }
+
+  // Verificar permisos - solo admin, admin_gestio y roles superiores pueden auto-asignar
+  if (!['ADMIN', 'ADMIN_GESTIO', 'SUPER_ADMIN'].includes(session.user.role)) {
+    throw new Error('No tens permisos per auto-assignar leads')
   }
 
   const assignedById = session.user.id
@@ -316,7 +353,7 @@ export async function getAssignmentStats() {
     // Gestors amb leads
     prismaClient.user.findMany({
       where: {
-        userType: { in: ['EMPLOYEE', 'ADMIN', 'ACCOUNT_MANAGER'] },
+        role: { in: ['GESTOR_ESTANDARD', 'GESTOR_ESTRATEGIC', 'GESTOR_ENTERPRISE'] },
         isActive: true,
       },
       select: {
@@ -351,6 +388,20 @@ export async function getAssignmentStats() {
 }
 
 /**
+ * Formatear nombre de gestor según rol
+ */
+function formatGestorName(role: string, name: string | null, email: string): string {
+  const roleLabels: Record<string, string> = {
+    'GESTOR_ESTANDARD': 'Gestor Estàndard',
+    'GESTOR_ESTRATEGIC': 'Gestor Estratègic',
+    'GESTOR_ENTERPRISE': 'Gestor Enterprise',
+    'CRM_COMERCIAL': 'CRM Comercial'
+  }
+
+  return roleLabels[role] || email
+}
+
+/**
  * Obtenir gestors amb estadístiques detallades
  */
 export async function getGestorsWithStats() {
@@ -361,7 +412,7 @@ export async function getGestorsWithStats() {
 
   const gestors = await prismaClient.user.findMany({
     where: {
-      userType: { in: ['EMPLOYEE', 'ADMIN', 'ACCOUNT_MANAGER'] },
+      role: { in: ['GESTOR_ESTANDARD', 'GESTOR_ESTRATEGIC', 'GESTOR_ENTERPRISE', 'CRM_COMERCIAL'] },
       isActive: true,
     },
     select: {
@@ -370,6 +421,7 @@ export async function getGestorsWithStats() {
       email: true,
       image: true,
       userType: true,
+      role: true,
       assignedLeads: {
         where: { status: { notIn: ['LOST'] } },
         select: {
@@ -397,17 +449,27 @@ export async function getGestorsWithStats() {
     orderBy: { name: 'asc' },
   })
 
-  return gestors.map((gestor) => {
+  // Filtrar para mostrar solo un usuario por rol (el primero)
+  const seenRoles = new Set<string>()
+  const uniqueGestors = gestors.filter(gestor => {
+    if (seenRoles.has(gestor.role)) {
+      return false
+    }
+    seenRoles.add(gestor.role)
+    return true
+  })
+
+  return uniqueGestors.map((gestor) => {
     const activeLeads = gestor.assignedLeads.filter((l) => l.status !== 'WON')
     const pipeline = activeLeads.reduce((sum, l) => sum + (l.estimatedRevenue || 0), 0)
     const load = Math.round((activeLeads.length / MAX_LEADS_PER_GESTOR) * 100)
 
     return {
       id: gestor.id,
-      name: gestor.name,
+      name: formatGestorName(gestor.role, gestor.name, gestor.email),
       email: gestor.email,
       image: gestor.image,
-      role: gestor.userType,
+      role: gestor.role,
       leads: gestor.assignedLeads,
       activeLeadsCount: activeLeads.length,
       wonCount: gestor._count.assignedLeads,
@@ -431,6 +493,17 @@ export async function assignLeadsToGestor(
     throw new Error('No autoritzat')
   }
 
+  // Verificar permisos - solo admin, admin_gestio, CRM_COMERCIAL y roles superiores pueden asignar
+  if (!['ADMIN', 'ADMIN_GESTIO', 'SUPER_ADMIN', 'CRM_COMERCIAL'].includes(session.user.role)) {
+    throw new Error('No tens permisos per assignar leads')
+  }
+
+  // Obtener información de los leads antes de la asignación
+  const leadsToAssign = await prismaClient.companyLead.findMany({
+    where: { id: { in: leadIds } },
+    select: { id: true, companyName: true }
+  })
+
   await prismaClient.companyLead.updateMany({
     where: { id: { in: leadIds } },
     data: { assignedToId: gestorId },
@@ -446,7 +519,18 @@ export async function assignLeadsToGestor(
     })),
   })
 
+  // Enviar notificaciones por cada lead asignado
+  for (const lead of leadsToAssign) {
+    await notifyLeadAssigned(
+      gestorId,
+      lead.id,
+      lead.companyName,
+      assignedById
+    )
+  }
+
   revalidatePath('/gestio/crm/assignacions')
+  revalidatePath('/gestio/leads')
 }
 
 /**
@@ -460,6 +544,11 @@ export async function reassignLead(
   const session = await getServerSession(authOptions)
   if (!session?.user) {
     throw new Error('No autoritzat')
+  }
+
+  // Verificar permisos - solo admin, admin_gestio y roles superiores pueden reassignar
+  if (!['ADMIN', 'ADMIN_GESTIO', 'SUPER_ADMIN'].includes(session.user.role)) {
+    throw new Error('No tens permisos per reassignar leads')
   }
 
   const lead = await prismaClient.companyLead.update({

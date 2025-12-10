@@ -17,7 +17,7 @@ import { AdvancedCriteria } from './AdvancedCriteria'
 import { generateLeadsWithAI, AIModel, GenerationCriteria, GeneratedLead } from '@/lib/gestio-empreses/ia-lead-actions'
 
 interface IALeadGeneratorProps {
-  onGenerated: (generationId: string, leads: GeneratedLead[]) => void
+  onGenerated: (generationId: string, leads: GeneratedLead[], warning?: string) => void
   userId: string
 }
 
@@ -50,15 +50,35 @@ const quantityOptions = [
   { value: 20, label: '20 leads' },
 ]
 
-const modelOptions: { value: AIModel; label: string; description: string; icon: string }[] = [
-  { value: 'claude', label: 'Claude', description: 'Millor qualitat', icon: '🟣' },
-  { value: 'gpt4', label: 'GPT-4', description: 'Més ràpid', icon: '🟢' },
-  { value: 'gemini', label: 'Gemini', description: 'Equilibrat', icon: '🔵' },
+const modelOptions: { value: AIModel; label: string; description: string; icon: string; badge?: string; cost?: string }[] = [
+  {
+    value: 'deepseek-chat',
+    label: 'DeepSeek Chat',
+    description: 'General - Ultra econòmic',
+    icon: '🟡',
+    badge: 'Per defecte',
+    cost: '~$0.001/lead'
+  },
+  {
+    value: 'deepseek-reasoner',
+    label: 'DeepSeek Pro',
+    description: 'Raonament complex',
+    icon: '🟠',
+    badge: 'Avançat',
+    cost: '~$0.002/lead'
+  },
+  {
+    value: 'gemini',
+    label: 'Gemini',
+    description: 'Backup - Multimodal',
+    icon: '🔵',
+    cost: '~$0.005/lead'
+  },
 ]
 
 export function IALeadGenerator({ onGenerated, userId }: IALeadGeneratorProps) {
   const [isPending, startTransition] = useTransition()
-  const [model, setModel] = useState<AIModel>('claude')
+  const [model, setModel] = useState<AIModel>('deepseek-chat')
   const [sector, setSector] = useState('')
   const [location, setLocation] = useState('')
   const [companySize, setCompanySize] = useState('')
@@ -87,7 +107,7 @@ export function IALeadGenerator({ onGenerated, userId }: IALeadGeneratorProps) {
     startTransition(async () => {
       try {
         const result = await generateLeadsWithAI(criteria, model, userId)
-        onGenerated(result.generationId, result.leads)
+        onGenerated(result.generationId, result.leads, result.warning)
       } catch (error) {
         console.error('Error generant leads:', error)
       }
@@ -113,27 +133,60 @@ export function IALeadGenerator({ onGenerated, userId }: IALeadGeneratorProps) {
             <Cpu className="h-4 w-4 text-slate-400" strokeWidth={1.5} />
             Model IA
           </label>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {modelOptions.map((m) => (
               <button
                 key={m.value}
                 type="button"
                 onClick={() => setModel(m.value)}
                 className={cn(
-                  'p-3 rounded-lg border text-left transition-all',
+                  'p-3 rounded-lg border text-left transition-all relative',
                   model === m.value
                     ? 'border-purple-300 bg-purple-50 ring-2 ring-purple-200'
                     : 'border-slate-200 hover:border-slate-300'
                 )}
               >
+                {m.badge && (
+                  <span className="absolute -top-2 -right-2 px-2 py-0.5 text-xs font-medium bg-green-500 text-white rounded-full">
+                    {m.badge}
+                  </span>
+                )}
                 <div className="flex items-center gap-2 mb-1">
                   <span>{m.icon}</span>
                   <span className="font-medium text-slate-900">{m.label}</span>
                 </div>
-                <p className="text-xs text-slate-500">{m.description}</p>
+                <p className="text-xs text-slate-500 mb-1">{m.description}</p>
+                {m.cost && (
+                  <p className="text-xs text-green-600 font-medium">{m.cost}</p>
+                )}
               </button>
             ))}
           </div>
+
+          {/* Informació de cost per model seleccionat */}
+          {model === 'deepseek' && (
+            <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-sm text-green-800">
+                <span className="font-medium">DeepSeek:</span> Fins a 20x més econòmic que OpenAI/Anthropic.
+                Cost estimat: ~$0.003 per 10 leads vs $0.05 amb altres models.
+              </p>
+            </div>
+          )}
+
+          {model !== 'deepseek' && (
+            <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-sm text-amber-800">
+                <span className="font-medium">Consell:</span> DeepSeek ofereix qualitat similar amb cost molt menor.
+                <button
+                  type="button"
+                  onClick={() => setModel('deepseek')}
+                  className="ml-2 text-amber-700 underline hover:text-amber-900"
+                >
+                  Provar DeepSeek
+                </button>
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Camps principals */}

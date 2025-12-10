@@ -1,69 +1,108 @@
-// components/gestio-empreses/pipeline/PipelineBoard.tsx
 'use client'
 
-import { useRouter } from 'next/navigation'
-import { PipelineColumn } from './PipelineColumn'
+import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
+import {
+  getPipelineViewType,
+  getWorkspaceStages,
+  canViewGestorPipelines,
+  STAGE_LABELS
+} from '@/lib/gestio-empreses/pipeline-config'
+import { WorkspaceSection } from './WorkspaceSection'
+import { GestorPipelineSection } from './GestorPipelineSection'
+import { getGestorsWithLeads } from '@/lib/gestio-empreses/pipeline-actions'
 
-interface Lead {
-  id: string
-  companyName: string
-  contactName: string
-  email: string
-  phone: string | null
-  status: string
-  priority: string
-  estimatedRevenue: number | null
-  score: number | null
-  createdAt: Date
-  updatedAt: Date
-  assignedTo: {
+interface GestorInfo {
+  gestor: {
     id: string
-    name: string | null
-  } | null
+    name: string
+    email: string
+    role: string
+  }
+  leadCount: number
+  leadsByStage: Record<string, number>
 }
 
-interface Stage {
-  id: string
-  label: string
-  color: string
-  leads: Lead[]
-  totalValue: number
-  count: number
-}
+export function PipelineBoard() {
+  const { data: session } = useSession()
+  const [gestors, setGestors] = useState<GestorInfo[]>([])
+  const [loading, setLoading] = useState(true)
 
-interface PipelineBoardProps {
-  stages: Stage[]
-  isSupervisor: boolean
-}
+  const userRole = session?.user?.role as string || ''
+  const viewType = getPipelineViewType(userRole)
+  const workspaceStages = getWorkspaceStages(userRole)
+  const showGestorPipelines = canViewGestorPipelines(userRole)
 
-export function PipelineBoard({ stages, isSupervisor }: PipelineBoardProps) {
-  const router = useRouter()
+  // Carregar gestors si és CRM/Admin
+  useEffect(() => {
+    if (showGestorPipelines) {
+      loadGestors()
+    } else {
+      setLoading(false)
+    }
+  }, [showGestorPipelines])
 
-  const handleLeadMoved = () => {
-    router.refresh()
+  const loadGestors = async () => {
+    const result = await getGestorsWithLeads()
+    if (result.success && result.data) {
+      setGestors(result.data)
+    }
+    setLoading(false)
   }
 
-  // Filtrar columnes buides opcionals (CRM_REJECTED només si té leads)
-  const visibleStages = stages.filter(stage => {
-    // Sempre mostrar les columnes principals
-    if (['NEW', 'CONTACTED', 'NEGOTIATION', 'QUALIFIED', 'WON', 'LOST'].includes(stage.id)) {
-      return true
-    }
-    // Mostrar columnes CRM si és supervisor o si tenen leads
-    if (isSupervisor) return true
-    return stage.count > 0
-  })
+  if (loading) {
+    return <div className="animate-pulse">Carregant pipeline...</div>
+  }
 
-  return (
-    <div className="flex gap-4 overflow-x-auto pb-4">
-      {visibleStages.map((stage) => (
-        <PipelineColumn
-          key={stage.id}
-          {...stage}
-          isSupervisor={isSupervisor}
-          onLeadMoved={handleLeadMoved}
+  // ========== VISTA GESTOR ==========
+  if (viewType === 'gestor') {
+    return (
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold text-slate-900">
+          El meu Pipeline
+        </h2>
+        <WorkspaceSection
+          stages={workspaceStages}
+          userId={session?.user?.id}
         />
-      ))}
+      </div>
+    )
+  }
+
+  // ========== VISTA CRM / ADMIN ==========
+  return (
+    <div className="space-y-6">
+      {/* Espai de treball propi */}
+      <WorkspaceSection
+        stages={workspaceStages}
+        title="El meu espai de treball"
+        defaultExpanded={true}
+        collapsible={true}
+      />
+
+      {/* Pipelines dels Gestors */}
+      {showGestorPipelines && gestors.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold text-slate-700">
+            Pipelines dels Gestors
+          </h3>
+
+          {gestors.map((gestorInfo) => (
+            <GestorPipelineSection
+              key={gestorInfo.gestor.id}
+              gestor={gestorInfo.gestor}
+              leadCount={gestorInfo.leadCount}
+              leadsByStage={gestorInfo.leadsByStage}
+            />
+          ))}
+        </div>
+      )}
+
+      {showGestorPipelines && gestors.length === 0 && (
+        <div className="text-center py-8 text-slate-500">
+          No hi ha gestors amb leads assignats
+        </div>
+      )}
     </div>
   )
 }

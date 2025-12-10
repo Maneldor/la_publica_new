@@ -68,6 +68,16 @@ model User {
   favorites                UserFavorite[]             @relation("UserFavorites")
   wallet                   UserWallet?
 
+  // Relacions Eines
+  einesCreated             EinesResource[]            @relation("EinesCreatedBy")
+  einesUpdated             EinesResource[]            @relation("EinesUpdatedBy")
+  completedChecks          LeadPhaseCheck[]
+
+  // Relacions Recursos Comercials
+  resourcesCreated         CommercialResource[]       @relation("ResourceCreator")
+  resourcesUpdated         CommercialResource[]       @relation("ResourceUpdater")
+  resourceUsages           ResourceUsage[]
+
   @@index([email])
   @@index([role])
   @@index([communityId])
@@ -1182,6 +1192,12 @@ model CompanyLead {
   notifications         Notification[]
   enterpriseTasks       Task[]
 
+  // Relació amb checklist
+  phaseChecks           LeadPhaseCheck[]
+
+  // Relació amb recursos comercials
+  resourceUsages        ResourceUsage[]
+
   @@index([status])
   @@index([assignedToId])
   @@index([source])
@@ -1429,75 +1445,45 @@ model ConversationParticipants {
   @@map("_ConversationParticipants")
 }
 
-// ============================================
-// CONFIGURACIÓ D'IA
-// ============================================
-
-/// Proveïdors d'IA disponibles
-enum AIProviderType {
-  OPENAI
-  ANTHROPIC
-  GEMINI
-}
-
-/// Casos d'ús de la IA
-enum AIUseCase {
-  LEADS           // Generació i anàlisi de leads
-  CONTENT         // Creació de contingut per la web
-}
-
 /// Proveïdor d'IA configurat
 model AIProvider {
-  id              String         @id @default(cuid())
-  type            AIProviderType @unique
-  name            String         // "OpenAI", "Anthropic", "Google Gemini"
-  isActive        Boolean        @default(true)
-  apiKeyEncrypted String?        @db.Text  // API Key encriptada (opcional si s'usa .env)
-  useEnvKey       Boolean        @default(true) // Si true, usa la key de .env
-
-  // Límits globals del proveïdor
-  maxTokensPerRequest   Int      @default(4000)
-  maxTokensPerDay       Int?     // Límit diari (null = sense límit)
-  maxTokensPerMonth     Int?     // Límit mensual (null = sense límit)
-
-  // Relacions
-  models          AIModel[]
-  configurations  AIConfiguration[]
-  usageLogs       AIUsageLog[]
-
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  createdBy       String?        // ID del user que ho va crear
+  id                  String            @id @default(cuid())
+  type                AIProviderType    @unique
+  name                String
+  isActive            Boolean           @default(true)
+  apiKeyEncrypted     String?
+  useEnvKey           Boolean           @default(true)
+  maxTokensPerRequest Int               @default(4000)
+  maxTokensPerDay     Int?
+  maxTokensPerMonth   Int?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  createdBy           String?
+  configurations      AIConfiguration[]
+  models              AIModel[]
+  usageLogs           AIUsageLog[]
 
   @@map("ai_providers_config")
 }
 
 /// Models disponibles per cada proveïdor
 model AIModel {
-  id              String         @id @default(cuid())
-  providerId      String
-  provider        AIProvider     @relation(fields: [providerId], references: [id], onDelete: Cascade)
-
-  modelId         String         // "gpt-4o", "claude-sonnet-4-20250514", "gemini-1.5-pro"
-  displayName     String         // "GPT-4o", "Claude Sonnet 4", "Gemini 1.5 Pro"
-  description     String?
-  isActive        Boolean        @default(true)
-
-  // Capacitats del model
-  maxContextTokens    Int        @default(128000)
-  maxOutputTokens     Int        @default(4096)
-  supportsVision      Boolean    @default(false)
-  supportsTools       Boolean    @default(true)
-
-  // Cost aproximat (per 1M tokens)
-  inputCostPer1M      Float?
-  outputCostPer1M     Float?
-
-  // Relacions
-  configurations  AIConfiguration[]
-
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  id               String            @id @default(cuid())
+  providerId       String
+  modelId          String
+  displayName      String
+  description      String?
+  isActive         Boolean           @default(true)
+  maxContextTokens Int               @default(128000)
+  maxOutputTokens  Int               @default(4096)
+  supportsVision   Boolean           @default(false)
+  supportsTools    Boolean           @default(true)
+  inputCostPer1M   Float?
+  outputCostPer1M  Float?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  configurations   AIConfiguration[]
+  provider         AIProvider        @relation(fields: [providerId], references: [id], onDelete: Cascade)
 
   @@unique([providerId, modelId])
   @@map("ai_models_config")
@@ -1505,60 +1491,43 @@ model AIModel {
 
 /// Configuració d'IA per cada cas d'ús
 model AIConfiguration {
-  id              String         @id @default(cuid())
-  useCase         AIUseCase      @unique
-  name            String         // "Generació de Leads", "Creació de Contingut"
-  description     String?
-  isActive        Boolean        @default(true)
-
-  // Proveïdor i model per defecte
-  providerId      String
-  provider        AIProvider     @relation(fields: [providerId], references: [id])
-  modelId         String
-  model           AIModel        @relation(fields: [modelId], references: [id])
-
-  // Paràmetres per defecte
-  temperature     Float          @default(0.7)
-  maxTokens       Int            @default(2000)
-
-  // Límits específics del cas d'ús
-  maxRequestsPerDay   Int?       // Límit de peticions diàries
-  maxTokensPerDay     Int?       // Límit de tokens diaris
-
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  updatedBy       String?        // ID del user que ho va actualitzar
+  id                String     @id @default(cuid())
+  useCase           AIUseCase  @unique
+  name              String
+  description       String?
+  isActive          Boolean    @default(true)
+  providerId        String
+  modelId           String
+  temperature       Float      @default(0.7)
+  maxTokens         Int        @default(2000)
+  maxRequestsPerDay Int?
+  maxTokensPerDay   Int?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  updatedBy         String?
+  model             AIModel    @relation(fields: [modelId], references: [id])
+  provider          AIProvider @relation(fields: [providerId], references: [id])
 
   @@map("ai_configurations_v2")
 }
 
 /// Registre d'ús de la IA
 model AIUsageLog {
-  id              String         @id @default(cuid())
-  providerId      String
-  provider        AIProvider     @relation(fields: [providerId], references: [id])
-
-  useCase         AIUseCase
-  modelId         String         // Model usat (string per si el model s'elimina)
-
-  // Detalls de la petició
-  inputTokens     Int
-  outputTokens    Int
-  totalTokens     Int
-
-  // Cost estimat
-  estimatedCost   Float?
-
-  // Qui i quan
-  userId          String?
-  userEmail       String?
-
-  // Metadades
-  success         Boolean        @default(true)
-  errorMessage    String?
-  durationMs      Int?           // Duració de la petició en ms
-
-  createdAt       DateTime       @default(now())
+  id            String     @id @default(cuid())
+  providerId    String
+  useCase       AIUseCase
+  modelId       String
+  inputTokens   Int
+  outputTokens  Int
+  totalTokens   Int
+  estimatedCost Float?
+  userId        String?
+  userEmail     String?
+  success       Boolean    @default(true)
+  errorMessage  String?
+  durationMs    Int?
+  createdAt     DateTime   @default(now())
+  provider      AIProvider @relation(fields: [providerId], references: [id])
 
   @@index([providerId, createdAt])
   @@index([useCase, createdAt])
@@ -2142,23 +2111,28 @@ model user_notifications {
   @@index([userId, isRead])
 }
 
+/// Proveïdors d'IA disponibles
+enum AIProviderType {
+  OPENAI
+  ANTHROPIC
+  GEMINI
+}
+
+/// Casos d'ús de la IA
+enum AIUseCase {
+  LEADS
+  CONTENT
+}
+
 enum UserRole {
-  // Nivell 1 - Propietat
   SUPER_ADMIN
-
-  // Nivell 2 - Direcció
   ADMIN
-
-  // Nivell 3 - Supervisors CRM
+  ADMIN_GESTIO
   CRM_COMERCIAL
   CRM_CONTINGUT
-
-  // Nivell 4 - Gestors Comercials
   GESTOR_ESTANDARD
   GESTOR_ESTRATEGIC
   GESTOR_ENTERPRISE
-
-  // Altres
   MODERATOR
   COMPANY
   USER
@@ -2335,6 +2309,17 @@ enum NotificationType {
   OFFER_EXPIRING
   NEW_FAVORITE
   WEEKLY_SUMMARY
+  LEAD_VERIFIED
+  COMPANY_ASSIGNED
+  COMPANY_COMPLETED
+  COMPANY_PUBLISHED
+  NEW_MESSAGE
+  TASK_ASSIGNED
+  PAYMENT_RECEIVED
+  PLAN_EXPIRING
+  INFO
+  WARNING
+  SUCCESS
 }
 
 enum ProfileChangeStatus {
@@ -2514,6 +2499,9 @@ enum LeadStatus {
   CONTACTED
   QUALIFIED
   PROPOSAL_SENT
+  PENDING_CRM        // Pendent verificació CRM (Gestor ha completat, espera CRM)
+  CRM_APPROVED       // Aprovat per CRM, pendent Admin
+  PENDING_ADMIN      // Pendent contractació Admin (CRM ha verificat, espera Admin)
   NEGOTIATION
   DOCUMENTATION
   WON
@@ -2604,6 +2592,113 @@ enum AdministrationType {
   CENTRAL
 }
 
+// ============================================
+// CHECKLIST SISTEMA
+// ============================================
+
+// Definició dels checks per fase (configuració)
+model PhaseCheckDefinition {
+  id          String   @id @default(cuid())
+  phase       String   // NEW, CONTACTED, QUALIFIED, etc.
+  order       Int      // Ordre dins la fase
+  title       String   // Títol del check
+  description String   @db.Text // Descripció/instruccions
+  isRequired  Boolean  @default(true) // Obligatori per avançar?
+
+  // Enllaç a recurs
+  resourceType  String?  // 'eines' | 'external' | null
+  resourceId    String?  // ID del recurs Eines (si aplica)
+  externalUrl   String?  // URL externa (si aplica)
+  externalLabel String?  // Text del link extern
+
+  // Rols que han de completar aquest check
+  allowedRoles  String[] // ['GESTOR_ESTANDARD', 'CRM_COMERCIAL', etc.]
+
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relació amb els checks completats
+  completedChecks LeadPhaseCheck[]
+
+  @@index([phase])
+  @@map("phase_check_definitions")
+}
+
+// Registre de checks completats per lead
+model LeadPhaseCheck {
+  id              String   @id @default(cuid())
+  leadId          String
+  checkDefinitionId String
+
+  isCompleted     Boolean  @default(false)
+  completedAt     DateTime?
+  completedById   String?
+  notes           String?  @db.Text // Notes opcionals del gestor
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relacions
+  lead            CompanyLead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  checkDefinition PhaseCheckDefinition @relation(fields: [checkDefinitionId], references: [id])
+  completedBy     User? @relation(fields: [completedById], references: [id])
+
+  @@unique([leadId, checkDefinitionId])
+  @@index([leadId])
+  @@map("lead_phase_checks")
+}
+
+// ============================================
+// CATÀLEG EINES (Recursos)
+// ============================================
+
+// Categories de recursos
+model EinesCategory {
+  id          String   @id @default(cuid())
+  name        String   // "Speeches", "Plantilles Correu", etc.
+  slug        String   @unique // "speeches", "correus", etc.
+  description String?
+  icon        String?  // Icona Material Design
+  order       Int      @default(0)
+
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  resources   EinesResource[]
+
+  @@map("eines_categories")
+}
+
+// Recursos individuals
+model EinesResource {
+  id          String   @id @default(cuid())
+  categoryId  String
+
+  title       String   // "Trucada inicial de presentació"
+  slug        String   @unique // "trucada-inicial"
+  summary     String   @db.Text // Resum curt
+  content     String   @db.Text // Contingut complet amb variables {{empresa}}, {{contacte}}
+
+  // Metadades
+  tags        String[] // Per cercar
+  isTemplate  Boolean  @default(true) // Té variables per substituir?
+
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdById String?
+  updatedById String?
+
+  category    EinesCategory @relation(fields: [categoryId], references: [id])
+  createdBy   User? @relation("EinesCreatedBy", fields: [createdById], references: [id])
+  updatedBy   User? @relation("EinesUpdatedBy", fields: [updatedById], references: [id])
+
+  @@index([categoryId])
+  @@map("eines_resources")
+}
+
 enum PermissionType {
   MANAGE_USERS
   MANAGE_ROLES
@@ -2660,4 +2755,90 @@ enum PermissionType {
   VIEW_AUDIT_LOGS
   MANAGE_TRANSLATIONS
   MANAGE_COMMUNITIES
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SISTEMA DE RECURSOS COMERCIALS (NUEVOS MODELS)
+// ═══════════════════════════════════════════════════════════════
+
+enum ResourceType {
+  SPEECH           // Script de trucada
+  EMAIL_TEMPLATE   // Plantilla de correu
+  DOCUMENT         // Precontracte, proposta
+  GUIDE            // Guia o manual
+  VIDEO            // Vídeo formatiu
+  CHECKLIST        // Llista de verificació
+}
+
+enum PipelinePhase {
+  PROSPECCIO
+  NEGOCIACIO
+  TANCAMENT
+  POST_VENDA
+  ALL
+}
+
+enum ResourceCategory {
+  TRUCADA_INICIAL
+  SEGUIMENT
+  PRESENTACIO_PLANS
+  NEGOCIACIO_PREUS
+  TANCAMENT_VENDA
+  DOCUMENTACIO
+  OBJECIONS
+  ONBOARDING
+}
+
+model CommercialResource {
+  id          String           @id @default(cuid())
+  slug        String           @unique
+  title       String
+  description String           @db.Text
+  type        ResourceType
+  phase       PipelinePhase
+  category    ResourceCategory
+  content     Json             // Contingut estructurat segons tipus
+  tags        String[]         // Array de tags
+  order       Int              @default(0)
+  isActive    Boolean          @default(true)
+
+  // Metadades
+  createdById String
+  updatedById String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  // Relacions
+  createdBy   User             @relation("ResourceCreator", fields: [createdById], references: [id])
+  updatedBy   User?            @relation("ResourceUpdater", fields: [updatedById], references: [id])
+
+  // Historial d'ús pels gestors
+  usageHistory ResourceUsage[]
+
+  @@index([type])
+  @@index([phase])
+  @@index([category])
+  @@index([isActive])
+  @@map("commercial_resources")
+}
+
+// Registre d'ús de recursos pels gestors
+model ResourceUsage {
+  id          String             @id @default(cuid())
+  resourceId  String
+  userId      String             // Gestor que l'ha usat
+  leadId      String?            // Lead per al qual s'ha usat (opcional)
+  action      String             // 'view', 'copy', 'extract', 'send_email'
+  extractedContent Json?         // Contingut personalitzat generat
+  createdAt   DateTime           @default(now())
+
+  resource    CommercialResource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lead        CompanyLead?       @relation(fields: [leadId], references: [id], onDelete: SetNull)
+
+  @@index([resourceId])
+  @@index([userId])
+  @@index([leadId])
+  @@index([createdAt])
+  @@map("resource_usage")
 }

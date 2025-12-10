@@ -22,6 +22,7 @@ import {
 export const ROLE_HIERARCHY: Record<UserRole, number> = {
   SUPER_ADMIN: 100,
   ADMIN: 90,
+  ADMIN_GESTIO: 85,
   CRM_COMERCIAL: 70,
   CRM_CONTINGUT: 70,
   GESTOR_ENTERPRISE: 50,
@@ -38,7 +39,7 @@ export const ROLE_HIERARCHY: Record<UserRole, number> = {
 
 export const ROLE_GROUPS = {
   // Administradors amb accés total
-  ADMINS: ['SUPER_ADMIN', 'ADMIN'] as UserRole[],
+  ADMINS: ['SUPER_ADMIN', 'ADMIN', 'ADMIN_GESTIO'] as UserRole[],
 
   // Supervisors CRM
   SUPERVISORS: ['CRM_COMERCIAL', 'CRM_CONTINGUT'] as UserRole[],
@@ -53,7 +54,7 @@ export const ROLE_GROUPS = {
   CONTENT_TEAM: ['CRM_CONTINGUT', 'MODERATOR'] as UserRole[],
 
   // Tots els que poden accedir a /gestio/
-  ALL_GESTIO: ['SUPER_ADMIN', 'ADMIN', 'CRM_COMERCIAL', 'CRM_CONTINGUT', 'GESTOR_ESTANDARD', 'GESTOR_ESTRATEGIC', 'GESTOR_ENTERPRISE'] as UserRole[],
+  ALL_GESTIO: ['SUPER_ADMIN', 'ADMIN', 'ADMIN_GESTIO', 'CRM_COMERCIAL', 'CRM_CONTINGUT', 'GESTOR_ESTANDARD', 'GESTOR_ESTRATEGIC', 'GESTOR_ENTERPRISE'] as UserRole[],
 
   // Poden veure totes les dades comercials
   CAN_VIEW_ALL_COMMERCIAL: ['SUPER_ADMIN', 'ADMIN', 'CRM_COMERCIAL'] as UserRole[],
@@ -62,7 +63,7 @@ export const ROLE_GROUPS = {
   CAN_VERIFY: ['SUPER_ADMIN', 'ADMIN', 'CRM_COMERCIAL'] as UserRole[],
 
   // Poden assignar leads/empreses
-  CAN_ASSIGN: ['SUPER_ADMIN', 'ADMIN', 'CRM_COMERCIAL'] as UserRole[],
+  CAN_ASSIGN: ['SUPER_ADMIN', 'ADMIN', 'ADMIN_GESTIO', 'CRM_COMERCIAL'] as UserRole[],
 
   // Poden gestionar equip
   CAN_MANAGE_TEAM: ['SUPER_ADMIN', 'ADMIN', 'CRM_COMERCIAL'] as UserRole[],
@@ -80,7 +81,7 @@ export const PERMISSIONS = {
   LEADS_EDIT: ['SUPER_ADMIN', 'ADMIN', 'CRM_COMERCIAL', 'GESTOR_ESTANDARD', 'GESTOR_ESTRATEGIC', 'GESTOR_ENTERPRISE'] as UserRole[],
   LEADS_DELETE: ['SUPER_ADMIN', 'ADMIN', 'CRM_COMERCIAL'] as UserRole[],
   LEADS_VERIFY: ['SUPER_ADMIN', 'ADMIN', 'CRM_COMERCIAL'] as UserRole[],
-  LEADS_ASSIGN: ['SUPER_ADMIN', 'ADMIN', 'CRM_COMERCIAL'] as UserRole[],
+  LEADS_ASSIGN: ['SUPER_ADMIN', 'ADMIN', 'ADMIN_GESTIO', 'CRM_COMERCIAL'] as UserRole[],
   LEADS_AI_GENERATE: ['SUPER_ADMIN', 'ADMIN', 'CRM_COMERCIAL', 'GESTOR_ESTANDARD', 'GESTOR_ESTRATEGIC', 'GESTOR_ENTERPRISE'] as UserRole[],
   LEADS_EXPORT: ['SUPER_ADMIN', 'ADMIN', 'CRM_COMERCIAL'] as UserRole[],
 
@@ -108,7 +109,7 @@ export const PERMISSIONS = {
   VERIFICATION_ACCESS: ['SUPER_ADMIN', 'ADMIN', 'CRM_COMERCIAL'] as UserRole[],
 
   // ASSIGNACIONS
-  ASSIGNMENTS_ACCESS: ['SUPER_ADMIN', 'ADMIN', 'CRM_COMERCIAL'] as UserRole[],
+  ASSIGNMENTS_ACCESS: ['SUPER_ADMIN', 'ADMIN', 'ADMIN_GESTIO', 'CRM_COMERCIAL'] as UserRole[],
 
   // ESTADÍSTIQUES
   STATS_VIEW_ALL: ['SUPER_ADMIN', 'ADMIN'] as UserRole[],
@@ -244,6 +245,7 @@ export function getRoleLabel(role: UserRole | undefined | null): string {
   const labels: Record<UserRole, string> = {
     SUPER_ADMIN: 'Super Administrador',
     ADMIN: 'Administrador',
+    ADMIN_GESTIO: 'Admin Gestió',
     CRM_COMERCIAL: 'CRM Comercial',
     CRM_CONTINGUT: 'CRM Contingut',
     GESTOR_ESTANDARD: 'Gestor Estàndard',
@@ -266,6 +268,7 @@ export function getRoleBadgeColor(role: UserRole | undefined | null): string {
   const colors: Record<UserRole, string> = {
     SUPER_ADMIN: 'bg-red-100 text-red-700',
     ADMIN: 'bg-orange-100 text-orange-700',
+    ADMIN_GESTIO: 'bg-pink-100 text-pink-700',
     CRM_COMERCIAL: 'bg-blue-100 text-blue-700',
     CRM_CONTINGUT: 'bg-purple-100 text-purple-700',
     GESTOR_ESTANDARD: 'bg-slate-100 text-slate-700',
@@ -288,6 +291,7 @@ export function getRoleIcon(role: UserRole | undefined | null): React.ComponentT
   const icons: Record<UserRole, React.ComponentType<any>> = {
     SUPER_ADMIN: Crown,
     ADMIN: Settings,
+    ADMIN_GESTIO: Shield,
     CRM_COMERCIAL: BarChart3,
     CRM_CONTINGUT: FileText,
     GESTOR_ESTANDARD: Briefcase,
@@ -353,6 +357,7 @@ export function getDashboardType(role: UserRole | undefined | null): DashboardTy
   if (!role) return 'gestor'
 
   if (['SUPER_ADMIN', 'ADMIN'].includes(role)) return 'admin'
+  if (role === 'ADMIN_GESTIO') return 'crm_comercial'
   if (role === 'CRM_COMERCIAL') return 'crm_comercial'
   if (role === 'CRM_CONTINGUT') return 'crm_contingut'
 

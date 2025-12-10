@@ -1,315 +1,258 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { Bell, X, Settings } from 'lucide-react';
-import Link from 'next/link';
+import { useState, useEffect, useRef } from 'react'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
+import { Bell, Check, CheckCheck, ExternalLink, Loader2 } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import {
+  getUserNotifications,
+  getUnreadCount,
+  markAsRead,
+  markAllAsRead
+} from '@/lib/notifications/notification-actions'
 
 interface Notification {
-  id: string;
-  type: string;
-  title: string;
-  message: string;
-  actionUrl?: string;
-  isRead: boolean;
-  createdAt: string;
-  sender?: {
-    id: string;
-    name: string;
-    image?: string;
-  } | null;
+  id: string
+  type: string
+  title: string
+  message: string
+  actionUrl: string | null
+  isRead: boolean
+  createdAt: string
 }
 
-interface NotificationResponse {
-  success: boolean;
-  notifications: Notification[];
-  pagination: {
-    total: number;
-    unread: number;
-    hasMore: boolean;
-  };
-}
+export function NotificationBell() {
+  const { data: session } = useSession()
+  const router = useRouter()
+  const [isOpen, setIsOpen] = useState(false)
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [loading, setLoading] = useState(false)
+  const [markingAll, setMarkingAll] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
-export default function NotificationBell() {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const userId = session?.user?.id
 
-  useEffect(() => {
-    loadNotifications();
-
-    // Polling cada 30 segundos para nuevas notificaciones
-    const interval = setInterval(loadNotifications, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
+  // Carregar notificacions
   const loadNotifications = async () => {
-    try {
-      const response = await fetch('/api/notifications?limit=5');
-      const data: NotificationResponse = await response.json();
+    if (!userId) return
 
-      if (data.success) {
-        setNotifications(data.notifications);
-        setUnreadCount(data.pagination.unread);
+    try {
+      const [notifResult, countResult] = await Promise.all([
+        getUserNotifications(userId, 15),
+        getUnreadCount(userId)
+      ])
+
+      if (notifResult.success) {
+        setNotifications(notifResult.notifications as Notification[])
+      }
+      if (countResult.success) {
+        setUnreadCount(countResult.count)
       }
     } catch (error) {
-      console.error('Error loading notifications:', error);
+      console.error('Error carregant notificacions:', error)
     }
-  };
+  }
 
-  const markAsRead = async (notificationId: string) => {
-    try {
-      await fetch(`/api/notifications/${notificationId}/read`, {
-        method: 'PUT'
-      });
-
-      // Actualizar estado local
-      setNotifications(notifications.map(n =>
-        n.id === notificationId ? { ...n, isRead: true } : n
-      ));
-      setUnreadCount(Math.max(0, unreadCount - 1));
-
-    } catch (error) {
-      console.error('Error marking as read:', error);
-    }
-  };
-
-  const markAllAsRead = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch('/api/notifications/mark-all-read', {
-        method: 'PUT'
-      });
-
-      if (response.ok) {
-        setNotifications(notifications.map(n => ({ ...n, isRead: true })));
-        setUnreadCount(0);
-      }
-
-    } catch (error) {
-      console.error('Error marking all as read:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getNotificationIcon = (type: string): string => {
-    switch (type) {
-      case 'COUPON_GENERATED':
-        return '🎫';
-      case 'COUPON_USED':
-        return '✅';
-      case 'OFFER_EXPIRING':
-        return '⏰';
-      case 'NEW_FAVORITE':
-        return '❤️';
-      case 'WEEKLY_SUMMARY':
-        return '📊';
-      case 'COMPANY_APPROVED':
-        return '✅';
-      case 'COMPANY_REJECTED':
-        return '❌';
-      default:
-        return '🔔';
-    }
-  };
-
-  const formatTime = (dateString: string): string => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(diff / 3600000);
-    const days = Math.floor(diff / 86400000);
-
-    if (minutes < 1) return 'Ara mateix';
-    if (minutes < 60) return `Fa ${minutes}m`;
-    if (hours < 24) return `Fa ${hours}h`;
-    return `Fa ${days}d`;
-  };
-
-  // Cerrar dropdown al hacer click fuera
+  // Polling cada 30 segons
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Element;
-      if (!target.closest('.notification-bell')) {
-        setShowDropdown(false);
-      }
-    };
+    if (!userId) return
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    loadNotifications()
+
+    const interval = setInterval(loadNotifications, 30000)
+    return () => clearInterval(interval)
+  }, [userId])
+
+  // Tancar dropdown en clicar fora
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // Marcar una notificació com a llegida i navegar
+  const handleNotificationClick = async (notification: Notification) => {
+    if (!notification.isRead) {
+      await markAsRead(notification.id)
+      setNotifications(prev =>
+        prev.map(n => n.id === notification.id ? { ...n, isRead: true } : n)
+      )
+      setUnreadCount(prev => Math.max(0, prev - 1))
+    }
+
+    if (notification.actionUrl) {
+      setIsOpen(false)
+      router.push(notification.actionUrl)
+    }
+  }
+
+  // Marcar totes com a llegides
+  const handleMarkAllAsRead = async () => {
+    if (!userId) return
+
+    setMarkingAll(true)
+    try {
+      await markAllAsRead(userId)
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })))
+      setUnreadCount(0)
+    } catch (error) {
+      console.error('Error marcant totes com a llegides:', error)
+    } finally {
+      setMarkingAll(false)
+    }
+  }
+
+  // Obtenir icona segons tipus
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'COMPANY_ASSIGNED':
+        return '👤'
+      case 'COMPANY_PENDING':
+        return '📋'
+      case 'LEAD_VERIFIED':
+        return '✅'
+      case 'COMPANY_APPROVED':
+        return '🏢'
+      case 'GENERAL':
+        return '🔔'
+      default:
+        return '🔔'
+    }
+  }
+
+  // Format temps relatiu
+  const getRelativeTime = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+
+    if (diffMins < 1) return 'Ara mateix'
+    if (diffMins < 60) return `Fa ${diffMins} min`
+    if (diffHours < 24) return `Fa ${diffHours}h`
+    if (diffDays < 7) return `Fa ${diffDays}d`
+    return date.toLocaleDateString('ca-ES', { day: 'numeric', month: 'short' })
+  }
+
+  if (!userId) return null
 
   return (
-    <div className="relative notification-bell">
-      {/* Bell Icon Button */}
+    <div className="relative" ref={dropdownRef}>
+      {/* Botó campaneta */}
       <button
-        onClick={() => setShowDropdown(!showDropdown)}
-        className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
-        aria-label={`Notificacions ${unreadCount > 0 ? `(${unreadCount} sense llegir)` : ''}`}
+        onClick={() => setIsOpen(!isOpen)}
+        className={cn(
+          'relative p-2 rounded-lg transition-colors',
+          'hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-200',
+          isOpen && 'bg-slate-100'
+        )}
+        aria-label="Notificacions"
       >
-        <Bell className="w-5 h-5 text-gray-600" />
+        <Bell className="h-5 w-5 text-slate-600" strokeWidth={1.5} />
 
-        {/* Badge de notificaciones sin leer */}
+        {/* Badge comptador */}
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-            {unreadCount > 9 ? '9+' : unreadCount}
+          <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-xs font-bold text-white bg-red-500 rounded-full">
+            {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
       </button>
 
-      {/* Dropdown Panel */}
-      {showDropdown && (
-        <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-[32rem] overflow-hidden">
+      {/* Dropdown */}
+      {isOpen && (
+        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-lg border border-slate-200 z-50 overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b bg-gray-50">
-            <h3 className="font-semibold text-gray-900">Notificacions</h3>
-            <div className="flex items-center gap-2">
-              {unreadCount > 0 && (
-                <button
-                  onClick={markAllAsRead}
-                  disabled={loading}
-                  className="text-sm text-blue-600 hover:text-blue-700 disabled:opacity-50 transition-colors"
-                >
-                  {loading ? 'Marcant...' : 'Marcar totes com llegides'}
-                </button>
-              )}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50">
+            <h3 className="font-semibold text-slate-900">Notificacions</h3>
+            {unreadCount > 0 && (
               <button
-                onClick={() => setShowDropdown(false)}
-                className="p-1 hover:bg-gray-200 rounded transition-colors"
-                aria-label="Tancar notificacions"
+                onClick={handleMarkAllAsRead}
+                disabled={markingAll}
+                className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium disabled:opacity-50"
               >
-                <X className="w-4 h-4 text-gray-500" />
+                {markingAll ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <CheckCheck className="h-3 w-3" />
+                )}
+                Marcar totes llegides
               </button>
-            </div>
-          </div>
-
-          {/* Notifications List */}
-          <div className="max-h-96 overflow-y-auto">
-            {notifications.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">
-                <Bell className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                <p className="text-sm">No tens notificacions</p>
-                <p className="text-xs text-gray-400 mt-1">Les teves notificacions apareixeran aquí</p>
-              </div>
-            ) : (
-              notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  className={`border-b hover:bg-gray-50 transition-colors ${
-                    !notification.isRead ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
-                  }`}
-                >
-                  {notification.actionUrl ? (
-                    <Link
-                      href={notification.actionUrl}
-                      onClick={() => {
-                        if (!notification.isRead) {
-                          markAsRead(notification.id);
-                        }
-                        setShowDropdown(false);
-                      }}
-                      className="block p-4"
-                    >
-                      <NotificationContent
-                        notification={notification}
-                        getIcon={getNotificationIcon}
-                        formatTime={formatTime}
-                      />
-                    </Link>
-                  ) : (
-                    <div
-                      className="p-4 cursor-pointer"
-                      onClick={() => {
-                        if (!notification.isRead) {
-                          markAsRead(notification.id);
-                        }
-                      }}
-                    >
-                      <NotificationContent
-                        notification={notification}
-                        getIcon={getNotificationIcon}
-                        formatTime={formatTime}
-                      />
-                    </div>
-                  )}
-                </div>
-              ))
             )}
           </div>
 
-          {/* Footer */}
-          {notifications.length > 0 && (
-            <div className="border-t bg-gray-50">
-              <Link
-                href="/dashboard/notificacions"
-                className="block text-center text-sm text-blue-600 hover:text-blue-700 font-medium p-3 hover:bg-gray-100 transition-colors"
-                onClick={() => setShowDropdown(false)}
-              >
-                Veure totes les notificacions
-              </Link>
+          {/* Llista de notificacions */}
+          <div className="max-h-[400px] overflow-y-auto">
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+              </div>
+            ) : notifications.length === 0 ? (
+              <div className="py-8 text-center">
+                <Bell className="h-10 w-10 text-slate-300 mx-auto mb-2" strokeWidth={1.5} />
+                <p className="text-sm text-slate-500">No tens notificacions</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100">
+                {notifications.map((notification) => (
+                  <button
+                    key={notification.id}
+                    onClick={() => handleNotificationClick(notification)}
+                    className={cn(
+                      'w-full px-4 py-3 text-left transition-colors hover:bg-slate-50',
+                      !notification.isRead && 'bg-blue-50/50'
+                    )}
+                  >
+                    <div className="flex gap-3">
+                      {/* Icona */}
+                      <span className="text-lg flex-shrink-0">
+                        {getNotificationIcon(notification.type)}
+                      </span>
 
-              {/* Enlace a preferencias */}
-              <Link
-                href="/dashboard/configuracio/preferencies"
-                className="flex items-center justify-center gap-2 text-sm text-gray-600 hover:text-gray-900 font-medium p-3 hover:bg-gray-100 border-t transition-colors"
-                onClick={() => setShowDropdown(false)}
-              >
-                <Settings className="w-4 h-4" />
-                Configurar preferències
-              </Link>
-            </div>
-          )}
+                      {/* Contingut */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className={cn(
+                            'text-sm',
+                            !notification.isRead ? 'font-semibold text-slate-900' : 'font-medium text-slate-700'
+                          )}>
+                            {notification.title}
+                          </p>
+                          {!notification.isRead && (
+                            <span className="flex-shrink-0 w-2 h-2 mt-1.5 rounded-full bg-blue-500" />
+                          )}
+                        </div>
+                        <p className="text-sm text-slate-600 mt-0.5 overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                          {notification.message}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <span className="text-xs text-slate-400">
+                            {getRelativeTime(notification.createdAt)}
+                          </span>
+                          {notification.actionUrl && (
+                            <span className="flex items-center gap-0.5 text-xs text-blue-500">
+                              <ExternalLink className="h-3 w-3" />
+                              Veure
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
-  );
-}
-
-// Componente para el contenido de cada notificación
-interface NotificationContentProps {
-  notification: Notification;
-  getIcon: (type: string) => string;
-  formatTime: (dateString: string) => string;
-}
-
-function NotificationContent({ notification, getIcon, formatTime }: NotificationContentProps) {
-  return (
-    <div className="flex gap-3">
-      {/* Icon */}
-      <div className="text-2xl flex-shrink-0 mt-0.5">
-        {getIcon(notification.type)}
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        <p className="font-medium text-gray-900 text-sm line-clamp-1">
-          {notification.title}
-        </p>
-        <p className="text-gray-600 text-sm mt-1 line-clamp-2">
-          {notification.message}
-        </p>
-
-        {/* Meta info */}
-        <div className="flex items-center justify-between mt-2">
-          <p className="text-gray-400 text-xs">
-            {formatTime(notification.createdAt)}
-          </p>
-
-          {/* Sender info */}
-          {notification.sender && (
-            <p className="text-xs text-gray-400">
-              De {notification.sender.name}
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Unread indicator */}
-      {!notification.isRead && (
-        <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0 mt-2" />
-      )}
-    </div>
-  );
+  )
 }

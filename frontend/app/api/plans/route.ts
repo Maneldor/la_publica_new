@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prismaClient } from '@/lib/prisma';
 
 /**
  * GET /api/plans
@@ -7,10 +7,7 @@ import { PrismaClient } from '@prisma/client';
  * Usat tant per Admin com per Empresa
  */
 export async function GET(request: NextRequest) {
-  let prismaClient;
-
   try {
-    prismaClient = new PrismaClient();
     
     const planes = await prismaClient.planConfig.findMany({
       where: {
@@ -61,9 +58,5 @@ export async function GET(request: NextRequest) {
       { success: false, error: 'Error al obtenir plans' },
       { status: 500 }
     );
-  } finally {
-    if (prismaClient) {
-      await prismaClient.$disconnect();
-    }
   }
 }

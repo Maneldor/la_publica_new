@@ -3,6 +3,10 @@
 
 import { prismaClient } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
+import {
+  notifyLeadVerifiedForAdmin,
+  getAdminUserIds
+} from '@/lib/notifications/notification-actions'
 
 /**
  * Obtenir estadístiques de verificació
@@ -156,21 +160,49 @@ export async function approveLead(
     where: { id: leadId },
     data: {
       status: 'WON',
+      stage: 'PENDING_ADMIN',
       updatedAt: new Date(),
     },
   })
 
   // Crear activitat
+  // Verificar que l'usuari existeix
+  const userExists = userId ? await prismaClient.user.findUnique({
+    where: { id: userId },
+    select: { id: true }
+  }) : null
+
   await prismaClient.leadActivity.create({
     data: {
       leadId,
       type: 'WON',
       description: notes ? `Aprovat pel CRM: ${notes}` : 'Aprovat pel CRM',
-      userId: userId,
+      userId: userExists ? userId : null,
     },
   })
 
+  // Obtenir qui ha verificat
+  const verifier = await prismaClient.user.findUnique({
+    where: { id: userId },
+    select: { name: true }
+  })
+
+  // Obtenir tots els usuaris Admin per notificar
+  const adminUserIds = await getAdminUserIds()
+
+  // Disparar notificacions als Admins
+  if (adminUserIds.length > 0) {
+    await notifyLeadVerifiedForAdmin(
+      adminUserIds,
+      leadId,
+      lead.companyName,
+      verifier?.name || 'CRM'
+    )
+    console.log('🔔 Notificacions enviades a', adminUserIds.length, 'admins per lead verificat:', leadId)
+  }
+
   revalidatePath('/gestio/crm/verificacio')
+  revalidatePath('/admin/empreses-pendents')
 
   return lead
 }
@@ -192,12 +224,18 @@ export async function rejectLead(
   })
 
   // Crear activitat
+  // Verificar que l'usuari existeix
+  const userExists = userId ? await prismaClient.user.findUnique({
+    where: { id: userId },
+    select: { id: true }
+  }) : null
+
   await prismaClient.leadActivity.create({
     data: {
       leadId,
       type: 'LOST',
       description: `Rebutjat pel CRM: ${reason}`,
-      userId: userId,
+      userId: userExists ? userId : null,
     },
   })
 
@@ -218,21 +256,57 @@ export async function bulkApproveLeads(
     where: { id: { in: leadIds } },
     data: {
       status: 'WON',
+      stage: 'PENDING_ADMIN',
       updatedAt: new Date(),
     },
   })
 
   // Crear activitats
+  // Verificar que l'usuari existeix abans de crear les activitats
+  const userExists = userId ? await prismaClient.user.findUnique({
+    where: { id: userId },
+    select: { id: true }
+  }) : null
+
   await prismaClient.leadActivity.createMany({
     data: leadIds.map((leadId) => ({
       leadId,
       type: 'WON',
       description: notes ? `Aprovat en bloc: ${notes}` : 'Aprovat en bloc pel CRM',
-      userId: userId,
+      userId: userExists ? userId : null,
     })),
   })
 
+  // Obtenir noms dels leads per enviar notificacions
+  const approvedLeads = await prismaClient.companyLead.findMany({
+    where: { id: { in: leadIds } },
+    select: { id: true, companyName: true }
+  })
+
+  // Obtenir qui ha verificat
+  const verifier = await prismaClient.user.findUnique({
+    where: { id: userId },
+    select: { name: true }
+  })
+
+  // Obtenir tots els usuaris Admin per notificar
+  const adminUserIds = await getAdminUserIds()
+
+  // Enviar notificació per cada lead aprovat
+  if (adminUserIds.length > 0) {
+    for (const lead of approvedLeads) {
+      await notifyLeadVerifiedForAdmin(
+        adminUserIds,
+        lead.id,
+        lead.companyName,
+        verifier?.name || 'CRM'
+      )
+    }
+    console.log('🔔 Notificacions enviades a', adminUserIds.length, 'admins per', approvedLeads.length, 'leads verificats')
+  }
+
   revalidatePath('/gestio/crm/verificacio')
+  revalidatePath('/admin/empreses-pendents')
 }
 
 /**
@@ -252,12 +326,18 @@ export async function bulkRejectLeads(
   })
 
   // Crear activitats
+  // Verificar que l'usuari existeix abans de crear les activitats
+  const userExists = userId ? await prismaClient.user.findUnique({
+    where: { id: userId },
+    select: { id: true }
+  }) : null
+
   await prismaClient.leadActivity.createMany({
     data: leadIds.map((leadId) => ({
       leadId,
       type: 'LOST',
       description: `Rebutjat en bloc: ${reason}`,
-      userId: userId,
+      userId: userExists ? userId : null,
     })),
   })
 
@@ -356,34 +436,40 @@ export async function seedVerificationLeads(userId: string) {
     })
 
     // Crear algunes activitats de prova
+    // Verificar que l'usuari existeix
+    const userExists = userId ? await prismaClient.user.findUnique({
+      where: { id: userId },
+      select: { id: true }
+    }) : null
+
     await prismaClient.leadActivity.createMany({
       data: [
         {
           leadId: lead.id,
           type: 'CREATED',
           description: 'Lead creat al sistema',
-          userId:userId,
+          userId: userExists ? userId : null,
           createdAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000),
         },
         {
           leadId: lead.id,
           type: 'STATUS_CHANGE',
           description: 'Estat canviat a Contactat',
-          userId:userId,
+          userId: userExists ? userId : null,
           createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
         },
         {
           leadId: lead.id,
           type: 'NOTE',
           description: 'Trucada inicial realitzada. Client interessat.',
-          userId:userId,
+          userId: userExists ? userId : null,
           createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
         },
         {
           leadId: lead.id,
           type: 'STATUS_CHANGE',
           description: 'Enviat a verificació CRM',
-          userId:userId,
+          userId: userExists ? userId : null,
           createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
         },
       ],

@@ -1,7 +1,7 @@
 // components/gestio-empreses/leads/LeadFiltersCompact.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Search, SlidersHorizontal, X } from 'lucide-react'
 import { FilterDropdown } from './FilterDropdown'
@@ -28,17 +28,13 @@ const priorityOptions = [
 ]
 
 const sourceOptions = [
-  { value: 'WEB', label: 'Web' },
+  { value: 'AI_PROSPECTING', label: 'IA Generats' },
+  { value: 'MANUAL', label: 'Manual' },
+  { value: 'WEB_FORM', label: 'Formulari Web' },
   { value: 'REFERRAL', label: 'Referit' },
-  { value: 'COLD_CALL', label: 'Trucada freda' },
-  { value: 'EVENT', label: 'Esdeveniment' },
-  { value: 'LINKEDIN', label: 'LinkedIn' },
-  { value: 'SOCIAL_MEDIA', label: 'Xarxes socials' },
-  { value: 'EMAIL_CAMPAIGN', label: 'Campanya email' },
-  { value: 'TRADE_SHOW', label: 'Fira comercial' },
-  { value: 'PARTNER', label: 'Soci comercial' },
-  { value: 'ADVERTISING', label: 'Publicitat' },
-  { value: 'OTHER', label: 'Altres' },
+  { value: 'EMPLOYEE_SUGGESTION', label: 'Suggeriment Empleat' },
+  { value: 'INBOUND', label: 'Entrant' },
+  { value: 'COLD_OUTREACH', label: 'Prospecció Freda' },
 ]
 
 const sectorOptions = [
@@ -79,8 +75,13 @@ export function LeadFiltersCompact({ gestors }: LeadFiltersCompactProps) {
   const [sector, setSector] = useState<string[]>(searchParams.get('sector')?.split(',').filter(Boolean) || [])
   const [gestor, setGestor] = useState<string[]>(searchParams.get('gestor')?.split(',').filter(Boolean) || [])
 
-  const updateURL = () => {
+  const updateURL = useCallback(() => {
     const params = new URLSearchParams()
+
+    // Preservar el paràmetre view si existeix
+    const currentView = searchParams.get('view')
+    if (currentView) params.set('view', currentView)
+
     if (search) params.set('search', search)
     if (status.length) params.set('status', status.join(','))
     if (priority.length) params.set('priority', priority.join(','))
@@ -88,12 +89,12 @@ export function LeadFiltersCompact({ gestors }: LeadFiltersCompactProps) {
     if (sector.length) params.set('sector', sector.join(','))
     if (gestor.length) params.set('gestor', gestor.join(','))
     router.push(`/gestio/leads?${params.toString()}`)
-  }
+  }, [search, status, priority, source, sector, gestor, searchParams, router])
 
   useEffect(() => {
     const debounce = setTimeout(updateURL, 300)
     return () => clearTimeout(debounce)
-  }, [status, priority, source, sector, gestor])
+  }, [status, priority, source, sector, gestor, updateURL])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -125,7 +126,14 @@ export function LeadFiltersCompact({ gestors }: LeadFiltersCompactProps) {
     setSource([])
     setSector([])
     setGestor([])
-    router.push('/gestio/leads')
+
+    // Preservar el paràmetre view si existeix
+    const currentView = searchParams.get('view')
+    if (currentView) {
+      router.push(`/gestio/leads?view=${currentView}`)
+    } else {
+      router.push('/gestio/leads')
+    }
   }
 
   return (

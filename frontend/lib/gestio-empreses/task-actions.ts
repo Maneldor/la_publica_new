@@ -548,3 +548,23 @@ export async function getTasksForCalendar(
 
   return tasks
 }
+
+/**
+ * Obtenir informació bàsica d'un lead per ID
+ */
+export async function getLeadBasicInfo(leadId: string) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user) {
+    throw new Error('No autoritzat')
+  }
+
+  const lead = await prismaClient.lead.findUnique({
+    where: { id: leadId },
+    select: {
+      id: true,
+      companyName: true,
+    },
+  })
+
+  return lead
+}

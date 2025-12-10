@@ -77,7 +77,7 @@ export default function TestAuthPage() {
             Necesitas iniciar sesión para probar el sistema de permisos.
           </p>
           <Link
-            href="/login-nextauth"
+            href="/login"
             className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
           >
             <User className="w-4 h-4" />
@@ -294,7 +294,7 @@ export default function TestAuthPage() {
         {/* Acciones */}
         <div className="flex justify-center gap-4 mt-8">
           <Link
-            href="/login-nextauth"
+            href="/login"
             className="inline-flex items-center gap-2 bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors"
           >
             <User className="w-4 h-4" />

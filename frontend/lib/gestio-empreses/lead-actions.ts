@@ -94,6 +94,7 @@ export async function bulkUpdateLeadStatus(leadIds: string[], status: string, us
       },
       data: {
         status,
+        stage: status,  // Sincronitzar stage amb status
         updatedAt: new Date()
       }
     })

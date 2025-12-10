@@ -1,0 +1,27 @@
+// app/api/gestio/empreses/[id]/verificar/route.ts
+import { NextRequest, NextResponse } from 'next/server'
+import { toggleEmpresaVerificacio } from '@/lib/gestio-empreses/actions/empreses-llista-actions'
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const result = await toggleEmpresaVerificacio(params.id)
+
+    if (!result.success) {
+      return NextResponse.json(
+        { error: result.error },
+        { status: 400 }
+      )
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Error en verificació empresa:', error)
+    return NextResponse.json(
+      { error: 'Error interno del servidor' },
+      { status: 500 }
+    )
+  }
+}

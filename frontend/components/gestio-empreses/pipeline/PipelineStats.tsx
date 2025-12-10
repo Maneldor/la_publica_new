@@ -24,7 +24,15 @@ export function PipelineStats({ stats }: PipelineStatsProps) {
     return `${value.toFixed(0)}€`
   }
 
-  const totalPipeline = stats.draft.amount + stats.sent.amount + stats.approved.amount + stats.invoiced.amount
+  // Valors per defecte per evitar errors
+  const draft = stats.draft || { count: 0, amount: 0 }
+  const sent = stats.sent || { count: 0, amount: 0 }
+  const approved = stats.approved || { count: 0, amount: 0 }
+  const invoiced = stats.invoiced || { count: 0, amount: 0 }
+  const paid = stats.paid || { count: 0, amount: 0 }
+  const overdue = stats.overdue || { count: 0, amount: 0 }
+
+  const totalPipeline = draft.amount + sent.amount + approved.amount + invoiced.amount
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
@@ -34,7 +42,7 @@ export function PipelineStats({ stats }: PipelineStatsProps) {
             <p className="text-xs text-slate-500">Pipeline Total</p>
             <p className="text-xl font-semibold text-slate-900">{formatCurrency(totalPipeline)}</p>
             <p className="text-xs text-slate-400">
-              {stats.draft.count + stats.sent.count + stats.approved.count + stats.invoiced.count} oberts
+              {draft.count + sent.count + approved.count + invoiced.count} oberts
             </p>
           </div>
           <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
@@ -47,8 +55,8 @@ export function PipelineStats({ stats }: PipelineStatsProps) {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs text-slate-500">Pendent Cobrament</p>
-            <p className="text-xl font-semibold text-purple-600">{formatCurrency(stats.invoiced.amount)}</p>
-            <p className="text-xs text-slate-400">{stats.invoiced.count} factures</p>
+            <p className="text-xl font-semibold text-purple-600">{formatCurrency(invoiced.amount)}</p>
+            <p className="text-xs text-slate-400">{invoiced.count} factures</p>
           </div>
           <div className="p-2 rounded-lg bg-purple-50 text-purple-600">
             <Receipt className="h-4 w-4" strokeWidth={1.5} />
@@ -60,8 +68,8 @@ export function PipelineStats({ stats }: PipelineStatsProps) {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs text-slate-500">Cobrat (Total)</p>
-            <p className="text-xl font-semibold text-green-600">{formatCurrency(stats.paid.amount)}</p>
-            <p className="text-xs text-slate-400">{stats.paid.count} completats</p>
+            <p className="text-xl font-semibold text-green-600">{formatCurrency(paid.amount)}</p>
+            <p className="text-xs text-slate-400">{paid.count} completats</p>
           </div>
           <div className="p-2 rounded-lg bg-green-50 text-green-600">
             <BadgeCheck className="h-4 w-4" strokeWidth={1.5} />
@@ -71,24 +79,24 @@ export function PipelineStats({ stats }: PipelineStatsProps) {
 
       <div className={cn(
         'bg-white rounded-xl border p-3',
-        stats.overdue.count > 0 ? 'border-red-200' : 'border-slate-200'
+        overdue.count > 0 ? 'border-red-200' : 'border-slate-200'
       )}>
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs text-slate-500">Endarrerits</p>
             <p className={cn(
               'text-xl font-semibold',
-              stats.overdue.count > 0 ? 'text-red-600' : 'text-slate-400'
+              overdue.count > 0 ? 'text-red-600' : 'text-slate-400'
             )}>
-              {stats.overdue.count > 0 ? formatCurrency(stats.overdue.amount) : '0€'}
+              {overdue.count > 0 ? formatCurrency(overdue.amount) : '0€'}
             </p>
             <p className="text-xs text-slate-400">
-              {stats.overdue.count} {stats.overdue.count === 1 ? 'element' : 'elements'}
+              {overdue.count} {overdue.count === 1 ? 'element' : 'elements'}
             </p>
           </div>
           <div className={cn(
             'p-2 rounded-lg',
-            stats.overdue.count > 0 ? 'bg-red-50 text-red-600' : 'bg-slate-50 text-slate-400'
+            overdue.count > 0 ? 'bg-red-50 text-red-600' : 'bg-slate-50 text-slate-400'
           )}>
             <AlertTriangle className="h-4 w-4" strokeWidth={1.5} />
           </div>

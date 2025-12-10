@@ -7,6 +7,9 @@ import { authOptions } from '@/lib/auth'
 import { prismaClient } from '@/lib/prisma'
 import { PIPELINE_STAGES, PipelineStage } from './pipeline-utils'
 import { PIPELINE_PHASES, PhaseId } from './pipeline-utils-phases'
+import { notifyLeadToVerify, getCRMUserIds } from '@/lib/notifications/notification-actions'
+import { canTransition, getTransitionErrorMessage, LeadStage } from './lead-permissions'
+import { GESTOR_ROLES, CRM_ROLES, ADMIN_ROLES, GESTOR_STAGES } from './pipeline-config'
 
 interface PipelineLead {
   id: string
@@ -47,9 +50,10 @@ async function verifyAccess() {
   if (!session?.user) {
     throw new Error('No autoritzat')
   }
+  const userRole = (session.user as any).role || 'USER'
   const userType = (session.user as any).userType || 'USER'
   const isSupervisor = ['SUPER_ADMIN', 'ADMIN', 'ACCOUNT_MANAGER'].includes(userType)
-  return { user: session.user, isSupervisor }
+  return { user: session.user, isSupervisor, userRole }
 }
 
 // Obtenir dades del pipeline
@@ -119,7 +123,7 @@ export async function moveLeadToStage(
   newStatus: PipelineStage
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const { user, isSupervisor } = await verifyAccess()
+    const { user, isSupervisor, userRole } = await verifyAccess()
 
     // Verificar que el lead existeix i l'usuari té accés
     const lead = await prismaClient.companyLead.findUnique({
@@ -134,35 +138,31 @@ export async function moveLeadToStage(
       return { success: false, error: 'No tens permís per modificar aquest lead' }
     }
 
-    // Validar transicions permeses
-    const allowedTransitions: Record<string, string[]> = {
-      'NEW': ['CONTACTED', 'LOST'],
-      'CONTACTED': ['NEW', 'NEGOTIATION', 'LOST'],
-      'NEGOTIATION': ['CONTACTED', 'QUALIFIED', 'LOST'],
-      'QUALIFIED': ['NEGOTIATION', 'PENDING_CRM', 'LOST'],
-      'PENDING_CRM': ['QUALIFIED', 'CRM_APPROVED', 'CRM_REJECTED'],
-      'CRM_APPROVED': ['PENDING_CRM', 'PENDING_ADMIN'],
-      'CRM_REJECTED': ['PENDING_CRM', 'QUALIFIED', 'LOST'],
-      'PENDING_ADMIN': ['CRM_APPROVED', 'WON', 'LOST'],
-      'WON': ['PENDING_ADMIN'],
-      'LOST': ['NEW', 'CONTACTED', 'NEGOTIATION'],
-    }
+    // Verificar permisos de transició utilitzant el sistema de permisos
+    const currentStage = lead.stage as LeadStage || lead.status as LeadStage
+    const targetStage = newStatus as LeadStage
 
-    // Supervisors poden fer qualsevol transició
-    if (!isSupervisor) {
-      const allowed = allowedTransitions[lead.status] || []
-      if (!allowed.includes(newStatus)) {
-        return { success: false, error: `No es pot moure de ${lead.status} a ${newStatus}` }
+    // Els administradors poden saltar-se les verificacions de permisos
+    if (!['SUPER_ADMIN', 'ADMIN', 'ADMIN_GESTIO'].includes(userRole)) {
+      if (!canTransition(userRole, currentStage, targetStage)) {
+        const errorMessage = getTransitionErrorMessage(userRole, currentStage, targetStage)
+        return { success: false, error: errorMessage }
       }
     }
 
     // Actualitzar lead
-    await prismaClient.companyLead.update({
+    const updatedLead = await prismaClient.companyLead.update({
       where: { id: leadId },
       data: {
         status: newStatus,
+        stage: newStatus,  // Sincronitzar stage amb status
         updatedAt: new Date(),
       },
+      include: {
+        assignedTo: {
+          select: { name: true, email: true }
+        }
+      }
     })
 
     // Crear activitat
@@ -174,6 +174,25 @@ export async function moveLeadToStage(
         userId: user.id,
       },
     })
+
+    // Enviar notificación al CRM cuando un gestor envía un lead para revisar
+    if (newStatus === 'PENDING_CRM') {
+      try {
+        const crmUserIds = await getCRMUserIds()
+        const gestorName = updatedLead.assignedTo?.name || user.name || 'Gestor'
+
+        await notifyLeadToVerify(
+          crmUserIds,
+          leadId,
+          updatedLead.companyName,
+          gestorName
+        )
+        console.log('🔔 Notificació enviada al CRM per verificar lead:', leadId)
+      } catch (error) {
+        console.error('Error enviando notificación al CRM:', error)
+        // No falla la operación principal si hay error en notificaciones
+      }
+    }
 
     revalidatePath('/gestio/pipeline')
     revalidatePath('/gestio/leads')
@@ -289,30 +308,260 @@ export async function moveLeadToStatus(
   leadId: string,
   newStatus: string,
   userId: string
-) {
-  const { user } = await verifyAccess()
+): Promise<{ success: boolean; lead?: any; error?: string }> {
+  try {
+    const { user, userRole } = await verifyAccess()
 
-  const lead = await prismaClient.companyLead.update({
-    where: { id: leadId },
-    data: {
-      status: newStatus,
-      updatedAt: new Date(),
-    },
-  })
+    // Obtenir dades del lead actual
+    const currentLead = await prismaClient.companyLead.findUnique({
+      where: { id: leadId },
+      select: { stage: true, status: true, assignedToId: true }
+    })
 
-  // Crear activitat
-  await prismaClient.leadActivity.create({
-    data: {
-      leadId,
-      type: 'STATUS_CHANGE',
-      description: `Estat canviat a ${newStatus}`,
-      userId: user.id,
-    },
-  })
+    if (!currentLead) {
+      return { success: false, error: 'Lead no trobat' }
+    }
 
-  revalidatePath('/gestio/pipeline')
+    // Verificar permisos de transició
+    const currentStage = currentLead.stage as LeadStage || currentLead.status as LeadStage
+    const targetStage = newStatus as LeadStage
 
-  return lead
+    // Els administradors poden saltar-se les verificacions de permisos
+    if (!['SUPER_ADMIN', 'ADMIN', 'ADMIN_GESTIO'].includes(userRole)) {
+      if (!canTransition(userRole, currentStage, targetStage)) {
+        const errorMessage = getTransitionErrorMessage(userRole, currentStage, targetStage)
+        return { success: false, error: errorMessage }
+      }
+    }
+
+    const lead = await prismaClient.companyLead.update({
+      where: { id: leadId },
+      data: {
+        status: newStatus,
+        stage: newStatus,  // Sincronitzar stage amb status
+        updatedAt: new Date(),
+      },
+      include: {
+        assignedTo: {
+          select: { name: true, email: true }
+        }
+      }
+    })
+
+    // Crear activitat
+    await prismaClient.leadActivity.create({
+      data: {
+        leadId,
+        type: 'STATUS_CHANGE',
+        description: `Estat canviat a ${newStatus}`,
+        userId: user.id,
+      },
+    })
+
+    // Enviar notificación al CRM cuando un gestor envía un lead para revisar
+    if (newStatus === 'PENDING_CRM') {
+      try {
+        const crmUserIds = await getCRMUserIds()
+        const gestorName = lead.assignedTo?.name || user.name || 'Gestor'
+
+        await notifyLeadToVerify(
+          crmUserIds,
+          leadId,
+          lead.companyName,
+          gestorName
+        )
+        console.log('🔔 Notificació enviada al CRM per verificar lead:', leadId)
+      } catch (error) {
+        console.error('Error enviando notificación al CRM:', error)
+        // No falla la operación principal si hay error en notificaciones
+      }
+    }
+
+    revalidatePath('/gestio/pipeline')
+
+    return { success: true, lead }
+  } catch (error) {
+    console.error('Error moving lead to status:', error)
+    return { success: false, error: 'Error actualitzant l\'estat del lead' }
+  }
 }
 
+// ============================================
+// OBTENIR GESTORS AMB ELS SEUS LEADS
+// ============================================
+
+export async function getGestorsWithLeads(): Promise<{
+  success: boolean
+  data?: Array<{
+    gestor: {
+      id: string
+      name: string
+      email: string
+      role: string
+    }
+    leadCount: number
+    leadsByStage: Record<string, number>
+  }>
+  error?: string
+}> {
+  const session = await getServerSession(authOptions)
+  if (!session?.user) {
+    return { success: false, error: 'No autenticat' }
+  }
+
+  const userRole = session.user.role as string
+
+  // Només CRM i Admin poden veure això
+  if (!CRM_ROLES.includes(userRole) && !ADMIN_ROLES.includes(userRole)) {
+    return { success: false, error: 'No tens permisos' }
+  }
+
+  try {
+    // Obtenir tots els gestors
+    const gestors = await prismaClient.user.findMany({
+      where: {
+        role: { in: GESTOR_ROLES },
+        isActive: true
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true
+      }
+    })
+
+    // Per cada gestor, obtenir el recompte de leads per fase
+    const gestorsWithLeads = await Promise.all(
+      gestors.map(async (gestor) => {
+        const leads = await prismaClient.companyLead.groupBy({
+          by: ['stage'],
+          where: {
+            assignedToId: gestor.id,
+            stage: { in: [...GESTOR_STAGES] }
+          },
+          _count: true
+        })
+
+        const leadsByStage: Record<string, number> = {}
+        let totalLeads = 0
+
+        leads.forEach(item => {
+          if (item.stage) {
+            leadsByStage[item.stage] = item._count
+            totalLeads += item._count
+          }
+        })
+
+        return {
+          gestor,
+          leadCount: totalLeads,
+          leadsByStage
+        }
+      })
+    )
+
+    // Filtrar gestors sense leads si es vol
+    const gestorsWithAtLeastOneLead = gestorsWithLeads.filter(g => g.leadCount > 0)
+
+    return { success: true, data: gestorsWithAtLeastOneLead }
+  } catch (error) {
+    console.error('Error obtenint gestors amb leads:', error)
+    return { success: false, error: 'Error obtenint dades' }
+  }
+}
+
+// ============================================
+// OBTENIR LEADS D'UN GESTOR ESPECÍFIC
+// ============================================
+
+export async function getLeadsByGestor(
+  gestorId: string
+): Promise<{
+  success: boolean
+  data?: any[]
+  error?: string
+}> {
+  const session = await getServerSession(authOptions)
+  if (!session?.user) {
+    return { success: false, error: 'No autenticat' }
+  }
+
+  const userRole = session.user.role as string
+
+  // Només CRM i Admin poden veure leads d'altres gestors
+  if (!CRM_ROLES.includes(userRole) && !ADMIN_ROLES.includes(userRole)) {
+    return { success: false, error: 'No tens permisos' }
+  }
+
+  try {
+    const leads = await prismaClient.companyLead.findMany({
+      where: {
+        assignedToId: gestorId,
+        stage: { in: [...GESTOR_STAGES] }
+      },
+      include: {
+        assignedTo: {
+          select: { id: true, name: true, email: true }
+        }
+      },
+      orderBy: { updatedAt: 'desc' }
+    })
+
+    return { success: true, data: leads }
+  } catch (error) {
+    console.error('Error obtenint leads del gestor:', error)
+    return { success: false, error: 'Error obtenint leads' }
+  }
+}
+
+// ============================================
+// OBTENIR LEADS PER WORKSPACE
+// ============================================
+
+export async function getPipelineLeads({
+  stages,
+  userId
+}: {
+  stages: string[]
+  userId?: string
+}): Promise<{
+  success: boolean
+  data?: any[]
+  error?: string
+}> {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user) {
+      return { success: false, error: 'No autenticat' }
+    }
+
+    const whereClause: any = {
+      stage: { in: stages }
+    }
+
+    // Si s'especifica userId, filtrar per assignat
+    if (userId) {
+      whereClause.assignedToId = userId
+    }
+
+    const leads = await prismaClient.companyLead.findMany({
+      where: whereClause,
+      include: {
+        assignedTo: {
+          select: { id: true, name: true, email: true }
+        }
+      },
+      orderBy: [
+        { priority: 'asc' },
+        { updatedAt: 'desc' }
+      ]
+    })
+
+    return { success: true, data: leads }
+  } catch (error) {
+    console.error('Error obtenint leads del pipeline:', error)
+    return { success: false, error: 'Error obtenint leads' }
+  }
+}
 

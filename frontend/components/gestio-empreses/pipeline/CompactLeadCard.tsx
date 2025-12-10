@@ -2,7 +2,6 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import Link from 'next/link'
 import {
   Building2,
   User,
@@ -29,6 +28,8 @@ interface CompactLeadCardProps {
   phaseColor: 'blue' | 'purple' | 'green'
   isLastInPhase: boolean
   onMove: () => void
+  onLeadClick?: (lead: Lead) => void
+  highlightLeadId?: string | null
 }
 
 const priorityColors: Record<string, string> = {
@@ -43,9 +44,12 @@ const phaseColorClasses = {
   green: 'hover:border-green-300 hover:bg-green-50/50',
 }
 
-export function CompactLeadCard({ lead, phaseColor, isLastInPhase, onMove }: CompactLeadCardProps) {
+export function CompactLeadCard({ lead, phaseColor, isLastInPhase, onMove, onLeadClick, highlightLeadId }: CompactLeadCardProps) {
   const [isPending, startTransition] = useTransition()
   const [showActions, setShowActions] = useState(false)
+
+  // Verificar si este lead está destacado
+  const isHighlighted = highlightLeadId === lead.id
 
   const formatCurrency = (value: number | null) => {
     if (!value) return '-'
@@ -79,13 +83,28 @@ export function CompactLeadCard({ lead, phaseColor, isLastInPhase, onMove }: Com
     })
   }
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Si se hace clic en un botón de acción, no abrir el panel
+    if (e.currentTarget !== e.target && (e.target as HTMLElement).closest('button')) {
+      return
+    }
+
+    if (onLeadClick) {
+      e.preventDefault()
+      e.stopPropagation()
+      onLeadClick(lead)
+    }
+  }
+
   return (
-    <Link
-      href={`/gestio/leads/${lead.id}`}
+    <div
+      onClick={handleCardClick}
       className={cn(
-        'block bg-white rounded-lg border border-slate-200 border-l-4 p-3 transition-all',
+        'bg-white rounded-lg border border-slate-200 border-l-4 p-3 transition-all cursor-pointer',
         priorityColors[lead.priority],
-        phaseColorClasses[phaseColor]
+        phaseColorClasses[phaseColor],
+        // Estilo de highlight cuando el lead está destacado
+        isHighlighted && 'ring-2 ring-blue-500 ring-offset-2 bg-blue-50 shadow-lg animate-pulse'
       )}
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
@@ -151,6 +170,6 @@ export function CompactLeadCard({ lead, phaseColor, isLastInPhase, onMove }: Com
           )}
         </div>
       </div>
-    </Link>
+    </div>
   )
 }

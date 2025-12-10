@@ -24,7 +24,8 @@ import {
   Zap
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { GeneratedLead, saveGeneratedLeads } from '@/lib/gestio-empreses/ia-lead-actions'
+import { GeneratedLead } from '@/lib/gestio-empreses/ia-lead-actions'
+import { saveGeneratedLeads } from '@/lib/gestio-empreses/ia-lead-actions'
 
 interface IALeadPreviewProps {
   generationId: string

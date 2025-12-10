@@ -178,7 +178,7 @@ export async function notifyLeadAssigned(
   assignedBy: string
 ) {
   return createNotification(gestorId, {
-    type: 'LEAD_ASSIGNED',
+    type: 'COMPANY_ASSIGNED',
     title: 'Nou lead assignat',
     message: `T'han assignat el lead "${leadName}"`,
     link: `/gestio/leads/${leadId}`,
@@ -201,14 +201,35 @@ export async function notifyLeadStatusChange(
   })
 }
 
-export async function notifyCRMApprovalNeeded(crmUserIds: string[], leadId: string, leadName: string) {
+export async function notifyCRMApprovalNeeded(crmUserIds: string[], leadId: string, leadName: string, sentByGestorName: string) {
   return createBulkNotifications(crmUserIds, {
-    type: 'CRM_APPROVAL_NEEDED',
+    type: 'GENERAL',
     title: 'Lead pendent de verificació',
-    message: `El lead "${leadName}" necessita verificació CRM`,
+    message: `${sentByGestorName} ha enviat el lead "${leadName}" per verificació CRM`,
     link: `/gestio/crm/verificacio`,
-    metadata: { leadId },
+    metadata: { leadId, sentByGestorName },
   })
+}
+
+/**
+ * Obtener usuarios CRM para notificaciones
+ */
+export async function getCRMUsers() {
+  const crmUsers = await prismaClient.user.findMany({
+    where: {
+      role: {
+        in: ['CRM_COMERCIAL', 'ADMIN', 'ADMIN_GESTIO', 'SUPER_ADMIN']
+      },
+      isActive: true
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true
+    }
+  })
+
+  return crmUsers
 }
 
 export async function notifyTaskDue(

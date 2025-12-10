@@ -31,6 +31,9 @@ interface PipelineColumnProps {
   count: number
   isSupervisor: boolean
   onLeadMoved?: () => void
+  onLeadClick?: (lead: Lead) => void
+  compact?: boolean
+  fullWidth?: boolean
 }
 
 const colorVariants: Record<string, { bg: string; border: string; text: string; badge: string }> = {
@@ -116,19 +119,34 @@ export function PipelineColumn({
   count,
   isSupervisor,
   onLeadMoved,
+  onLeadClick,
+  compact = false,
+  fullWidth = false,
 }: PipelineColumnProps) {
   const colors = colorVariants[color] || colorVariants.slate
 
   return (
     <div className={cn(
-      "flex flex-col min-w-[280px] max-w-[320px] rounded-lg border",
+      "flex flex-col rounded-lg border",
+      fullWidth
+        ? "w-full" // Ocupa todo el ancho disponible cuando se usa en grid
+        : compact
+          ? "min-w-[180px] max-w-[220px] flex-shrink-0"
+          : "min-w-[240px] max-w-[280px] flex-shrink-0",
       colors.bg,
       colors.border
     )}>
       {/* Capçalera */}
-      <div className="p-3 border-b border-inherit">
+      <div className={cn(
+        "border-b border-inherit",
+        compact ? "p-2" : "p-3"
+      )}>
         <div className="flex items-center justify-between mb-1">
-          <h3 className={cn("font-medium", colors.text)}>{label}</h3>
+          <h3 className={cn(
+            "font-medium",
+            compact ? "text-sm" : "text-base",
+            colors.text
+          )}>{label}</h3>
           <span className={cn(
             "px-2 py-0.5 text-xs font-medium rounded-full",
             colors.badge
@@ -136,15 +154,24 @@ export function PipelineColumn({
             {count}
           </span>
         </div>
-        <p className="text-sm text-slate-500">
+        <p className={cn(
+          "text-slate-500",
+          compact ? "text-xs" : "text-sm"
+        )}>
           {formatCurrency(totalValue)}
         </p>
       </div>
 
       {/* Llista de leads */}
-      <div className="flex-1 p-2 space-y-2 overflow-y-auto max-h-[calc(100vh-300px)]">
+      <div className={cn(
+        "flex-1 space-y-2 overflow-y-auto",
+        compact ? "p-1.5 max-h-[300px]" : "p-2 max-h-[calc(100vh-300px)]"
+      )}>
         {leads.length === 0 ? (
-          <div className="text-center py-8 text-sm text-slate-400">
+          <div className={cn(
+            "text-center text-slate-400",
+            compact ? "py-4 text-xs" : "py-8 text-sm"
+          )}>
             Cap lead en aquest estat
           </div>
         ) : (
@@ -154,6 +181,8 @@ export function PipelineColumn({
               lead={lead}
               isSupervisor={isSupervisor}
               onMoved={onLeadMoved}
+              onLeadClick={onLeadClick}
+              compact={compact}
             />
           ))
         )}

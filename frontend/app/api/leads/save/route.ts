@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { prismaClient } from '@/lib/prisma'
 
 export async function POST(req: Request) {
   console.log('=== API /api/leads/save called ===')
@@ -29,21 +29,22 @@ export async function POST(req: Request) {
       leads.map(async (lead, index) => {
         console.log(`Saving lead ${index + 1}:`, lead.companyName)
         try {
-          const result = await prisma.companyLead.create({
+          const result = await prismaClient.companyLead.create({
             data: {
               companyName: lead.companyName,
               contactName: lead.contactName || null,
               email: lead.contactEmail || null,
               phone: lead.contactPhone || null,
               sector: lead.sector || null,
-              companySize: lead.employees || null,
-              estimatedRevenue: lead.revenue || null,
+              companySize: lead.employees?.toString() || null,
+              estimatedRevenue: lead.estimatedRevenue || lead.revenue || null,
               notes: lead.description || null,
               priority: lead.priority || 'MEDIUM',
               score: lead.score || null,
               source: 'AI_PROSPECTING',
               status: 'NEW',
               assignedToId: session.user.id,
+              userId: session.user.id,
               tags: [`generation:${generationId}`, 'ai-generated'],
             },
           })

@@ -12,6 +12,7 @@ import {
   AlertTriangle
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { assignLeadsToGestor } from '@/lib/gestio-empreses/assignment-actions'
 
 interface Gestor {
   id: string
@@ -24,6 +25,8 @@ interface BulkActionsBarProps {
   onClear: () => void
   onSuccess: () => void
   gestors: Gestor[]
+  userId?: string
+  userRole?: string
 }
 
 const statusOptions = [
@@ -37,27 +40,31 @@ const statusOptions = [
   { value: 'LOST', label: 'Perdut' },
 ]
 
-export function BulkActionsBar({ selectedIds, onClear, onSuccess, gestors }: BulkActionsBarProps) {
+export function BulkActionsBar({ selectedIds, onClear, onSuccess, gestors, userId, userRole }: BulkActionsBarProps) {
   const [isPending, startTransition] = useTransition()
   const [activeAction, setActiveAction] = useState<'assign' | 'status' | 'delete' | null>(null)
   const [selectedGestor, setSelectedGestor] = useState('')
   const [selectedStatus, setSelectedStatus] = useState('')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
+  // Verificar si el usuario puede asignar leads
+  const canAssign = userRole && ['ADMIN', 'ADMIN_GESTIO', 'SUPER_ADMIN', 'CRM_COMERCIAL'].includes(userRole)
+
   const handleAssign = () => {
-    if (!selectedGestor) return
+    if (!selectedGestor || !userId) return
 
     startTransition(async () => {
       try {
         console.log('Assigning leads:', selectedIds, 'to:', selectedGestor)
-        // Simular delay
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        await assignLeadsToGestor(selectedIds, selectedGestor, userId)
+        console.log('✅ Leads assigned successfully')
         onSuccess()
         onClear()
         setActiveAction(null)
         setSelectedGestor('')
       } catch (error) {
         console.error('Error assignant leads:', error)
+        // Aquí podrías mostrar un toast/notificación de error
       }
     })
   }
@@ -110,13 +117,15 @@ export function BulkActionsBar({ selectedIds, onClear, onSuccess, gestors }: Bul
         {/* Accions */}
         {activeAction === null && (
           <>
-            <button
-              onClick={() => setActiveAction('assign')}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-slate-800 transition-colors"
-            >
-              <UserPlus className="h-4 w-4" strokeWidth={1.5} />
-              <span className="text-sm">Assignar</span>
-            </button>
+            {canAssign && (
+              <button
+                onClick={() => setActiveAction('assign')}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-slate-800 transition-colors"
+              >
+                <UserPlus className="h-4 w-4" strokeWidth={1.5} />
+                <span className="text-sm">Assignar</span>
+              </button>
+            )}
 
             <button
               onClick={() => setActiveAction('status')}

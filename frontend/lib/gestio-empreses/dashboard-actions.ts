@@ -80,7 +80,7 @@ export async function getEvolutionData(userId: string): Promise<EvolutionData[]>
       const monthEnd = endOfMonth(monthDate)
 
       // Leads creats aquest mes
-      const leads = await prismaClient.lead.count({
+      const leads = await prismaClient.companyLead.count({
         where: {
           assignedToId: userId,
           createdAt: {
@@ -91,10 +91,10 @@ export async function getEvolutionData(userId: string): Promise<EvolutionData[]>
       })
 
       // Conversions (leads convertits a empresa)
-      const conversions = await prismaClient.lead.count({
+      const conversions = await prismaClient.companyLead.count({
         where: {
           assignedToId: userId,
-          status: 'CONVERTED',
+          status: 'WON',
           updatedAt: {
             gte: monthStart,
             lte: monthEnd
@@ -103,10 +103,10 @@ export async function getEvolutionData(userId: string): Promise<EvolutionData[]>
       })
 
       // Valor total del pipeline aquest mes
-      const valueResult = await prismaClient.lead.aggregate({
+      const valueResult = await prismaClient.companyLead.aggregate({
         where: {
           assignedToId: userId,
-          status: 'CONVERTED',
+          status: 'WON',
           updatedAt: {
             gte: monthStart,
             lte: monthEnd
@@ -121,7 +121,7 @@ export async function getEvolutionData(userId: string): Promise<EvolutionData[]>
         month: format(monthDate, 'MMM', { locale: ca }),
         leads,
         conversions,
-        value: valueResult._sum.estimatedRevenue ? Number(valueResult._sum.estimatedRevenue) : 0
+        value: Number(valueResult._sum.estimatedRevenue) || 0
       })
     }
 
@@ -150,6 +150,11 @@ export async function getUpcomingEvents(userId: string): Promise<UpcomingEvent[]
   }
 
   try {
+    // TODO: Implementar quan existeixi el model Event
+    console.log('⚠️ Model Event no disponible')
+    return []
+
+    /*
     const now = new Date()
     const weekStart = startOfWeek(now, { weekStartsOn: 1 })
     const weekEnd = endOfWeek(now, { weekStartsOn: 1 })
@@ -182,6 +187,7 @@ export async function getUpcomingEvents(userId: string): Promise<UpcomingEvent[]
       type: event.type,
       relatedTo: event.lead?.companyName || event.company?.name || null
     }))
+    */
   } catch (error) {
     console.error('Error obtenint esdeveniments:', error)
     // Retornar esdeveniments fictícis
@@ -217,11 +223,16 @@ export async function getRecentConversations(userId: string): Promise<RecentConv
   }
 
   try {
+    // TODO: Implementar quan existeixi el model Conversation i ConversationParticipants
+    console.log('⚠️ Model Conversation no disponible')
+    return []
+
+    /*
     const conversations = await prismaClient.conversation.findMany({
       where: {
-        participants: {
+        ConversationParticipants: {
           some: {
-            id: userId
+            participantId: userId
           }
         }
       },
@@ -265,6 +276,7 @@ export async function getRecentConversations(userId: string): Promise<RecentConv
     )
 
     return conversationsWithUnread
+    */
   } catch (error) {
     console.error('Error obtenint converses:', error)
     // Retornar converses fictícies
@@ -305,10 +317,10 @@ export async function getAlerts(userId: string): Promise<Alert[]> {
     const sevenDaysAgo = subDays(now, 7)
 
     // 1. Leads sense activitat > 7 dies
-    const inactiveLeads = await prismaClient.lead.findMany({
+    const inactiveLeads = await prismaClient.companyLead.findMany({
       where: {
         assignedToId: userId,
-        status: { notIn: ['CONVERTED', 'LOST'] },
+        status: { notIn: ['WON', 'LOST'] },
         updatedAt: { lt: sevenDaysAgo }
       },
       select: { id: true, companyName: true, updatedAt: true },
@@ -354,6 +366,9 @@ export async function getAlerts(userId: string): Promise<Alert[]> {
     const todayStart = new Date(now.setHours(0, 0, 0, 0))
     const todayEnd = new Date(now.setHours(23, 59, 59, 999))
 
+    // TODO: Implementar quan existeixi el model Event
+    const todayEvents = 0
+    /*
     const todayEvents = await prismaClient.event.count({
       where: {
         userId,
@@ -363,6 +378,7 @@ export async function getAlerts(userId: string): Promise<Alert[]> {
         }
       }
     })
+    */
 
     if (todayEvents > 0) {
       alerts.push({
@@ -421,7 +437,7 @@ export async function getPerformanceData(userId: string): Promise<PerformanceDat
     const monthEnd = endOfMonth(now)
 
     // Leads creats aquest mes
-    const leadsCreated = await prismaClient.lead.count({
+    const leadsCreated = await prismaClient.companyLead.count({
       where: {
         assignedToId: userId,
         createdAt: {
@@ -432,10 +448,10 @@ export async function getPerformanceData(userId: string): Promise<PerformanceDat
     })
 
     // Conversions aquest mes
-    const conversions = await prismaClient.lead.count({
+    const conversions = await prismaClient.companyLead.count({
       where: {
         assignedToId: userId,
-        status: 'CONVERTED',
+        status: 'WON',
         updatedAt: {
           gte: monthStart,
           lte: monthEnd
@@ -456,6 +472,9 @@ export async function getPerformanceData(userId: string): Promise<PerformanceDat
     })
 
     // Esdeveniments realitzats aquest mes
+    // TODO: Implementar quan existeixi el model Event
+    const eventsHeld = 0
+    /*
     const eventsHeld = await prismaClient.event.count({
       where: {
         userId,
@@ -465,6 +484,7 @@ export async function getPerformanceData(userId: string): Promise<PerformanceDat
         }
       }
     })
+    */
 
     // Objectius (es poden configurar per usuari, aquí posem defaults)
     return {
@@ -533,7 +553,7 @@ export async function getDayFocusData(userId: string) {
       }),
 
       // Leads sense activitat en els últims 7 dies
-      prismaClient.lead.findMany({
+      prismaClient.companyLead.findMany({
         where: {
           assignedToId: userId,
           status: { in: ['NEW', 'CONTACTED', 'QUALIFIED', 'NEGOTIATION'] },
@@ -551,6 +571,9 @@ export async function getDayFocusData(userId: string) {
       }),
 
       // Esdeveniments en les pròximes 2 hores
+      // TODO: Implementar quan existeixi el model Event
+      [],
+      /*
       prismaClient.event.findMany({
         where: {
           OR: [
@@ -566,6 +589,7 @@ export async function getDayFocusData(userId: string) {
         orderBy: { startTime: 'asc' },
         take: 3,
       }),
+      */
 
       // Tasques endarrerides
       prismaClient.task.count({

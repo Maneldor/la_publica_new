@@ -1,13 +1,14 @@
 // app/gestio/leads/[id]/page.tsx
-import { getServerSession } from 'next-auth'
-import { redirect, notFound } from 'next/navigation'
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
+import { redirect, notFound, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Building2, Edit, Phone, Mail, Calendar, User, Tag, TrendingUp, Clock, MessageCircle } from 'lucide-react'
 
-import { authOptions } from '@/lib/auth'
 import { PageHeader } from '@/components/gestio-empreses/shared/PageHeader'
 import { LeadStatusBadge, LeadTimeline, LeadActions } from '@/components/gestio-empreses/leads'
-import { getLeadById } from '@/lib/gestio-empreses/actions/leads-actions'
 
 interface PageProps {
   params: {
@@ -15,17 +16,47 @@ interface PageProps {
   }
 }
 
-export default async function LeadDetailPage({ params }: PageProps) {
-  const session = await getServerSession(authOptions)
+export default function LeadDetailPage({ params }: PageProps) {
+  const { data: session, status } = useSession()
+  const router = useRouter()
+  const [lead, setLead] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
 
-  if (!session?.user) {
-    redirect('/login')
+  useEffect(() => {
+    if (status === 'loading') return
+
+    if (!session?.user) {
+      router.push('/login')
+      return
+    }
+
+    // Fetch lead data
+    fetchLead()
+  }, [session, status, params.id])
+
+  const fetchLead = async () => {
+    try {
+      const response = await fetch(`/api/leads/${params.id}`)
+      if (!response.ok) {
+        router.push('/gestio/leads')
+        return
+      }
+      const data = await response.json()
+      setLead(data)
+    } catch (error) {
+      console.error('Error fetching lead:', error)
+      router.push('/gestio/leads')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const lead = await getLeadById(params.id)
-
-  if (!lead) {
-    notFound()
+  if (loading || !lead) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    )
   }
 
   return (

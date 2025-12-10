@@ -20,6 +20,8 @@ interface PhaseColumnProps {
   phaseColor: 'blue' | 'purple' | 'green'
   isLastStatus: boolean
   onMove: () => void
+  onLeadClick?: (lead: Lead) => void
+  highlightLeadId?: string | null
 }
 
 const colorClasses = {
@@ -49,7 +51,9 @@ export function PhaseColumn({
   leads,
   phaseColor,
   isLastStatus,
-  onMove
+  onMove,
+  onLeadClick,
+  highlightLeadId
 }: PhaseColumnProps) {
   const colors = colorClasses[phaseColor]
   const totalValue = leads.reduce((sum, lead) => sum + (lead.estimatedRevenue || 0), 0)
@@ -98,6 +102,8 @@ export function PhaseColumn({
               phaseColor={phaseColor}
               isLastInPhase={isLastStatus}
               onMove={onMove}
+              onLeadClick={onLeadClick}
+              highlightLeadId={highlightLeadId}
             />
           ))
         )}

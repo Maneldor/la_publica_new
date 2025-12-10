@@ -6,6 +6,7 @@ import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { CalendarProvider } from '@/lib/context/CalendarContext';
 import Breadcrumbs from '@/components/Breadcrumbs';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 const menuSections = [
   {
@@ -18,11 +19,7 @@ const menuSections = [
   {
     title: 'Gestió Comercial',
     items: [
-      { title: 'Plans', icon: '📦', path: '/admin/plans' },
-      { title: 'Pressupostos', icon: '📄', path: '/admin/pressupostos' },
-      { title: 'Facturació', icon: '💰', path: '/admin/facturacio' },
-      { title: 'Extras', icon: '⭐', path: '/admin/extras' },
-      { title: 'Empreses', icon: '🏢', path: '/admin/empresas/listar' },
+      { title: 'Empreses Pendents', icon: '⏳', path: '/admin/empreses-pendents' },
     ]
   },
   {
@@ -160,6 +157,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-600">{session.user.email}</span>
+            <NotificationBell />
             <button
               onClick={() => {
                 console.log('🎯 BOTÓN CLICKEADO');

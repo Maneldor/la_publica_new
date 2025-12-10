@@ -35,6 +35,7 @@ interface LeadTableSelectableProps {
   selectedIds: string[]
   onSelectionChange: (selectedIds: string[]) => void
   gestors: Gestor[]
+  hideGestorColumn?: boolean
 }
 
 type SortField = 'company' | 'contact' | 'status' | 'priority' | 'value' | 'createdAt' | 'updatedAt'
@@ -60,7 +61,7 @@ const priorityConfig = {
   'LOW': { label: 'Baixa', color: 'bg-slate-400', icon: null },
 }
 
-export function LeadTableSelectable({ leads, selectedIds, onSelectionChange, gestors }: LeadTableSelectableProps) {
+export function LeadTableSelectable({ leads, selectedIds, onSelectionChange, gestors, hideGestorColumn = false }: LeadTableSelectableProps) {
   const [sortField, setSortField] = useState<SortField>('createdAt')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
 
@@ -184,25 +185,27 @@ export function LeadTableSelectable({ leads, selectedIds, onSelectionChange, ges
                 </label>
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-                <SortButton field="company">Empresa</SortButton>
+                Empresa
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-                <SortButton field="contact">Contacte</SortButton>
+                Contacte
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-                <SortButton field="status">Estat</SortButton>
+                Estat
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-                <SortButton field="priority">Prioritat</SortButton>
+                Prioritat
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-                <SortButton field="value">Valor</SortButton>
+                Valor
               </th>
+              {!hideGestorColumn && (
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
+                  Gestor
+                </th>
+              )}
               <th className="px-4 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-                Gestor
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-                <SortButton field="createdAt">Data creació</SortButton>
+                Data creació
               </th>
             </tr>
           </thead>
@@ -233,39 +236,29 @@ export function LeadTableSelectable({ leads, selectedIds, onSelectionChange, ges
                     </label>
                   </td>
                   <td className="px-4 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="flex-shrink-0">
-                        <Building2 className="h-5 w-5 text-slate-400" strokeWidth={1.5} />
-                      </div>
-                      <div>
-                        <div className="font-medium text-slate-900">{lead.company}</div>
-                        {lead.sector && (
-                          <div className="text-sm text-slate-500">{lead.sector}</div>
-                        )}
-                      </div>
+                    <div>
+                      <div className="font-medium text-slate-900">{lead.company}</div>
+                      {lead.sector && (
+                        <div className="text-sm text-slate-500">{lead.sector}</div>
+                      )}
                     </div>
                   </td>
                   <td className="px-4 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="flex-shrink-0">
-                        <User className="h-5 w-5 text-slate-400" strokeWidth={1.5} />
-                      </div>
-                      <div>
-                        <div className="font-medium text-slate-900">{lead.contact}</div>
-                        <div className="flex items-center gap-2 text-sm text-slate-500">
-                          {lead.email && (
-                            <div className="flex items-center gap-1">
-                              <Mail className="h-3.5 w-3.5" />
-                              {lead.email}
-                            </div>
-                          )}
-                          {lead.phone && (
-                            <div className="flex items-center gap-1">
-                              <Phone className="h-3.5 w-3.5" />
-                              {lead.phone}
-                            </div>
-                          )}
-                        </div>
+                    <div>
+                      <div className="font-medium text-slate-900">{lead.contact}</div>
+                      <div className="space-y-0.5">
+                        {lead.email && (
+                          <div className="flex items-center gap-1 text-xs text-slate-500">
+                            <Mail className="h-3 w-3" />
+                            {lead.email}
+                          </div>
+                        )}
+                        {lead.phone && (
+                          <div className="flex items-center gap-1 text-xs text-slate-500">
+                            <Phone className="h-3 w-3" />
+                            {lead.phone}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </td>
@@ -276,45 +269,38 @@ export function LeadTableSelectable({ leads, selectedIds, onSelectionChange, ges
                     </span>
                   </td>
                   <td className="px-4 py-4">
-                    <div className="flex items-center gap-1.5">
-                      {priorityInfo?.icon && (
-                        <priorityInfo.icon className="h-4 w-4 text-red-500" strokeWidth={1.5} />
-                      )}
-                      <span className={cn(
-                        'inline-flex items-center px-2.5 py-1 text-xs font-medium text-white rounded-full',
-                        priorityInfo?.color || 'bg-slate-500'
-                      )}>
-                        {priorityInfo?.label || lead.priority}
-                      </span>
-                    </div>
+                    <span className={cn(
+                      'inline-flex items-center px-2.5 py-1 text-xs font-medium text-white rounded-full',
+                      priorityInfo?.color || 'bg-slate-500'
+                    )}>
+                      {priorityInfo?.label || lead.priority}
+                    </span>
                   </td>
                   <td className="px-4 py-4">
-                    <div className="flex items-center gap-1.5">
-                      <Trophy className="h-4 w-4 text-slate-400" strokeWidth={1.5} />
-                      <span className="font-medium text-slate-900">
-                        {formatValue(lead.value)}
-                      </span>
-                    </div>
+                    <span className="font-medium text-slate-900">
+                      {formatValue(lead.value)}
+                    </span>
                   </td>
-                  <td className="px-4 py-4">
-                    {gestor ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
-                          <span className="text-xs font-medium text-blue-700">
-                            {(gestor.name || gestor.email).charAt(0).toUpperCase()}
+                  {!hideGestorColumn && (
+                    <td className="px-4 py-4">
+                      {gestor ? (
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
+                            <span className="text-xs font-medium text-blue-700">
+                              {(gestor.name || gestor.email).charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                          <span className="text-sm text-slate-900">
+                            {gestor.name || gestor.email}
                           </span>
                         </div>
-                        <span className="text-sm text-slate-900">
-                          {gestor.name || gestor.email}
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-sm text-slate-500">Sense assignar</span>
-                    )}
-                  </td>
+                      ) : (
+                        <span className="text-sm text-slate-500">Sense assignar</span>
+                      )}
+                    </td>
+                  )}
                   <td className="px-4 py-4">
-                    <div className="flex items-center gap-1.5 text-sm text-slate-500">
-                      <Calendar className="h-4 w-4" strokeWidth={1.5} />
+                    <div className="text-sm text-slate-500">
                       {format(lead.createdAt, 'dd MMM yyyy', { locale: ca })}
                     </div>
                   </td>

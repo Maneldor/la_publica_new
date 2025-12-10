@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { TaskHeader } from '@/components/gestio-empreses/tasques/TaskHeader'
 import { TaskViewTabs } from '@/components/gestio-empreses/tasques/TaskViewTabs'
 import { TaskStatsAdvanced } from '@/components/gestio-empreses/tasques/TaskStatsAdvanced'
@@ -13,12 +14,14 @@ import { TaskKanban } from '@/components/gestio-empreses/tasques/TaskKanban'
 import { TaskCalendar } from '@/components/gestio-empreses/tasques/TaskCalendar'
 import { TaskTimeline } from '@/components/gestio-empreses/tasques/TaskTimeline'
 import { TaskModal } from '@/components/gestio-empreses/tasques/TaskModal'
+import { LeadFilterBanner } from '@/components/gestio-empreses/tasques/LeadFilterBanner'
 import {
   getUserTasks,
   getAdvancedTaskStats,
   getTasksByStatus,
   updateTask,
   deleteTask,
+  getLeadBasicInfo,
   type TaskStatus
 } from '@/lib/gestio-empreses/task-actions'
 
@@ -26,12 +29,17 @@ type ViewType = 'list' | 'kanban' | 'calendar' | 'timeline'
 
 export default function TasquesPage() {
   const { data: session } = useSession()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const leadIdFilter = searchParams.get('leadId')
+
   const [activeView, setActiveView] = useState<ViewType>('list')
   const [tasks, setTasks] = useState<any[]>([])
   const [tasksByStatus, setTasksByStatus] = useState<any>({})
   const [stats, setStats] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [editingTask, setEditingTask] = useState<any>(null)
+  const [leadInfo, setLeadInfo] = useState<{ id: string; companyName: string } | null>(null)
 
   const currentUserId = session?.user?.id || ''
 
@@ -40,8 +48,14 @@ export default function TasquesPage() {
 
     setIsLoading(true)
     try {
+      // Construir filtres
+      const filters: any = {}
+      if (leadIdFilter) {
+        filters.leadId = leadIdFilter
+      }
+
       const [tasksData, statsData, byStatusData] = await Promise.all([
-        getUserTasks(currentUserId),
+        getUserTasks(currentUserId, filters),
         getAdvancedTaskStats(currentUserId),
         getTasksByStatus(currentUserId),
       ])
@@ -54,11 +68,31 @@ export default function TasquesPage() {
     setIsLoading(false)
   }
 
+  // Carregar info del lead si hi ha filtre
+  const loadLeadInfo = async () => {
+    if (leadIdFilter) {
+      try {
+        const info = await getLeadBasicInfo(leadIdFilter)
+        if (info) {
+          setLeadInfo(info)
+        }
+      } catch (error) {
+        console.error('Error carregant info del lead:', error)
+      }
+    } else {
+      setLeadInfo(null)
+    }
+  }
+
   useEffect(() => {
     if (currentUserId) {
       loadData()
     }
-  }, [currentUserId])
+  }, [currentUserId, leadIdFilter])
+
+  useEffect(() => {
+    loadLeadInfo()
+  }, [leadIdFilter])
 
   const handleRefresh = () => {
     loadData()
@@ -92,6 +126,10 @@ export default function TasquesPage() {
     setEditingTask(task)
   }
 
+  const handleClearLeadFilter = () => {
+    router.push('/gestio/tasques')
+  }
+
   if (!session) {
     return <div>Carregant...</div>
   }
@@ -100,6 +138,14 @@ export default function TasquesPage() {
     <div className="space-y-6">
       {/* Header amb botons */}
       <TaskHeader tasks={tasks} onRefresh={handleRefresh} />
+
+      {/* Banner de filtres per lead */}
+      {leadInfo && (
+        <LeadFilterBanner
+          leadInfo={leadInfo}
+          onClear={handleClearLeadFilter}
+        />
+      )}
 
       {/* Tabs de vista */}
       <div className="bg-white rounded-lg border border-slate-200">

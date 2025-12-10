@@ -24,6 +24,8 @@ interface PipelinePhasesProps {
     totalValue: number
   }>
   onRefresh: () => void
+  onLeadClick?: (lead: Lead) => void
+  highlightLeadId?: string | null
 }
 
 const phaseColors: Record<PhaseId, 'blue' | 'purple' | 'green'> = {
@@ -32,7 +34,7 @@ const phaseColors: Record<PhaseId, 'blue' | 'purple' | 'green'> = {
   3: 'green',
 }
 
-export function PipelinePhases({ phaseData, onRefresh }: PipelinePhasesProps) {
+export function PipelinePhases({ phaseData, onRefresh, onLeadClick, highlightLeadId }: PipelinePhasesProps) {
   const [currentPhase, setCurrentPhase] = useState<PhaseId>(1)
 
   const phase = PIPELINE_PHASES[currentPhase]
@@ -117,6 +119,8 @@ export function PipelinePhases({ phaseData, onRefresh }: PipelinePhasesProps) {
             phaseColor={phaseColors[currentPhase]}
             isLastStatus={index === phase.statuses.length - 1}
             onMove={onRefresh}
+            onLeadClick={onLeadClick}
+            highlightLeadId={highlightLeadId}
           />
         ))}
       </div>

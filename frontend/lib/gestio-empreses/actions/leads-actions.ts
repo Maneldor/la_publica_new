@@ -251,6 +251,7 @@ export async function updateLeadStatus(leadId: string, status: string) {
       where: { id: leadId },
       data: {
         status: status as any,
+        stage: status,  // Sincronitzar stage amb status
         updatedAt: new Date()
       },
       include: {

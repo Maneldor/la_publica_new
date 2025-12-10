@@ -43,7 +43,7 @@ export async function middleware(request: NextRequest) {
 
     if (role === 'SUPER_ADMIN' || role === 'ADMIN') {
       return NextResponse.redirect(new URL('/admin', request.url))
-    } else if (role === 'CRM_COMERCIAL' || role === 'CRM_CONTINGUT' ||
+    } else if (role === 'ADMIN_GESTIO' || role === 'CRM_COMERCIAL' || role === 'CRM_CONTINGUT' ||
                role === 'GESTOR_ESTANDARD' || role === 'GESTOR_ESTRATEGIC' ||
                role === 'GESTOR_ENTERPRISE') {
       return NextResponse.redirect(new URL('/gestio', request.url))
@@ -67,7 +67,7 @@ export async function middleware(request: NextRequest) {
     }
 
     // Rols de CRM i gestors poden accedir a /gestio
-    const gestorRoles = ['SUPER_ADMIN', 'ADMIN', 'CRM_COMERCIAL', 'CRM_CONTINGUT',
+    const gestorRoles = ['SUPER_ADMIN', 'ADMIN', 'ADMIN_GESTIO', 'CRM_COMERCIAL', 'CRM_CONTINGUT',
                         'GESTOR_ESTANDARD', 'GESTOR_ESTRATEGIC', 'GESTOR_ENTERPRISE']
     if (path.startsWith('/gestio') && !gestorRoles.includes(role)) {
       console.log(`🚫 [MIDDLEWARE] Acceso denegado: ${role} no puede acceder a ${path}`)

@@ -66,7 +66,12 @@ export function UnassignedLeads({ leads, gestors, onAssign }: UnassignedLeadsPro
     }
   }
 
-  const handleAssign = (gestorId: string) => {
+  const handleAssign = (gestorId: string, event?: React.MouseEvent) => {
+    if (event) {
+      event.preventDefault()
+      event.stopPropagation()
+    }
+
     onAssign(selectedIds, gestorId)
     setSelectedIds([])
     setShowDropdown(false)
@@ -135,7 +140,7 @@ export function UnassignedLeads({ leads, gestors, onAssign }: UnassignedLeadsPro
                     {gestors.map((gestor) => (
                       <button
                         key={gestor.id}
-                        onClick={() => handleAssign(gestor.id)}
+                        onClick={(e) => handleAssign(gestor.id, e)}
                         className="w-full px-4 py-2 text-left text-sm hover:bg-slate-50 flex items-center justify-between"
                       >
                         <span className="font-medium text-slate-700">

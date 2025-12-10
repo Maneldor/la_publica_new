@@ -141,7 +141,7 @@ export const authOptions: NextAuthOptions = {
 
           // Usar el campo 'role' directament si existeix i és vàlid
           const validRoles = [
-            'SUPER_ADMIN', 'ADMIN',
+            'SUPER_ADMIN', 'ADMIN', 'ADMIN_GESTIO',
             'CRM_COMERCIAL', 'CRM_CONTINGUT',
             'GESTOR_ESTANDARD', 'GESTOR_ESTRATEGIC', 'GESTOR_ENTERPRISE',
             'MODERATOR', 'COMPANY', 'USER'
@@ -363,6 +363,18 @@ export const authOptions: NextAuthOptions = {
   jwt: {
     // JWT duradero: 30 días
     maxAge: 30 * 24 * 60 * 60, // 30 días en segundos
+  },
+  cookies: {
+    sessionToken: {
+      name: process.env.NODE_ENV === 'production' ? '__Secure-next-auth.session-token' : 'next-auth.session-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        domain: process.env.NODE_ENV === 'production' ? '.lapublica.cat' : undefined,
+      }
+    }
   },
   secret: process.env.NEXTAUTH_SECRET,
 }

@@ -156,3 +156,26 @@ body {
     font-size: 0.5rem;
   }
 }
+
+/* ReactQuill custom styles */
+.ql-container {
+  border-bottom-left-radius: 0.375rem !important;
+  border-bottom-right-radius: 0.375rem !important;
+  min-height: 200px;
+}
+
+.ql-toolbar {
+  border-top-left-radius: 0.375rem !important;
+  border-top-right-radius: 0.375rem !important;
+  border-bottom: 1px solid #d1d5db !important;
+}
+
+.ql-editor {
+  min-height: 200px;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+
+.ql-editor.ql-blank::before {
+  color: #9ca3af !important;
+  font-style: normal !important;
+}

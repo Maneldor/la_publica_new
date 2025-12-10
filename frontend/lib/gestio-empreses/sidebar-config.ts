@@ -106,6 +106,13 @@ export const SIDEBAR_CONFIG: SidebarSection[] = [
         roles: [...ROLE_GROUPS.ADMINS],
       },
       {
+        id: 'empreses-pendents',
+        label: 'Empreses Pendents',
+        href: '/gestio/admin/empreses-pendents',
+        icon: Building2,
+        roles: [...ROLE_GROUPS.ADMINS],
+      },
+      {
         id: 'plans',
         label: 'Plans',
         href: '/gestio/admin/plans',
@@ -372,6 +379,13 @@ export const SIDEBAR_CONFIG: SidebarSection[] = [
     defaultOpen: true,
     items: [
       {
+        id: 'recursos-comercials',
+        label: 'Recursos Comercials',
+        href: '/gestio/eines',
+        icon: FileText,
+        roles: [...ROLE_GROUPS.ALL_GESTIO],
+      },
+      {
         id: 'agenda',
         label: 'Agenda',
         href: '/gestio/agenda',
@@ -447,19 +461,19 @@ export function getSidebarTitle(role: UserRole | undefined | null): string {
 }
 
 /**
- * Adapta els labels per a gestors (afegeix "Els Meus" / "Les Meves")
+ * Adapta els labels per a gestors
  */
 export function getGestorAdjustedLabels(role: UserRole | undefined | null): Record<string, string> {
   if (!role || !ROLE_GROUPS.GESTORS.includes(role)) return {}
 
   return {
-    'leads': 'Gestió Leads → Els Meus Leads',
-    'leads-list': 'Els Meus Leads',
-    'pipeline': 'El Meu Pipeline',
-    'empreses': 'Gestió Empreses → Les Meves Empreses',
-    'empreses-list': 'Les Meves Empreses',
-    'ofertes': 'Les Meves Ofertes',
-    'assessoraments': 'Els Meus Assessoraments',
-    'estadistiques': 'Les Meves Estadístiques',
+    'leads': 'Gestió Leads',
+    'leads-list': 'Leads',
+    'pipeline': 'Pipeline',
+    'empreses': 'Gestió Empreses',
+    'empreses-list': 'Empreses',
+    'ofertes': 'Ofertes',
+    'assessoraments': 'Assessoraments',
+    'estadistiques': 'Estadístiques',
   }
 }

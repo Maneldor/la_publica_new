@@ -22,6 +22,8 @@ import { cn } from '@/lib/utils'
 import { moveLeadToStage } from '@/lib/gestio-empreses/pipeline-actions'
 import { getNextStages, PipelineStage } from '@/lib/gestio-empreses/pipeline-utils'
 import { AIScoreBadge } from '@/components/gestio-empreses/leads/ai/AIScoreBadge'
+import { canDragLead, getAllowedTransitions, LeadStage } from '@/lib/gestio-empreses/lead-permissions'
+import { useSession } from 'next-auth/react'
 
 interface PipelineCardProps {
   lead: {
@@ -43,6 +45,8 @@ interface PipelineCardProps {
   }
   isSupervisor: boolean
   onMoved?: () => void
+  onLeadClick?: (lead: any) => void
+  compact?: boolean
 }
 
 const priorityColors: Record<string, string> = {
@@ -51,11 +55,19 @@ const priorityColors: Record<string, string> = {
   LOW: 'border-l-slate-300',
 }
 
-export function PipelineCard({ lead, isSupervisor, onMoved }: PipelineCardProps) {
+export function PipelineCard({ lead, isSupervisor, onMoved, onLeadClick, compact = false }: PipelineCardProps) {
   const [isMoving, setIsMoving] = useState(false)
+  const { data: session } = useSession()
 
+  // Utilitzar el sistema de permisos nou
+  const userRole = session?.user?.role || 'USER'
+  const currentStage = (lead.status || lead.stage) as LeadStage
+  const allowedTransitions = getAllowedTransitions(userRole, currentStage)
+  const canDragThis = canDragLead(userRole, currentStage)
+
+  // Retrocompatibilitat amb sistema antic
   const nextStages = getNextStages(lead.status, isSupervisor)
-  const canMoveForward = nextStages.length > 0
+  const canMoveForward = allowedTransitions.length > 0 || nextStages.length > 0
 
   const handleMove = async (direction: 'forward' | 'back') => {
     if (direction === 'forward' && nextStages.length === 0) return
@@ -92,22 +104,34 @@ export function PipelineCard({ lead, isSupervisor, onMoved }: PipelineCardProps)
   }
 
   return (
-    <div className={cn(
-      "bg-white rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow border-l-4",
-      priorityColors[lead.priority] || priorityColors.MEDIUM,
-      isMoving && "opacity-50"
-    )}>
+    <div
+      className={cn(
+        "bg-white rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow border-l-4 cursor-pointer",
+        priorityColors[lead.priority] || priorityColors.MEDIUM,
+        isMoving && "opacity-50"
+      )}
+      onClick={(e) => {
+        // Si cliquen en un botó o link, no obrir el panel
+        if (
+          e.target instanceof HTMLElement &&
+          (e.target.tagName === 'A' ||
+           e.target.tagName === 'BUTTON' ||
+           e.target.closest('a') ||
+           e.target.closest('button'))
+        ) {
+          return
+        }
+        onLeadClick?.(lead)
+      }}
+    >
       {/* Contingut principal */}
-      <div className="p-3">
+      <div className={cn(compact ? "p-2" : "p-3")}>
         {/* Capçalera */}
         <div className="flex items-start justify-between mb-2">
           <div className="flex-1 min-w-0">
-            <Link
-              href={`/gestio/leads/${lead.id}`}
-              className="font-medium text-slate-800 hover:text-blue-600 truncate block"
-            >
+            <h4 className="font-medium text-slate-800 hover:text-blue-600 truncate">
               {lead.companyName}
-            </Link>
+            </h4>
             {lead.contactName && (
               <p className="text-sm text-slate-500 truncate flex items-center gap-1 mt-0.5">
                 <User className="h-3 w-3" strokeWidth={1.5} />
@@ -166,29 +190,38 @@ export function PipelineCard({ lead, isSupervisor, onMoved }: PipelineCardProps)
             )}
           </div>
 
-          {/* Botons moure */}
-          <div className="flex items-center gap-1">
-            {getPreviousStage(lead.status) && (
-              <button
-                onClick={() => handleMove('back')}
-                disabled={isMoving}
-                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded transition-colors disabled:opacity-50"
-                title="Retrocedir"
-              >
-                <ChevronLeft className="h-3.5 w-3.5" strokeWidth={1.5} />
-              </button>
-            )}
-            {canMoveForward && (
-              <button
-                onClick={() => handleMove('forward')}
-                disabled={isMoving}
-                className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors disabled:opacity-50"
-                title="Avançar"
-              >
-                <ChevronRight className="h-3.5 w-3.5" strokeWidth={1.5} />
-              </button>
-            )}
-          </div>
+          {/* Botons moure - només mostrar si l'usuari té permisos */}
+          {canDragThis && (
+            <div className="flex items-center gap-1">
+              {getPreviousStage(lead.status) && (
+                <button
+                  onClick={() => handleMove('back')}
+                  disabled={isMoving}
+                  className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded transition-colors disabled:opacity-50"
+                  title="Retrocedir"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" strokeWidth={1.5} />
+                </button>
+              )}
+              {canMoveForward && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    if (onLeadClick) {
+                      onLeadClick(lead)
+                    } else {
+                      handleMove('forward')
+                    }
+                  }}
+                  disabled={isMoving}
+                  className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors disabled:opacity-50"
+                  title={onLeadClick ? "Veure detalls" : "Avançar"}
+                >
+                  <ChevronRight className="h-3.5 w-3.5" strokeWidth={1.5} />
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

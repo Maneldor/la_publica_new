@@ -82,6 +82,30 @@ export function IALeadChart({ userId }: IALeadChartProps) {
     )
   }
 
+  // Si no hi ha dades, mostrar placeholder per evitar warnings de gràfic
+  if (!data || data.length === 0) {
+    return (
+      <div className="bg-white rounded-xl border border-slate-200 p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 rounded-lg bg-slate-100">
+            <BarChart3 className="h-5 w-5 text-slate-600" strokeWidth={1.5} />
+          </div>
+          <div>
+            <h2 className="font-semibold text-slate-900">Rendiment de generacions</h2>
+            <p className="text-sm text-slate-500">Evolució dels leads generats i acceptats</p>
+          </div>
+        </div>
+        <div className="h-[200px] flex items-center justify-center text-slate-400">
+          <div className="text-center">
+            <BarChart3 className="h-12 w-12 mx-auto mb-3 text-slate-300" strokeWidth={1} />
+            <p className="font-medium">No hi ha dades de rendiment disponibles</p>
+            <p className="text-sm mt-1">Genera alguns leads amb IA per veure estadístiques</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="bg-white rounded-xl border border-slate-200">
       <div className="p-6 border-b border-slate-200">
@@ -126,7 +150,7 @@ export function IALeadChart({ userId }: IALeadChartProps) {
       <div className="p-6">
         {chartType === 'bar' ? (
           <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minHeight={200}>
               <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                 <XAxis
@@ -163,7 +187,7 @@ export function IALeadChart({ userId }: IALeadChartProps) {
         ) : (
           <div className="flex items-center justify-between">
             <div className="h-64 w-64">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minHeight={200}>
                 <PieChart>
                   <Pie
                     data={pieData}
