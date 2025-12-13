@@ -147,7 +147,7 @@ export default function LeadDetailPage({ params }: PageProps) {
 
                 {lead.sector && (
                   <div>
-                    <label className="block text-sm font-medium text-slate-500 mb-1">Sector</label>
+                    <label className="block text-sm font-medium text-slate-500 mb-1">Categoria</label>
                     <p className="text-slate-800">{lead.sector}</p>
                   </div>
                 )}
@@ -172,14 +172,13 @@ export default function LeadDetailPage({ params }: PageProps) {
                     <Tag className="h-3 w-3" strokeWidth={1.5} />
                     Prioritat
                   </label>
-                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                    lead.priority === 'HIGH' ? 'bg-red-100 text-red-700' :
-                    lead.priority === 'MEDIUM' ? 'bg-yellow-100 text-yellow-700' :
-                    'bg-green-100 text-green-700'
-                  }`}>
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${lead.priority === 'HIGH' ? 'bg-red-100 text-red-700' :
+                      lead.priority === 'MEDIUM' ? 'bg-yellow-100 text-yellow-700' :
+                        'bg-green-100 text-green-700'
+                    }`}>
                     {lead.priority === 'HIGH' ? 'Alta' :
-                     lead.priority === 'MEDIUM' ? 'Mitjana' :
-                     lead.priority === 'LOW' ? 'Baixa' : lead.priority}
+                      lead.priority === 'MEDIUM' ? 'Mitjana' :
+                        lead.priority === 'LOW' ? 'Baixa' : lead.priority}
                   </span>
                 </div>
 
@@ -197,20 +196,18 @@ export default function LeadDetailPage({ params }: PageProps) {
                       Score
                     </label>
                     <div className="flex items-center gap-2">
-                      <div className={`text-lg font-bold ${
-                        lead.score >= 80 ? 'text-green-600' :
-                        lead.score >= 60 ? 'text-yellow-600' :
-                        'text-red-600'
-                      }`}>
+                      <div className={`text-lg font-bold ${lead.score >= 80 ? 'text-green-600' :
+                          lead.score >= 60 ? 'text-yellow-600' :
+                            'text-red-600'
+                        }`}>
                         {lead.score}
                       </div>
                       <div className="flex-1 bg-slate-200 rounded-full h-2">
                         <div
-                          className={`h-2 rounded-full ${
-                            lead.score >= 80 ? 'bg-green-500' :
-                            lead.score >= 60 ? 'bg-yellow-500' :
-                            'bg-red-500'
-                          }`}
+                          className={`h-2 rounded-full ${lead.score >= 80 ? 'bg-green-500' :
+                              lead.score >= 60 ? 'bg-yellow-500' :
+                                'bg-red-500'
+                            }`}
                           style={{ width: `${lead.score}%` }}
                         />
                       </div>

@@ -392,7 +392,7 @@ export async function getGestorsWithFullStats() {
       email: true,
       image: true,
       userType: true,
-      phone: true,
+      // phone: true, // Field does not exist in User model
       createdAt: true,
       assignedLeads: {
         select: {
@@ -450,7 +450,7 @@ export async function getGestorsWithFullStats() {
       email: gestor.email,
       image: gestor.image,
       role: gestor.userType,
-      phone: gestor.phone,
+      phone: null, // gestor.phone not available
       createdAt: gestor.createdAt,
       activeLeads: activeLeads.length,
       totalLeads: gestor.assignedLeads.length,

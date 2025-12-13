@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { Providers } from './providers';
 import DevWarningsFilter from '@/components/DevWarningsFilter';
+import LocalStorageMigrator from '@/components/LocalStorageMigrator';
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -34,6 +35,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <DevWarningsFilter />
+        <LocalStorageMigrator />
         <Providers>
           {children}
         </Providers>

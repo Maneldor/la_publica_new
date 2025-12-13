@@ -148,7 +148,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         dueDate: new Date(),
         paidDate: new Date(),
         clientName: company.name,
-        clientCif: company.cif,
+        clientCif: company.cif || 'N/D',
         clientEmail: company.email,
         clientAddress: company.address || 'N/D',
         items: {

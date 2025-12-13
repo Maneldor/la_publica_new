@@ -28,11 +28,12 @@ interface PerformanceData {
 
 interface IALeadChartProps {
   userId: string
+  initialData?: PerformanceData[]
 }
 
-export function IALeadChart({ userId }: IALeadChartProps) {
-  const [data, setData] = useState<PerformanceData[]>([])
-  const [loading, setLoading] = useState(true)
+export function IALeadChart({ userId, initialData }: IALeadChartProps) {
+  const [data, setData] = useState<PerformanceData[]>(initialData || [])
+  const [loading, setLoading] = useState(!initialData)
   const [chartType, setChartType] = useState<'bar' | 'pie'>('bar')
 
   const loadData = async () => {
@@ -47,7 +48,9 @@ export function IALeadChart({ userId }: IALeadChartProps) {
   }
 
   useEffect(() => {
-    loadData()
+    if (!initialData) {
+      loadData()
+    }
   }, [userId])
 
   const formatWeekLabel = (dateString: string) => {
@@ -254,8 +257,8 @@ export function IALeadChart({ userId }: IALeadChartProps) {
                       {acceptanceRate >= 70
                         ? 'Excel·lent taxa d\'acceptació'
                         : acceptanceRate >= 50
-                        ? 'Taxa d\'acceptació satisfactòria'
-                        : 'Considera ajustar els criteris de generació'
+                          ? 'Taxa d\'acceptació satisfactòria'
+                          : 'Considera ajustar els criteris de generació'
                       }
                     </p>
                   </div>

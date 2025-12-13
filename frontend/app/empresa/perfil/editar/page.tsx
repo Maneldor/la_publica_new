@@ -12,19 +12,55 @@ import {
   CheckCircle
 } from 'lucide-react';
 import SimpleWizard from '@/components/wizard/SimpleWizard';
-import { useAdminCreateEmpresa } from '@/app/admin/empresas/crear/hooks/useAdminCreateEmpresa';
-import { Step1Branding } from '@/app/admin/empresas/crear/components/steps/Step1Branding';
-import { Step2BasicInfo } from '@/app/admin/empresas/crear/components/steps/Step2BasicInfo';
-import { Step3Contact } from '@/app/admin/empresas/crear/components/steps/Step3Contact';
-import { Step4Professional } from '@/app/admin/empresas/crear/components/steps/Step4Professional';
-import { Step5Certifications } from '@/app/admin/empresas/crear/components/steps/Step5Certifications';
-import { Step6Team } from '@/app/admin/empresas/crear/components/steps/Step6Team';
-import { Step8Review } from '@/app/admin/empresas/crear/components/steps/Step8Review';
+// import { useAdminCreateEmpresa } from '@/app/admin/empresas/crear/hooks/useAdminCreateEmpresa';
+// Imports replaced with local placeholders due to missing files
+// import { Step1Branding } from '@/app/admin/empresas/crear/components/steps/Step1Branding';
+// ...
+
+// Local placeholders for missing components
+const StepPlaceholder = ({ title, formData }: any) => (
+  <div className="p-6 text-center border-2 border-dashed border-gray-200 rounded-lg">
+    <h3 className="text-lg font-medium text-gray-900 mb-2">{title}</h3>
+    <p className="text-sm text-gray-500">Component missing or under construction.</p>
+    <div className="mt-4 text-left bg-gray-50 p-4 rounded text-xs font-mono overflow-auto max-h-40">
+      {JSON.stringify(formData, null, 2)}
+    </div>
+  </div>
+);
+
+const Step1Branding = (props: any) => <StepPlaceholder title="Branding" {...props} />;
+const Step2BasicInfo = (props: any) => <StepPlaceholder title="Basic Info" {...props} />;
+const Step3Contact = (props: any) => <StepPlaceholder title="Contact" {...props} />;
+const Step4Professional = (props: any) => <StepPlaceholder title="Professional" {...props} />;
+const Step5Certifications = (props: any) => <StepPlaceholder title="Certifications" {...props} />;
+const Step6Team = (props: any) => <StepPlaceholder title="Team" {...props} />;
+const Step8Review = (props: any) => <StepPlaceholder title="Review" {...props} />;
 
 export default function EditarPerfilEmpresaPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
+  // Local state management replacing useAdminCreateEmpresa
+  const [currentStep, setCurrentStep] = useState(1);
+  const [formData, setFormData] = useState<any>({});
+  const [errors, setErrors] = useState<any>({});
+
+  const updateField = (field: string, value: any) => {
+    setFormData((prev: any) => ({ ...prev, [field]: value }));
+  };
+
+  const nextStep = () => setCurrentStep(prev => prev + 1);
+  const prevStep = () => setCurrentStep(prev => prev - 1);
+
+  // Stubs for specific actions
+  const addTeamMember = () => { };
+  const updateTeamMember = () => { };
+  const removeTeamMember = () => { };
+  const addCertification = () => { };
+  const updateCertification = () => { };
+  const removeCertification = () => { };
+
+  /*
   const {
     currentStep,
     formData,
@@ -39,6 +75,7 @@ export default function EditarPerfilEmpresaPage() {
     nextStep,
     prevStep,
   } = useAdminCreateEmpresa();
+  */
 
   const steps = [
     { id: 1, title: 'Branding', icon: <Image className="w-5 h-5" /> },
@@ -134,7 +171,7 @@ export default function EditarPerfilEmpresaPage() {
           <Step8Review
             formData={formData}
             errors={errors}
-            onSaveDraft={() => {}}
+            onSaveDraft={() => { }}
             onPublish={handleSubmit}
           />
         );

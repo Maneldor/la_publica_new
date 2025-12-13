@@ -1,18 +1,80 @@
 'use client'
 
-import { useState } from 'react'
-import { BarChart3, Download, Calendar, Filter } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { BarChart3, Filter } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import {
+  getKPIData,
+  getChartData,
+  getFunnelData,
+  getPipelineData,
+  getGestorRanking,
+  type KPIData,
+  type ChartDataPoint,
+  type FunnelStage,
+  type PipelineData,
+  type GestorRanking,
+  type StatisticsFilters
+} from '@/lib/gestio-empreses/statistics-actions'
+import { KPICards } from '@/components/gestio-empreses/estadistiques/KPICards'
+import { LeadsChart } from '@/components/gestio-empreses/estadistiques/LeadsChart'
+import { ConversionFunnel } from '@/components/gestio-empreses/estadistiques/ConversionFunnel'
+import { PipelineChart } from '@/components/gestio-empreses/estadistiques/PipelineChart'
+import { GestorRanking as GestorRankingComponent } from '@/components/gestio-empreses/estadistiques/GestorRanking'
+import { StatisticsFilters as FiltersComponent } from '@/components/gestio-empreses/estadistiques/StatisticsFilters'
+import { QuickExportButtons } from '@/components/gestio-empreses/estadistiques/ExportButton'
 
 export default function EstadistiquesPage() {
   const [isFiltersOpen, setIsFiltersOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Estado de datos
+  const [kpiData, setKpiData] = useState<KPIData | null>(null)
+  const [chartData, setChartData] = useState<ChartDataPoint[] | null>(null)
+  const [funnelData, setFunnelData] = useState<FunnelStage[] | null>(null)
+  const [pipelineData, setPipelineData] = useState<PipelineData[] | null>(null)
+  const [rankingData, setRankingData] = useState<GestorRanking[] | null>(null)
+
+  // Estado de filtros
+  const [filters, setFilters] = useState<StatisticsFilters>({
+    dateFrom: '', // Inicializar con fechas por defecto si se desea (e.g. last 30 days)
+    dateTo: ''
+  })
+
+  // Carga inicial y al cambiar filtros
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true)
+      try {
+        const [kpis, charts, funnel, pipeline, ranking] = await Promise.all([
+          getKPIData(filters),
+          getChartData(filters),
+          getFunnelData(filters),
+          getPipelineData(filters),
+          getGestorRanking(filters)
+        ])
+
+        setKpiData(kpis)
+        setChartData(charts)
+        setFunnelData(funnel)
+        setPipelineData(pipeline)
+        setRankingData(ranking)
+      } catch (error) {
+        console.error('Error carregant estadístiques:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [filters])
 
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
       <div className="bg-white border-b border-slate-200">
         <div className="px-6 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             {/* Título y descripción */}
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -30,17 +92,11 @@ export default function EstadistiquesPage() {
 
             {/* Controles */}
             <div className="flex items-center gap-3">
-              {/* Información del filtro actual */}
-              <div className="hidden sm:flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-lg">
-                <Calendar className="h-4 w-4 text-slate-500" strokeWidth={1.5} />
-                <span className="text-sm text-slate-700">Últims 30 dies</span>
-              </div>
-
               {/* Botón de filtros */}
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+                onClick={() => setIsFiltersOpen(true)}
                 className={isFiltersOpen ? 'bg-blue-50 border-blue-200' : ''}
               >
                 <Filter className="h-4 w-4" strokeWidth={1.5} />
@@ -48,24 +104,7 @@ export default function EstadistiquesPage() {
               </Button>
 
               {/* Botones de exportación */}
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                >
-                  <Download className="h-4 w-4" strokeWidth={1.5} />
-                  <span className="hidden sm:inline ml-2">Excel</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                >
-                  <Download className="h-4 w-4" strokeWidth={1.5} />
-                  <span className="hidden sm:inline ml-2">PDF</span>
-                </Button>
-              </div>
+              <QuickExportButtons filters={filters} />
             </div>
           </div>
         </div>
@@ -81,73 +120,34 @@ export default function EstadistiquesPage() {
       </div>
 
       {/* Contenido principal */}
-      <div className="px-6 py-8">
-        {/* Mensaje de desarrollo */}
-        <div className="bg-white rounded-lg border border-slate-200 p-8 text-center">
-          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <BarChart3 className="h-8 w-8 text-blue-600" strokeWidth={1.5} />
-          </div>
+      <div className="px-6 py-8 md:px-8 max-w-7xl mx-auto space-y-8">
 
-          <h2 className="text-xl font-semibold text-slate-900 mb-2">
-            Mòdul d'Estadístiques
-          </h2>
+        {/* KPIs */}
+        <section>
+          <KPICards data={kpiData} isLoading={isLoading} />
+        </section>
 
-          <p className="text-slate-600 mb-6 max-w-md mx-auto">
-            El mòdul d'estadístiques està en desenvolupament. Totes les funcionalitats han estat implementades
-            i estaran disponibles un cop es resolguin els errors de configuració.
-          </p>
-
-          {/* Preview de funcionalidades */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
-            <div className="p-4 bg-slate-50 rounded-lg">
-              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-                📊
-              </div>
-              <h3 className="font-medium text-slate-900 text-sm">KPIs Principals</h3>
-              <p className="text-xs text-slate-500 mt-1">8 indicadors clau amb tendències</p>
-            </div>
-
-            <div className="p-4 bg-slate-50 rounded-lg">
-              <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-                📈
-              </div>
-              <h3 className="font-medium text-slate-900 text-sm">Gràfics Interactius</h3>
-              <p className="text-xs text-slate-500 mt-1">Evolució temporal i tendències</p>
-            </div>
-
-            <div className="p-4 bg-slate-50 rounded-lg">
-              <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-                🏆
-              </div>
-              <h3 className="font-medium text-slate-900 text-sm">Rànking Gestors</h3>
-              <p className="text-xs text-slate-500 mt-1">Comparativa de rendiment</p>
-            </div>
-
-            <div className="p-4 bg-slate-50 rounded-lg">
-              <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-                📤
-              </div>
-              <h3 className="font-medium text-slate-900 text-sm">Exportació</h3>
-              <p className="text-xs text-slate-500 mt-1">PDF i Excel amb dades completes</p>
-            </div>
-          </div>
-
-          {/* Información técnica */}
-          <div className="mt-8 p-4 bg-blue-50 rounded-lg text-left">
-            <h4 className="font-medium text-blue-900 mb-2">Funcionalitats Implementades:</h4>
-            <ul className="text-sm text-blue-800 space-y-1">
-              <li>• Dashboard complet amb 8 KPIs principals i mètriques financeres</li>
-              <li>• Gràfics de línies, barres i combinats amb Recharts</li>
-              <li>• Embut de conversió visual amb insights automàtics</li>
-              <li>• Anàlisi de pipeline amb múltiples vistes</li>
-              <li>• Activitat temporal amb filtres per tipus</li>
-              <li>• Rànking de gestors amb podio i estadístiques d'equip</li>
-              <li>• Sistema de filtres avançat (dates, gestor, empresa, origen)</li>
-              <li>• Exportació a PDF i Excel</li>
-            </ul>
-          </div>
+        {/* Gráficos Principales */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <LeadsChart data={chartData} isLoading={isLoading} />
+          <ConversionFunnel data={funnelData} isLoading={isLoading} />
         </div>
+
+        {/* Pipeline y Ranking */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <PipelineChart data={pipelineData} isLoading={isLoading} />
+          <GestorRankingComponent data={rankingData} isLoading={isLoading} />
+        </div>
+
       </div>
+
+      {/* Modal de Filtres */}
+      <FiltersComponent
+        isOpen={isFiltersOpen}
+        onClose={() => setIsFiltersOpen(false)}
+        filters={filters}
+        onFiltersChange={setFilters}
+      />
     </div>
   )
 }

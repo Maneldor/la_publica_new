@@ -15,6 +15,7 @@ interface WorkspaceSectionProps {
   userId?: string
   defaultExpanded?: boolean
   collapsible?: boolean
+  initialLeads?: any[]
 }
 
 export function WorkspaceSection({
@@ -22,11 +23,12 @@ export function WorkspaceSection({
   title = "Pipeline",
   userId,
   defaultExpanded = true,
-  collapsible = false
+  collapsible = false,
+  initialLeads
 }: WorkspaceSectionProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded)
-  const [leads, setLeads] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const [leads, setLeads] = useState<any[]>(initialLeads || [])
+  const [loading, setLoading] = useState(!initialLeads)
   const [currentPage, setCurrentPage] = useState(0)
   const [selectedLead, setSelectedLead] = useState<any>(null)
   const [isDetailPanelOpen, setIsDetailPanelOpen] = useState(false)
@@ -40,7 +42,9 @@ export function WorkspaceSection({
   )
 
   useEffect(() => {
-    loadLeads()
+    if (!initialLeads) {
+      loadLeads()
+    }
   }, [stages, userId])
 
   const loadLeads = async () => {

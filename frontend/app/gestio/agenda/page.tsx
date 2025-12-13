@@ -33,7 +33,7 @@ import { AgendaSemesterView } from '@/components/gestio-empreses/agenda/AgendaSe
 import { AgendaYearView } from '@/components/gestio-empreses/agenda/AgendaYearView'
 import { ContactsSidebar } from '@/components/gestio-empreses/agenda/ContactsSidebar'
 import { EventModal } from '@/components/gestio-empreses/agenda/EventModal'
-import { getCalendarEvents, getEventStats } from '@/lib/gestio-empreses/calendar-actions'
+import { getCalendarEvents, getCalendarStats } from '@/lib/gestio-empreses/calendar-actions'
 import type { Contact } from '@/lib/gestio-empreses/contacts-actions'
 
 export default function AgendaPage() {
@@ -50,15 +50,52 @@ export default function AgendaPage() {
 
   const currentUserId = session?.user?.id || ''
 
+  // Helper per calcular rang
+  const getViewRange = () => {
+    let start = new Date(currentDate)
+    let end = new Date(currentDate)
+
+    switch (currentView) {
+      case 'day':
+        start.setHours(0, 0, 0, 0)
+        end.setHours(23, 59, 59, 999)
+        break
+      case 'week':
+        start = startOfWeek(currentDate, { weekStartsOn: 1 })
+        end = endOfWeek(currentDate, { weekStartsOn: 1 })
+        break
+      case 'month':
+        start = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
+        end = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59)
+        break
+      case 'quarter':
+        const currentQuarter = Math.floor(currentDate.getMonth() / 3)
+        start = new Date(currentDate.getFullYear(), currentQuarter * 3, 1)
+        end = new Date(currentDate.getFullYear(), (currentQuarter + 1) * 3, 0, 23, 59, 59)
+        break
+      case 'semester':
+        const currentSemester = currentDate.getMonth() < 6 ? 0 : 1
+        start = new Date(currentDate.getFullYear(), currentSemester * 6, 1)
+        end = new Date(currentDate.getFullYear(), (currentSemester + 1) * 6, 0, 23, 59, 59)
+        break
+      case 'year':
+        start = new Date(currentDate.getFullYear(), 0, 1)
+        end = new Date(currentDate.getFullYear(), 11, 31, 23, 59, 59)
+        break
+    }
+    return { start, end }
+  }
+
   // Carregar esdeveniments
   useEffect(() => {
     const loadData = async () => {
       if (!currentUserId) return
       setIsLoading(true)
       try {
+        const { start, end } = getViewRange()
         const [eventsData, statsData] = await Promise.all([
-          getCalendarEvents(currentUserId),
-          getEventStats(currentUserId)
+          getCalendarEvents(currentUserId, start, end),
+          getCalendarStats(currentUserId)
         ])
         setEvents(eventsData)
         setStats(statsData)
@@ -69,13 +106,14 @@ export default function AgendaPage() {
     }
 
     loadData()
-  }, [currentUserId])
+  }, [currentUserId, currentDate, currentView]) // Added dependencies to reload on view/date change
 
   const handleRefresh = async () => {
     if (!currentUserId) return
+    const { start, end } = getViewRange()
     const [eventsData, statsData] = await Promise.all([
-      getCalendarEvents(currentUserId),
-      getEventStats(currentUserId)
+      getCalendarEvents(currentUserId, start, end),
+      getCalendarStats(currentUserId)
     ])
     setEvents(eventsData)
     setStats(statsData)

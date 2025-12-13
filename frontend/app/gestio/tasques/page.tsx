@@ -41,9 +41,14 @@ export default function TasquesPage() {
   const [editingTask, setEditingTask] = useState<any>(null)
   const [leadInfo, setLeadInfo] = useState<{ id: string; companyName: string } | null>(null)
 
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const LIMIT = 50
+
   const currentUserId = session?.user?.id || ''
 
-  const loadData = async () => {
+  // Cargar datos
+  const loadData = async (targetPage = 1) => {
     if (!currentUserId) return
 
     setIsLoading(true)
@@ -54,18 +59,44 @@ export default function TasquesPage() {
         filters.leadId = leadIdFilter
       }
 
-      const [tasksData, statsData, byStatusData] = await Promise.all([
-        getUserTasks(currentUserId, filters),
-        getAdvancedTaskStats(currentUserId),
-        getTasksByStatus(currentUserId),
+      // 1. Cargar datos básicos de lista y stats (siempre necesarios al inicio o refresh)
+      // Kanban se carga bajo demanda o en background si estamos en esa vista
+      const [tasksResult, statsData] = await Promise.all([
+        // @ts-ignore
+        getUserTasks(currentUserId, filters, targetPage, LIMIT),
+        getAdvancedTaskStats(currentUserId)
       ])
-      setTasks(tasksData)
+
+      // @ts-ignore
+      setTasks(tasksResult.tasks || [])
+      // @ts-ignore
+      if (tasksResult.metadata) {
+        // @ts-ignore
+        setTotalPages(tasksResult.metadata.totalPages)
+        // @ts-ignore
+        setPage(tasksResult.metadata.page)
+      }
+
       setStats(statsData)
-      setTasksByStatus(byStatusData)
+
+      // 2. Si la vista activa es kanban, cargar kanban. Si no, podemos cargarlo lazy después
+      if (activeView === 'kanban') {
+        loadKanbanData()
+      }
+
     } catch (error) {
       console.error('Error carregant dades:', error)
     }
     setIsLoading(false)
+  }
+
+  const loadKanbanData = async () => {
+    try {
+      const byStatusData = await getTasksByStatus(currentUserId)
+      setTasksByStatus(byStatusData)
+    } catch (error) {
+      console.error("Error loading kanban", error)
+    }
   }
 
   // Carregar info del lead si hi ha filtre
@@ -85,8 +116,15 @@ export default function TasquesPage() {
   }
 
   useEffect(() => {
+    if (activeView === 'kanban' && (!tasksByStatus || Object.keys(tasksByStatus).length === 0)) {
+      loadKanbanData()
+    }
+  }, [activeView])
+
+  useEffect(() => {
     if (currentUserId) {
-      loadData()
+      // Reset page to 1 on clean load
+      loadData(1)
     }
   }, [currentUserId, leadIdFilter])
 
@@ -180,12 +218,35 @@ export default function TasquesPage() {
       ) : (
         <>
           {activeView === 'list' && (
-            <TaskList
-              tasks={tasks}
-              onEdit={handleEdit}
-              onStatusChange={handleStatusChange}
-              onDelete={handleDelete}
-            />
+            <>
+              <TaskList
+                tasks={tasks}
+                onEdit={handleEdit}
+                onStatusChange={handleStatusChange}
+                onDelete={handleDelete}
+              />
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between border-t border-slate-200 pt-4 mt-4 bg-white p-4 rounded-b-lg">
+                  <button
+                    onClick={() => loadData(page - 1)}
+                    disabled={page === 1}
+                    className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    Anterior
+                  </button>
+                  <span className="text-sm text-slate-600">
+                    Pàgina {page} de {totalPages}
+                  </span>
+                  <button
+                    onClick={() => loadData(page + 1)}
+                    disabled={page === totalPages}
+                    className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    Següent
+                  </button>
+                </div>
+              )}
+            </>
           )}
 
           {activeView === 'kanban' && (

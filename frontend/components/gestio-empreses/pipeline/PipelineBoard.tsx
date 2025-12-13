@@ -23,10 +23,15 @@ interface GestorInfo {
   leadsByStage: Record<string, number>
 }
 
-export function PipelineBoard() {
+interface PipelineBoardProps {
+  initialGestors?: GestorInfo[]
+  initialWorkspaceLeads?: any[]
+}
+
+export function PipelineBoard({ initialGestors, initialWorkspaceLeads }: PipelineBoardProps) {
   const { data: session } = useSession()
-  const [gestors, setGestors] = useState<GestorInfo[]>([])
-  const [loading, setLoading] = useState(true)
+  const [gestors, setGestors] = useState<GestorInfo[]>(initialGestors || [])
+  const [loading, setLoading] = useState(!initialGestors)
 
   const userRole = session?.user?.role as string || ''
   const viewType = getPipelineViewType(userRole)
@@ -34,10 +39,11 @@ export function PipelineBoard() {
   const showGestorPipelines = canViewGestorPipelines(userRole)
 
   // Carregar gestors si és CRM/Admin
+  // Carregar gestors si és CRM/Admin i no tenim dades inicials
   useEffect(() => {
-    if (showGestorPipelines) {
+    if (showGestorPipelines && !initialGestors) {
       loadGestors()
-    } else {
+    } else if (!showGestorPipelines || initialGestors) {
       setLoading(false)
     }
   }, [showGestorPipelines])
@@ -78,6 +84,7 @@ export function PipelineBoard() {
         title="El meu espai de treball"
         defaultExpanded={true}
         collapsible={true}
+        initialLeads={initialWorkspaceLeads}
       />
 
       {/* Pipelines dels Gestors */}

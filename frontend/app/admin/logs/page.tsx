@@ -1,663 +1,828 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react'
 import {
-  FileText,
+  ScrollText,
   Search,
   Filter,
-  Download,
   RefreshCw,
+  Download,
   Calendar,
   User,
-  AlertCircle,
-  CheckCircle,
   AlertTriangle,
+  AlertCircle,
+  Info,
+  Bug,
+  CheckCircle,
   XCircle,
-  Shield,
-  Clock,
   ChevronLeft,
-  ChevronRight
-} from 'lucide-react';
+  ChevronRight,
+  X,
+  Clock,
+  Globe,
+  Monitor,
+  FileText,
+  Shield,
+  Activity,
+  TrendingUp,
+  Eye,
+} from 'lucide-react'
+
+// =====================
+// TIPUS
+// =====================
+
+type AuditLevel = 'DEBUG' | 'INFO' | 'WARNING' | 'ERROR' | 'CRITICAL'
 
 interface AuditLog {
-  id: string;
-  action: string;
-  entity: string;
-  entityId: string | null;
-  entityName: string | null;
-  description: string;
-  userName: string;
-  userEmail: string;
-  userRole: string;
-  severity: 'INFO' | 'WARNING' | 'ERROR' | 'CRITICAL';
-  success: boolean;
-  ipAddress: string | null;
-  userAgent: string | null;
-  changes: any;
-  metadata: any;
-  createdAt: string;
-  user: {
-    id: string;
-    name: string | null;
-    email: string;
-    role: string;
-  };
+  id: string
+  timestamp: string
+  userId: string | null
+  userEmail: string | null
+  userRole: string | null
+  action: string
+  category: string
+  entity: string | null
+  entityId: string | null
+  entityName: string | null
+  description: string | null
+  changes: any
+  metadata: any
+  ipAddress: string | null
+  userAgent: string | null
+  requestPath: string | null
+  requestMethod: string | null
+  level: AuditLevel
+  success: boolean
+  errorMessage: string | null
+  user?: {
+    id: string
+    name: string | null
+    email: string
+    role: string
+  } | null
 }
 
-interface LogStats {
-  bySeverity: Record<string, number>;
-  byAction?: Record<string, number>;
-  byEntity?: Record<string, number>;
+interface Stats {
+  totalLogs: number
+  recentErrors: number
+  failedLogins: number
+  byLevel: Record<string, number>
+  byCategory: { category: string; count: number }[]
+  byAction: { action: string; count: number }[]
+  topUsers: { userId: string; email: string; count: number }[]
+  activityByDay: { date: string; count: number }[]
 }
 
-export default function AdminLogsPage() {
-  // Estado
-  const [logs, setLogs] = useState<AuditLog[]>([]);
-  const [stats, setStats] = useState<LogStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+// =====================
+// CONFIGURACIÓ
+// =====================
 
-  // Filtros
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedAction, setSelectedAction] = useState<string>('all');
-  const [selectedEntity, setSelectedEntity] = useState<string>('all');
-  const [selectedSeverity, setSelectedSeverity] = useState<string>('all');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+const LEVEL_CONFIG: Record<AuditLevel, { label: string; icon: any; color: string; bg: string }> = {
+  DEBUG: { label: 'Debug', icon: Bug, color: 'text-slate-500', bg: 'bg-slate-100' },
+  INFO: { label: 'Info', icon: Info, color: 'text-blue-600', bg: 'bg-blue-100' },
+  WARNING: { label: 'Avís', icon: AlertTriangle, color: 'text-amber-600', bg: 'bg-amber-100' },
+  ERROR: { label: 'Error', icon: AlertCircle, color: 'text-red-600', bg: 'bg-red-100' },
+  CRITICAL: { label: 'Crític', icon: AlertCircle, color: 'text-red-800', bg: 'bg-red-200' },
+}
 
-  // Paginación
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
-  const limit = 50;
+const CATEGORIES = [
+  'AUTH', 'USER', 'ROLE', 'PERMISSION', 'COMPANY', 'OFFER',
+  'LEAD', 'CAMPAIGN', 'CONTENT', 'CATEGORY', 'SUBSCRIPTION',
+  'BILLING', 'SYSTEM', 'SECURITY', 'API'
+]
 
-  // Log seleccionado para detalles
-  const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
+const ACTIONS = [
+  'LOGIN', 'LOGOUT', 'LOGIN_FAILED', 'CREATE', 'UPDATE', 'DELETE',
+  'VIEW', 'APPROVE', 'REJECT', 'ACTIVATE', 'DEACTIVATE', 'SEND',
+  'PUBLISH', 'EXPORT', 'ERROR', 'CONFIG_CHANGE'
+]
 
-  // Cargar logs
-  const loadLogs = async (isRefresh = false) => {
+// =====================
+// COMPONENT PRINCIPAL
+// =====================
+
+export default function AuditLogsPage() {
+  const [logs, setLogs] = useState<AuditLog[]>([])
+  const [stats, setStats] = useState<Stats | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Filtres
+  const [search, setSearch] = useState('')
+  const [filterLevel, setFilterLevel] = useState('')
+  const [filterCategory, setFilterCategory] = useState('')
+  const [filterAction, setFilterAction] = useState('')
+  const [filterSuccess, setFilterSuccess] = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+
+  // Paginació
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [total, setTotal] = useState(0)
+  const limit = 50
+
+  // Modal
+  const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null)
+
+  // =====================
+  // CARREGAR DADES
+  // =====================
+
+  const fetchLogs = async () => {
     try {
-      if (isRefresh) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
-      }
-      setError(null);
+      setLoading(true)
+      const params = new URLSearchParams()
+      params.set('page', page.toString())
+      params.set('limit', limit.toString())
 
-      const params = new URLSearchParams();
-      params.append('page', page.toString());
-      params.append('limit', limit.toString());
+      if (search) params.set('search', search)
+      if (filterLevel) params.set('level', filterLevel)
+      if (filterCategory) params.set('category', filterCategory)
+      if (filterAction) params.set('action', filterAction)
+      if (filterSuccess) params.set('success', filterSuccess)
+      if (dateFrom) params.set('dateFrom', dateFrom)
+      if (dateTo) params.set('dateTo', dateTo)
 
-      if (searchQuery) params.append('search', searchQuery);
-      if (selectedAction !== 'all') params.append('action', selectedAction);
-      if (selectedEntity !== 'all') params.append('entity', selectedEntity);
-      if (selectedSeverity !== 'all') params.append('severity', selectedSeverity);
-      if (dateFrom) params.append('dateFrom', dateFrom);
-      if (dateTo) params.append('dateTo', dateTo);
-
-      const response = await fetch(`/api/admin/logs?${params}`);
+      const response = await fetch(`/api/admin/audit-logs?${params}`)
+      const data = await response.json()
 
       if (!response.ok) {
-        throw new Error('Error al carregar logs');
+        throw new Error(data.error || 'Error carregant logs')
       }
 
-      const data = await response.json();
-
-      setLogs(data.logs);
-      setStats(data.stats);
-      setTotal(data.pagination.total);
-      setTotalPages(data.pagination.totalPages);
-
-      console.log('✅ Audit logs loaded:', data.logs.length);
+      setLogs(data.logs || [])
+      setTotal(data.pagination?.total || 0)
+      setTotalPages(data.pagination?.totalPages || 1)
 
     } catch (err) {
-      console.error('Error loading logs:', err);
-      setError(err instanceof Error ? err.message : 'Error desconegut');
+      setError(err instanceof Error ? err.message : 'Error desconegut')
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      setLoading(false)
     }
-  };
+  }
 
-  // Cargar al montar y cuando cambien filtros
+  const fetchStats = async () => {
+    try {
+      const response = await fetch('/api/admin/audit-logs/stats?days=7')
+      const data = await response.json()
+      if (response.ok) {
+        setStats(data)
+      }
+    } catch (err) {
+      console.error('Error carregant stats:', err)
+    }
+  }
+
   useEffect(() => {
-    loadLogs();
-  }, [page, selectedAction, selectedEntity, selectedSeverity, dateFrom, dateTo]);
+    fetchLogs()
+  }, [page, filterLevel, filterCategory, filterAction, filterSuccess, dateFrom, dateTo])
 
-  // Búsqueda con debounce
+  useEffect(() => {
+    fetchStats()
+  }, [])
+
+  // Cerca amb debounce
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (page === 1) {
-        loadLogs();
-      } else {
-        setPage(1);
+      setPage(1)
+      fetchLogs()
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [search])
+
+  // =====================
+  // EXPORTAR
+  // =====================
+
+  const handleExport = async () => {
+    try {
+      const params = new URLSearchParams()
+      if (filterCategory) params.set('category', filterCategory)
+      if (filterLevel) params.set('level', filterLevel)
+      if (dateFrom) params.set('dateFrom', dateFrom)
+      if (dateTo) params.set('dateTo', dateTo)
+
+      const response = await fetch(`/api/admin/audit-logs/export?${params}`)
+
+      if (!response.ok) {
+        throw new Error('Error exportant logs')
       }
-    }, 500);
 
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `audit-logs-${new Date().toISOString().split('T')[0]}.csv`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
 
-  // Export a CSV
-  const exportToCSV = () => {
-    const headers = ['Fecha', 'Acción', 'Usuario', 'Entidad', 'Descripción', 'Severidad', 'IP'];
-    const rows = logs.map(log => [
-      new Date(log.createdAt).toLocaleString('ca-ES'),
-      log.action,
-      log.userName,
-      log.entity,
-      log.description,
-      log.severity,
-      log.ipAddress || 'N/A'
-    ]);
-
-    const csv = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n');
-
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `audit_logs_${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-    console.log('✅ CSV exportat correctament');
-  };
-
-  // Helpers
-  const getSeverityIcon = (severity: string) => {
-    switch (severity) {
-      case 'CRITICAL': return <Shield className="w-5 h-5 text-red-600" />;
-      case 'ERROR': return <XCircle className="w-5 h-5 text-red-500" />;
-      case 'WARNING': return <AlertTriangle className="w-5 h-5 text-yellow-500" />;
-      default: return <CheckCircle className="w-5 h-5 text-blue-500" />;
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Error exportant')
     }
-  };
+  }
 
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case 'CRITICAL': return 'bg-red-100 text-red-800 border-red-300';
-      case 'ERROR': return 'bg-red-50 text-red-700 border-red-200';
-      case 'WARNING': return 'bg-yellow-50 text-yellow-700 border-yellow-200';
-      default: return 'bg-blue-50 text-blue-700 border-blue-200';
-    }
-  };
+  // =====================
+  // RESET FILTRES
+  // =====================
 
-  const formatAction = (action: string) => {
-    return action.replace(/_/g, ' ').toLowerCase()
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  };
+  const resetFilters = () => {
+    setSearch('')
+    setFilterLevel('')
+    setFilterCategory('')
+    setFilterAction('')
+    setFilterSuccess('')
+    setDateFrom('')
+    setDateTo('')
+    setPage(1)
+  }
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleString('ca-ES', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    });
-  };
+  const hasFilters = search || filterLevel || filterCategory || filterAction || filterSuccess || dateFrom || dateTo
+
+  // =====================
+  // RENDER
+  // =====================
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-          <FileText className="w-8 h-8" />
-          Logs d'Auditoria
-        </h1>
-        <p className="text-gray-600 mt-2">
-          Registre complet d'accions administratives del sistema
-        </p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center">
+            <ScrollText className="h-6 w-6 text-slate-600" strokeWidth={1.5} />
+          </div>
+          <div>
+            <h1 className="text-2xl font-semibold text-slate-900">Logs d'Auditoria</h1>
+            <p className="text-slate-500">Registre de totes les accions del sistema</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => { fetchLogs(); fetchStats(); }}
+            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+            title="Refrescar"
+          >
+            <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} strokeWidth={1.5} />
+          </button>
+          <button
+            onClick={handleExport}
+            className="inline-flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+          >
+            <Download className="h-4 w-4" strokeWidth={1.5} />
+            Exportar CSV
+          </button>
+        </div>
       </div>
 
-      {/* Estadísticas rápidas */}
+      {/* Stats */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Logs</p>
-                <p className="text-2xl font-bold text-gray-900">{total}</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-white border border-slate-200 rounded-xl p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-slate-100 rounded-lg">
+                <Activity className="h-5 w-5 text-slate-600" strokeWidth={1.5} />
               </div>
-              <FileText className="w-8 h-8 text-gray-400" />
+              <div>
+                <p className="text-sm text-slate-500">Total logs</p>
+                <p className="text-2xl font-semibold text-slate-900">{stats.totalLogs.toLocaleString()}</p>
+              </div>
             </div>
           </div>
-
-          <div className="bg-blue-50 rounded-lg border border-blue-200 p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-blue-700">Info</p>
-                <p className="text-2xl font-bold text-blue-900">
-                  {stats.bySeverity?.INFO || 0}
-                </p>
+          <div className="bg-white border border-slate-200 rounded-xl p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <AlertCircle className="h-5 w-5 text-red-600" strokeWidth={1.5} />
               </div>
-              <CheckCircle className="w-8 h-8 text-blue-400" />
+              <div>
+                <p className="text-sm text-slate-500">Errors (7 dies)</p>
+                <p className="text-2xl font-semibold text-red-600">{stats.recentErrors}</p>
+              </div>
             </div>
           </div>
-
-          <div className="bg-yellow-50 rounded-lg border border-yellow-200 p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-yellow-700">Advertències</p>
-                <p className="text-2xl font-bold text-yellow-900">
-                  {stats.bySeverity?.WARNING || 0}
-                </p>
+          <div className="bg-white border border-slate-200 rounded-xl p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-amber-100 rounded-lg">
+                <Shield className="h-5 w-5 text-amber-600" strokeWidth={1.5} />
               </div>
-              <AlertTriangle className="w-8 h-8 text-yellow-400" />
+              <div>
+                <p className="text-sm text-slate-500">Logins fallits</p>
+                <p className="text-2xl font-semibold text-amber-600">{stats.failedLogins}</p>
+              </div>
             </div>
           </div>
-
-          <div className="bg-red-50 rounded-lg border border-red-200 p-4">
-            <div className="flex items-center justify-between">
+          <div className="bg-white border border-slate-200 rounded-xl p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <TrendingUp className="h-5 w-5 text-green-600" strokeWidth={1.5} />
+              </div>
               <div>
-                <p className="text-sm text-red-700">Errors/Crítics</p>
-                <p className="text-2xl font-bold text-red-900">
-                  {(stats.bySeverity?.ERROR || 0) + (stats.bySeverity?.CRITICAL || 0)}
+                <p className="text-sm text-slate-500">Avui</p>
+                <p className="text-2xl font-semibold text-green-600">
+                  {stats.activityByDay.length > 0
+                    ? stats.activityByDay[stats.activityByDay.length - 1].count
+                    : 0}
                 </p>
               </div>
-              <XCircle className="w-8 h-8 text-red-400" />
             </div>
           </div>
         </div>
       )}
 
-      {/* Filtros */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Filter className="w-5 h-5 text-gray-600" />
-          <h2 className="text-lg font-semibold text-gray-900">Filtres</h2>
+      {/* Filtres */}
+      <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-4">
+        <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
+          <Filter className="h-4 w-4" strokeWidth={1.5} />
+          Filtres
+          {hasFilters && (
+            <button
+              onClick={resetFilters}
+              className="ml-2 text-xs text-red-600 hover:text-red-700"
+            >
+              Esborrar filtres
+            </button>
+          )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Búsqueda */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Cerca
-            </label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Buscar en logs..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Cerca */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" strokeWidth={1.5} />
+            <input
+              type="text"
+              placeholder="Cercar..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+            />
           </div>
 
-          {/* Acción */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Acció
-            </label>
-            <select
-              value={selectedAction}
-              onChange={(e) => setSelectedAction(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">Totes les accions</option>
-              <option value="COMPANY_APPROVED">Empresa Aprovada</option>
-              <option value="COMPANY_REJECTED">Empresa Rebutjada</option>
-              <option value="OFFER_APPROVED">Oferta Aprovada</option>
-              <option value="OFFER_REJECTED">Oferta Rebutjada</option>
-              <option value="USER_CREATED">Usuari Creat</option>
-              <option value="USER_DELETED">Usuari Eliminat</option>
-            </select>
-          </div>
+          {/* Nivell */}
+          <select
+            value={filterLevel}
+            onChange={(e) => { setFilterLevel(e.target.value); setPage(1); }}
+            className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none bg-white"
+          >
+            <option value="">Tots els nivells</option>
+            {Object.entries(LEVEL_CONFIG).map(([key, { label }]) => (
+              <option key={key} value={key}>{label}</option>
+            ))}
+          </select>
 
-          {/* Entidad */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Entitat
-            </label>
-            <select
-              value={selectedEntity}
-              onChange={(e) => setSelectedEntity(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">Totes les entitats</option>
-              <option value="Company">Empresa</option>
-              <option value="Offer">Oferta</option>
-              <option value="User">Usuari</option>
-              <option value="Coupon">Cupó</option>
-            </select>
-          </div>
+          {/* Categoria */}
+          <select
+            value={filterCategory}
+            onChange={(e) => { setFilterCategory(e.target.value); setPage(1); }}
+            className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none bg-white"
+          >
+            <option value="">Totes les categories</option>
+            {CATEGORIES.map(cat => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
 
-          {/* Severidad */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Severitat
-            </label>
-            <select
-              value={selectedSeverity}
-              onChange={(e) => setSelectedSeverity(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">Totes</option>
-              <option value="INFO">Info</option>
-              <option value="WARNING">Advertència</option>
-              <option value="ERROR">Error</option>
-              <option value="CRITICAL">Crític</option>
-            </select>
-          </div>
+          {/* Acció */}
+          <select
+            value={filterAction}
+            onChange={(e) => { setFilterAction(e.target.value); setPage(1); }}
+            className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none bg-white"
+          >
+            <option value="">Totes les accions</option>
+            {ACTIONS.map(action => (
+              <option key={action} value={action}>{action}</option>
+            ))}
+          </select>
+        </div>
 
-          {/* Fecha desde */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Data des de
-            </label>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Èxit */}
+          <select
+            value={filterSuccess}
+            onChange={(e) => { setFilterSuccess(e.target.value); setPage(1); }}
+            className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none bg-white"
+          >
+            <option value="">Tots els resultats</option>
+            <option value="true">Èxit</option>
+            <option value="false">Error</option>
+          </select>
+
+          {/* Data inici */}
+          <div className="relative">
+            <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" strokeWidth={1.5} />
             <input
               type="date"
               value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              onChange={(e) => { setDateFrom(e.target.value); setPage(1); }}
+              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+              placeholder="Des de"
             />
           </div>
 
-          {/* Fecha hasta */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Data fins
-            </label>
+          {/* Data fi */}
+          <div className="relative">
+            <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" strokeWidth={1.5} />
             <input
               type="date"
               value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              onChange={(e) => { setDateTo(e.target.value); setPage(1); }}
+              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+              placeholder="Fins a"
             />
           </div>
         </div>
-
-        {/* Acciones */}
-        <div className="flex items-center gap-3 mt-4 pt-4 border-t">
-          <button
-            onClick={() => loadLogs(true)}
-            disabled={refreshing}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50"
-          >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-            Actualitzar
-          </button>
-
-          <button
-            onClick={exportToCSV}
-            disabled={logs.length === 0}
-            className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-          >
-            <Download className="w-4 h-4" />
-            Exportar CSV
-          </button>
-
-          <button
-            onClick={() => {
-              setSearchQuery('');
-              setSelectedAction('all');
-              setSelectedEntity('all');
-              setSelectedSeverity('all');
-              setDateFrom('');
-              setDateTo('');
-              setPage(1);
-            }}
-            className="ml-auto text-gray-600 hover:text-gray-900"
-          >
-            Netejar filtres
-          </button>
-        </div>
       </div>
 
-      {/* Contenido */}
+      {/* Error */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-          <p className="text-red-800">❌ {error}</p>
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3">
+          <AlertCircle className="h-5 w-5 text-red-600" strokeWidth={1.5} />
+          <p className="text-red-800">{error}</p>
         </div>
       )}
 
-      {loading && !logs.length ? (
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregant logs...</p>
-        </div>
-      ) : logs.length === 0 ? (
-        <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-          <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            No hi ha logs
-          </h3>
-          <p className="text-gray-600">
-            No s'han trobat logs amb els filtres seleccionats
-          </p>
-        </div>
-      ) : (
-        <>
-          {/* Lista de logs */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-6">
+      {/* Taula */}
+      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+        {loading ? (
+          <div className="p-12 text-center">
+            <RefreshCw className="h-8 w-8 text-slate-400 animate-spin mx-auto mb-4" strokeWidth={1.5} />
+            <p className="text-slate-500">Carregant logs...</p>
+          </div>
+        ) : logs.length === 0 ? (
+          <div className="p-12 text-center">
+            <ScrollText className="h-12 w-12 text-slate-300 mx-auto mb-4" strokeWidth={1.5} />
+            <p className="text-slate-500">No hi ha logs amb aquests filtres</p>
+          </div>
+        ) : (
+          <>
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
+                <thead className="bg-slate-50 border-b border-slate-200">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Data
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Severitat
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Acció
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Usuari
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Descripció
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Detalls
-                    </th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Data/Hora</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Nivell</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Categoria</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Acció</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Usuari</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Descripció</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Resultat</th>
+                    <th className="text-right px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Accions</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {logs.map((log) => (
-                    <tr
-                      key={log.id}
-                      className="hover:bg-gray-50 cursor-pointer transition-colors"
-                      onClick={() => setSelectedLog(log)}
-                    >
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <div className="flex items-center gap-2">
-                          <Clock className="w-4 h-4 text-gray-400" />
-                          {formatDate(log.createdAt)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border ${getSeverityColor(log.severity)}`}>
-                          {getSeverityIcon(log.severity)}
-                          {log.severity}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {formatAction(log.action)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        <div className="flex items-center gap-2">
-                          <User className="w-4 h-4 text-gray-400" />
-                          {log.userName}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600 max-w-md truncate">
-                        {log.description}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedLog(log);
-                          }}
-                          className="text-blue-600 hover:text-blue-800 font-medium"
-                        >
-                          Veure més →
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                <tbody className="divide-y divide-slate-100">
+                  {logs.map((log) => {
+                    const levelConfig = LEVEL_CONFIG[log.level] || LEVEL_CONFIG.INFO
+                    const LevelIcon = levelConfig.icon
+
+                    return (
+                      <tr key={log.id} className="hover:bg-slate-50">
+                        {/* Data/Hora */}
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="flex items-center gap-2 text-sm">
+                            <Clock className="h-3.5 w-3.5 text-slate-400" strokeWidth={1.5} />
+                            <span className="text-slate-600">
+                              {new Date(log.timestamp).toLocaleDateString('ca-ES', {
+                                day: '2-digit',
+                                month: 'short',
+                              })}
+                            </span>
+                            <span className="text-slate-400">
+                              {new Date(log.timestamp).toLocaleTimeString('ca-ES', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                second: '2-digit',
+                              })}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Nivell */}
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${levelConfig.bg} ${levelConfig.color}`}>
+                            <LevelIcon className="h-3 w-3" strokeWidth={2} />
+                            {levelConfig.label}
+                          </span>
+                        </td>
+
+                        {/* Categoria */}
+                        <td className="px-4 py-3">
+                          <span className="text-xs font-mono bg-slate-100 px-2 py-0.5 rounded text-slate-700">
+                            {log.category}
+                          </span>
+                        </td>
+
+                        {/* Acció */}
+                        <td className="px-4 py-3">
+                          <span className="text-sm text-slate-700">{log.action}</span>
+                        </td>
+
+                        {/* Usuari */}
+                        <td className="px-4 py-3">
+                          {log.userEmail ? (
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 bg-slate-200 rounded-full flex items-center justify-center">
+                                <User className="h-3 w-3 text-slate-500" strokeWidth={1.5} />
+                              </div>
+                              <span className="text-sm text-slate-600 truncate max-w-[150px]" title={log.userEmail}>
+                                {log.userEmail}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-sm text-slate-400">Sistema</span>
+                          )}
+                        </td>
+
+                        {/* Descripció */}
+                        <td className="px-4 py-3">
+                          <span className="text-sm text-slate-600 truncate block max-w-[200px]" title={log.description || ''}>
+                            {log.description || log.entityName || '-'}
+                          </span>
+                        </td>
+
+                        {/* Resultat */}
+                        <td className="px-4 py-3">
+                          {log.success ? (
+                            <span className="inline-flex items-center gap-1 text-green-600 text-sm">
+                              <CheckCircle className="h-4 w-4" strokeWidth={1.5} />
+                              Èxit
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-red-600 text-sm">
+                              <XCircle className="h-4 w-4" strokeWidth={1.5} />
+                              Error
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Accions */}
+                        <td className="px-4 py-3 text-right">
+                          <button
+                            onClick={() => setSelectedLog(log)}
+                            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                            title="Veure detalls"
+                          >
+                            <Eye className="h-4 w-4" strokeWidth={1.5} />
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
-          </div>
 
-          {/* Paginación */}
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-600">
-              Mostrant {((page - 1) * limit) + 1} a {Math.min(page * limit, total)} de {total} logs
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ChevronLeft className="w-4 h-4" />
-                Anterior
-              </button>
-
-              <span className="px-4 py-2 text-gray-600">
-                Pàgina {page} de {totalPages}
-              </span>
-
-              <button
-                onClick={() => setPage(p => p + 1)}
-                disabled={page >= totalPages}
-                className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Següent
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* Modal de detalles */}
-      {selectedLog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-auto">
-            <div className="p-6 border-b border-gray-200 sticky top-0 bg-white">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900">Detalls del Log</h2>
+            {/* Paginació */}
+            <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 bg-slate-50">
+              <p className="text-sm text-slate-600">
+                Mostrant {((page - 1) * limit) + 1} - {Math.min(page * limit, total)} de {total.toLocaleString()} logs
+              </p>
+              <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setSelectedLog(null)}
-                  className="p-2 hover:bg-gray-100 rounded-lg"
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="p-2 border border-slate-300 rounded-lg hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <XCircle className="w-6 h-6 text-gray-600" />
+                  <ChevronLeft className="h-4 w-4" strokeWidth={1.5} />
+                </button>
+                <span className="text-sm text-slate-600">
+                  Pàgina {page} de {totalPages}
+                </span>
+                <button
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="p-2 border border-slate-300 rounded-lg hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronRight className="h-4 w-4" strokeWidth={1.5} />
                 </button>
               </div>
             </div>
+          </>
+        )}
+      </div>
 
-            <div className="p-6 space-y-6">
-              {/* Info básica */}
-              <div>
-                <h3 className="text-sm font-semibold text-gray-500 uppercase mb-3">
-                  Informació Bàsica
-                </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-600">Data i Hora</p>
-                    <p className="font-medium">{formatDate(selectedLog.createdAt)}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Acció</p>
-                    <p className="font-medium">{formatAction(selectedLog.action)}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Entitat</p>
-                    <p className="font-medium">{selectedLog.entity}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Severitat</p>
-                    <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border ${getSeverityColor(selectedLog.severity)}`}>
-                      {getSeverityIcon(selectedLog.severity)}
-                      {selectedLog.severity}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Usuario */}
-              <div>
-                <h3 className="text-sm font-semibold text-gray-500 uppercase mb-3">
-                  Usuari
-                </h3>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="font-medium">{selectedLog.userName}</p>
-                  <p className="text-sm text-gray-600">{selectedLog.userEmail}</p>
-                  <p className="text-xs text-gray-500 mt-1">Rol: {selectedLog.userRole}</p>
-                </div>
-              </div>
-
-              {/* Descripción */}
-              <div>
-                <h3 className="text-sm font-semibold text-gray-500 uppercase mb-3">
-                  Descripció
-                </h3>
-                <p className="text-gray-900">{selectedLog.description}</p>
-              </div>
-
-              {/* Metadata */}
-              {selectedLog.metadata && (
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-500 uppercase mb-3">
-                    Metadata
-                  </h3>
-                  <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-x-auto">
-                    {JSON.stringify(selectedLog.metadata, null, 2)}
-                  </pre>
-                </div>
-              )}
-
-              {/* Changes */}
-              {selectedLog.changes && (
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-500 uppercase mb-3">
-                    Canvis
-                  </h3>
-                  <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-x-auto">
-                    {JSON.stringify(selectedLog.changes, null, 2)}
-                  </pre>
-                </div>
-              )}
-
-              {/* Info técnica */}
-              <div>
-                <h3 className="text-sm font-semibold text-gray-500 uppercase mb-3">
-                  Informació Tècnica
-                </h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">IP Address:</span>
-                    <span className="font-mono">{selectedLog.ipAddress || 'N/A'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">User Agent:</span>
-                    <span className="font-mono text-xs break-all max-w-md">
-                      {selectedLog.userAgent || 'N/A'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">ID Log:</span>
-                    <span className="font-mono text-xs">{selectedLog.id}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* Modal Detalls */}
+      {selectedLog && (
+        <LogDetailModal
+          log={selectedLog}
+          onClose={() => setSelectedLog(null)}
+        />
       )}
     </div>
-  );
+  )
+}
+
+// =====================
+// MODAL DETALLS
+// =====================
+
+function LogDetailModal({
+  log,
+  onClose,
+}: {
+  log: AuditLog
+  onClose: () => void
+}) {
+  const levelConfig = LEVEL_CONFIG[log.level] || LEVEL_CONFIG.INFO
+  const LevelIcon = levelConfig.icon
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-slate-200">
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-lg ${levelConfig.bg}`}>
+              <LevelIcon className={`h-5 w-5 ${levelConfig.color}`} strokeWidth={1.5} />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">Detalls del log</h2>
+              <p className="text-sm text-slate-500">{log.id}</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 text-slate-400 hover:text-slate-600 rounded-lg"
+          >
+            <X className="h-5 w-5" strokeWidth={1.5} />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+          {/* Informació principal */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs text-slate-500 uppercase font-semibold mb-1">Data/Hora</p>
+              <p className="text-sm text-slate-900">
+                {new Date(log.timestamp).toLocaleString('ca-ES', {
+                  day: '2-digit',
+                  month: 'long',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit',
+                })}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-500 uppercase font-semibold mb-1">Nivell</p>
+              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${levelConfig.bg} ${levelConfig.color}`}>
+                <LevelIcon className="h-3 w-3" strokeWidth={2} />
+                {levelConfig.label}
+              </span>
+            </div>
+            <div>
+              <p className="text-xs text-slate-500 uppercase font-semibold mb-1">Categoria</p>
+              <span className="text-xs font-mono bg-slate-100 px-2 py-1 rounded text-slate-700">
+                {log.category}
+              </span>
+            </div>
+            <div>
+              <p className="text-xs text-slate-500 uppercase font-semibold mb-1">Acció</p>
+              <p className="text-sm text-slate-900">{log.action}</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-500 uppercase font-semibold mb-1">Resultat</p>
+              {log.success ? (
+                <span className="inline-flex items-center gap-1 text-green-600 text-sm">
+                  <CheckCircle className="h-4 w-4" strokeWidth={1.5} />
+                  Èxit
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-red-600 text-sm">
+                  <XCircle className="h-4 w-4" strokeWidth={1.5} />
+                  Error
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Usuari */}
+          <div className="bg-slate-50 rounded-lg p-4">
+            <p className="text-xs text-slate-500 uppercase font-semibold mb-2 flex items-center gap-2">
+              <User className="h-3.5 w-3.5" strokeWidth={1.5} />
+              Usuari
+            </p>
+            {log.userEmail ? (
+              <div className="space-y-1">
+                <p className="text-sm text-slate-900">{log.userEmail}</p>
+                {log.userRole && (
+                  <span className="text-xs bg-slate-200 px-2 py-0.5 rounded text-slate-600">
+                    {log.userRole}
+                  </span>
+                )}
+                {log.userId && (
+                  <p className="text-xs text-slate-400 font-mono">{log.userId}</p>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500">Acció de sistema</p>
+            )}
+          </div>
+
+          {/* Entitat */}
+          {log.entity && (
+            <div className="bg-slate-50 rounded-lg p-4">
+              <p className="text-xs text-slate-500 uppercase font-semibold mb-2 flex items-center gap-2">
+                <FileText className="h-3.5 w-3.5" strokeWidth={1.5} />
+                Entitat afectada
+              </p>
+              <div className="space-y-1">
+                <p className="text-sm text-slate-900">{log.entity}</p>
+                {log.entityName && <p className="text-sm text-slate-600">{log.entityName}</p>}
+                {log.entityId && <p className="text-xs text-slate-400 font-mono">{log.entityId}</p>}
+              </div>
+            </div>
+          )}
+
+          {/* Descripció */}
+          {log.description && (
+            <div>
+              <p className="text-xs text-slate-500 uppercase font-semibold mb-2">Descripció</p>
+              <p className="text-sm text-slate-700">{log.description}</p>
+            </div>
+          )}
+
+          {/* Error */}
+          {log.errorMessage && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-xs text-red-600 uppercase font-semibold mb-2 flex items-center gap-2">
+                <AlertCircle className="h-3.5 w-3.5" strokeWidth={1.5} />
+                Missatge d'error
+              </p>
+              <p className="text-sm text-red-800 font-mono">{log.errorMessage}</p>
+            </div>
+          )}
+
+          {/* Context */}
+          {(log.ipAddress || log.requestPath || log.userAgent) && (
+            <div className="bg-slate-50 rounded-lg p-4">
+              <p className="text-xs text-slate-500 uppercase font-semibold mb-2 flex items-center gap-2">
+                <Globe className="h-3.5 w-3.5" strokeWidth={1.5} />
+                Context de la petició
+              </p>
+              <div className="space-y-2 text-sm">
+                {log.ipAddress && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-slate-500">IP:</span>
+                    <span className="font-mono text-slate-700">{log.ipAddress}</span>
+                  </div>
+                )}
+                {log.requestPath && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-slate-500">Path:</span>
+                    <span className="font-mono text-slate-700">
+                      {log.requestMethod && <span className="text-blue-600">{log.requestMethod}</span>}{' '}
+                      {log.requestPath}
+                    </span>
+                  </div>
+                )}
+                {log.userAgent && (
+                  <div className="flex items-start gap-2">
+                    <Monitor className="h-4 w-4 text-slate-400 mt-0.5" strokeWidth={1.5} />
+                    <span className="text-xs text-slate-500 break-all">{log.userAgent}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Canvis */}
+          {log.changes && (
+            <div>
+              <p className="text-xs text-slate-500 uppercase font-semibold mb-2">Canvis</p>
+              <div className="bg-slate-900 rounded-lg p-4 overflow-x-auto">
+                <pre className="text-xs text-green-400 font-mono">
+                  {JSON.stringify(log.changes, null, 2)}
+                </pre>
+              </div>
+            </div>
+          )}
+
+          {/* Metadata */}
+          {log.metadata && (
+            <div>
+              <p className="text-xs text-slate-500 uppercase font-semibold mb-2">Metadades</p>
+              <div className="bg-slate-900 rounded-lg p-4 overflow-x-auto">
+                <pre className="text-xs text-blue-400 font-mono">
+                  {JSON.stringify(log.metadata, null, 2)}
+                </pre>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end p-4 border-t border-slate-200">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+          >
+            Tancar
+          </button>
+        </div>
+      </div>
+    </div>
+  )
 }

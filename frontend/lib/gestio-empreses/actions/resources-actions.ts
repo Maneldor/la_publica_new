@@ -90,7 +90,7 @@ export async function createResource(
 
     return {
       success: true,
-      data: resource as CommercialResource,
+      data: resource as unknown as CommercialResource,
       message: 'Recurso creado exitosamente'
     }
 
@@ -109,10 +109,12 @@ export async function createResource(
 export async function getResources(
   filters?: ResourceFilterDTO,
   userId?: string,
-  userRole?: string
-): Promise<ResourceResponse<CommercialResource[]>> {
+  userRole?: string,
+  page: number = 1,
+  limit: number = 50
+): Promise<ResourceResponse<CommercialResource[]> & { metadata?: { total: number; page: number; limit: number; totalPages: number } }> {
   try {
-    console.log('DEBUG: getResources called with:', { filters, userId, userRole })
+    console.log('DEBUG: getResources called with:', { filters, userId, userRole, page, limit })
     const whereClause: any = { isActive: filters?.isActive ?? true }
 
     // Aplicar filtros
@@ -130,7 +132,7 @@ export async function getResources(
 
     if (filters?.tags && filters.tags.length > 0) {
       whereClause.tags = {
-        hassome: filters.tags
+        hasSome: filters.tags
       }
     }
 
@@ -138,7 +140,7 @@ export async function getResources(
       whereClause.OR = [
         { title: { contains: filters.search, mode: 'insensitive' } },
         { description: { contains: filters.search, mode: 'insensitive' } },
-        { tags: { hassome: [filters.search] } }
+        { tags: { hasSome: [filters.search] } } // Fixed hasSome typo (was hassome) which might be an issue too? Prisma is usually camelCase 'hasSome' for arrays? No, Prisma array filter is 'has', 'hasSome', 'hasEvery'.
       ]
     }
 
@@ -148,6 +150,11 @@ export async function getResources(
         has: userRole
       }
     }
+
+    // Get total count for pagination
+    const total = await prisma.commercialResource.count({ where: whereClause })
+    const totalPages = Math.ceil(total / limit)
+    const skip = (page - 1) * limit
 
     const resources = await prisma.commercialResource.findMany({
       where: whereClause,
@@ -162,15 +169,22 @@ export async function getResources(
       orderBy: [
         { updatedAt: 'desc' },
         { title: 'asc' }
-      ]
+      ],
+      skip,
+      take: limit
     })
 
-    console.log('DEBUG: getResources found:', resources.length, 'resources')
-    console.log('DEBUG: Resources:', resources.map(r => ({ id: r.id, title: r.title, type: r.type })))
+    console.log('DEBUG: getResources found:', resources.length, 'resources of total', total)
 
     return {
       success: true,
-      data: resources as CommercialResource[]
+      data: resources as unknown as CommercialResource[],
+      metadata: {
+        total,
+        page,
+        limit,
+        totalPages
+      }
     }
 
   } catch (error) {
@@ -219,7 +233,7 @@ export async function getResourceById(
 
     return {
       success: true,
-      data: resource as CommercialResource
+      data: resource as unknown as CommercialResource
     }
 
   } catch (error) {
@@ -268,7 +282,7 @@ export async function getResourceBySlug(
 
     return {
       success: true,
-      data: resource as CommercialResource
+      data: resource as unknown as CommercialResource
     }
 
   } catch (error) {
@@ -336,7 +350,7 @@ export async function updateResource(
 
     return {
       success: true,
-      data: updatedResource as CommercialResource,
+      data: updatedResource as unknown as CommercialResource,
       message: 'Recurso actualizado exitosamente'
     }
 
@@ -512,7 +526,7 @@ export async function extractResourceContent(
     })
 
     const extractedResource: ExtractedResource = {
-      resource: resource as CommercialResource,
+      resource: resource as unknown as CommercialResource,
       extractedContent: preview.processedContent,
       placeholderValues: {
         ...placeholderConfig.systemValues,
@@ -637,7 +651,7 @@ export async function getResourcesByPhase(
 
     return {
       success: true,
-      data: resources as CommercialResource[]
+      data: resources as unknown as CommercialResource[]
     }
 
   } catch (error) {
@@ -691,8 +705,8 @@ export async function duplicateResource(
         type: originalResource.type,
         phase: originalResource.phase,
         category: originalResource.category,
-        content: originalResource.content,
-        placeholders: originalResource.placeholders,
+        content: originalResource.content ?? {}, // Handle JsonValue potential null/type mismatch
+        placeholders: originalResource.placeholders ?? undefined, // Handle optional/Json
         tags: originalResource.tags,
         accessRoles: originalResource.accessRoles,
         isActive: true,
@@ -714,7 +728,7 @@ export async function duplicateResource(
 
     return {
       success: true,
-      data: duplicatedResource as CommercialResource,
+      data: duplicatedResource as unknown as CommercialResource, // Force cast due to Enum/Json mismatch
       message: 'Recurso duplicado exitosamente'
     }
 

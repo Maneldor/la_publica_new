@@ -17,7 +17,7 @@ export function Step7Configuracio({ formData, updateField, errors }: Props) {
   // Calcular completesa dels steps
   const getStepCompleteness = () => {
     const checks = {
-      step1: !!(formData.nom && formData.cif && formData.email),
+      step1: !!(formData.name && formData.cif && formData.email),
       step2: !!(formData.slogan && formData.description && formData.logo && formData.coverImage),
       step3: !!(formData.adminContactPerson && formData.adminPhone && formData.adminEmail),
       step4: !!(formData.publicEmail || formData.publicPhone),
@@ -130,7 +130,7 @@ export function Step7Configuracio({ formData, updateField, errors }: Props) {
                   </div>
                 )}
                 <div className="flex-1">
-                  <h4 className="font-semibold text-slate-900">{formData.nom || 'Nom de l\'empresa'}</h4>
+                  <h4 className="font-semibold text-slate-900">{formData.name || 'Nom de l\'empresa'}</h4>
                   <p className="text-sm text-slate-600">{formData.slogan || 'Eslògan de l\'empresa'}</p>
                   <p className="text-xs text-slate-500 mt-1">{formData.sector} • {formData.location}</p>
                 </div>
@@ -243,7 +243,7 @@ export function Step7Configuracio({ formData, updateField, errors }: Props) {
             <input
               type="checkbox"
               checked={formData.acceptsDataProcessing ?? false}
-              onChange={(e) => updateField('acceptsDataProcessing', e.target.value)}
+              onChange={(e) => updateField('acceptsDataProcessing', e.target.checked)}
               className="mt-1 w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
             />
             <div>

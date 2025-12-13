@@ -1,180 +1,52 @@
-// app/gestio/crm/verificacio/page.tsx
-'use client'
 
-import { useState, useEffect } from 'react'
-import { ShieldCheck, RefreshCw, Download } from 'lucide-react'
-import { VerificationStats } from '@/components/gestio-empreses/crm/VerificationStats'
-import { VerificationCard } from '@/components/gestio-empreses/crm/VerificationCard'
-import { LeadPreviewPanel } from '@/components/gestio-empreses/crm/LeadPreviewPanel'
-import { BulkVerificationBar } from '@/components/gestio-empreses/crm/BulkVerificationBar'
-import {
-  getVerificationStats,
-  getPendingVerificationLeads,
-  getLeadPreview
-} from '@/lib/gestio-empreses/verification-actions'
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/lib/auth'
+import { redirect } from 'next/navigation'
+import { getVerificationStats, getPendingVerificationLeads } from '@/lib/gestio-empreses/verification-actions'
+import { VerificacioClient } from './VerificacioClient'
+import { AlertCircle } from 'lucide-react'
+import Link from 'next/link'
 
-export default function VerificacioPage() {
-  const [stats, setStats] = useState<any>(null)
-  const [leads, setLeads] = useState<any[]>([])
-  const [selectedIds, setSelectedIds] = useState<string[]>([])
-  const [activeLead, setActiveLead] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState(true)
+export default async function VerificacioPage() {
+  const session = await getServerSession(authOptions)
 
-  // TODO: Obtenir userId real de la sessió
-  const currentUserId = 'current-user-id'
-
-  const loadData = async () => {
-    setIsLoading(true)
-    try {
-      const [statsData, leadsData] = await Promise.all([
-        getVerificationStats(),
-        getPendingVerificationLeads(),
-      ])
-      setStats(statsData)
-      setLeads(leadsData)
-    } catch (error) {
-      console.error('Error carregant dades:', error)
-    }
-    setIsLoading(false)
+  if (!session?.user) {
+    redirect('/login')
   }
 
-  useEffect(() => {
-    loadData()
-  }, [])
+  const userId = session.user.id
+  const userRole = (session.user as any).role
 
-  const handleSelectLead = (leadId: string) => {
-    if (selectedIds.includes(leadId)) {
-      setSelectedIds(selectedIds.filter((id) => id !== leadId))
-    } else {
-      setSelectedIds([...selectedIds, leadId])
-    }
+  // Verificar permisos (solo CRM, Admin, SuperAdmin)
+  const allowedRoles = ['SUPER_ADMIN', 'ADMIN', 'ADMIN_GESTIO', 'CRM_COMERCIAL', 'CRM_CONTINGUT']
+
+  if (!allowedRoles.includes(userRole)) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px]">
+        <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
+        <h2 className="text-xl font-semibold mb-2">Accés denegat</h2>
+        <p className="text-gray-600 mb-4">No tens permisos per accedir a la verificació CRM</p>
+        <Link
+          href="/gestio"
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          Tornar al Dashboard
+        </Link>
+      </div>
+    )
   }
 
-  const handleSelectAll = () => {
-    if (selectedIds.length === leads.length) {
-      setSelectedIds([])
-    } else {
-      setSelectedIds(leads.map((l) => l.id))
-    }
-  }
-
-  const handleLeadClick = async (lead: any) => {
-    const fullLead = await getLeadPreview(lead.id)
-    setActiveLead(fullLead)
-  }
-
-  const handleSuccess = () => {
-    loadData()
-    setActiveLead(null)
-    setSelectedIds([])
-  }
-
-  // Valors per defecte pels stats
-  const defaultStats = {
-    pending: 0,
-    approvedToday: 0,
-    rejectedToday: 0,
-    approvedWeek: 0,
-    avgWaitTime: 0,
-    slaCompliance: 100,
-    outsideSLA: 0,
-  }
+  // Carga paralela de dades
+  const [stats, leads] = await Promise.all([
+    getVerificationStats(),
+    getPendingVerificationLeads(),
+  ])
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <ShieldCheck className="h-7 w-7 text-slate-600" strokeWidth={1.5} />
-          <div>
-            <h1 className="text-xl font-semibold text-slate-900">Verificació CRM</h1>
-            <p className="text-sm text-slate-500">
-              Revisa i aprova els leads en documentació per contractar-los
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={loadData}
-            disabled={isLoading}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50"
-          >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} strokeWidth={1.5} />
-            Actualitzar
-          </button>
-          <button className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50">
-            <Download className="h-4 w-4" strokeWidth={1.5} />
-            Exportar
-          </button>
-        </div>
-      </div>
-
-      {/* Stats - SEMPRE VISIBLES */}
-      <VerificationStats stats={stats || defaultStats} />
-
-      {/* Select all */}
-      {leads.length > 0 && (
-        <div className="flex items-center gap-4">
-          <button
-            onClick={handleSelectAll}
-            className="text-sm text-blue-600 hover:text-blue-700"
-          >
-            {selectedIds.length === leads.length ? 'Deseleccionar tot' : 'Seleccionar tot'}
-          </button>
-          {selectedIds.length > 0 && (
-            <span className="text-sm text-slate-500">
-              {selectedIds.length} de {leads.length} seleccionats
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* Main content - List + Preview */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        {/* Lead list */}
-        <div className="lg:col-span-3 space-y-3">
-          {leads.length === 0 ? (
-            <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
-              <ShieldCheck className="h-12 w-12 text-green-500 mx-auto mb-4" strokeWidth={1.5} />
-              <h3 className="text-lg font-medium text-slate-900 mb-2">
-                Tot verificat!
-              </h3>
-              <p className="text-slate-500">
-                No hi ha leads pendents de verificació.
-              </p>
-            </div>
-          ) : (
-            leads.map((lead) => (
-              <VerificationCard
-                key={lead.id}
-                lead={lead}
-                isSelected={selectedIds.includes(lead.id)}
-                isActive={activeLead?.id === lead.id}
-                onSelect={() => handleSelectLead(lead.id)}
-                onClick={() => handleLeadClick(lead)}
-              />
-            ))
-          )}
-        </div>
-
-        {/* Preview panel */}
-        <div className="lg:col-span-2 lg:sticky lg:top-6 h-fit">
-          <LeadPreviewPanel
-            lead={activeLead}
-            onClose={() => setActiveLead(null)}
-            onSuccess={handleSuccess}
-            userId={currentUserId}
-          />
-        </div>
-      </div>
-
-      {/* Bulk actions */}
-      <BulkVerificationBar
-        selectedIds={selectedIds}
-        onClear={() => setSelectedIds([])}
-        onSuccess={handleSuccess}
-        userId={currentUserId}
-      />
-    </div>
+    <VerificacioClient
+      initialStats={stats}
+      initialLeads={leads}
+      currentUserId={userId}
+    />
   )
 }

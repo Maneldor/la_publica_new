@@ -96,9 +96,20 @@ async function getSessionWithRole() {
 // OBTENIR EMPRESES
 // ============================================
 
+// ============================================
+// OBTENIR EMPRESES
+// ============================================
+
 export async function getEmpresesLlista(
-  filters: EmpresaFilters = {}
-): Promise<{ success: boolean; data?: EmpresaLlista[]; error?: string }> {
+  filters: EmpresaFilters = {},
+  page: number = 1,
+  limit: number = 50
+): Promise<{
+  success: boolean;
+  data?: EmpresaLlista[];
+  metadata?: { total: number; page: number; limit: number; totalPages: number };
+  error?: string
+}> {
   const session = await getSessionWithRole()
   if (!session.authorized) {
     return { success: false, error: session.error }
@@ -147,6 +158,13 @@ export async function getEmpresesLlista(
       }
     }
 
+    // Calcular total per paginació
+    const total = await prisma.company.count({ where })
+
+    // Calcular paginació
+    const skip = (page - 1) * limit
+    const totalPages = Math.ceil(total / limit)
+
     const empreses = await prisma.company.findMany({
       where,
       include: {
@@ -165,7 +183,9 @@ export async function getEmpresesLlista(
           }
         }
       },
-      orderBy: { updatedAt: 'desc' }
+      orderBy: { updatedAt: 'desc' },
+      skip,
+      take: limit
     })
 
     // Calcular percentatge de completitud per cada empresa
@@ -174,7 +194,16 @@ export async function getEmpresesLlista(
       completionPercentage: calculateCompletionPercentage(empresa)
     }))
 
-    return { success: true, data: empresesAmbCompletitud as EmpresaLlista[] }
+    return {
+      success: true,
+      data: empresesAmbCompletitud as EmpresaLlista[],
+      metadata: {
+        total,
+        page,
+        limit,
+        totalPages
+      }
+    }
   } catch (error) {
     console.error('Error obtenint empreses:', error)
     return { success: false, error: 'Error obtenint empreses' }
@@ -199,33 +228,29 @@ export async function getEmpresesStats(): Promise<{ success: boolean; data?: Emp
       where.accountManagerId = session.userId
     }
 
-    const [total, verificades, actives, pendents] = await Promise.all([
+    // Optimization: Run counts in parallel using DB aggregation where possible
+    // For 'pendentsCompletar' (incomplete profile), checking all fields in DB query is complex but faster than fetching all data.
+    // We check for null/empty on key fields.
+    const incompleteWhere = {
+      ...where,
+      OR: [
+        { name: null }, { name: '' },
+        { cif: null }, { cif: '' },
+        { email: null }, { email: '' },
+        // { description: null }, // Description is text, might be heavy to check empty string? nullable is fine.
+        { phone: null }, { phone: '' },
+        { address: null }, { address: '' },
+        { sector: null }, { sector: '' }
+      ]
+    }
+
+    const [total, verificades, actives, pendents, pendentsCompletar] = await Promise.all([
       prisma.company.count({ where }),
       prisma.company.count({ where: { ...where, isVerified: true } }),
       prisma.company.count({ where: { ...where, isActive: true } }),
-      prisma.company.count({ where: { ...where, status: 'PENDING' } })
+      prisma.company.count({ where: { ...where, status: 'PENDING' } }),
+      prisma.company.count({ where: incompleteWhere })
     ])
-
-    // Empreses amb perfil incomplet (menys del 100%)
-    const empreses = await prisma.company.findMany({
-      where,
-      select: {
-        name: true,
-        cif: true,
-        email: true,
-        description: true,
-        logo: true,
-        phone: true,
-        address: true,
-        website: true,
-        sector: true
-      }
-    })
-
-    const pendentsCompletar = empreses.filter(e => {
-      const requiredFields = ['name', 'cif', 'email', 'description', 'logo', 'phone', 'address', 'website', 'sector']
-      return requiredFields.some(field => !(e as any)[field])
-    }).length
 
     return {
       success: true,
@@ -526,7 +551,7 @@ export async function getGestorsDisponibles(): Promise<{
         name: true,
         email: true,
         _count: {
-          select: { companies: true }
+          select: { managedCompanies: true }
         }
       },
       orderBy: { name: 'asc' }
@@ -538,7 +563,7 @@ export async function getGestorsDisponibles(): Promise<{
         id: g.id,
         name: g.name,
         email: g.email,
-        empresesAssignades: g._count.companies
+        empresesAssignades: g._count.managedCompanies
       }))
     }
   } catch (error) {

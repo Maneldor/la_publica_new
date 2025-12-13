@@ -78,7 +78,7 @@ export async function getCompanyDetail(companyId: string) {
       accountManager: {
         select: { id: true, name: true, email: true },
       },
-      members: {
+      teamMembers: {
         select: {
           id: true,
           name: true,
@@ -88,6 +88,7 @@ export async function getCompanyDetail(companyId: string) {
           createdAt: true,
         },
       },
+      currentPlan: true,
       offers: {
         orderBy: { createdAt: 'desc' },
         take: 5,
@@ -106,10 +107,48 @@ export async function getCompanyDetail(companyId: string) {
           convertedAt: true,
         },
       },
+      subscriptions: {
+        orderBy: { createdAt: 'desc' },
+        take: 1,
+        select: {
+          id: true,
+          status: true,
+          currentPeriodStart: true,
+          currentPeriodEnd: true,
+          plan: {
+            select: {
+              name: true,
+              tier: true,
+              precioMensual: true,
+            },
+          },
+        },
+      },
     },
   })
 
-  return company
+  // Adaptar respuesta para frontend
+  if (!company) return null
+
+  return {
+    ...company,
+    currentPlanTier: company.currentPlan?.tier || null,
+    city: null, // Camps legacy/no existents
+    province: null,
+    postalCode: null,
+    teamMembers: company.teamMembers,
+    activeSubscription: company.subscriptions[0] ? {
+      id: company.subscriptions[0].id,
+      status: company.subscriptions[0].status,
+      currentPeriodStart: company.subscriptions[0].currentPeriodStart,
+      currentPeriodEnd: company.subscriptions[0].currentPeriodEnd,
+      plan: company.subscriptions[0].plan ? {
+        name: company.subscriptions[0].plan.name,
+        tier: company.subscriptions[0].plan.tier,
+        price: company.subscriptions[0].plan.precioMensual,
+      } : null,
+    } : null,
+  }
 }
 
 /**

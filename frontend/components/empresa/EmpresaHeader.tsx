@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Bell, MessageSquare, ChevronDown } from 'lucide-react';
-import NotificationBadge from '@/app/components/NotificationBadge';
+import { Search, Bell, ChevronDown, User, MessageSquare } from 'lucide-react';
 import NotificationCenter from '@/app/components/NotificationCenter';
 
 interface EmpresaHeaderProps {
@@ -20,160 +19,86 @@ export default function EmpresaHeader({
   notificacionsCount,
   missatgesCount
 }: EmpresaHeaderProps) {
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [showMessages, setShowMessages] = useState(false);
   const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
 
-  const getPlanBadge = () => {
-    const styles = {
-      BÀSIC: 'bg-gray-100 text-gray-700',
-      ESTÀNDARD: 'bg-blue-100 text-blue-700',
-      PREMIUM: 'bg-gradient-to-r from-violet-500 to-purple-500 text-white',
-      EMPRESARIAL: 'bg-gradient-to-r from-amber-400 to-yellow-500 text-gray-900'
-    };
-
-    const icons = {
-      BÀSIC: '',
-      ESTÀNDARD: '',
-      PREMIUM: '⭐',
-      EMPRESARIAL: '👑'
-    };
-
-    return (
-      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${styles[plan]}`}>
-        {icons[plan] && <span>{icons[plan]}</span>}
-        <span>{plan}</span>
-      </span>
-    );
+  // Helper per a l'estil del badge del pla
+  const getPlanBadgeStyle = (plan: string) => {
+    switch (plan) {
+      case 'PREMIUM': return 'bg-purple-100 text-purple-700';
+      case 'EMPRESARIAL': return 'bg-amber-100 text-amber-700';
+      case 'ESTÀNDARD': return 'bg-blue-100 text-blue-700';
+      default: return 'bg-slate-100 text-slate-700';
+    }
   };
 
   return (
-    <header className="fixed top-0 left-0 w-full bg-white border-b border-black z-50 h-20">
-      <div className="flex items-center h-full">
-        {/* Izquierda - Logo La Pública alineado con sidebar */}
-        <div className="flex items-center justify-center w-64">
-          <img
-            src="/images/cropped-logo_la-Pública-ok-2.png"
-            alt="La Pública"
-            className="w-[150px] h-auto object-contain"
-          />
+    <>
+      <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 fixed top-0 right-0 left-64 z-30 transition-all duration-300">
+        {/* Esquerra: Títol de la pàgina */}
+        <div>
+          <h1 className="text-xl font-semibold text-slate-900">Dashboard d'Empresa</h1>
         </div>
 
-        {/* Centro - Empresa */}
-        <div className="flex items-center justify-center gap-3 flex-1 px-6">
-          <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-lg overflow-hidden">
-            {empresaLogo ? (
-              <img
-                src={empresaLogo}
-                alt={`Logo de ${empresaNom}`}
-                className="w-10 h-10 object-contain"
-              />
-            ) : (
-              <span className="text-2xl">🏢</span>
+        {/* Dreta: Accions */}
+        <div className="flex items-center gap-4">
+          {/* Cerca */}
+          <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+            <Search className="h-5 w-5" strokeWidth={1.5} />
+          </button>
+
+          {/* Missatges */}
+          <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg relative transition-colors">
+            <MessageSquare className="h-5 w-5" strokeWidth={1.5} />
+            {missatgesCount > 0 && (
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-500 rounded-full"></span>
             )}
-          </div>
-          <div className="text-center">
-            <h2 className="text-lg font-semibold text-gray-900">{empresaNom}</h2>
-            <p className="text-sm text-gray-500">Perfil empresa</p>
-          </div>
-        </div>
+          </button>
 
-        {/* Derecha - Plan Badge, Notificaciones, Mensajes y Avatar */}
-        <div className="flex items-center justify-center gap-4 px-6">
-          {getPlanBadge()}
-          {/* Notificaciones dinámicas */}
-          <NotificationBadge
+          {/* Notificacions */}
+          <button
             onClick={() => setNotificationCenterOpen(true)}
-          />
-
-          <NotificationCenter
-            isOpen={notificationCenterOpen}
-            onClose={() => setNotificationCenterOpen(false)}
-          />
-
-          {/* Mensajes */}
-          <div className="relative">
-            <button
-              onClick={() => setShowMessages(!showMessages)}
-              className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <MessageSquare className="w-5 h-5" />
-              {missatgesCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                  {missatgesCount > 9 ? '9+' : missatgesCount}
-                </span>
-              )}
-            </button>
-
-            {showMessages && (
-              <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-                <div className="px-4 py-2 border-b border-gray-100">
-                  <h3 className="font-semibold text-gray-900">Missatges</h3>
-                </div>
-                <div className="max-h-64 overflow-y-auto">
-                  <div className="px-4 py-3 hover:bg-gray-50 cursor-pointer">
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                        <span className="text-white text-xs font-bold">JG</span>
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm font-medium text-gray-900">Joan García</p>
-                          <p className="text-xs text-gray-400">10:30</p>
-                        </div>
-                        <p className="text-xs text-gray-600 mt-1">Estic interessat en la vostra oferta de...</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="px-4 py-3 hover:bg-gray-50 cursor-pointer">
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                        <span className="text-white text-xs font-bold">AM</span>
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm font-medium text-gray-900">Anna Martí</p>
-                          <p className="text-xs text-gray-400">Ahir</p>
-                        </div>
-                        <p className="text-xs text-gray-600 mt-1">Moltes gràcies per la informació proporcionada</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="px-4 py-3 hover:bg-gray-50 cursor-pointer">
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
-                        <span className="text-white text-xs font-bold">PL</span>
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm font-medium text-gray-900">Pere López</p>
-                          <p className="text-xs text-gray-400">Ahir</p>
-                        </div>
-                        <p className="text-xs text-gray-600 mt-1">Podríem concertar una reunió per parlar del...</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="px-4 py-2 border-t border-gray-100">
-                  <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                    Veure tots els missatges
-                  </button>
-                </div>
-              </div>
+            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg relative transition-colors"
+          >
+            <Bell className="h-5 w-5" strokeWidth={1.5} />
+            {notificacionsCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-medium rounded-full flex items-center justify-center border-2 border-white">
+                {notificacionsCount}
+              </span>
             )}
-          </div>
+          </button>
 
-          {/* Avatar usuario */}
-          <div className="relative">
-            <button className="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100 transition-colors">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                <span className="text-white text-sm font-bold">E</span>
+          <div className="h-8 w-px bg-slate-200 mx-2"></div>
+
+          {/* Badge pla (petit) */}
+          <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full ${getPlanBadgeStyle(plan)}`}>
+            {plan}
+          </span>
+
+          {/* Avatar usuari */}
+          <div className="flex items-center gap-3 pl-2">
+            <div className="text-right hidden sm:block">
+              <p className="text-sm font-medium text-slate-900 leading-tight">{empresaNom}</p>
+              <p className="text-xs text-slate-500">Administrador</p>
+            </div>
+
+            <button className="relative group">
+              <div className="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center text-slate-600 border border-slate-200 group-hover:bg-slate-200 transition-colors overflow-hidden">
+                {empresaLogo ? (
+                  <img src={empresaLogo} alt={empresaNom} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="font-semibold text-sm">{empresaNom.charAt(0).toUpperCase()}</span>
+                )}
               </div>
-              <ChevronDown className="w-4 h-4 text-gray-500" />
             </button>
           </div>
         </div>
-      </div>
-    </header>
+      </header>
+
+      {/* Notification Center Logic */}
+      <NotificationCenter
+        isOpen={notificationCenterOpen}
+        onClose={() => setNotificationCenterOpen(false)}
+      />
+    </>
   );
 }

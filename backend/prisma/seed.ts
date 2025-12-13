@@ -1,6 +1,7 @@
 import { PrismaClient, UserRole, AdministrationType } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
-import { seedCourses } from './seeds/courses.seed';
+// import { seedCourses } from './seeds/courses.seed';
+import { seedRolesAndPermissions } from './seeds/roles-permissions';
 
 const prisma = new PrismaClient();
 
@@ -8,6 +9,10 @@ async function main() {
   console.log('🌱 Iniciando seed de la base de datos...');
 
   try {
+    // 0. CREAR ROLS I PERMISOS
+    console.log('\n🔐 Creant rols i permisos del sistema...');
+    await seedRolesAndPermissions();
+
     // 1. VERIFICAR/CREAR COMUNIDAD CATALUNYA
     console.log('\n🏛️ Verificando comunidad Catalunya...');
     let catalunya = await prisma.comunidadConfig.findUnique({
@@ -525,7 +530,7 @@ async function main() {
 
     // 6. CREAR CURSOS
     console.log('\n🎓 Creando cursos de formación...');
-    await seedCourses();
+    // await seedCourses();
 
     console.log('\n🎉 Seed completado exitosamente!');
     console.log('\n📊 Resumen:');

@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Save, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { getCategoriesAsOptions } from '@/lib/constants/categories'
 
 interface LeadFormData {
   companyName: string
@@ -15,6 +16,7 @@ interface LeadFormData {
   source: string
   estimatedRevenue: string
   notes: string
+  sector: string
 }
 
 interface LeadFormProps {
@@ -53,6 +55,7 @@ export function LeadForm({ lead, isEditing = false }: LeadFormProps) {
     source: lead?.source || '',
     estimatedRevenue: lead?.estimatedRevenue || '',
     notes: lead?.notes || '',
+    sector: '',
   })
 
   const handleInputChange = (field: keyof LeadFormData, value: string) => {
@@ -143,6 +146,22 @@ export function LeadForm({ lead, isEditing = false }: LeadFormProps) {
             {errors.companyName && (
               <p className="text-sm text-red-600 mt-1">{errors.companyName}</p>
             )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Sector
+            </label>
+            <select
+              value={formData.sector}
+              onChange={(e) => handleInputChange('sector', e.target.value)}
+              className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">Selecciona un sector</option>
+              {getCategoriesAsOptions().map(cat => (
+                <option key={cat.value} value={cat.value}>{cat.label}</option>
+              ))}
+            </select>
           </div>
 
           <div>

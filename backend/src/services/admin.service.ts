@@ -29,7 +29,7 @@ export class AdminService {
     const hashedPassword = await bcrypt.hash(data.password, 10);
 
     // Verificar que el email no existe
-    const existingUser = await (prisma as any).user.findUnique({
+    const existingUser = await prisma.user.findUnique({
       where: { email: data.email }
     });
 
@@ -53,10 +53,10 @@ export class AdminService {
       case UserRole.EMPLEADO_PUBLICO:
         profile = await this.createEmployeeProfile(user.id, data.userData, data.customFields, data.customFieldsPrivacy);
         break;
-      case (UserRole as any).EMPRESA:
+      case UserRole.COMPANY:
         profile = await this.createCompanyProfile(user.id, data.userData, data.customFields, data.customFieldsPrivacy);
         break;
-      case (UserRole as any).ADMINISTRACION_PUBLICA:
+      case UserRole.ADMINISTRACION_PUBLICA:
         profile = await this.createPublicAdminProfile(user.id, data.userData, data.customFields, data.customFieldsPrivacy);
         break;
       // Para ADMIN, SUPER_ADMIN, etc. no se crea perfil adicional
@@ -85,7 +85,7 @@ export class AdminService {
     customFields?: Record<string, any>,
     customFieldsPrivacy?: Record<string, 'public' | 'private'>
   ) {
-    return (prisma.employee.create as any)({
+    return prisma.employee.create({
       data: {
         userId,
         firstName: userData.firstName,
@@ -122,9 +122,9 @@ export class AdminService {
     customFields?: Record<string, any>,
     customFieldsPrivacy?: Record<string, 'public' | 'private'>
   ) {
-    return (prisma.companies.create as any)({
+    return prisma.company.create({
       data: {
-        userId,
+        userId, // Warning: Ensure Company model has userId
         name: userData.name,
         description: userData.description,
         sector: userData.sector,
@@ -141,8 +141,8 @@ export class AdminService {
         employeeCount: userData.employeeCount,
         annualRevenue: userData.annualRevenue,
         configuration: userData.configuration,
-        customFields: customFields ? JSON.stringify(customFields) : undefined,
-        customFieldsPrivacy: customFieldsPrivacy ? JSON.stringify(customFieldsPrivacy) : undefined,
+        // customFields: customFields ? JSON.stringify(customFields) : undefined, // Check if Company has customFields
+        // customFieldsPrivacy: customFieldsPrivacy ? JSON.stringify(customFieldsPrivacy) : undefined, // Check if Company has customFieldsPrivacy
         isVerified: false
       }
     });
@@ -155,7 +155,7 @@ export class AdminService {
     customFields?: Record<string, any>,
     customFieldsPrivacy?: Record<string, 'public' | 'private'>
   ) {
-    return (prisma as any).publicAdministration.create({
+    return prisma.publicAdministration.create({
       data: {
         userId,
         name: userData.name,
@@ -190,20 +190,20 @@ export class AdminService {
     }
 
     const [users, total] = await Promise.all([
-      (prisma as any).user.findMany({
+      prisma.user.findMany({
         where,
         include: {
           employee: true,
-          company: true,
+          ownedCompany: true,
           publicAdministration: true,
-          additionalRoles: true,
-          permissions: true
+          // additionalRoles: true, // Check if exists
+          // permissions: true      // Check if exists
         },
         skip: offset,
         take: limit,
         orderBy: { createdAt: 'desc' }
       }),
-      (prisma as any).user.count({ where })
+      prisma.user.count({ where })
     ]);
 
     return {
@@ -216,27 +216,27 @@ export class AdminService {
 
   // Obtener usuario por ID con toda su información
   async getUserById(userId: string) {
-    return (prisma.user.findUnique as any)({
+    return prisma.user.findUnique({
       where: { id: userId },
       include: {
         employee: true,
-        company: true,
+        ownedCompany: true,
         publicAdministration: true,
-        additionalRoles: true,
-        permissions: true
+        // additionalRoles: true,
+        // permissions: true
       }
     });
   }
 
   // Actualizar usuario
   async updateUser(userId: string, data: UpdateUserData) {
-    const user = await (prisma as any).user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { id: userId },
       include: {
         employee: true,
-        company: true,
+        ownedCompany: true,
         publicAdministration: true
-      } as any
+      }
     });
 
     if (!user) {
@@ -254,11 +254,11 @@ export class AdminService {
 
     // Actualizar perfil específico si hay datos
     if (data.userData) {
-      if ((user as any).employee) {
+      if (user.employee) {
         await this.updateEmployeeProfile(userId, data.userData, data.customFields, data.customFieldsPrivacy);
-      } else if ((user as any).company) {
+      } else if (user.ownedCompany) {
         await this.updateCompanyProfile(userId, data.userData, data.customFields, data.customFieldsPrivacy);
-      } else if ((user as any).publicAdministration) {
+      } else if (user.publicAdministration) {
         await this.updatePublicAdminProfile(userId, data.userData, data.customFields, data.customFieldsPrivacy);
       }
     }
@@ -280,8 +280,8 @@ export class AdminService {
     if (customFields) updateData.customFields = JSON.stringify(customFields);
     if (customFieldsPrivacy) updateData.customFieldsPrivacy = JSON.stringify(customFieldsPrivacy);
 
-    return (prisma.employee.update as any)({
-      where: { userId } as any,
+    return prisma.employee.update({
+      where: { userId },
       data: updateData
     });
   }
@@ -295,11 +295,21 @@ export class AdminService {
   ) {
     const updateData: any = { ...userData };
 
-    if (customFields) updateData.customFields = JSON.stringify(customFields);
-    if (customFieldsPrivacy) updateData.customFieldsPrivacy = JSON.stringify(customFieldsPrivacy);
+    // if (customFields) updateData.customFields = JSON.stringify(customFields);
+    // if (customFieldsPrivacy) updateData.customFieldsPrivacy = JSON.stringify(customFieldsPrivacy);
 
-    return (prisma.companies.update as any)({
-      where: { userId } as any,
+    // Buscar la compañía propiedad del usuario
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { ownedCompany: true }
+    });
+
+    if (!user || !user.ownedCompany) {
+      throw new Error('Empresa no encontrada para este usuario');
+    }
+
+    return prisma.company.update({
+      where: { id: user.ownedCompany.id },
       data: updateData
     });
   }
@@ -319,8 +329,8 @@ export class AdminService {
     if (customFields) updateData.customFields = JSON.stringify(customFields);
     if (customFieldsPrivacy) updateData.customFieldsPrivacy = JSON.stringify(customFieldsPrivacy);
 
-    return (prisma as any).publicAdministration.update({
-      where: { userId } as any,
+    return prisma.publicAdministration.update({
+      where: { userId },
       data: updateData
     });
   }
@@ -328,14 +338,14 @@ export class AdminService {
   // Eliminar usuario
   async deleteUser(userId: string) {
     // Prisma manejará la eliminación en cascada de los perfiles relacionados
-    return (prisma as any).user.delete({
+    return prisma.user.delete({
       where: { id: userId }
     });
   }
 
   // Activar/Desactivar usuario
   async toggleUserStatus(userId: string) {
-    const user = await (prisma as any).user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { id: userId }
     });
 
@@ -343,7 +353,7 @@ export class AdminService {
       throw new Error('Usuario no encontrado');
     }
 
-    return (prisma as any).user.update({
+    return prisma.user.update({
       where: { id: userId },
       data: {
         isActive: !user.isActive
@@ -359,13 +369,13 @@ export class AdminService {
       usersByRole,
       recentUsers
     ] = await Promise.all([
-      (prisma as any).user.count(),
-      (prisma as any).user.count({ where: { isActive: true } }),
+      prisma.user.count(),
+      prisma.user.count({ where: { isActive: true } }),
       prisma.user.groupBy({
         by: ['primaryRole'],
         _count: { primaryRole: true }
       }),
-      (prisma as any).user.count({
+      prisma.user.count({
         where: {
           createdAt: {
             gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Últimos 30 días

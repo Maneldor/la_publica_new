@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import { Briefcase, Users, Calendar, MapPin, Tag, Handshake, Euro, X } from 'lucide-react'
 import { EmpresaCompletarData } from '@/lib/gestio-empreses/actions/empresa-completar-actions'
+import { getCategoriesAsOptions } from '@/lib/constants/categories'
 
 interface Props {
   formData: EmpresaCompletarData
@@ -11,11 +12,7 @@ interface Props {
   errors: Record<string, string>
 }
 
-const SECTORS = [
-  'Tecnologia', 'Consultoria', 'Construcció', 'Educació', 'Sanitat', 'Turisme',
-  'Logística', 'Energia', 'Agricultura', 'Alimentació', 'Textil', 'Automòbil',
-  'Immobiliària', 'Finances', 'Comunicació', 'Altres'
-]
+
 
 const COMPANY_SIZES = [
   '1-5 empleats', '6-20 empleats', '21-50 empleats', '51-100 empleats',
@@ -92,7 +89,7 @@ export function Step5InformacioAmpliada({ formData, updateField, errors }: Props
           {/* Sector */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1.5">
-              Sector principal
+              Sector
             </label>
             <select
               value={formData.sector || ''}
@@ -100,8 +97,8 @@ export function Step5InformacioAmpliada({ formData, updateField, errors }: Props
               className="w-full h-10 px-3 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">Selecciona un sector</option>
-              {SECTORS.map(sector => (
-                <option key={sector} value={sector}>{sector}</option>
+              {getCategoriesAsOptions().map(cat => (
+                <option key={cat.value} value={cat.value}>{cat.label}</option>
               ))}
             </select>
           </div>

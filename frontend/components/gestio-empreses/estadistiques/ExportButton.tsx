@@ -26,7 +26,21 @@ export function ExportButton({ filters, className, size = 'default' }: ExportBut
     setIsExporting(format)
 
     try {
-      const blob = await exportStatisticsData(filters, format)
+      // Construir query params
+      const params = new URLSearchParams()
+      params.append('format', format)
+      if (filters.dateFrom) params.append('dateFrom', filters.dateFrom)
+      if (filters.dateTo) params.append('dateTo', filters.dateTo)
+      if (filters.gestorId) params.append('gestorId', filters.gestorId)
+      if (filters.companyId) params.append('companyId', filters.companyId)
+      if (filters.leadSource) params.append('leadSource', filters.leadSource)
+
+      // Usar fetch estándar a la API Route
+      const response = await fetch(`/api/gestio/estadistiques/exportar?${params.toString()}`)
+
+      if (!response.ok) throw new Error('Error en la descarga')
+
+      const blob = await response.blob()
 
       // Crear URL del blob y descargar
       const url = window.URL.createObjectURL(blob)
@@ -44,12 +58,8 @@ export function ExportButton({ filters, className, size = 'default' }: ExportBut
       document.body.removeChild(link)
       window.URL.revokeObjectURL(url)
 
-      // Mostrar mensaje de éxito (opcional)
-      // toast.success(`Estadístiques exportades en format ${format.toUpperCase()}`)
-
     } catch (error) {
       console.error('Error exportando estadístiques:', error)
-      // toast.error('Error exportant les estadístiques')
     } finally {
       setIsExporting(null)
     }
@@ -164,7 +174,19 @@ export function QuickExportButtons({ filters, className }: QuickExportButtonsPro
     setIsExporting(format)
 
     try {
-      const blob = await exportStatisticsData(filters, format)
+      // Construir query params
+      const params = new URLSearchParams()
+      params.append('format', format)
+      if (filters.dateFrom) params.append('dateFrom', filters.dateFrom)
+      if (filters.dateTo) params.append('dateTo', filters.dateTo)
+      if (filters.gestorId) params.append('gestorId', filters.gestorId)
+      if (filters.companyId) params.append('companyId', filters.companyId)
+      if (filters.leadSource) params.append('leadSource', filters.leadSource)
+
+      const response = await fetch(`/api/gestio/estadistiques/exportar?${params.toString()}`)
+      if (!response.ok) throw new Error('Error en la descarga')
+
+      const blob = await response.blob()
 
       const url = window.URL.createObjectURL(blob)
       const link = document.createElement('a')

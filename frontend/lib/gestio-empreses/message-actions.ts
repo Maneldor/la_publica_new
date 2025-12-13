@@ -102,65 +102,88 @@ function getTemplatesData(): MessageTemplate[] {
 /**
  * Obtenir converses de l'usuari autenticat
  */
-export async function getUserConversations() {
+export async function getUserConversations(page: number = 1, limit: number = 20) {
   const session = await getServerSession(authOptions)
   if (!session?.user) {
     throw new Error('No autoritzat')
   }
 
-  const conversations = await prismaClient.conversation.findMany({
-    where: {
-      participants: {
-        some: {
-          id: session.user.id,
-        },
-      },
-    },
-    include: {
-      participants: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-        },
-      },
-      messages: {
-        orderBy: { createdAt: 'desc' },
-        take: 1,
-        include: {
-          sender: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-        },
-      },
-      _count: {
-        select: {
-          messages: {
-            where: {
-              isRead: false,
-              senderId: { not: session.user.id },
-            },
-          },
-        },
-      },
-    },
-    orderBy: {
-      updatedAt: 'desc',
-    },
-  })
+  const skip = (page - 1) * limit
 
-  return conversations.map((conversation) => ({
-    id: conversation.id,
-    title: conversation.title,
-    participants: conversation.participants.filter(p => p.id !== session.user.id),
-    lastMessage: conversation.messages[0] || null,
-    unreadCount: conversation._count.messages,
-    updatedAt: conversation.updatedAt,
-  }))
+  const [conversations, total] = await Promise.all([
+    prismaClient.conversation.findMany({
+      where: {
+        participants: {
+          some: {
+            id: session.user.id,
+          },
+        },
+      },
+      include: {
+        participants: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+          },
+        },
+        messages: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+          include: {
+            sender: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        _count: {
+          select: {
+            messages: {
+              where: {
+                isRead: false,
+                senderId: { not: session.user.id },
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        updatedAt: 'desc',
+      },
+      skip,
+      take: limit
+    }),
+    prismaClient.conversation.count({
+      where: {
+        participants: {
+          some: {
+            id: session.user.id,
+          },
+        },
+      },
+    })
+  ])
+
+  return {
+    conversations: conversations.map((conversation) => ({
+      id: conversation.id,
+      title: conversation.title,
+      participants: conversation.participants.filter(p => p.id !== session.user.id),
+      lastMessage: conversation.messages[0] || null,
+      unreadCount: conversation._count.messages,
+      updatedAt: conversation.updatedAt,
+    })),
+    metadata: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    }
+  }
 }
 
 /**
@@ -249,12 +272,12 @@ export async function createConversation(
       },
       messages: initialMessage
         ? {
-            create: {
-              content: initialMessage,
-              senderId: session.user.id,
-              isRead: false,
-            },
-          }
+          create: {
+            content: initialMessage,
+            senderId: session.user.id,
+            isRead: false,
+          },
+        }
         : undefined,
     },
     include: {
@@ -310,8 +333,8 @@ export async function sendMessage(
       isRead: false,
       attachments: attachmentIds
         ? {
-            connect: attachmentIds.map(id => ({ id })),
-          }
+          connect: attachmentIds.map(id => ({ id })),
+        }
         : undefined,
     },
     include: {

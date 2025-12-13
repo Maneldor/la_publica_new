@@ -220,17 +220,17 @@ export function StatisticsFilters({
               Gestor
             </Label>
             <Select
-              value={localFilters.gestorId || ''}
+              value={localFilters.gestorId || 'ALL'}
               onValueChange={(value) => setLocalFilters(prev => ({
                 ...prev,
-                gestorId: value || undefined
+                gestorId: value === 'ALL' ? undefined : value
               }))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Tots els gestors" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Tots els gestors</SelectItem>
+                <SelectItem value="ALL">Tots els gestors</SelectItem>
                 {gestores.map((gestor) => (
                   <SelectItem key={gestor.id} value={gestor.id}>
                     {gestor.name}
@@ -263,17 +263,17 @@ export function StatisticsFilters({
               Origen del lead
             </Label>
             <Select
-              value={localFilters.leadSource || ''}
+              value={localFilters.leadSource || 'ALL'}
               onValueChange={(value) => setLocalFilters(prev => ({
                 ...prev,
-                leadSource: value || undefined
+                leadSource: value === 'ALL' ? undefined : value
               }))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Totes les fonts" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Totes les fonts</SelectItem>
+                <SelectItem value="ALL">Totes les fonts</SelectItem>
                 {leadSources.map((source) => (
                   <SelectItem key={source.value} value={source.value}>
                     {source.label}

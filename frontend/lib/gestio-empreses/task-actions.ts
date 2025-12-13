@@ -19,7 +19,9 @@ export async function getUserTasks(
     priority?: TaskPriority
     leadId?: string
     companyId?: string
-  }
+  },
+  page: number = 1,
+  limit: number = 50
 ) {
   const session = await getServerSession(authOptions)
   if (!session?.user) {
@@ -49,30 +51,45 @@ export async function getUserTasks(
     where.companyId = filters.companyId
   }
 
-  const tasks = await prismaClient.task.findMany({
-    where,
-    include: {
-      lead: {
-        select: { id: true, companyName: true },
-      },
-      company: {
-        select: { id: true, name: true },
-      },
-      assignedTo: {
-        select: { id: true, name: true, email: true },
-      },
-      createdBy: {
-        select: { id: true, name: true },
-      },
-    },
-    orderBy: [
-      { priority: 'desc' },
-      { dueDate: 'asc' },
-      { createdAt: 'desc' },
-    ],
-  })
+  const skip = (page - 1) * limit
 
-  return tasks
+  const [tasks, total] = await Promise.all([
+    prismaClient.task.findMany({
+      where,
+      include: {
+        lead: {
+          select: { id: true, companyName: true },
+        },
+        company: {
+          select: { id: true, name: true },
+        },
+        assignedTo: {
+          select: { id: true, name: true, email: true },
+        },
+        createdBy: {
+          select: { id: true, name: true },
+        },
+      },
+      orderBy: [
+        { priority: 'desc' },
+        { dueDate: 'asc' },
+        { createdAt: 'desc' },
+      ],
+      skip,
+      take: limit
+    }),
+    prismaClient.task.count({ where })
+  ])
+
+  return {
+    tasks,
+    metadata: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    }
+  }
 }
 
 /**

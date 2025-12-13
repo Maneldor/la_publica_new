@@ -62,7 +62,7 @@ Podríem concertar una reunió de 15 minuts aquesta setmana per explicar-li com 
         }
       ]
     } as SpeechContent,
-    // placeholders: [
+    placeholders: [
       {
         key: 'contact.name',
         label: 'Nom del contacte',
@@ -81,15 +81,15 @@ Podríem concertar una reunió de 15 minuts aquesta setmana per explicar-li com 
         type: PlaceholderType.SYSTEM,
         required: true
       }
-    // ],
+    ],
     tags: ['primer-contacte', 'pyme', 'telemarketing'],
-    // accessRoles: [
+    accessRoles: [
       ResourceRole.GESTOR_ESTANDARD,
       ResourceRole.GESTOR_ESTRATEGIC,
       ResourceRole.GESTOR_ENTERPRISE
-    // ],
+    ],
     isActive: true,
-    // version: '1.0'
+    version: '1.0'
   }
 ]
 
@@ -128,7 +128,7 @@ La Pública Solucions
       attachments: ['presentacio-serveis.pdf'],
       followUpDays: 3
     } as EmailTemplateContent,
-    // placeholders: [
+    placeholders: [
       {
         key: 'contact.name',
         label: 'Nom del contacte',
@@ -141,15 +141,15 @@ La Pública Solucions
         type: PlaceholderType.COMPANY,
         required: true
       }
-    // ],
+    ],
     tags: ['seguiment', 'email', 'primer-contacte'],
-    // accessRoles: [
+    accessRoles: [
       ResourceRole.GESTOR_ESTANDARD,
       ResourceRole.GESTOR_ESTRATEGIC,
       ResourceRole.GESTOR_ENTERPRISE
-    // ],
+    ],
     isActive: true,
-    // version: '1.0'
+    version: '1.0'
   }
 ]
 
@@ -236,7 +236,7 @@ La Pública Solucions`,
         }
       ]
     } as DocumentContent,
-    // placeholders: [
+    placeholders: [
       {
         key: 'company.name',
         label: 'Nom de l\'empresa',
@@ -263,15 +263,15 @@ La Pública Solucions`,
         description: 'Data límit de l\'oferta',
         required: true
       }
-    // ],
+    ],
     tags: ['proposta', 'pioner', 'contracte'],
-    // accessRoles: [
+    accessRoles: [
       ResourceRole.GESTOR_ESTRATEGIC,
       ResourceRole.GESTOR_ENTERPRISE,
       ResourceRole.CRM_MANAGER
-    // ],
+    ],
     isActive: true,
-    // version: '1.0'
+    version: '1.0'
   }
 ]
 
@@ -334,7 +334,7 @@ const guideResources: Omit<CommercialResource, 'id' | 'createdAt' | 'updatedAt'>
       ],
       estimatedTime: 40
     } as GuideContent,
-    // placeholders: [
+    placeholders: [
       {
         key: 'company.name',
         label: 'Nom de l\'empresa',
@@ -347,15 +347,15 @@ const guideResources: Omit<CommercialResource, 'id' | 'createdAt' | 'updatedAt'>
         type: PlaceholderType.CONTACT,
         required: true
       }
-    // ],
+    ],
     tags: ['primera-reunio', 'guia', 'vendes'],
-    // accessRoles: [
+    accessRoles: [
       ResourceRole.GESTOR_ESTANDARD,
       ResourceRole.GESTOR_ESTRATEGIC,
       ResourceRole.GESTOR_ENTERPRISE
-    // ],
+    ],
     isActive: true,
-    // version: '1.0'
+    version: '1.0'
   }
 ]
 
@@ -415,23 +415,23 @@ const checklistResources: Omit<CommercialResource, 'id' | 'createdAt' | 'updated
       ],
       successCriteria: 'Tots els ítems marcats com a requerits han de ser completats abans d\'enviar la proposta comercial'
     } as ChecklistContent,
-    // placeholders: [
+    placeholders: [
       {
         key: 'company.name',
         label: 'Nom de l\'empresa',
         type: PlaceholderType.COMPANY,
         required: true
       }
-    // ],
+    ],
     tags: ['qualificacio', 'checklist', 'leads'],
-    // accessRoles: [
+    accessRoles: [
       ResourceRole.GESTOR_ESTANDARD,
       ResourceRole.GESTOR_ESTRATEGIC,
       ResourceRole.GESTOR_ENTERPRISE,
       ResourceRole.CRM_MANAGER
-    // ],
+    ],
     isActive: true,
-    // version: '1.0'
+    version: '1.0'
   }
 ]
 

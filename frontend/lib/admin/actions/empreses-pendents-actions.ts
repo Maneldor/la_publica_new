@@ -306,3 +306,73 @@ export async function marcarLeadGuanyat(
     return { success: false, error: 'Error marcant lead com guanyat' }
   }
 }
+
+// ============================================
+// DATA FETCHING OPTIMIZAT
+// ============================================
+
+export async function getLeadsPendentsDashboardData(): Promise<{
+  success: boolean
+  leads?: LeadPendentRegistre[]
+  stats?: LeadsPendentsStats
+  error?: string
+}> {
+  const access = await checkAdminAccess()
+  if (!access.authorized) {
+    return { success: false, error: access.error }
+  }
+
+  try {
+    const [leads, stats] = await Promise.all([
+      // 1. Obtenir Leads
+      prismaClient.companyLead.findMany({
+        where: {
+          stage: 'PENDING_ADMIN',
+          convertedToCompanyId: null
+        },
+        include: {
+          assignedTo: {
+            select: { id: true, name: true, email: true }
+          }
+        },
+        orderBy: [
+          { priority: 'desc' },
+          { createdAt: 'asc' }
+        ]
+      }),
+      // 2. Obtenir Stats (Optimitzat: agrupant o comptant paral·lelament ja dins d'aquesta Promise.all global)
+      // Nota: Prisma count en paral·lel és ràpid.
+      Promise.all([
+        prismaClient.companyLead.count({
+          where: { stage: 'PENDING_ADMIN', convertedToCompanyId: null }
+        }),
+        prismaClient.companyLead.count({
+          where: { stage: 'PENDING_ADMIN', convertedToCompanyId: null, internalNotes: { not: null } }
+        }),
+        prismaClient.companyLead.count({
+          where: { stage: 'PENDING_ADMIN', convertedToCompanyId: null, OR: [{ internalNotes: null }, { internalNotes: '' }] }
+        })
+      ])
+    ])
+
+    const formattedLeads = leads.map(lead => ({
+      ...lead,
+      estimatedValue: lead.estimatedValue ? Number(lead.estimatedValue) : null,
+      assignedTo: lead.assignedTo
+    })) as LeadPendentRegistre[]
+
+    return {
+      success: true,
+      leads: formattedLeads,
+      stats: {
+        total: stats[0],
+        contactats: stats[1],
+        perContactar: stats[2],
+        pagamentPendent: 0
+      }
+    }
+  } catch (error) {
+    console.error('Error carregant dashboard data:', error)
+    return { success: false, error: 'Error carregant dades del sistema' }
+  }
+}

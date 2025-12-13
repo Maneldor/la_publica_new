@@ -32,12 +32,13 @@ interface Generation {
 
 interface IALeadHistoryProps {
   userId: string
+  initialGenerations?: Generation[]
   onGenerated?: (generationId: string, leads: GeneratedLead[]) => void
 }
 
-export function IALeadHistory({ userId, onGenerated }: IALeadHistoryProps) {
-  const [generations, setGenerations] = useState<Generation[]>([])
-  const [loading, setLoading] = useState(true)
+export function IALeadHistory({ userId, initialGenerations, onGenerated }: IALeadHistoryProps) {
+  const [generations, setGenerations] = useState<Generation[]>(initialGenerations || [])
+  const [loading, setLoading] = useState(!initialGenerations)
   const [repeating, setRepeating] = useState<string | null>(null)
 
   const loadHistory = async () => {
@@ -52,7 +53,9 @@ export function IALeadHistory({ userId, onGenerated }: IALeadHistoryProps) {
   }
 
   useEffect(() => {
-    loadHistory()
+    if (!initialGenerations) {
+      loadHistory()
+    }
   }, [userId])
 
   const handleRepeat = async (generationId: string) => {

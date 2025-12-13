@@ -82,20 +82,17 @@ export function GestioSidebar() {
             {section.collapsible ? (
               <button
                 onClick={() => toggleSection(section.id)}
-                className="w-full flex items-center justify-between px-2 py-1.5 text-xs font-semibold text-slate-500 uppercase tracking-wider hover:text-slate-700"
+                className="w-full flex items-center justify-between px-2 py-2 text-[11px] font-bold text-slate-700 uppercase tracking-wider hover:text-slate-900"
               >
-                <span className="flex items-center gap-2">
-                  {section.icon && <section.icon className="h-4 w-4" strokeWidth={1.5} />}
-                  {getSectionLabel(section)}
-                </span>
+                <span>{getSectionLabel(section)}</span>
                 {openSections[section.id] ? (
-                  <ChevronDown className="h-4 w-4" />
+                  <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
                 ) : (
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
                 )}
               </button>
             ) : (
-              <div className="px-2 py-1.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              <div className="px-2 py-2 text-[11px] font-bold text-slate-700 uppercase tracking-wider">
                 {getSectionLabel(section)}
               </div>
             )}

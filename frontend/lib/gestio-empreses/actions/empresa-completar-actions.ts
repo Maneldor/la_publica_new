@@ -75,6 +75,12 @@ export interface EmpresaCompletarData {
   completionPercentage: number
   createdAt: Date
   updatedAt: Date
+
+  // Camps de formulari (no persistits o persistits parcialment)
+  acceptsTerms?: boolean
+  acceptsDataProcessing?: boolean
+  isPubliclyVisible?: boolean
+  allowDirectContact?: boolean
 }
 
 // ============================================

@@ -63,7 +63,7 @@ export class CustomFieldService {
   // Crear campo personalizado
   async createCustomField(data: CreateCustomFieldData, createdBy: string) {
     // Verificar que no existe un campo con el mismo nombre para el mismo tipo de usuario
-    const existingField = await prisma.customField.findFirst({
+    const existingField = await prisma.custom_fields.findFirst({
       where: {
         fieldName: data.name,
         entityType: data.userType as any
@@ -74,7 +74,7 @@ export class CustomFieldService {
       throw new Error(`Ya existe un campo "${data.name}" para el tipo de usuario ${data.userType}`);
     }
 
-    return prisma.customField.create({
+    return prisma.custom_fields.create({
       data: {
         fieldName: data.name,
         fieldType: data.fieldType as any,
@@ -93,7 +93,7 @@ export class CustomFieldService {
     if (userType) where.entityType = userType;
     if (activeOnly) where.isActive = true;
 
-    return prisma.customField.findMany({
+    return prisma.custom_fields.findMany({
       where,
       orderBy: [
         { entityType: 'asc' },
@@ -108,7 +108,7 @@ export class CustomFieldService {
     const where: any = { entityType: userType };
     if (activeOnly) where.isActive = true;
 
-    const fields = await prisma.customField.findMany({
+    const fields = await prisma.custom_fields.findMany({
       where,
       orderBy: [
         { order: 'asc' },
@@ -159,7 +159,7 @@ export class CustomFieldService {
 
   // Obtener campo por ID
   async getCustomFieldById(id: string) {
-    const field = await prisma.customField.findUnique({
+    const field = await prisma.custom_fields.findUnique({
       where: { id }
     });
 
@@ -180,7 +180,7 @@ export class CustomFieldService {
 
   // Actualizar campo personalizado
   async updateCustomField(id: string, data: UpdateCustomFieldData) {
-    const field = await prisma.customField.findUnique({
+    const field = await prisma.custom_fields.findUnique({
       where: { id }
     });
 
@@ -190,7 +190,7 @@ export class CustomFieldService {
 
     // Si se cambia el nombre, verificar que no existe otro con ese nombre para el mismo tipo
     if (data.name && data.name !== (field as any).fieldName) {
-      const existingField = await prisma.customField.findFirst({
+      const existingField = await prisma.custom_fields.findFirst({
         where: {
           fieldName: data.name,
           entityType: (field as any).entityType
@@ -209,7 +209,7 @@ export class CustomFieldService {
     if (data.order !== undefined) updateData.order = data.order;
     if (data.isActive !== undefined) updateData.isActive = data.isActive;
 
-    return prisma.customField.update({
+    return prisma.custom_fields.update({
       where: { id },
       data: updateData
     });
@@ -217,7 +217,7 @@ export class CustomFieldService {
 
   // Eliminar campo personalizado
   async deleteCustomField(id: string) {
-    const field = await prisma.customField.findUnique({
+    const field = await prisma.custom_fields.findUnique({
       where: { id }
     });
 
@@ -231,14 +231,14 @@ export class CustomFieldService {
       throw new Error(`No se puede eliminar el campo. Está siendo usado por ${usage} usuarios. Desactívalo en su lugar.`);
     }
 
-    return prisma.customField.delete({
+    return prisma.custom_fields.delete({
       where: { id }
     });
   }
 
   // Activar/Desactivar campo
   async toggleCustomFieldStatus(id: string) {
-    const field = await prisma.customField.findUnique({
+    const field = await prisma.custom_fields.findUnique({
       where: { id }
     });
 
@@ -246,7 +246,7 @@ export class CustomFieldService {
       throw new Error('Campo personalizado no encontrado');
     }
 
-    return prisma.customField.update({
+    return prisma.custom_fields.update({
       where: { id },
       data: {
         isActive: !field.isActive
@@ -258,7 +258,7 @@ export class CustomFieldService {
   async reorderCustomFields(userType: UserRole, fieldOrders: { id: string; order: number }[]) {
     // Actualizar el orden de múltiples campos en una transacción
     const updatePromises = fieldOrders.map(({ id, order }) =>
-      prisma.customField.update({
+      prisma.custom_fields.update({
         where: { id },
         data: { order }
       })
@@ -358,13 +358,13 @@ export class CustomFieldService {
       fieldsByType,
       fieldsByUserType
     ] = await Promise.all([
-      prisma.customField.count(),
-      prisma.customField.count({ where: { isActive: true } }),
-      prisma.customField.groupBy({
+      prisma.custom_fields.count(),
+      prisma.custom_fields.count({ where: { isActive: true } }),
+      prisma.custom_fields.groupBy({
         by: ['fieldType'],
         _count: { fieldType: true }
       }),
-      prisma.customField.groupBy({
+      prisma.custom_fields.groupBy({
         by: ['entityType'],
         _count: { entityType: true }
       })

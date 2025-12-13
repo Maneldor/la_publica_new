@@ -23,8 +23,15 @@ export default function EmpresaLayout({
   missatgesCount
 }: EmpresaLayoutProps) {
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header fijo en la parte superior */}
+    <div className="min-h-screen bg-slate-50">
+      {/* Sidebar fijo - ocupa toda la altura */}
+      <EmpresaSidebar
+        plan={plan}
+        missatgesCount={missatgesCount}
+        notificacionsCount={notificacionsCount}
+      />
+
+      {/* Header fijo - desplazado a la derecha del sidebar */}
       <EmpresaHeader
         empresaNom={empresaNom}
         empresaLogo={empresaLogo}
@@ -33,15 +40,8 @@ export default function EmpresaLayout({
         missatgesCount={missatgesCount}
       />
 
-      {/* Sidebar fijo */}
-      <EmpresaSidebar
-        plan={plan}
-        missatgesCount={missatgesCount}
-        notificacionsCount={notificacionsCount}
-      />
-
-      {/* Contenido principal con margen para header y sidebar */}
-      <main className="ml-64 pt-20">
+      {/* Contenido principal - ajustado margen y padding */}
+      <main className="ml-64 pt-16 min-h-screen transition-all duration-300">
         <div className="max-w-7xl mx-auto px-6 py-8">
           <Breadcrumbs />
           {children}

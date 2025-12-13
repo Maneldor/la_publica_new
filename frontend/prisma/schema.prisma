@@ -13,6 +13,8 @@ model User {
   name                     String?
   image                    String?
   role                     UserRole                   @default(USER)
+  customRoleId             String?
+  customRole               Role?                      @relation("UserCustomRole", fields: [customRoleId], references: [id], onDelete: SetNull)
   communityId              String?
   isActive                 Boolean                    @default(true)
   createdAt                DateTime                   @default(now())
@@ -78,6 +80,14 @@ model User {
   resourcesUpdated         CommercialResource[]       @relation("ResourceUpdater")
   resourceUsages           ResourceUsage[]
 
+  // Relacions amb campanyes
+  campaignsCreated    Campaign[]          @relation("CampaignCreator")
+  campaignRecipients  CampaignRecipient[]
+  
+  // Relacions amb avisos
+  noticesCreated      PlatformNotice[]   @relation("NoticeCreator")
+  noticeDismissals    NoticeDismissal[]  @relation("UserNoticeDismissals")
+
   @@index([email])
   @@index([role])
   @@index([communityId])
@@ -86,6 +96,9 @@ model User {
   @@index([memberCompanyId])
   @@index([createdAt])
   @@index([isActive, createdAt])
+
+  employee                 Employee?
+  publicAdministration     PublicAdministration?
 }
 
 model Comunidad {
@@ -617,6 +630,7 @@ model OfferCategory {
   description String?
   icon        String?
   color       String?
+  order       Int      @default(0)
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -624,6 +638,7 @@ model OfferCategory {
 
   @@index([slug])
   @@index([isActive])
+  @@index([order])
 }
 
 model Offer {
@@ -875,36 +890,6 @@ model EmailLog {
   @@index([toEmail])
   @@index([externalId])
   @@map("email_logs")
-}
-
-model AuditLog {
-  id           String      @id @default(cuid())
-  userId       String
-  userName     String
-  userEmail    String
-  userRole     String
-  action       AuditAction
-  entity       String
-  entityId     String?
-  entityName   String?
-  description  String
-  changes      Json?
-  metadata     Json?
-  ipAddress    String?
-  userAgent    String?
-  severity     LogSeverity @default(INFO)
-  success      Boolean     @default(true)
-  errorMessage String?
-  createdAt    DateTime    @default(now())
-  user         User        @relation("UserAuditLogs", fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId], map: "idx_auditlog_user")
-  @@index([action], map: "idx_auditlog_action")
-  @@index([entity], map: "idx_auditlog_entity")
-  @@index([entityId], map: "idx_auditlog_entity_id")
-  @@index([createdAt], map: "idx_auditlog_created")
-  @@index([severity], map: "idx_auditlog_severity")
-  @@map("audit_logs")
 }
 
 model GroupOfferRequest {
@@ -1785,26 +1770,41 @@ model custom_fields {
   @@index([entityType, entityId])
 }
 
-model employees {
-  id                 String              @id
-  userId             String
-  companyId          String?
-  department         String?
-  position           String?
-  startDate          DateTime?
-  endDate            DateTime?
-  isActive           Boolean             @default(true)
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime
-  firstName          String?
-  nick               String?
-  lastName           String?
-  community          String?
-  administrationType AdministrationType?
-  avatar             String?
-  bio                String?
-  socialNetworks     Json?
-  privacySettings    Json?
+model Employee {
+  id                  String            @id @default(cuid())
+  userId              String            @unique
+  companyId           String?
+  nick                String?
+  firstName           String?
+  lastName            String?
+  dni                 String?
+  jobTitle            String?
+  department          String?
+  organization        String?
+  community           String?
+  administrationType  AdministrationType?
+  province            String?
+  city                String?
+  avatar              String?
+  generalInfo         String?
+  skills              String?
+  workExperience      String?
+  socialNetworks      Json?
+  bio                 String?
+  privacySettings     Json?
+  canBeGroupAdmin     Boolean           @default(false)
+  canBeGroupModerator Boolean           @default(false)
+  canBeContentManager Boolean           @default(false)
+  customFields        String?
+  customFieldsPrivacy String?
+  startDate           DateTime?
+  endDate             DateTime?
+  isActive            Boolean           @default(true)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  user                User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("employees")
 }
 
 model events {
@@ -2128,14 +2128,23 @@ enum UserRole {
   SUPER_ADMIN
   ADMIN
   ADMIN_GESTIO
+  ADMIN_ADMINISTRACIONS
   CRM_COMERCIAL
   CRM_CONTINGUT
+  CRM_ADMINISTRACIONS
   GESTOR_ESTANDARD
   GESTOR_ESTRATEGIC
   GESTOR_ENTERPRISE
   MODERATOR
   COMPANY
   USER
+  COMPANY_MANAGER
+  GESTOR_EMPRESAS
+  ADMINISTRADOR_GRUPO
+  EMPLEADO_PUBLICO
+  ADMINISTRACION_PUBLICA
+  COMMUNITY_MANAGER
+  ADMINISTRATION
 }
 
 enum AnuncioType {
@@ -2586,11 +2595,6 @@ enum TaskActivityAction {
   ATTACHMENT_ADDED
 }
 
-enum AdministrationType {
-  LOCAL
-  AUTONOMICA
-  CENTRAL
-}
 
 // ============================================
 // CHECKLIST SISTEMA
@@ -2842,3 +2846,580 @@ model ResourceUsage {
   @@index([createdAt])
   @@map("resource_usage")
 }
+
+
+
+model PublicAdministration {
+  id                  String            @id @default(cuid())
+  userId              String            @unique
+  name                String
+  administrationType  AdministrationType
+  community           String?
+  province            String?
+  city                String?
+  address             String?
+  phone               String?
+  email               String?
+  website             String?
+  description         String?
+  citizenServices     String?
+  departments         String?
+  publicHours         String?
+  contactInfo         String?
+  customFields        String?
+  customFieldsPrivacy String?
+  isVerified          Boolean           @default(false)
+  isActive            Boolean           @default(true)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  user                User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("public_administrations")
+}
+
+
+enum AdministrationType {
+  LOCAL
+  AUTONOMICA
+  CENTRAL
+}
+
+// =============================================
+// SISTEMA DINÀMIC DE ROLS I PERMISOS
+// =============================================
+
+// Rol del sistema (predefinit o personalitzat)
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique  // "GESTOR_GESTIO" (clau única)
+  label       String            // "Gestor Gestió" (nom visible)
+  description String?
+  
+  // Estil UI
+  color       String   @default("slate")  // blue, red, green, etc.
+  icon        String   @default("Users")  // Nom icona Lucide
+  
+  // Configuració
+  dashboard   String?           // "/gestio/", "/admin/", "/empresa/", etc.
+  isSystem    Boolean  @default(false)  // true = no es pot eliminar ni modificar nom
+  isActive    Boolean  @default(true)
+  
+  // Si és copiat d'un altre rol
+  copiedFromId String?
+  copiedFrom   Role?   @relation("RoleCopies", fields: [copiedFromId], references: [id], onDelete: SetNull)
+  copies       Role[]  @relation("RoleCopies")
+  
+  // Metadades
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdById String?
+  
+  // Relacions
+  permissions RolePermission[]
+  users       User[]           @relation("UserCustomRole")
+  
+  @@index([isActive])
+  @@index([isSystem])
+  @@map("roles")
+}
+
+// Categoria de permisos
+model PermissionCategory {
+  id          String       @id @default(cuid())
+  name        String       @unique  // "users", "companies", etc.
+  label       String                // "Usuaris", "Empreses", etc.
+  icon        String       @default("Settings")  // Nom icona Lucide
+  order       Int          @default(0)
+  
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  
+  permissions Permission[]
+  
+  @@map("permission_categories")
+}
+
+// Permís del sistema
+model Permission {
+  id          String   @id @default(cuid())
+  key         String   @unique  // "MANAGE_USERS"
+  label       String            // "Gestionar usuaris"
+  description String?
+  
+  categoryId  String
+  category    PermissionCategory @relation(fields: [categoryId], references: [id])
+  
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  
+  roles       RolePermission[]
+  
+  @@index([categoryId])
+  @@map("permissions")
+}
+
+// Relació Rol <-> Permís (many-to-many)
+model RolePermission {
+  id           String     @id @default(cuid())
+  roleId       String
+  permissionId String
+  
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  
+  grantedAt    DateTime   @default(now())
+  grantedById  String?
+  
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+  @@map("role_permissions")
+}
+
+// =============================================
+// SISTEMA DINÀMIC DE CATEGORIES
+// =============================================
+
+// Components del sistema que suporten categorització
+// Es registren automàticament quan es creen nous mòduls
+model SystemComponent {
+  id                    String   @id @default(cuid())
+  code                  String   @unique  // "OFFERS", "COMPANIES", "FORUMS", etc.
+  name                  String            // "Ofertes", "Empreses", "Fòrums"
+  namePlural            String            // "Ofertes", "Empreses", "Fòrums"
+  description           String?
+  icon                  String   @default("Box")  // Nom icona Lucide
+  color                 String   @default("slate")
+  
+  // Configuració
+  supportsCategorization Boolean @default(true)
+  isCore                Boolean  @default(false)  // true = sistema, no es pot eliminar
+  isActive              Boolean  @default(true)
+  
+  // Metadades
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  // Relacions
+  categoryScopes        CategoryScopeComponent[]
+  
+  @@index([code])
+  @@index([isActive, supportsCategorization])
+  @@map("system_components")
+}
+
+// Tipus/Scopes de categories (agrupació)
+// Exemple: "Empreses i Ofertes", "Fòrums", "Anuncis"
+model CategoryScope {
+  id          String   @id @default(cuid())
+  name        String   @unique  // "empreses-ofertes", "forums", "anuncis"
+  label       String            // "Empreses i Ofertes", "Fòrums", "Anuncis"
+  description String?
+  icon        String   @default("Folder")
+  color       String   @default("slate")
+  
+  // Configuració
+  order       Int      @default(0)
+  isSystem    Boolean  @default(false)  // true = creat pel sistema, no eliminar
+  isActive    Boolean  @default(true)
+  
+  // Metadades
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdById String?
+  
+  // Relacions
+  components  CategoryScopeComponent[]
+  categories  Category[]
+  
+  @@index([isActive])
+  @@index([order])
+  @@map("category_scopes")
+}
+
+// Relació N:M entre CategoryScope i SystemComponent
+// Un scope pot tenir múltiples components (ex: "Empreses i Ofertes" té OFFERS i COMPANIES)
+model CategoryScopeComponent {
+  id            String          @id @default(cuid())
+  scopeId       String
+  componentId   String
+  
+  scope         CategoryScope   @relation(fields: [scopeId], references: [id], onDelete: Cascade)
+  component     SystemComponent @relation(fields: [componentId], references: [id], onDelete: Cascade)
+  
+  createdAt     DateTime        @default(now())
+  
+  @@unique([scopeId, componentId])
+  @@index([scopeId])
+  @@index([componentId])
+  @@map("category_scope_components")
+}
+
+// Categories individuals
+model Category {
+  id          String        @id @default(cuid())
+  scopeId     String
+  scope       CategoryScope @relation(fields: [scopeId], references: [id], onDelete: Cascade)
+  
+  name        String
+  slug        String
+  description String?
+  icon        String?
+  color       String        @default("slate")
+  image       String?       // URL imatge opcional
+  
+  // Configuració
+  order       Int           @default(0)
+  isActive    Boolean       @default(true)
+  isFeatured  Boolean       @default(false)
+  
+  // Jerarquia (subcategories) - Opcional per futur
+  parentId    String?
+  parent      Category?     @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children    Category[]    @relation("CategoryHierarchy")
+  
+  // Metadades
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  createdById String?
+  
+  // Relacions amb altres entitats (afegir segons necessitat)
+  // offers      Offer[]      // Descomentar quan es faci la migració
+  // companies   Company[]
+  // forumTopics ForumTopic[]
+  // etc.
+  
+  @@unique([scopeId, slug])
+  @@index([scopeId, isActive])
+  @@index([scopeId, order])
+  @@index([parentId])
+  @@map("categories")
+}
+
+// =============================================
+// SISTEMA DE CAMPANYES
+// =============================================
+
+// Tipus de campanya
+enum CampaignType {
+  EMAIL           // Email màrqueting
+  PUSH            // Notificacions push
+  SMS             // Missatges SMS
+  BANNER          // Banners dins la plataforma
+  FEATURED        // Anuncis/ofertes destacades
+  ANNOUNCEMENT    // Comunicats oficials
+}
+
+// Estat de la campanya
+enum CampaignStatus {
+  DRAFT           // Esborrany
+  SCHEDULED       // Programada
+  ACTIVE          // Activa/Enviant
+  PAUSED          // Pausada
+  COMPLETED       // Completada
+  CANCELLED       // Cancel·lada
+}
+
+// Tipus de segmentació
+enum SegmentationType {
+  ALL             // Tots els usuaris
+  ADMINISTRATION  // Per administració
+  SECTOR          // Per sector/categoria
+  SUBSCRIPTION    // Per tipus de subscripció
+  CUSTOM          // Personalitzada (llista d'IDs)
+  BEHAVIOR        // Per comportament (actius, inactius, etc.)
+}
+
+// Campanya principal
+model Campaign {
+  id              String            @id @default(cuid())
+  
+  // Informació bàsica
+  name            String
+  slug            String            @unique
+  description     String?
+  type            CampaignType
+  status          CampaignStatus    @default(DRAFT)
+  
+  // Contingut
+  subject         String?           // Assumpte (email/push)
+  content         String?           // Contingut principal (HTML o text)
+  contentPlain    String?           // Versió text pla (emails)
+  ctaText         String?           // Text del botó CTA
+  ctaUrl          String?           // URL del CTA
+  imageUrl        String?           // Imatge principal
+  
+  // Segmentació
+  segmentationType SegmentationType @default(ALL)
+  segmentationData Json?            // Dades de segmentació (IDs, filtres, etc.)
+  
+  // Programació
+  scheduledAt     DateTime?         // Data programada d'enviament
+  startDate       DateTime?         // Data inici (banners)
+  endDate         DateTime?         // Data fi (banners)
+  isRecurring     Boolean           @default(false)
+  recurringRule   String?           // Regla de recurrència (cron o similar)
+  
+  // Configuració
+  priority        Int               @default(0)  // Prioritat per ordenar
+  isActive        Boolean           @default(true)
+  
+  // Opcions específiques per tipus
+  settings        Json?             // Configuració addicional (posició banner, etc.)
+  
+  // Mètriques
+  totalRecipients Int               @default(0)
+  sent            Int               @default(0)
+  delivered       Int               @default(0)
+  opened          Int               @default(0)
+  clicked         Int               @default(0)
+  converted       Int               @default(0)
+  bounced         Int               @default(0)
+  unsubscribed    Int               @default(0)
+  
+  // Metadades
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  createdById     String?
+  createdBy       User?             @relation("CampaignCreator", fields: [createdById], references: [id])
+  
+  // Relacions
+  recipients      CampaignRecipient[]
+  events          CampaignEvent[]
+  
+  @@index([type, status])
+  @@index([status, scheduledAt])
+  @@index([createdById])
+  @@map("campaigns")
+}
+
+// Destinataris de la campanya
+model CampaignRecipient {
+  id            String          @id @default(cuid())
+  campaignId    String
+  campaign      Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  
+  // Destinatari
+  userId        String?
+  user          User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  email         String?         // Per enviaments sense usuari registrat
+  phone         String?         // Per SMS
+  
+  // Estat individual
+  status        String          @default("pending")  // pending, sent, delivered, failed
+  sentAt        DateTime?
+  deliveredAt   DateTime?
+  openedAt      DateTime?
+  clickedAt     DateTime?
+  
+  // Metadades
+  errorMessage  String?
+  metadata      Json?
+  
+  createdAt     DateTime        @default(now())
+  
+  @@unique([campaignId, userId])
+  @@unique([campaignId, email])
+  @@index([campaignId, status])
+  @@index([userId])
+  @@map("campaign_recipients")
+}
+
+// Events/tracking de campanyes
+model CampaignEvent {
+  id          String      @id @default(cuid())
+  campaignId  String
+  campaign    Campaign    @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  
+  // Event
+  eventType   String      // sent, delivered, opened, clicked, converted, bounced, unsubscribed
+  userId      String?
+  email       String?
+  
+  // Dades de l'event
+  metadata    Json?       // URL clicada, dispositiu, etc.
+  ipAddress   String?
+  userAgent   String?
+  
+  createdAt   DateTime    @default(now())
+  
+  @@index([campaignId, eventType])
+  @@index([campaignId, createdAt])
+  @@map("campaign_events")
+}
+
+// Plantilles de campanyes
+model CampaignTemplate {
+  id          String        @id @default(cuid())
+  name        String
+  description String?
+  type        CampaignType
+  
+  // Contingut de la plantilla
+  subject     String?
+  content     String        // HTML o text
+  contentPlain String?
+  
+  // Configuració
+  isActive    Boolean       @default(true)
+  isDefault   Boolean       @default(false)
+  
+  // Metadades
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  createdById String?
+  
+  @@index([type, isActive])
+  @@map("campaign_templates")
+}
+
+// =============================================
+// SISTEMA DE LOGS D'AUDITORIA
+// =============================================
+
+// Nivell de log
+enum AuditLevel {
+  DEBUG
+  INFO
+  WARNING
+  ERROR
+  CRITICAL
+}
+
+// Log d'auditoria
+model AuditLog {
+  id          String     @id @default(cuid())
+  timestamp   DateTime   @default(now())
+  
+  // Qui
+  userId      String?
+  user        User?      @relation("UserAuditLogs", fields: [userId], references: [id], onDelete: SetNull)
+  userEmail   String?    // Guardem email per si s'elimina l'usuari
+  userRole    String?    // Rol en el moment de l'acció
+  
+  // Què
+  action      String     // LOGIN, LOGOUT, CREATE, UPDATE, DELETE, VIEW, EXPORT, etc.
+  category    String     // AUTH, USER, COMPANY, OFFER, CAMPAIGN, SYSTEM, etc.
+  
+  // On
+  entity      String?    // Nom del model: User, Company, Offer, etc.
+  entityId    String?    // ID de l'entitat afectada
+  entityName  String?    // Nom/títol de l'entitat (per referència)
+  
+  // Detalls
+  description String?    // Descripció llegible
+  changes     Json?      // { before: {...}, after: {...} } per UPDATE
+  metadata    Json?      // Dades addicionals
+  
+  // Context
+  ipAddress   String?
+  userAgent   String?
+  requestPath String?    // /api/admin/users/xxx
+  requestMethod String?  // GET, POST, PUT, DELETE
+  
+  // Resultat
+  level       AuditLevel @default(INFO)
+  success     Boolean    @default(true)
+  errorMessage String?
+  
+  @@index([userId])
+  @@index([action])
+  @@index([category])
+  @@index([entity, entityId])
+  @@index([timestamp])
+  @@index([level])
+  @@map("audit_logs")
+}
+
+// =============================================
+// SISTEMA D'AVISOS DE PLATAFORMA
+// =============================================
+
+// Tipus d'avís
+enum NoticeType {
+  INFO          // Informació general (blau)
+  SUCCESS       // Èxit/novetats (verd)
+  WARNING       // Advertència (groc)
+  ERROR         // Error/problema (vermell)
+  MAINTENANCE   // Manteniment programat (taronja)
+  ANNOUNCEMENT  // Comunicat oficial (morat)
+}
+
+// Posició de l'avís
+enum NoticePosition {
+  TOP_BANNER    // Banner fixe a dalt
+  BOTTOM_BANNER // Banner fixe a baix
+  MODAL         // Modal centrat
+  TOAST         // Notificació temporal
+}
+
+// Audiència de l'avís
+enum NoticeAudience {
+  ALL           // Tots els usuaris
+  USERS         // Només usuaris (empleats públics)
+  COMPANIES     // Només empreses
+  ADMINS        // Només administradors
+  GESTORS       // Només gestors CRM
+}
+
+// Avís de plataforma
+model PlatformNotice {
+  id            String          @id @default(cuid())
+  
+  // Contingut
+  type          NoticeType      @default(INFO)
+  title         String
+  message       String          @db.Text
+  
+  // CTA opcional
+  ctaText       String?         // Text del botó
+  ctaUrl        String?         // URL del botó
+  
+  // Aparença
+  position      NoticePosition  @default(TOP_BANNER)
+  icon          String?         // Icona Lucide opcional
+  
+  // Visibilitat
+  audience      NoticeAudience  @default(ALL)
+  startDate     DateTime        @default(now())
+  endDate       DateTime?       // Null = indefinit
+  
+  // Comportament
+  dismissible   Boolean         @default(true)  // Es pot tancar?
+  persistent    Boolean         @default(false) // Reapareix després de tancar?
+  priority      Int             @default(0)     // Ordre si hi ha múltiples
+  
+  // Estat
+  isActive      Boolean         @default(true)
+  
+  // Metadades
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  createdById   String?
+  createdBy     User?           @relation("NoticeCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  
+  // Tracking de tancaments
+  dismissals    NoticeDismissal[]
+  
+  @@index([isActive, startDate, endDate])
+  @@index([audience])
+  @@index([type])
+  @@index([createdById])
+  @@map("platform_notices")
+}
+
+// Registre de tancaments d'avisos per usuari
+model NoticeDismissal {
+  id          String         @id @default(cuid())
+  noticeId    String
+  notice      PlatformNotice @relation(fields: [noticeId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User           @relation("UserNoticeDismissals", fields: [userId], references: [id], onDelete: Cascade)
+  dismissedAt DateTime       @default(now())
+  
+  @@unique([noticeId, userId])
+  @@index([userId])
+  @@map("notice_dismissals")
+}
+

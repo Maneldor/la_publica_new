@@ -17,7 +17,8 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ContactForm, ContactData } from '@/components/gestio-empreses/leads/ContactForm'
-import { SECTORS, SOURCES, PRIORITIES, EMPLOYEE_RANGES } from '@/components/gestio-empreses/leads/constants'
+import { SOURCES, PRIORITIES, EMPLOYEE_RANGES } from '@/components/gestio-empreses/leads/constants'
+import { getCategoriesAsOptions } from '@/lib/constants/categories'
 import { createLead } from '@/lib/gestio-empreses/actions'
 
 export default function NewLeadPage() {
@@ -169,7 +170,8 @@ export default function NewLeadPage() {
                 name="sector"
                 className="w-full px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
               >
-                {SECTORS.map(s => (
+                <option value="">Selecciona un sector</option>
+                {getCategoriesAsOptions().map(s => (
                   <option key={s.value} value={s.value}>{s.label}</option>
                 ))}
               </select>

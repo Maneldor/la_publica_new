@@ -141,6 +141,13 @@ export const SIDEBAR_CONFIG: SidebarSection[] = [
         roles: [...ROLE_GROUPS.ADMINS],
       },
       {
+        id: 'campanyes',
+        label: 'Campanyes',
+        href: '/gestio/admin/campanyes',
+        icon: Megaphone,
+        roles: [...ROLE_GROUPS.ADMINS],
+      },
+      {
         id: 'configuracio-ia',
         label: 'Configuració d\'IA',
         href: '/gestio/admin/configuracio-ia',
@@ -159,7 +166,7 @@ export const SIDEBAR_CONFIG: SidebarSection[] = [
     icon: Target,
     roles: [...ROLE_GROUPS.ADMINS, ...ROLE_GROUPS.CRM_TEAM],
     collapsible: true,
-    defaultOpen: true,
+    defaultOpen: false,
     items: [
       {
         id: 'leads-list',
@@ -207,15 +214,15 @@ export const SIDEBAR_CONFIG: SidebarSection[] = [
   },
 
   // ============================================
-  // GESTIÓ EMPRESES (Admin + CRM Comercial + Gestors)
+  // GESTIÓ EMPRESES
   // ============================================
   {
-    id: 'empreses',
+    id: 'gestio-empreses',
     label: 'Gestió Empreses',
     icon: Building2,
     roles: [...ROLE_GROUPS.ADMINS, ...ROLE_GROUPS.CRM_TEAM],
     collapsible: true,
-    defaultOpen: true,
+    defaultOpen: false,
     items: [
       {
         id: 'empreses-list',
@@ -225,27 +232,100 @@ export const SIDEBAR_CONFIG: SidebarSection[] = [
         roles: [...ROLE_GROUPS.ADMINS, ...ROLE_GROUPS.CRM_TEAM],
       },
       {
-        id: 'ofertes',
+        id: 'empreses-pipeline',
+        label: 'Pipeline',
+        href: '/gestio/empreses/pipeline',
+        icon: GitBranch,
+        roles: [...ROLE_GROUPS.ADMINS, ...ROLE_GROUPS.CRM_TEAM],
+        disabled: true, // Activar quan es creï la pàgina
+      },
+    ],
+  },
+
+  // ============================================
+  // GESTIÓ OFERTES
+  // ============================================
+  {
+    id: 'gestio-ofertes',
+    label: 'Gestió Ofertes',
+    icon: Gift,
+    roles: [...ROLE_GROUPS.ADMINS, ...ROLE_GROUPS.CRM_TEAM],
+    collapsible: true,
+    defaultOpen: false,
+    items: [
+      {
+        id: 'ofertes-list',
         label: 'Ofertes',
         href: '/gestio/ofertes',
         icon: Gift,
         roles: [...ROLE_GROUPS.ADMINS, ...ROLE_GROUPS.CRM_TEAM],
-        disabled: true,
       },
       {
-        id: 'assessoraments',
+        id: 'ofertes-pipeline',
+        label: 'Pipeline',
+        href: '/gestio/ofertes/pipeline',
+        icon: GitBranch,
+        roles: [...ROLE_GROUPS.ADMINS, ...ROLE_GROUPS.CRM_TEAM],
+        disabled: true, // Activar quan es creï la pàgina
+      },
+    ],
+  },
+
+  // ============================================
+  // GESTIÓ ASSESSORAMENTS
+  // ============================================
+  {
+    id: 'gestio-assessoraments',
+    label: 'Gestió Assessoraments',
+    icon: HelpCircle,
+    roles: [...ROLE_GROUPS.ADMINS, ...ROLE_GROUPS.CRM_TEAM],
+    collapsible: true,
+    defaultOpen: false,
+    items: [
+      {
+        id: 'assessoraments-list',
         label: 'Assessoraments',
         href: '/gestio/assessoraments',
         icon: HelpCircle,
         roles: [...ROLE_GROUPS.ADMINS, ...ROLE_GROUPS.CRM_TEAM],
+        disabled: true, // Activar quan es creï la pàgina
+      },
+      {
+        id: 'assessoraments-pipeline',
+        label: 'Pipeline',
+        href: '/gestio/assessoraments/pipeline',
+        icon: GitBranch,
+        roles: [...ROLE_GROUPS.ADMINS, ...ROLE_GROUPS.CRM_TEAM],
+        disabled: true, // Activar quan es creï la pàgina
+      },
+    ],
+  },
+
+  // ============================================
+  // GESTIÓ EXTRES
+  // ============================================
+  {
+    id: 'gestio-extres',
+    label: 'Gestió Extres',
+    icon: Star,
+    roles: [...ROLE_GROUPS.ADMINS, ...ROLE_GROUPS.CRM_TEAM],
+    collapsible: true,
+    defaultOpen: false,
+    items: [
+      {
+        id: 'extres-list',
+        label: 'Extres',
+        href: '/gestio/extres',
+        icon: Star,
+        roles: [...ROLE_GROUPS.ADMINS, ...ROLE_GROUPS.CRM_TEAM],
         disabled: true,
       },
       {
-        id: 'serveis-extras',
-        label: 'Serveis Extras',
-        href: '/gestio/serveis',
-        icon: Star,
-        roles: [...ROLE_GROUPS.ADMINS, ...ROLE_GROUPS.CAN_VIEW_ALL_COMMERCIAL],
+        id: 'extres-pipeline',
+        label: 'Pipeline',
+        href: '/gestio/extres/pipeline',
+        icon: GitBranch,
+        roles: [...ROLE_GROUPS.ADMINS, ...ROLE_GROUPS.CRM_TEAM],
         disabled: true,
       },
     ],
@@ -260,7 +340,7 @@ export const SIDEBAR_CONFIG: SidebarSection[] = [
     icon: MessagesSquare,
     roles: ['SUPER_ADMIN', 'ADMIN', 'CRM_CONTINGUT'] as UserRole[],
     collapsible: true,
-    defaultOpen: true,
+    defaultOpen: false,
     items: [
       {
         id: 'feed',
@@ -376,7 +456,7 @@ export const SIDEBAR_CONFIG: SidebarSection[] = [
     icon: CheckSquare,
     roles: [...ROLE_GROUPS.ALL_GESTIO],
     collapsible: true,
-    defaultOpen: true,
+    defaultOpen: false,
     items: [
       {
         id: 'recursos-comercials',

@@ -48,8 +48,8 @@ export default async function CompanyDetailPage({ params }: PageProps) {
 
               {/* Sidebar - 1 column */}
               <div className="space-y-6">
-                <CompanySubscription subscription={company.subscription || null} />
-                <CompanyUsers users={company.members || []} />
+                <CompanySubscription subscription={company.activeSubscription || null} />
+                <CompanyUsers users={company.teamMembers || []} />
               </div>
             </div>
           </div>

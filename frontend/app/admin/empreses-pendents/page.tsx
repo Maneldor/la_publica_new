@@ -27,8 +27,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
-  getLeadsPendentsRegistre,
-  getLeadsPendentsStats,
+  getLeadsPendentsDashboardData,
   updateLeadAdminNotes,
   LeadPendentRegistre,
   LeadsPendentsStats
@@ -71,19 +70,14 @@ export default function EmpresesPendentsPage() {
   const loadData = async () => {
     setLoading(true)
     try {
-      const [leadsResult, statsResult] = await Promise.all([
-        getLeadsPendentsRegistre(),
-        getLeadsPendentsStats()
-      ])
+      const result = await getLeadsPendentsDashboardData()
 
-      if (leadsResult.success && leadsResult.data) {
-        setLeads(leadsResult.data)
-      }
-      if (statsResult.success && statsResult.data) {
-        console.log('Stats carregades:', statsResult.data)
-        setStats(statsResult.data)
+      if (result.success) {
+        if (result.leads) setLeads(result.leads)
+        if (result.stats) setStats(result.stats)
       } else {
-        console.log('Error carregant stats:', statsResult)
+        console.error('Error carregant dades:', result.error)
+        toast.error('Error carregant dades')
       }
     } catch (error) {
       console.error('Error carregant dades:', error)
@@ -148,34 +142,34 @@ export default function EmpresesPendentsPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            label="Total pendents"
-            value={stats.total}
-            icon={Building2}
-            color="blue"
-            subtitle="Leads aprovats per CRM"
-          />
-          <StatCard
-            label="Per contactar"
-            value={stats.perContactar}
-            icon={Clock}
-            color="amber"
-            subtitle="Sense contacte encara"
-          />
-          <StatCard
-            label="Contactats"
-            value={stats.contactats}
-            icon={Phone}
-            color="purple"
-            subtitle="Amb notes d'admin"
-          />
-          <StatCard
-            label="Pagament pendent"
-            value={stats.pagamentPendent}
-            icon={CreditCard}
-            color="green"
-            subtitle="Llest per registrar"
-          />
+        <StatCard
+          label="Total pendents"
+          value={stats.total}
+          icon={Building2}
+          color="blue"
+          subtitle="Leads aprovats per CRM"
+        />
+        <StatCard
+          label="Per contactar"
+          value={stats.perContactar}
+          icon={Clock}
+          color="amber"
+          subtitle="Sense contacte encara"
+        />
+        <StatCard
+          label="Contactats"
+          value={stats.contactats}
+          icon={Phone}
+          color="purple"
+          subtitle="Amb notes d'admin"
+        />
+        <StatCard
+          label="Pagament pendent"
+          value={stats.pagamentPendent}
+          icon={CreditCard}
+          color="green"
+          subtitle="Llest per registrar"
+        />
       </div>
 
       {/* Barra de cerca */}

@@ -135,7 +135,7 @@ export class PlanLimitsService {
           }
         }),
         // Contar ofertas/proyectos - usaremos CompanyService como proxy
-        prisma.companyService.count({
+        prisma.company_services.count({
           where: {
             companyId: companyId,
             isActive: true
