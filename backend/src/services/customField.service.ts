@@ -128,7 +128,7 @@ export class CustomFieldService {
             break;
 
           case UserRole.COMPANY:
-            usageCount = await prisma.companies.count() || 0;
+            usageCount = await prisma.company.count() || 0;
             break;
 
           default:
@@ -274,7 +274,7 @@ export class CustomFieldService {
         return await prisma.employee.count() || 0;
 
       case UserRole.COMPANY:
-        return await prisma.companies.count() || 0;
+        return await prisma.company.count() || 0;
 
       default:
         return 0;

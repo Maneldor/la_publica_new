@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = "postgresql://lapublica:dev123@127.0.0.1:5432/lapublica_dev"
 }
 
 model User {
@@ -49,6 +49,8 @@ model User {
   emailLogs                EmailLog[]                 @relation("UserEmailLogs")
   groupOfferRequests       GroupOfferRequest[]        @relation("GroupOfferRequests")
   groupParticipations      GroupParticipant[]         @relation("UserGroupParticipants")
+  group_members            group_members[]            @relation("UserGroupMembers")
+  group_posts              group_posts[]
   invoicesCreated          Invoice[]                  @relation("InvoicesCreated")
   leadActivities           LeadActivity[]
   leadDocuments            LeadDocument[]
@@ -1572,7 +1574,7 @@ model ai_providers {
 }
 
 model announcement_reads {
-  id             String        @id
+  id             String        @id @default(cuid())
   announcementId String
   userId         String
   readAt         DateTime      @default(now())
@@ -1583,7 +1585,7 @@ model announcement_reads {
 }
 
 model announcements {
-  id                 String               @id
+  id                 String               @id @default(cuid())
   title              String
   content            String
   type               String               @default("INFO")
@@ -1594,7 +1596,7 @@ model announcements {
   targetAudience     String?
   createdBy          String?
   createdAt          DateTime             @default(now())
-  updatedAt          DateTime
+  updatedAt          DateTime             @updatedAt
   configuration      Json?
   isPinned           Boolean              @default(false)
   scope              String?
@@ -1608,7 +1610,7 @@ model announcements {
 }
 
 model company_advisory {
-  id              String    @id
+  id          String    @id @default(cuid())
   companyId       String
   title           String
   description     String?
@@ -1618,7 +1620,7 @@ model company_advisory {
   contact         Json?
   isActive        Boolean   @default(true)
   createdAt       DateTime  @default(now())
-  updatedAt       DateTime
+  updatedAt   DateTime  @updatedAt
   requestDate     DateTime?
   serviceId       String?
   status          String    @default("pending")
@@ -1636,7 +1638,7 @@ model company_advisory {
 }
 
 model company_products {
-  id          String   @id
+  id          String    @id @default(cuid())
   companyId   String
   name        String
   description String?
@@ -1645,7 +1647,7 @@ model company_products {
   images      String[] @default([])
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
-  updatedAt   DateTime
+  updatedAt   DateTime  @updatedAt
   features    Json?
   isAvailable Boolean  @default(true)
   order       Int      @default(0)
@@ -1657,14 +1659,14 @@ model company_products {
 }
 
 model company_ratings {
-  id         String   @id
+  id          String    @id @default(cuid())
   companyId  String
   userId     String
   rating     Int
   comment    String?
   isVerified Boolean  @default(false)
   createdAt  DateTime @default(now())
-  updatedAt  DateTime
+  updatedAt   DateTime  @updatedAt
   isActive   Boolean  @default(true)
   serviceId  String?
   advisoryId String?
@@ -1677,7 +1679,7 @@ model company_ratings {
 }
 
 model company_services {
-  id           String   @id
+  id          String    @id @default(cuid())
   companyId    String
   name         String
   description  String?
@@ -1686,7 +1688,7 @@ model company_services {
   price        Decimal? @db.Decimal(10, 2)
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
-  updatedAt    DateTime
+  updatedAt   DateTime  @updatedAt
   availability Json?
   features     Json?
   pricing      Json?
@@ -1721,14 +1723,14 @@ model contacts {
 }
 
 model contenido_maestro {
-  id                      String                    @id
+  id          String    @id @default(cuid())
   title                   String
   content                 String
   type                    String
   category                String?
   isActive                Boolean                   @default(true)
   createdAt               DateTime                  @default(now())
-  updatedAt               DateTime
+  updatedAt   DateTime  @updatedAt
   tipo                    String?
   tituloOriginal          String?
   contenidoOriginal       String?
@@ -1759,7 +1761,7 @@ model contents {
 }
 
 model courses {
-  id            String   @id
+  id          String    @id @default(cuid())
   title         String
   description   String?
   instructor    String
@@ -1771,11 +1773,11 @@ model courses {
   tags          String[] @default([])
   configuration Json?
   createdAt     DateTime @default(now())
-  updatedAt     DateTime
+  updatedAt   DateTime  @updatedAt
 }
 
 model custom_fields {
-  id         String   @id
+  id         String   @id @default(cuid())
   entityType String
   entityId   String
   fieldName  String
@@ -1784,7 +1786,7 @@ model custom_fields {
   isRequired Boolean  @default(false)
   order      Int      @default(0)
   createdAt  DateTime @default(now())
-  updatedAt  DateTime
+  updatedAt  DateTime @updatedAt
   isActive   Boolean  @default(true)
 
   @@index([entityType, entityId])
@@ -1828,7 +1830,7 @@ model Employee {
 }
 
 model events {
-  id            String   @id
+  id          String    @id @default(cuid())
   title         String
   description   String?
   startDate     DateTime
@@ -1841,11 +1843,11 @@ model events {
   configuration Json?
   tags          String[] @default([])
   createdAt     DateTime @default(now())
-  updatedAt     DateTime
+  updatedAt   DateTime  @updatedAt
 }
 
 model forum_moderators {
-  id          String   @id
+  id          String   @id @default(cuid())
   forumId     String
   userId      String
   permissions String[] @default([])
@@ -1858,13 +1860,13 @@ model forum_moderators {
 }
 
 model forum_replies {
-  id           String       @id
+  id           String       @id @default(cuid())
   topicId      String
   content      String
   authorId     String
   isAccepted   Boolean      @default(false)
   createdAt    DateTime     @default(now())
-  updatedAt    DateTime
+  updatedAt    DateTime     @updatedAt
   isActive     Boolean      @default(true)
   userId       String?
   replyToId    String?
@@ -1872,7 +1874,7 @@ model forum_replies {
 }
 
 model forum_topics {
-  id            String          @id
+  id            String          @id @default(cuid())
   forumId       String
   title         String
   content       String
@@ -1881,7 +1883,7 @@ model forum_topics {
   isPinned      Boolean         @default(false)
   isLocked      Boolean         @default(false)
   createdAt     DateTime        @default(now())
-  updatedAt     DateTime
+  updatedAt     DateTime        @updatedAt
   tags          String[]        @default([])
   lastActivity  DateTime?
   userId        String?
@@ -1892,14 +1894,14 @@ model forum_topics {
 }
 
 model forums {
-  id            String         @id
+  id            String         @id @default(cuid())
   name          String
   description   String?
   slug          String         @unique
   isActive      Boolean        @default(true)
   order         Int            @default(0)
   createdAt     DateTime       @default(now())
-  updatedAt     DateTime
+  updatedAt     DateTime       @updatedAt
   title         String?
   configuration Json?
   type          String?
@@ -1912,21 +1914,23 @@ model forums {
 }
 
 model group_members {
-  id            String   @id
+  id            String   @id @default(cuid())
   groupId       String
   userId        String
   role          String   @default("MEMBER")
   joinedAt      DateTime @default(now())
-  updatedAt     DateTime
+  updatedAt     DateTime @updatedAt
   configuration Json?
   tags          String[] @default([])
   status        String   @default("ACTIVE")
+  group         groups   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user          User     @relation("UserGroupMembers", fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([groupId, userId])
 }
 
 model group_posts {
-  id          String    @id
+  id          String    @id @default(cuid())
   groupId     String
   authorId    String
   content     String
@@ -1934,17 +1938,19 @@ model group_posts {
   likes       Int       @default(0)
   comments    Int       @default(0)
   createdAt   DateTime  @default(now())
-  updatedAt   DateTime
+  updatedAt   DateTime  @updatedAt
   multimedia  Json?
   publishedAt DateTime?
   tags        String[]  @default([])
   title       String?
   userId      String?
   isActive    Boolean   @default(true)
+  group       groups    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
 }
 
 model groups {
-  id            String   @id
+  id            String   @id @default(cuid())
   name          String
   description   String?
   slug          String   @unique
@@ -1954,8 +1960,10 @@ model groups {
   configuration Json?
   tags          String[] @default([])
   createdAt     DateTime @default(now())
-  updatedAt     DateTime
+  updatedAt     DateTime @updatedAt
   creatorId     String?
+  members       group_members[]
+  posts         group_posts[]
 }
 
 model interactions {
@@ -2003,7 +2011,7 @@ model lead_sources {
 }
 
 model multimedia {
-  id         String   @id
+  id          String    @id @default(cuid())
   type       String
   url        String
   filename   String?
@@ -2015,7 +2023,7 @@ model multimedia {
   isPublic   Boolean  @default(true)
   metadata   Json?
   createdAt  DateTime @default(now())
-  updatedAt  DateTime
+  updatedAt   DateTime  @updatedAt
 
   @@index([entityType, entityId])
   @@index([uploadedBy])
@@ -2032,7 +2040,7 @@ model post_comments {
 }
 
 model post_reports {
-  id          String    @id
+  id          String    @id @default(cuid())
   postId      String
   userId      String
   reason      String
@@ -2057,14 +2065,14 @@ model posts {
 }
 
 model publicaciones_comunidad {
-  id                String             @id
+  id          String    @id @default(cuid())
   title             String
   content           String
   authorId          String
   comunidadId       String?
   isActive          Boolean            @default(true)
   createdAt         DateTime           @default(now())
-  updatedAt         DateTime
+  updatedAt   DateTime  @updatedAt
   contenidoId       String?
   traduccionId      String?
   comunidadSlug     String?
@@ -2078,7 +2086,7 @@ model publicaciones_comunidad {
 }
 
 model reports {
-  id          String    @id
+  id          String    @id @default(cuid())
   entityType  String
   entityId    String
   reporterId  String
@@ -2089,7 +2097,7 @@ model reports {
   reviewedAt  DateTime?
   resolution  String?
   createdAt   DateTime  @default(now())
-  updatedAt   DateTime
+  updatedAt   DateTime  @updatedAt
 
   @@index([entityType, entityId])
   @@index([reporterId])
@@ -2097,12 +2105,12 @@ model reports {
 }
 
 model traducciones {
-  id                      String                    @id
+  id          String    @id @default(cuid())
   language                String
   key                     String
   value                   String
   createdAt               DateTime                  @default(now())
-  updatedAt               DateTime
+  updatedAt   DateTime  @updatedAt
   contenidoId             String?
   idiomaDestino           String?
   tituloTraducido         String?

@@ -17,7 +17,7 @@ router.get('/', authMiddleware, async (req: AuthenticatedRequest, res: Response)
   try {
     const userId = req.user!.id;
 
-    const empresa = await (prisma.companies.findUnique as any)({
+    const empresa = await (prisma.company.findUnique as any)({
       where: { userId } as any,
     });
 
@@ -55,7 +55,7 @@ router.get('/:id', authMiddleware, async (req: AuthenticatedRequest, res: Respon
     const userId = req.user!.id;
     const { id } = req.params;
 
-    const empresa = await (prisma.companies.findUnique as any)({
+    const empresa = await (prisma.company.findUnique as any)({
       where: { userId } as any,
     });
 
@@ -99,7 +99,7 @@ router.patch('/:id/aprobar', authMiddleware, async (req: AuthenticatedRequest, r
     const userId = req.user!.id;
     const { id } = req.params;
 
-    const empresa = await (prisma.companies.findUnique as any)({
+    const empresa = await (prisma.company.findUnique as any)({
       where: { userId } as any,
     });
 
@@ -149,7 +149,7 @@ router.patch('/:id/rechazar', authMiddleware, async (req: AuthenticatedRequest, 
     const userId = req.user!.id;
     const { id } = req.params;
 
-    const empresa = await (prisma.companies.findUnique as any)({
+    const empresa = await (prisma.company.findUnique as any)({
       where: { userId } as any,
     });
 

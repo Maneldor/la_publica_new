@@ -89,7 +89,7 @@ export class PlanManagementService {
    */
   async enableCustomization(companyId: string, adminId: string) {
     try {
-      const company = await (prisma as any).companies.update({
+      const company = await (prisma as any).company.update({
         where: { id: companyId },
         data: {
           updatedAt: new Date()
@@ -112,7 +112,7 @@ export class PlanManagementService {
    */
   async changePlan(companyId: string, newPlan: PlanType, reason: string | null, adminId: string) {
     try {
-      const company = await (prisma as any).companies.update({
+      const company = await (prisma as any).company.update({
         where: { id: companyId },
         data: {
           updatedAt: new Date()
@@ -173,7 +173,7 @@ export class PlanManagementService {
       });
 
       // Deshabilitar personalización
-      const company = await (prisma as any).companies.update({
+      const company = await (prisma as any).company.update({
         where: { id: companyId },
         data: {
           updatedAt: new Date()
@@ -260,7 +260,7 @@ export class PlanManagementService {
    */
   async getDetailedCompanyInfo(companyId: string) {
     try {
-      const company = await (prisma as any).companies.findUnique({
+      const company = await (prisma as any).company.findUnique({
         where: { id: companyId }
       });
 

@@ -137,7 +137,7 @@ export class AdminService {
         socialMedia: userData.socialMedia,
         logo: userData.logo,
         certifications: userData.certifications,
-        foundedYear: userData.foundedYear,
+        foundingYear: userData.foundedYear,
         employeeCount: userData.employeeCount,
         annualRevenue: userData.annualRevenue,
         configuration: userData.configuration,

@@ -157,7 +157,7 @@ export class AIProcessingWorker {
         await this.queue.updateProgress(jobId, 10, 'Obteniendo datos del lead');
 
         // 1. Get lead data from database
-        const lead = await (this.prisma as any).company_leads.findUnique({
+        const lead = await (this.prisma as any).companyLead.findUnique({
           where: { id: data.leadId },
           include: { User: true }
         });
@@ -225,7 +225,7 @@ export class AIProcessingWorker {
       await this.queue.updateProgress(jobId, 90, 'Guardando resultados del análisis');
 
       // Update lead with analysis results
-      await (this.prisma as any).company_leads.update({
+      await (this.prisma as any).companyLead.update({
         where: { id: lead.id },
         data: {
           aiScore: aiResult.score,
@@ -288,7 +288,7 @@ export class AIProcessingWorker {
       await this.queue.updateProgress(jobId, 90, 'Guardando puntuaciones');
 
       // Update lead with scoring results
-      await (this.prisma as any).company_leads.update({
+      await (this.prisma as any).companyLead.update({
         where: { id: lead.id },
         data: {
           dataQualityScore: dataQuality.score,
@@ -339,7 +339,7 @@ export class AIProcessingWorker {
       await this.queue.updateProgress(jobId, 90, 'Guardando pitch generado');
 
       // Update lead with generated pitch
-      await (this.prisma as any).company_leads.update({
+      await (this.prisma as any).companyLead.update({
         where: { id: lead.id },
         data: {
           suggestedPitch: pitchResult.pitch,
@@ -455,7 +455,7 @@ export class AIProcessingWorker {
 
       // Update lead with enriched data
       if (Object.keys(enrichmentData).length > 0) {
-        await (this.prisma as any).company_leads.update({
+        await (this.prisma as any).companyLead.update({
           where: { id: lead.id },
           data: {
             ...enrichmentData,
@@ -513,7 +513,7 @@ export class AIProcessingWorker {
       await this.queue.updateProgress(jobId, 90, 'Guardando clasificación');
 
       // Update lead with classification
-      await (this.prisma as any).company_leads.update({
+      await (this.prisma as any).companyLead.update({
         where: { id: lead.id },
         data: {
           priority: classificationResult.priority as any,
@@ -606,7 +606,7 @@ export class AIProcessingWorker {
       const isValid = validationIssues.length === 0 && dataQuality.score >= 60;
 
       // Update lead with validation results
-      await (this.prisma as any).company_leads.update({
+      await (this.prisma as any).companyLead.update({
         where: { id: lead.id },
         data: {
           validationStatus: isValid ? 'VALID' : 'NEEDS_REVIEW',

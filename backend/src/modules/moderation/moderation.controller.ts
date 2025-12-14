@@ -194,21 +194,21 @@ export class ModerationController {
           break;
 
         case 'FORUM_TOPIC':
-          content = await prisma.forumTopic.findUnique({
+          content = await prisma.forum_topics.findUnique({
             where: { id: contentId },
             include: {} as any
           });
           break;
 
         case 'FORUM_REPLY':
-          content = await prisma.forumReply.findUnique({
+          content = await prisma.forum_replies.findUnique({
             where: { id: contentId },
             include: {} as any
           });
           break;
 
         case 'ANNOUNCEMENT':
-          content = await prisma.announcement.findUnique({
+          content = await prisma.announcements.findUnique({
             where: { id: contentId },
             include: {} as any
           });

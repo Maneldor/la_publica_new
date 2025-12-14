@@ -59,7 +59,7 @@ router.get('/', async (req: Request, res: Response) => {
     const take = parseInt(limit as string);
 
     const [courses, total] = await Promise.all([
-      (prisma.course.findMany as any)({
+      (prisma.courses.findMany as any)({
         where,
         include: {
           creator: {
@@ -90,7 +90,7 @@ router.get('/', async (req: Request, res: Response) => {
         skip,
         take
       }),
-      prisma.course.count({ where })
+      prisma.courses.count({ where })
     ]);
 
     res.json({
@@ -118,7 +118,7 @@ router.get('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    const course = await (prisma.course.findUnique as any)({
+    const course = await (prisma.courses.findUnique as any)({
       where: { id },
       include: {
         creator: {
@@ -177,7 +177,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     }
 
     // Incrementar contador de views
-    await (prisma.course.update as any)({
+    await (prisma.courses.update as any)({
       where: { id },
       data: {
         viewCount: {
@@ -203,7 +203,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 // GET /api/courses/categories/stats - Estadísticas por categoría
 router.get('/categories/stats', async (req: Request, res: Response) => {
   try {
-    const stats = await prisma.course.groupBy({
+    const stats = await prisma.courses.groupBy({
       by: ['category'],
       where: {
         status: 'PUBLISHED'
@@ -240,7 +240,7 @@ router.post('/:id/enroll', async (req: Request, res: Response) => {
     const userId = req.body.userId || 'temp-user-id';
 
     // Verificar que el curso existe
-    const course = await (prisma.course.findUnique as any)({
+    const course = await (prisma.courses.findUnique as any)({
       where: { id: courseId }
     });
 
@@ -279,7 +279,7 @@ router.post('/:id/enroll', async (req: Request, res: Response) => {
     });
 
     // Incrementar contador de inscripciones
-    await (prisma.course.update as any)({
+    await (prisma.courses.update as any)({
       where: { id: courseId },
       data: {
         enrollment_count: {

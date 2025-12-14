@@ -60,7 +60,7 @@ export async function createLead(data: CreateLeadData) {
   try {
     const result = await prisma.$transaction(async (tx) => {
       // Crear el lead
-      const lead = await (tx as any).company_leads.create({
+      const lead = await (tx as any).companyLead.create({
         data: {
           ...leadData,
           status: 'NEW' as any, // Estado inicial
@@ -75,13 +75,13 @@ export async function createLead(data: CreateLeadData) {
           isPrimary: index === 0 // El primer contacto es principal por defecto
         }));
 
-        await (tx as any).contact.createMany({
+        await (tx as any).contacts.createMany({
           data: contactsData as any
         });
       }
 
       // Retornar el lead con sus contactos
-      return await (tx as any).company_leads.findUnique({
+      return await (tx as any).companyLead.findUnique({
         where: { id: lead.id },
         include: {
           contacts: {
@@ -112,7 +112,7 @@ export async function createLead(data: CreateLeadData) {
  */
 export async function getLeadById(id: string) {
   try {
-    const lead = await (prisma as any).company_leads.findUnique({
+    const lead = await (prisma as any).companyLead.findUnique({
       where: { id },
       include: {
         contacts: {
@@ -188,7 +188,7 @@ export async function listLeads(filters: LeadFilters = {}) {
 
     // Obtener leads y total
     const [leads, total] = await Promise.all([
-      (prisma as any).company_leads.findMany({
+      (prisma as any).companyLead.findMany({
         where,
         include: {
           contacts: {
@@ -212,7 +212,7 @@ export async function listLeads(filters: LeadFilters = {}) {
         take: limit,
         skip: offset
       }),
-      (prisma as any).company_leads.count({ where })
+      (prisma as any).companyLead.count({ where })
     ]);
 
     return {
@@ -231,7 +231,7 @@ export async function listLeads(filters: LeadFilters = {}) {
  */
 export async function updateLead(id: string, data: UpdateLeadData) {
   try {
-    const lead = await (prisma as any).company_leads.update({
+    const lead = await (prisma as any).companyLead.update({
       where: { id },
       data: {
         ...data,
@@ -265,7 +265,7 @@ export async function updateLead(id: string, data: UpdateLeadData) {
  */
 export async function deleteLead(id: string) {
   try {
-    await (prisma as any).company_leads.delete({
+    await (prisma as any).companyLead.delete({
       where: { id }
     });
 
@@ -291,24 +291,24 @@ export async function getDashboardStats(userId?: string) {
       totalValue,
       recentLeads
     ] = await Promise.all([
-      (prisma as any).company_leads.count({ where: whereClause }),
-      (prisma as any).company_leads.count({
+      (prisma as any).companyLead.count({ where: whereClause }),
+      (prisma as any).companyLead.count({
         where: { ...whereClause, status: 'NEW' as any }
       }),
-      (prisma as any).company_leads.count({
+      (prisma as any).companyLead.count({
         where: {
           ...whereClause,
           status: { in: ['CONTACTED' as any, 'NEGOTIATION' as any] }
         }
       }),
-      (prisma as any).company_leads.count({
+      (prisma as any).companyLead.count({
         where: { ...whereClause, status: 'CONVERTED' as any }
       }),
-      (prisma as any).company_leads.aggregate({
+      (prisma as any).companyLead.aggregate({
         where: { ...whereClause, estimatedValue: { not: null } },
         _sum: { estimatedValue: true }
       }),
-      (prisma as any).company_leads.findMany({
+      (prisma as any).companyLead.findMany({
         where: whereClause,
         include: {
           contacts: {

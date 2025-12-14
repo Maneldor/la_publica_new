@@ -11,7 +11,7 @@ export class ForumsService {
     configuration?: any;
     order?: number;
   }) {
-    const forum = await prisma.forum.create({
+    const forum = await prisma.forums.create({
       data: {
         title: data.title,
         description: data.description,
@@ -61,7 +61,7 @@ export class ForumsService {
     }
 
     const [forums, total] = await Promise.all([
-      prisma.forum.findMany({
+      prisma.forums.findMany({
         where,
         orderBy: [
           { isPinned: 'desc' },
@@ -71,7 +71,7 @@ export class ForumsService {
         take: filters.limit || 20,
         skip: filters.offset || 0
       }),
-      prisma.forum.count({ where })
+      prisma.forums.count({ where })
     ]);
 
     return {
@@ -84,7 +84,7 @@ export class ForumsService {
   }
 
   async getForumById(id: string) {
-    const forum = await prisma.forum.findUnique({
+    const forum = await prisma.forums.findUnique({
       where: { id }
     });
 
@@ -109,7 +109,7 @@ export class ForumsService {
     isActive?: boolean;
     isLocked?: boolean;
   }) {
-    const forum = await prisma.forum.findUnique({
+    const forum = await prisma.forums.findUnique({
       where: { id }
     });
 
@@ -132,7 +132,7 @@ export class ForumsService {
     if (data.isLocked !== undefined) updateData.isLocked = data.isLocked;
     if (data.configuration !== undefined) updateData.configuration = JSON.stringify(data.configuration);
 
-    const updatedForum = await prisma.forum.update({
+    const updatedForum = await prisma.forums.update({
       where: { id },
       data: updateData
     });
@@ -144,7 +144,7 @@ export class ForumsService {
   }
 
   async deleteForum(id: string, userId: string) {
-    const forum = await prisma.forum.findUnique({
+    const forum = await prisma.forums.findUnique({
       where: { id }
     });
 
@@ -157,20 +157,20 @@ export class ForumsService {
     }
 
     await prisma.$transaction([
-      prisma.forumReply.deleteMany({
+      prisma.forum_replies.deleteMany({
         where: {
-          topic: {
+          forum_topics: {
             forumId: id
           }
         }
       }),
-      prisma.forumTopic.deleteMany({
+      prisma.forum_topics.deleteMany({
         where: { forumId: id }
       }),
-      prisma.forumModerator.deleteMany({
+      prisma.forum_moderators.deleteMany({
         where: { forumId: id }
       }),
-      prisma.forum.delete({
+      prisma.forums.delete({
         where: { id }
       })
     ]);
@@ -187,7 +187,7 @@ export class ForumsService {
     tags?: string[];
     isPinned?: boolean;
   }) {
-    const forum = await prisma.forum.findUnique({
+    const forum = await prisma.forums.findUnique({
       where: { id: data.forumId }
     });
 
@@ -199,7 +199,7 @@ export class ForumsService {
       throw new Error('El foro está bloqueado');
     }
 
-    const topic = await prisma.forumTopic.create({
+    const topic = await prisma.forum_topics.create({
       data: {
         forumId: data.forumId,
         title: data.title,
@@ -254,7 +254,7 @@ export class ForumsService {
     }
 
     const [topics, total] = await Promise.all([
-      prisma.forumTopic.findMany({
+      prisma.forum_topics.findMany({
         where,
         orderBy: [
           { isPinned: 'desc' },
@@ -263,7 +263,7 @@ export class ForumsService {
         take: filters.limit || 20,
         skip: filters.offset || 0
       }),
-      prisma.forumTopic.count({ where })
+      prisma.forum_topics.count({ where })
     ]);
 
     return {
@@ -276,7 +276,7 @@ export class ForumsService {
   }
 
   async getTopicById(id: string) {
-    const topic = await prisma.forumTopic.findUnique({
+    const topic = await prisma.forum_topics.findUnique({
       where: { id }
     });
 
@@ -297,7 +297,7 @@ export class ForumsService {
     isPinned?: boolean;
     isLocked?: boolean;
   }) {
-    const topic = await prisma.forumTopic.findUnique({
+    const topic = await prisma.forum_topics.findUnique({
       where: { id }
     });
 
@@ -319,7 +319,7 @@ export class ForumsService {
     if (data.isPinned !== undefined) updateData.isPinned = data.isPinned;
     if (data.isLocked !== undefined) updateData.isLocked = data.isLocked;
 
-    const updatedTopic = await prisma.forumTopic.update({
+    const updatedTopic = await prisma.forum_topics.update({
       where: { id },
       data: updateData
     });
@@ -331,7 +331,7 @@ export class ForumsService {
   }
 
   async deleteTopic(id: string, userId: string) {
-    const topic = await prisma.forumTopic.findUnique({
+    const topic = await prisma.forum_topics.findUnique({
       where: { id }
     });
 
@@ -347,10 +347,10 @@ export class ForumsService {
     }
 
     await prisma.$transaction([
-      prisma.forumReply.deleteMany({
+      prisma.forum_replies.deleteMany({
         where: { topicId: id }
       }),
-      prisma.forumTopic.update({
+      prisma.forum_topics.update({
         where: { id },
         data: { isActive: false }
       })
@@ -365,7 +365,7 @@ export class ForumsService {
     userId: string;
     replyToId?: string;
   }) {
-    const topic = await prisma.forumTopic.findUnique({
+    const topic = await prisma.forum_topics.findUnique({
       where: { id: data.topicId }
     });
 
@@ -377,7 +377,7 @@ export class ForumsService {
       throw new Error('El topic está bloqueado');
     }
 
-    const reply = await prisma.forumReply.create({
+    const reply = await prisma.forum_replies.create({
       data: {
         topicId: data.topicId,
         content: data.content,
@@ -388,7 +388,7 @@ export class ForumsService {
       } as any
     });
 
-    await prisma.forumTopic.update({
+    await prisma.forum_topics.update({
       where: { id: data.topicId },
       data: { lastActivity: new Date() }
     });
@@ -409,13 +409,13 @@ export class ForumsService {
     if (filters.userId) where.userId = filters.userId;
 
     const [replies, total] = await Promise.all([
-      prisma.forumReply.findMany({
+      prisma.forum_replies.findMany({
         where,
         orderBy: { createdAt: 'asc' },
         take: filters.limit || 50,
         skip: filters.offset || 0
       }),
-      prisma.forumReply.count({ where })
+      prisma.forum_replies.count({ where })
     ]);
 
     return { replies, total };
@@ -424,7 +424,7 @@ export class ForumsService {
   async updateReply(id: string, userId: string, data: {
     content: string;
   }) {
-    const reply = await prisma.forumReply.findUnique({
+    const reply = await prisma.forum_replies.findUnique({
       where: { id }
     });
 
@@ -436,7 +436,7 @@ export class ForumsService {
       throw new Error('No tienes permisos para editar esta respuesta');
     }
 
-    const updatedReply = await prisma.forumReply.update({
+    const updatedReply = await prisma.forum_replies.update({
       where: { id },
       data: { content: data.content }
     });
@@ -445,9 +445,9 @@ export class ForumsService {
   }
 
   async deleteReply(id: string, userId: string) {
-    const reply = await prisma.forumReply.findUnique({
+    const reply = await prisma.forum_replies.findUnique({
       where: { id },
-      include: { topic: true }
+      include: { forum_topics: true }
     });
 
     if (!reply) {
@@ -455,13 +455,13 @@ export class ForumsService {
     }
 
     if (reply.userId !== userId) {
-      const isModerator = await this.verifyModeratorOrAdmin(reply.topic.forumId, userId);
+      const isModerator = await this.verifyModeratorOrAdmin(reply.forum_topics.forumId, userId);
       if (!isModerator) {
         throw new Error('No tienes permisos para eliminar esta respuesta');
       }
     }
 
-    await prisma.forumReply.update({
+    await prisma.forum_replies.update({
       where: { id },
       data: { isActive: false }
     });
@@ -474,7 +474,7 @@ export class ForumsService {
     role: 'admin' | 'moderator';
     assignedBy: string;
   }) {
-    const forum = await prisma.forum.findUnique({
+    const forum = await prisma.forums.findUnique({
       where: { id: forumId }
     });
 
@@ -489,7 +489,7 @@ export class ForumsService {
       }
     }
 
-    const existingModerator = await prisma.forumModerator.findFirst({
+    const existingModerator = await prisma.forum_moderators.findFirst({
       where: {
         forumId,
         userId: data.userId
@@ -500,7 +500,7 @@ export class ForumsService {
       throw new Error('El usuario ya es moderador de este foro');
     }
 
-    const moderator = await prisma.forumModerator.create({
+    const moderator = await prisma.forum_moderators.create({
       data: {
         forumId,
         userId: data.userId,
@@ -514,7 +514,7 @@ export class ForumsService {
   }
 
   async removeModerator(forumId: string, userId: string, requesterId: string) {
-    const forum = await prisma.forum.findUnique({
+    const forum = await prisma.forums.findUnique({
       where: { id: forumId }
     });
 
@@ -529,7 +529,7 @@ export class ForumsService {
       }
     }
 
-    const moderator = await prisma.forumModerator.findFirst({
+    const moderator = await prisma.forum_moderators.findFirst({
       where: {
         forumId,
         userId
@@ -540,7 +540,7 @@ export class ForumsService {
       throw new Error('Moderador no encontrado');
     }
 
-    await prisma.forumModerator.delete({
+    await prisma.forum_moderators.delete({
       where: { id: moderator.id }
     });
 
@@ -548,7 +548,7 @@ export class ForumsService {
   }
 
   private async verifyForumAdmin(forumId: string, userId: string): Promise<boolean> {
-    const moderator = await prisma.forumModerator.findFirst({
+    const moderator = await prisma.forum_moderators.findFirst({
       where: {
         forumId,
         userId,
@@ -559,7 +559,7 @@ export class ForumsService {
   }
 
   private async verifyModeratorOrAdmin(forumId: string, userId: string): Promise<boolean> {
-    const moderator = await prisma.forumModerator.findFirst({
+    const moderator = await prisma.forum_moderators.findFirst({
       where: {
         forumId,
         userId,

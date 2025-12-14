@@ -33,7 +33,7 @@ export class AnnouncementsService {
     status?: string;
     userId: string;
   }) {
-    const announcement = await prisma.announcement.create({
+    const announcement = await prisma.announcements.create({
       data: {
         title: data.title,
         content: data.content,
@@ -51,7 +51,7 @@ export class AnnouncementsService {
         isRead: false
       },
       include: {
-        user: {
+        User: {
           select: {
             id: true,
             email: true
@@ -139,16 +139,16 @@ export class AnnouncementsService {
     console.log('📋 Query WHERE:', JSON.stringify(where, null, 2));
 
     const [announcements, total] = await Promise.all([
-      prisma.announcement.findMany({
+      prisma.announcements.findMany({
         where,
         include: {
-          user: {
+          User: {
             select: {
               id: true,
               email: true
             }
           },
-          reads: true
+          announcement_reads: true
         },
         orderBy: [
           { isPinned: 'desc' },
@@ -158,7 +158,7 @@ export class AnnouncementsService {
         take: filters.limit || 20,
         skip: filters.offset || 0
       }),
-      prisma.announcement.count({ where })
+      prisma.announcements.count({ where })
     ]);
 
     console.log(`✅ Trobats ${announcements.length} anuncis de ${total} total`);
@@ -169,7 +169,7 @@ export class AnnouncementsService {
         ...announcement,
         targets: announcement.targets ? JSON.parse(announcement.targets as string) : [],
         configuration: announcement.configuration ? JSON.parse(announcement.configuration as string) : null,
-        totalReads: announcement.reads?.length || 0,
+        totalReads: announcement.announcement_reads?.length || 0,
         isExpired: announcement.expiresAt ? announcement.expiresAt < new Date() : false
       })),
       total
@@ -177,10 +177,10 @@ export class AnnouncementsService {
   }
 
   async getAnnouncementById(id: string, userId?: string) {
-    const announcement = await prisma.announcement.findUnique({
+    const announcement = await prisma.announcements.findUnique({
       where: { id },
       include: {
-        user: {
+        User: {
           select: {
             id: true,
             email: true
@@ -188,10 +188,10 @@ export class AnnouncementsService {
         },
         _count: {
           select: {
-            reads: true
+            announcement_reads: true
           }
         },
-        reads: userId ? {
+        announcement_reads: userId ? {
           where: { userId },
           take: 1
         } : false
@@ -202,7 +202,7 @@ export class AnnouncementsService {
       throw new Error('Anuncio no encontrado');
     }
 
-    const readByUser = userId && announcement.reads && announcement.reads.length > 0;
+    const readByUser = userId && announcement.announcement_reads && announcement.announcement_reads.length > 0;
 
     if (userId && !readByUser) {
       await this.markAsRead(id, userId);
@@ -212,7 +212,7 @@ export class AnnouncementsService {
       ...announcement,
       targets: announcement.targets ? JSON.parse(announcement.targets as string) : [],
       configuration: announcement.configuration ? JSON.parse(announcement.configuration as string) : null,
-      totalReads: announcement._count.reads,
+      totalReads: announcement._count.announcement_reads,
       isExpired: announcement.expiresAt ? announcement.expiresAt < new Date() : false,
       readByUser
     };
@@ -230,7 +230,7 @@ export class AnnouncementsService {
     configuration?: any;
     isActive?: boolean;
   }) {
-    const announcement = await prisma.announcement.findUnique({
+    const announcement = await prisma.announcements.findUnique({
       where: { id }
     });
 
@@ -259,11 +259,11 @@ export class AnnouncementsService {
       updateData.configuration = JSON.stringify(data.configuration);
     }
 
-    const updatedAnnouncement = await prisma.announcement.update({
+    const updatedAnnouncement = await prisma.announcements.update({
       where: { id },
       data: updateData,
       include: {
-        user: {
+        User: {
           select: {
             id: true,
             email: true
@@ -271,7 +271,7 @@ export class AnnouncementsService {
         },
         _count: {
           select: {
-            reads: true
+            announcement_reads: true
           }
         }
       }
@@ -281,13 +281,13 @@ export class AnnouncementsService {
       ...updatedAnnouncement,
       targets: updatedAnnouncement.targets ? JSON.parse(updatedAnnouncement.targets as string) : [],
       configuration: updatedAnnouncement.configuration ? JSON.parse(updatedAnnouncement.configuration as string) : null,
-      totalReads: updatedAnnouncement._count.reads,
+      totalReads: updatedAnnouncement._count.announcement_reads,
       isExpired: updatedAnnouncement.expiresAt ? updatedAnnouncement.expiresAt < new Date() : false
     };
   }
 
   async deleteAnnouncement(id: string, userId: string) {
-    const announcement = await prisma.announcement.findUnique({
+    const announcement = await prisma.announcements.findUnique({
       where: { id }
     });
 
@@ -303,10 +303,10 @@ export class AnnouncementsService {
     }
 
     await prisma.$transaction([
-      prisma.announcementRead.deleteMany({
+      prisma.announcement_reads.deleteMany({
         where: { announcementId: id }
       }),
-      prisma.announcement.delete({
+      prisma.announcements.delete({
         where: { id }
       })
     ]);
@@ -315,7 +315,7 @@ export class AnnouncementsService {
   }
 
   async pinAnnouncement(id: string, userId: string) {
-    const announcement = await prisma.announcement.findUnique({
+    const announcement = await prisma.announcements.findUnique({
       where: { id }
     });
 
@@ -328,7 +328,7 @@ export class AnnouncementsService {
       throw new Error('No tienes permisos para fijar anuncios');
     }
 
-    const updatedAnnouncement = await prisma.announcement.update({
+    const updatedAnnouncement = await prisma.announcements.update({
       where: { id },
       data: { isPinned: !announcement.isPinned }
     });
@@ -341,7 +341,7 @@ export class AnnouncementsService {
   }
 
   async expireAnnouncement(id: string, userId: string) {
-    const announcement = await prisma.announcement.findUnique({
+    const announcement = await prisma.announcements.findUnique({
       where: { id }
     });
 
@@ -356,7 +356,7 @@ export class AnnouncementsService {
       }
     }
 
-    const updatedAnnouncement = await prisma.announcement.update({
+    const updatedAnnouncement = await prisma.announcements.update({
       where: { id },
       data: {
         expiresAt: new Date(),
@@ -372,7 +372,7 @@ export class AnnouncementsService {
   }
 
   async markAsRead(announcementId: string, userId: string) {
-    const existingRead = await prisma.announcementRead.findFirst({
+    const existingRead = await prisma.announcement_reads.findFirst({
       where: {
         announcementId,
         userId
@@ -383,7 +383,7 @@ export class AnnouncementsService {
       return existingRead;
     }
 
-    const read = await prisma.announcementRead.create({
+    const read = await prisma.announcement_reads.create({
       data: {
         announcementId,
         userId,
@@ -395,7 +395,7 @@ export class AnnouncementsService {
   }
 
   async getReadStatus(announcementId: string, userId: string) {
-    const read = await prisma.announcementRead.findFirst({
+    const read = await prisma.announcement_reads.findFirst({
       where: {
         announcementId,
         userId
@@ -409,7 +409,7 @@ export class AnnouncementsService {
   }
 
   async getAnnouncementStats(id: string, userId: string) {
-    const announcement = await prisma.announcement.findUnique({
+    const announcement = await prisma.announcements.findUnique({
       where: { id }
     });
 
@@ -425,10 +425,10 @@ export class AnnouncementsService {
     }
 
     const [totalReads, readsByDay] = await Promise.all([
-      prisma.announcementRead.count({
+      prisma.announcement_reads.count({
         where: { announcementId: id }
       }),
-      prisma.announcementRead.groupBy({
+      prisma.announcement_reads.groupBy({
         by: ['readAt'],
         where: {
           announcementId: id,
@@ -498,16 +498,16 @@ export class AnnouncementsService {
       }
     }
 
-    const announcements = await prisma.announcement.findMany({
+    const announcements = await prisma.announcements.findMany({
       where,
       include: {
-        user: {
+        User: {
           select: {
             id: true,
             email: true
           }
         },
-        reads: filters.userId ? {
+        announcement_reads: filters.userId ? {
           where: { userId: filters.userId }
         } : false
       },
@@ -523,7 +523,7 @@ export class AnnouncementsService {
       ...announcement,
       targets: announcement.targets ? JSON.parse(announcement.targets as string) : [],
       configuration: announcement.configuration ? JSON.parse(announcement.configuration as string) : null,
-      readByUser: filters.userId ? announcement.reads && announcement.reads.length > 0 : undefined
+      readByUser: filters.userId ? announcement.announcement_reads && announcement.announcement_reads.length > 0 : undefined
     }));
   }
 
@@ -548,7 +548,7 @@ export class AnnouncementsService {
     }
 
     if (targets.grupos && Array.isArray(targets.grupos)) {
-      const groupsCount = await prisma.groupMember.count({
+      const groupsCount = await prisma.group_members.count({
         where: {
           groupId: { in: targets.grupos },
           status: 'active'
@@ -564,7 +564,7 @@ export class AnnouncementsService {
     // TODO: Arreglar después de resolver conflictos de schema
     throw new Error('Función temporalmente deshabilitada');
     /*
-    const announcement = await prisma.announcement.findUnique({
+    const announcement = await prisma.announcements.findUnique({
       where: { id }
     });
 
@@ -577,14 +577,14 @@ export class AnnouncementsService {
       throw new Error('No tienes permisos para aprobar anuncios');
     }
 
-    const updatedAnnouncement = await prisma.announcement.update({
+    const updatedAnnouncement = await prisma.announcements.update({
       where: { id },
       data: {
         status: 'approved',
         isActive: true
       },
       include: {
-        user: {
+        User: {
           select: {
             id: true,
             email: true
@@ -609,7 +609,7 @@ export class AnnouncementsService {
     // TODO: Arreglar después de resolver conflictos de schema
     throw new Error('Función temporalmente deshabilitada');
     /*
-    const announcement = await prisma.announcement.findUnique({
+    const announcement = await prisma.announcements.findUnique({
       where: { id }
     });
 
@@ -634,7 +634,7 @@ export class AnnouncementsService {
       newConfiguration = JSON.stringify({ rejectionReason: reason });
     }
 
-    const updatedAnnouncement = await prisma.announcement.update({
+    const updatedAnnouncement = await prisma.announcements.update({
       where: { id },
       data: {
         status: 'rejected',
@@ -642,7 +642,7 @@ export class AnnouncementsService {
         configuration: newConfiguration
       },
       include: {
-        user: {
+        User: {
           select: {
             id: true,
             email: true
@@ -681,16 +681,16 @@ export class AnnouncementsService {
     };
 
     const [announcements, total] = await Promise.all([
-      prisma.announcement.findMany({
+      prisma.announcements.findMany({
         where,
         include: {
-          user: {
+          User: {
             select: {
               id: true,
               email: true
             }
           },
-          reads: true
+          announcement_reads: true
         },
         orderBy: [
           { createdAt: 'desc' }
@@ -698,7 +698,7 @@ export class AnnouncementsService {
         take: filters.limit || 20,
         skip: filters.offset || 0
       }),
-      prisma.announcement.count({ where })
+      prisma.announcements.count({ where })
     ]);
 
     return {
@@ -706,7 +706,7 @@ export class AnnouncementsService {
         ...announcement,
         targets: announcement.targets ? JSON.parse(announcement.targets as string) : [],
         configuration: announcement.configuration ? JSON.parse(announcement.configuration as string) : null,
-        totalReads: announcement.reads?.length || 0,
+        totalReads: announcement.announcement_reads?.length || 0,
         isExpired: announcement.expiresAt ? announcement.expiresAt < new Date() : false
       })),
       total

@@ -18,7 +18,7 @@ export class LeadGenerationAdapter {
    */
   async getLeadSources() {
     // Usar company_leads para obtener fuentes únicas
-    const sources = await this.prisma.company_leads.groupBy({
+    const sources = await this.prisma.companyLead.groupBy({
       by: ['source'],
       where: {
         source: {
@@ -71,21 +71,21 @@ export class LeadGenerationAdapter {
    * Usar company_leads en lugar de lead
    */
   async getLeads(filters?: any) {
-    return this.prisma.company_leads.findMany(filters);
+    return this.prisma.companyLead.findMany(filters);
   }
 
   async createLead(data: any) {
-    return this.prisma.company_leads.create({ data });
+    return this.prisma.companyLead.create({ data });
   }
 
   async updateLead(id: string, data: any) {
-    return this.prisma.company_leads.update({
+    return this.prisma.companyLead.update({
       where: { id },
       data
     });
   }
 
   async getLeadCount(where?: any) {
-    return this.prisma.company_leads.count({ where });
+    return this.prisma.companyLead.count({ where });
   }
 }

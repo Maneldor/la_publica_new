@@ -230,7 +230,7 @@ export class ScrapingWorker {
             const companySize = DataExtractor.estimateCompanySize(scrapedData.description || '');
 
             // Create lead in database
-            const lead = await (this.prisma as any).company_leads.create({
+            const lead = await (this.prisma as any).companyLead.create({
               data: {
                 id: require('crypto').randomBytes(16).toString('hex'),
                 companyName: scrapedData.name,

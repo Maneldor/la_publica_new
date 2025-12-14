@@ -87,7 +87,7 @@ export class JobsService {
     // Obtenir leads generats per aquest job si està completat
     let generatedLeads = null;
     if (job.status === 'COMPLETED' && job.leadsGenerated > 0) {
-      generatedLeads = await (this.prisma as any).company_leads.findMany({
+      generatedLeads = await (this.prisma as any).companyLead.findMany({
         where: {
           sourceId: job.sourceId,
           createdAt: {

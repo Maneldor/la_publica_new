@@ -168,7 +168,7 @@ export class AIProcessingQueue {
       const data: AIProcessingJobData = job.payload;
 
       if (data.leadId && data.operation) {
-        await (this.prisma as any).company_leads.update({
+        await (this.prisma as any).companyLead.update({
           where: { id: data.leadId },
           data: {
             aiProcessingStatus: 'PROCESSING',
@@ -197,7 +197,7 @@ export class AIProcessingQueue {
     try {
       const job = this.queue.get(jobId);
       if (job?.payload.leadId) {
-        await (this.prisma as any).company_leads.update({
+        await (this.prisma as any).companyLead.update({
           where: { id: job.payload.leadId },
           data: {
             aiProcessingProgress: percentage,
@@ -282,7 +282,7 @@ export class AIProcessingQueue {
             break;
         }
 
-        await (this.prisma as any).company_leads.update({
+        await (this.prisma as any).companyLead.update({
           where: { id: data.leadId },
           data: updateData,
         });
@@ -318,7 +318,7 @@ export class AIProcessingQueue {
       const data: AIProcessingJobData = job.payload;
 
       if (data.leadId) {
-        await (this.prisma as any).company_leads.update({
+        await (this.prisma as any).companyLead.update({
           where: { id: data.leadId },
           data: {
             aiProcessingStatus: 'FAILED',
@@ -361,7 +361,7 @@ export class AIProcessingQueue {
       try {
         const data: AIProcessingJobData = job.payload;
         if (data.leadId) {
-          await (this.prisma as any).company_leads.update({
+          await (this.prisma as any).companyLead.update({
             where: { id: data.leadId },
             data: {
               aiProcessingStatus: 'CANCELLED',

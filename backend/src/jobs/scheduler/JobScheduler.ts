@@ -281,7 +281,7 @@ export class JobScheduler {
   private async checkStaleAIJobs(): Promise<void> {
     try {
       // Find leads that have been waiting for AI processing for more than 1 hour
-      const staleLeads = await (this.prisma as any).company_leads.findMany({
+      const staleLeads = await (this.prisma as any).companyLead.findMany({
         where: {
           aiProcessingStatus: 'PENDING',
           createdAt: {
@@ -300,7 +300,7 @@ export class JobScheduler {
         }, JOB_PRIORITIES.NORMAL);
 
         // Update status to avoid re-processing
-        await (this.prisma as any).company_leads.update({
+        await (this.prisma as any).companyLead.update({
           where: { id: lead.id },
           data: {
             aiProcessingStatus: 'QUEUED',

@@ -16,7 +16,7 @@ export class ContentService {
     autorNombre: string;
     metadatos?: any;
   }) {
-    const contenidoMaestro = await prisma.contenidoMaestro.create({
+    const contenidoMaestro = await prisma.contenido_maestro.create({
       data: {
         tipo: data.tipo,
         tituloOriginal: data.titulo,
@@ -53,7 +53,7 @@ export class ContentService {
         idioma
       );
 
-      const traduccionGuardada = await prisma.traduccion.create({
+      const traduccionGuardada = await prisma.traducciones.create({
         data: {
           contenidoId: contenidoMaestro.id,
           language: idioma,
@@ -81,7 +81,7 @@ export class ContentService {
         const slug = this.generarSlug(data.titulo);
         const urlPublica = this.generarUrlPublica(comunidad, idioma, slug);
 
-        const publicacion = await prisma.publicacionComunidad.create({
+        const publicacion = await prisma.publicaciones_comunidad.create({
           data: {
             contenidoId: contenidoMaestro.id,
             traduccionId: traducciones[idioma],
@@ -142,17 +142,17 @@ export class ContentService {
     if (filtros.estado) where.estado = filtros.estado;
 
     const [contenidos, total] = await Promise.all([
-      prisma.contenidoMaestro.findMany({
+      prisma.contenido_maestro.findMany({
         where,
         include: {
           traducciones: true,
-          publicaciones: true
+          publicaciones_comunidad: true
         },
         orderBy: { createdAt: 'desc' },
         take: filtros.limit || 20,
         skip: filtros.offset || 0
       }),
-      prisma.contenidoMaestro.count({ where })
+      prisma.contenido_maestro.count({ where })
     ]);
 
     return { contenidos, total };

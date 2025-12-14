@@ -1,10 +1,9 @@
 // lib/gestio-empreses/budget-actions.ts
 'use server'
 
-import { PrismaClient } from '@prisma/client'
+import { prismaClient as prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 
-const prisma = new PrismaClient()
 
 // ============================================
 // TIPUS I INTERFACES

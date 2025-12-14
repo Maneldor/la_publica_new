@@ -65,7 +65,7 @@ export class ModerationService {
 
     // Content (Blog posts)
     if (!filters.type || filters.type === 'CONTENT') {
-      const contentReports = await prisma.report.findMany({
+      const contentReports = await prisma.reports.findMany({
         where: filters.status ? { status: filters.status } : {},
         include: {
           content: {
@@ -128,7 +128,7 @@ export class ModerationService {
 
     // Posts (Social Feed)
     if (!filters.type || filters.type === 'POST') {
-      const postReports = await prisma.postReport.findMany({
+      const postReports = await prisma.post_reports.findMany({
         where: filters.status ? { status: filters.status } : {},
         include: {
           post: {
@@ -454,7 +454,7 @@ export class ModerationService {
 
     try {
       // Simplified implementation - update report in generic table
-      await prisma.report.updateMany({
+      await prisma.reports.updateMany({
         where: { id: reportId },
         data: {
           status: action === 'APPROVE' ? 'APPROVED' : 'REJECTED'
@@ -487,12 +487,12 @@ export class ModerationService {
 
     try {
       // Simplified implementation using generic report table
-      const totalReports = await prisma.report.count();
-      const pendingReports = await prisma.report.count({
+      const totalReports = await prisma.reports.count();
+      const pendingReports = await prisma.reports.count({
         where: { status: 'PENDING' }
       });
-      const postReports = await prisma.postReport.count().catch(() => 0);
-      const pendingPostReports = await prisma.postReport.count({
+      const postReports = await prisma.post_reports.count().catch(() => 0);
+      const pendingPostReports = await prisma.post_reports.count({
         where: { status: 'PENDING' }
       }).catch(() => 0);
 
@@ -506,7 +506,7 @@ export class ModerationService {
       };
 
       // Actividad reciente simplificada
-      const recentReports = await prisma.report.findMany({
+      const recentReports = await prisma.reports.findMany({
         take: 10,
         orderBy: { createdAt: 'desc' }
       });

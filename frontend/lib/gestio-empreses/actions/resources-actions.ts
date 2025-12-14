@@ -2,7 +2,7 @@
 
 'use server'
 
-import { PrismaClient } from '@prisma/client'
+import { prismaClient as prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import {
@@ -20,7 +20,7 @@ import {
   processContentWithPlaceholders
 } from '../utils/placeholder-utils'
 
-const prisma = new PrismaClient()
+
 
 // Validación de schemas con Zod
 const createResourceSchema = z.object({

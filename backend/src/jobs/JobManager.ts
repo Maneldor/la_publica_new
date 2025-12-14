@@ -442,8 +442,8 @@ export class JobManager {
   private async getDatabaseStats() {
     try {
       const [totalLeads, todayLeads, scrapingJobs] = await Promise.all([
-        this.prisma.company_leads.count(),
-        this.prisma.company_leads.count({
+        this.prisma.companyLead.count(),
+        this.prisma.companyLead.count({
           where: {
             createdAt: {
               gte: new Date(new Date().setHours(0, 0, 0, 0))

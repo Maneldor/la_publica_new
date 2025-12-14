@@ -491,7 +491,7 @@ export class LeadSourceService {
       // Crear leads en la DB
       const leads = await Promise.all(
         scrapedData.map((data: any) =>
-          (this.prisma as any).company_leads.create({
+          (this.prisma as any).companyLead.create({
             data: {
               sourceId: source.id,
               companyName: data.companyName,
@@ -570,7 +570,7 @@ export class LeadSourceService {
         });
 
         // Actualitzar lead amb resultats d'IA
-        await (this.prisma as any).company_leads.update({
+        await (this.prisma as any).companyLead.update({
           where: { id: lead.id },
           data: {
             aiScore: analysis.score,

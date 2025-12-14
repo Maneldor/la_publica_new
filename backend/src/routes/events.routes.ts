@@ -55,7 +55,7 @@ router.get('/', authenticate, async (req: AuthenticatedRequest, res: Response) =
       whereClause.status = (status as string).toUpperCase();
     }
 
-    const events = await prisma.event.findMany({
+    const events = await prisma.events.findMany({
       where: whereClause as any,
       orderBy: { startDate: 'asc' }
     });
@@ -113,7 +113,7 @@ router.get('/:id', authenticate, async (req: AuthenticatedRequest, res: Response
       });
     }
 
-    const event = await (prisma.event.findFirst as any)({
+    const event = await (prisma.events.findFirst as any)({
       where: {
         id: eventId,
         OR: [
@@ -286,7 +286,7 @@ router.post('/', authenticate, async (req: AuthenticatedRequest, res: Response) 
     }
 
     // Crear l'esdeveniment
-    const event = await prisma.event.create({
+    const event = await prisma.events.create({
       data: {
         title: title.trim(),
         description: description?.trim(),
@@ -328,7 +328,7 @@ router.put('/:id', authenticate, async (req: AuthenticatedRequest, res: Response
     }
 
     // Verificar que l'usuari és l'organitzador
-    const existingEvent = await prisma.event.findFirst({
+    const existingEvent = await prisma.events.findFirst({
       where: {
         id: eventId,
         organizer: userId
@@ -378,7 +378,7 @@ router.put('/:id', authenticate, async (req: AuthenticatedRequest, res: Response
       });
     }
 
-    const updatedEvent = await prisma.event.update({
+    const updatedEvent = await prisma.events.update({
       where: { id: eventId },
       data: updateData
     });
@@ -412,7 +412,7 @@ router.delete('/:id', authenticate, async (req: AuthenticatedRequest, res: Respo
     }
 
     // Verificar que l'usuari és l'organitzador
-    const existingEvent = await prisma.event.findFirst({
+    const existingEvent = await prisma.events.findFirst({
       where: {
         id: eventId,
         organizer: userId
@@ -426,7 +426,7 @@ router.delete('/:id', authenticate, async (req: AuthenticatedRequest, res: Respo
       });
     }
 
-    await prisma.event.delete({
+    await prisma.events.delete({
       where: { id: eventId }
     });
 
@@ -466,7 +466,7 @@ router.post('/:id/respond', authenticate, async (req: AuthenticatedRequest, res:
     }
 
     // Simplified - no attendee system
-    const event = await prisma.event.findFirst({
+    const event = await prisma.events.findFirst({
       where: { id: eventId }
     });
 
@@ -515,7 +515,7 @@ router.get('/calendar/:year/:month', authenticate, async (req: AuthenticatedRequ
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0, 23, 59, 59, 999);
 
-    const events = await prisma.event.findMany({
+    const events = await prisma.events.findMany({
       where: {
         organizer: userId,
         AND: [

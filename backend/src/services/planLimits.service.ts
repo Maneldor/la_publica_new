@@ -93,7 +93,7 @@ export class PlanLimitsService {
    */
   async getCompanyLimits(companyId: string): Promise<CompanyLimitsInfo | null> {
     try {
-      const company = await (prisma as any).companies.findUnique({
+      const company = await (prisma as any).company.findUnique({
         where: { id: companyId },
         include: {
           Subscription: true,

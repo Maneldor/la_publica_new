@@ -76,11 +76,11 @@ export class DashboardService {
       leadsThisMonth,
       leadsByStatus
     ] = await Promise.all([
-      this.prisma.company_leads.count().catch(() => 0),
-      this.prisma.company_leads.count({ where: { createdAt: { gte: todayStart } } }).catch(() => 0),
-      this.prisma.company_leads.count({ where: { createdAt: { gte: weekStart } } }).catch(() => 0),
-      this.prisma.company_leads.count({ where: { createdAt: { gte: monthStart } } }).catch(() => 0),
-      this.prisma.company_leads.groupBy({
+      this.prisma.companyLead.count().catch(() => 0),
+      this.prisma.companyLead.count({ where: { createdAt: { gte: todayStart } } }).catch(() => 0),
+      this.prisma.companyLead.count({ where: { createdAt: { gte: weekStart } } }).catch(() => 0),
+      this.prisma.companyLead.count({ where: { createdAt: { gte: monthStart } } }).catch(() => 0),
+      this.prisma.companyLead.groupBy({
         by: ['status'],
         _count: { status: true }
       }).catch(() => [])
@@ -253,7 +253,7 @@ export class DashboardService {
         const nextDay = new Date(date);
         nextDay.setDate(nextDay.getDate() + 1);
 
-        const count = await this.prisma.company_leads.count({
+        const count = await this.prisma.companyLead.count({
           where: {
             createdAt: {
               gte: date,
@@ -275,12 +275,12 @@ export class DashboardService {
         nextDay.setDate(nextDay.getDate() + 1);
 
         const [total, approved] = await Promise.all([
-          this.prisma.company_leads.count({
+          this.prisma.companyLead.count({
             where: {
               createdAt: { gte: date, lt: nextDay }
             }
           }).catch(() => 0),
-          this.prisma.company_leads.count({
+          this.prisma.companyLead.count({
             where: {
               createdAt: { gte: date, lt: nextDay },
               status: 'WON' // company_leads usa 'WON' para leads convertidos
@@ -338,14 +338,14 @@ export class DashboardService {
       leadsToday,
       activeSources
     ] = await Promise.all([
-      this.prisma.company_leads.count({
+      this.prisma.companyLead.count({
         where: { status: 'NEW' } // company_leads usa 'NEW' del enum LeadStatus
       }).catch(() => 0),
       // (this.prisma as any).scrapingJob.count({ // SECCIÓN COMENTADA
       //   where: { status: { in: ['PENDING', 'RUNNING'] } }
       // }),
       Promise.resolve(0), // Valor por defecto para activeJobs
-      this.prisma.company_leads.count({
+      this.prisma.companyLead.count({
         where: { createdAt: { gte: todayStart } }
       }).catch(() => 0),
       // (this.prisma as any).leadSource.count({ // SECCIÓN COMENTADA

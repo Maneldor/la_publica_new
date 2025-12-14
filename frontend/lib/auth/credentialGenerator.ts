@@ -1,6 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import { prismaClient as prisma } from '@/lib/prisma';
 
-const prisma = new PrismaClient();
 
 export type PlanTier = 'PIONERES' | 'STANDARD' | 'STRATEGIC' | 'ENTERPRISE';
 
@@ -35,8 +34,8 @@ export function generateUsername(companyData: MinimalCompanyData): string {
   // 2. Fecha: YYMMDD (6 dígitos)
   const today = new Date();
   const dateCode = today.getFullYear().toString().slice(-2) +
-                   (today.getMonth() + 1).toString().padStart(2, '0') +
-                   today.getDate().toString().padStart(2, '0');
+    (today.getMonth() + 1).toString().padStart(2, '0') +
+    today.getDate().toString().padStart(2, '0');
 
   return `${nameSlug}${dateCode}`;
 }
@@ -49,7 +48,7 @@ export function generateSecurePassword(companyData: MinimalCompanyData): string 
 
   // 1. Prefijo del nombre (3 chars, primera mayúscula)
   const namePrefix = companyName.charAt(0).toUpperCase() +
-                     companyName.replace(/[^a-zA-Z]/g, '').substring(1, 3).toLowerCase();
+    companyName.replace(/[^a-zA-Z]/g, '').substring(1, 3).toLowerCase();
 
   // 2. Números aleatorios (3 dígitos)
   const randomNumbers = Math.floor(100 + Math.random() * 900).toString();

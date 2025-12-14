@@ -15,7 +15,7 @@ router.post('/', authenticateToken, invalidateCacheMiddleware('GET:/api/v1/conte
     // Solo admin puede anclar posts
     const isPinned = (req as any).user?.primaryRole === 'ADMIN' ? (pinned || false) : false;
 
-    const newContent = await (prisma.content.create as any)({
+    const newContent = await (prisma.contents.create as any)({
       data: {
         title,
         slug,
@@ -55,7 +55,7 @@ router.get('/', cacheMiddleware(300), async (req: Request, res: Response) => {
     if (status) where.status = status;
 
     const [content, total] = await Promise.all([
-      (prisma.content.findMany as any)({
+      (prisma.contents.findMany as any)({
         where,
         include: {
           author: {
@@ -73,7 +73,7 @@ router.get('/', cacheMiddleware(300), async (req: Request, res: Response) => {
         skip: offset,
         take: Number(limit)
       }),
-      (prisma.content.count as any)({ where })
+      (prisma.contents.count as any)({ where })
     ]);
 
     res.json({
@@ -96,7 +96,7 @@ router.get('/:id', cacheMiddleware(300), async (req: Request, res: Response) => 
   try {
     const { id } = req.params;
 
-    const content = await (prisma.content.findUnique as any)({
+    const content = await (prisma.contents.findUnique as any)({
       where: { id },
       include: {
         author: {
@@ -129,7 +129,7 @@ router.put('/:id', authenticateToken, invalidateCacheMiddleware('GET:/api/v1/con
     const userId = (req as any).user?.id;
 
     // Verificar que el contenido existe
-    const existingContent = await (prisma.content.findUnique as any)({
+    const existingContent = await (prisma.contents.findUnique as any)({
       where: { id },
       include: { author: true }
     });
@@ -149,7 +149,7 @@ router.put('/:id', authenticateToken, invalidateCacheMiddleware('GET:/api/v1/con
     // Solo admin puede cambiar el estado de pinned
     const isPinned = isAdminUser ? (pinned !== undefined ? pinned : (existingContent as any).pinned || false) : (existingContent as any).pinned || false;
 
-    const updatedContent = await (prisma.content.update as any)({
+    const updatedContent = await (prisma.contents.update as any)({
       where: { id },
       data: {
         title,
@@ -185,7 +185,7 @@ router.delete('/:id', authenticateToken, invalidateCacheMiddleware('GET:/api/v1/
     const userId = (req as any).user?.id;
 
     // Verificar que el contenido existe
-    const existingContent = await (prisma.content.findUnique as any)({
+    const existingContent = await (prisma.contents.findUnique as any)({
       where: { id },
       include: { author: true }
     });
@@ -202,7 +202,7 @@ router.delete('/:id', authenticateToken, invalidateCacheMiddleware('GET:/api/v1/
       return res.status(403).json({ message: 'No tienes permisos para eliminar este contenido' });
     }
 
-    await prisma.content.delete({
+    await prisma.contents.delete({
       where: { id }
     });
 

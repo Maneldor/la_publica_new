@@ -9,7 +9,7 @@ export class GroupsService {
     configuration?: any;
     creatorId: string;
   }) {
-    const group = await prisma.group.create({
+    const group = await prisma.groups.create({
       data: {
         name: data.name,
         slug: data.name.toLowerCase().replace(/\s+/g, '-'),
@@ -20,7 +20,7 @@ export class GroupsService {
       } as any
     });
 
-    await prisma.groupMember.create({
+    await prisma.group_members.create({
       data: {
         groupId: group.id,
         userId: data.creatorId,
@@ -62,13 +62,13 @@ export class GroupsService {
     }
 
     const [groups, total] = await Promise.all([
-      prisma.group.findMany({
+      prisma.groups.findMany({
         where,
         orderBy: { createdAt: 'desc' },
         take: filters.limit || 20,
         skip: filters.offset || 0
       }),
-      prisma.group.count({ where })
+      prisma.groups.count({ where })
     ]);
 
     return {
@@ -81,7 +81,7 @@ export class GroupsService {
   }
 
   async getGroupById(id: string) {
-    const group = await prisma.group.findUnique({
+    const group = await prisma.groups.findUnique({
       where: { id }
     });
 
@@ -118,7 +118,7 @@ export class GroupsService {
       updateData.configuration = JSON.stringify(data.configuration);
     }
 
-    const group = await prisma.group.update({
+    const group = await prisma.groups.update({
       where: { id },
       data: updateData
     });
@@ -136,13 +136,13 @@ export class GroupsService {
     }
 
     await prisma.$transaction([
-      prisma.groupPost.deleteMany({
+      prisma.group_posts.deleteMany({
         where: { groupId: id }
       }),
-      prisma.groupMember.deleteMany({
+      prisma.group_members.deleteMany({
         where: { groupId: id }
       }),
-      prisma.group.delete({
+      prisma.groups.delete({
         where: { id }
       })
     ]);
@@ -155,7 +155,7 @@ export class GroupsService {
     role?: 'member' | 'moderator' | 'admin';
     invitedBy: string;
   }) {
-    const group = await prisma.group.findUnique({
+    const group = await prisma.groups.findUnique({
       where: { id: groupId }
     });
 
@@ -170,7 +170,7 @@ export class GroupsService {
       }
     }
 
-    const existingMember = await prisma.groupMember.findFirst({
+    const existingMember = await prisma.group_members.findFirst({
       where: {
         groupId,
         userId: data.userId
@@ -182,7 +182,7 @@ export class GroupsService {
         throw new Error('El usuario ya es miembro del grupo');
       }
 
-      return await prisma.groupMember.update({
+      return await prisma.group_members.update({
         where: { id: existingMember.id },
         data: {
           status: 'active',
@@ -192,7 +192,7 @@ export class GroupsService {
       });
     }
 
-    return await prisma.groupMember.create({
+    return await prisma.group_members.create({
       data: {
         groupId,
         userId: data.userId,
@@ -210,7 +210,7 @@ export class GroupsService {
       throw new Error('No tienes permisos para eliminar miembros');
     }
 
-    const member = await prisma.groupMember.findFirst({
+    const member = await prisma.group_members.findFirst({
       where: {
         groupId,
         userId,
@@ -223,7 +223,7 @@ export class GroupsService {
     }
 
     if (member.role === 'admin') {
-      const otherAdmins = await prisma.groupMember.count({
+      const otherAdmins = await prisma.group_members.count({
         where: {
           groupId,
           role: 'admin',
@@ -237,7 +237,7 @@ export class GroupsService {
       }
     }
 
-    await prisma.groupMember.update({
+    await prisma.group_members.update({
       where: { id: member.id },
       data: {
         status: 'inactive'
@@ -253,7 +253,7 @@ export class GroupsService {
       throw new Error('Solo los administradores pueden cambiar roles');
     }
 
-    const member = await prisma.groupMember.findFirst({
+    const member = await prisma.group_members.findFirst({
       where: {
         groupId,
         userId,
@@ -265,7 +265,7 @@ export class GroupsService {
       throw new Error('Miembro no encontrado');
     }
 
-    return await prisma.groupMember.update({
+    return await prisma.group_members.update({
       where: { id: member.id },
       data: { role: newRole }
     });
@@ -284,7 +284,7 @@ export class GroupsService {
     if (filters.role) where.role = filters.role;
 
     const [members, total] = await Promise.all([
-      prisma.groupMember.findMany({
+      prisma.group_members.findMany({
         where,
         orderBy: [
           { role: 'asc' },
@@ -293,7 +293,7 @@ export class GroupsService {
         take: filters.limit || 50,
         skip: filters.offset || 0
       }),
-      prisma.groupMember.count({ where })
+      prisma.group_members.count({ where })
     ]);
 
     return { members, total };
@@ -314,7 +314,7 @@ export class GroupsService {
       throw new Error('Debes ser miembro del grupo para publicar');
     }
 
-    const post = await prisma.groupPost.create({
+    const post = await prisma.group_posts.create({
       data: {
         groupId: data.groupId,
         title: data.title,
@@ -358,13 +358,13 @@ export class GroupsService {
     }
 
     const [posts, total] = await Promise.all([
-      prisma.groupPost.findMany({
+      prisma.group_posts.findMany({
         where,
         orderBy: { publishedAt: 'desc' },
         take: filters.limit || 20,
         skip: filters.offset || 0
       }),
-      prisma.groupPost.count({ where })
+      prisma.group_posts.count({ where })
     ]);
 
     return {
@@ -383,7 +383,7 @@ export class GroupsService {
     tags?: string[];
     multimedia?: any;
   }) {
-    const post = await prisma.groupPost.findUnique({
+    const post = await prisma.group_posts.findUnique({
       where: { id: postId }
     });
 
@@ -404,7 +404,7 @@ export class GroupsService {
     if (data.tags !== undefined) updateData.tags = JSON.stringify(data.tags);
     if (data.multimedia !== undefined) updateData.multimedia = JSON.stringify(data.multimedia);
 
-    const updatedPost = await prisma.groupPost.update({
+    const updatedPost = await prisma.group_posts.update({
       where: { id: postId },
       data: updateData
     });
@@ -417,7 +417,7 @@ export class GroupsService {
   }
 
   async deleteGroupPost(postId: string, userId: string) {
-    const post = await prisma.groupPost.findUnique({
+    const post = await prisma.group_posts.findUnique({
       where: { id: postId }
     });
 
@@ -432,7 +432,7 @@ export class GroupsService {
       }
     }
 
-    await prisma.groupPost.update({
+    await prisma.group_posts.update({
       where: { id: postId },
       data: { isActive: false }
     });
@@ -441,7 +441,7 @@ export class GroupsService {
   }
 
   private async verifyGroupAdmin(groupId: string, userId: string): Promise<boolean> {
-    const member = await prisma.groupMember.findFirst({
+    const member = await prisma.group_members.findFirst({
       where: {
         groupId,
         userId,
@@ -453,7 +453,7 @@ export class GroupsService {
   }
 
   private async verifyModeratorOrAdmin(groupId: string, userId: string): Promise<boolean> {
-    const member = await prisma.groupMember.findFirst({
+    const member = await prisma.group_members.findFirst({
       where: {
         groupId,
         userId,
@@ -465,7 +465,7 @@ export class GroupsService {
   }
 
   private async verifyActiveMember(groupId: string, userId: string): Promise<boolean> {
-    const member = await prisma.groupMember.findFirst({
+    const member = await prisma.group_members.findFirst({
       where: {
         groupId,
         userId,

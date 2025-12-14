@@ -14,7 +14,7 @@ export class CompaniesService {
     configuration?: any;
   }, password: string) {
     // Verificar si ya existe una empresa con ese email
-    const existingCompany = await prisma.companies.findFirst({
+    const existingCompany = await prisma.company.findFirst({
       where: {
         email: data.email
       }
@@ -51,7 +51,7 @@ export class CompaniesService {
       });
 
       // Crear la empresa
-      const company = await tx.companies.create({
+      const company = await tx.company.create({
         data: {
           name: data.name,
           description: data.description,
@@ -96,7 +96,7 @@ export class CompaniesService {
     configuration?: any;
     userId: string;
   }) {
-    const existingCompany = await prisma.companies.findFirst({
+    const existingCompany = await prisma.company.findFirst({
       where: {
         OR: [
           { name: data.name },
@@ -109,7 +109,7 @@ export class CompaniesService {
       throw new Error('Ya existe una empresa con ese nombre o CIF');
     }
 
-    const company = await prisma.companies.create({
+    const company = await prisma.company.create({
       data: {
         name: data.name,
         description: data.description,
@@ -195,7 +195,7 @@ export class CompaniesService {
     }
 
     const [companies, total] = await Promise.all([
-      prisma.companies.findMany({
+      prisma.company.findMany({
         where,
         orderBy: [
           { isVerified: 'desc' },
@@ -204,7 +204,7 @@ export class CompaniesService {
         take: filters.limit || 20,
         skip: filters.offset || 0
       }),
-      prisma.companies.count({ where })
+      prisma.company.count({ where })
     ]);
 
     return {
@@ -220,7 +220,7 @@ export class CompaniesService {
   }
 
   async getCompanyById(id: string) {
-    const company = await prisma.companies.findUnique({
+    const company = await prisma.company.findUnique({
       where: { id }
     });
 
@@ -228,7 +228,7 @@ export class CompaniesService {
       throw new Error('Empresa no encontrada');
     }
 
-    const averageRating = await prisma.companyRating.aggregate({
+    const averageRating = await prisma.company_ratings.aggregate({
       where: { companyId: id },
       _avg: { rating: true }
     });
@@ -260,7 +260,7 @@ export class CompaniesService {
     annualRevenue?: number;
     configuration?: any;
   }) {
-    const company = await prisma.companies.findUnique({
+    const company = await prisma.company.findUnique({
       where: { id }
     });
 
@@ -290,7 +290,7 @@ export class CompaniesService {
     if (data.certifications !== undefined) updateData.certifications = JSON.stringify(data.certifications);
     if (data.configuration !== undefined) updateData.configuration = JSON.stringify(data.configuration);
 
-    const updatedCompany = await prisma.companies.update({
+    const updatedCompany = await prisma.company.update({
       where: { id },
       data: updateData
     });
@@ -318,7 +318,7 @@ export class CompaniesService {
     order?: number;
     userId: string;
   }) {
-    const company = await prisma.companies.findUnique({
+    const company = await prisma.company.findUnique({
       where: { id: data.companyId }
     });
 
@@ -330,7 +330,7 @@ export class CompaniesService {
       throw new Error('No tienes permisos para crear servicios en esta empresa');
     }
 
-    const servicio = await prisma.companyService.create({
+    const servicio = await prisma.company_services.create({
       data: {
         companyId: data.companyId,
         name: data.name,
@@ -381,7 +381,7 @@ export class CompaniesService {
     }
 
     const [servicios, total] = await Promise.all([
-      prisma.companyService.findMany({
+      prisma.company_services.findMany({
         where,
         orderBy: [
           { order: 'asc' },
@@ -390,7 +390,7 @@ export class CompaniesService {
         take: filters.limit || 20,
         skip: filters.offset || 0
       }),
-      prisma.companyService.count({ where })
+      prisma.company_services.count({ where })
     ]);
 
     return {
@@ -418,7 +418,7 @@ export class CompaniesService {
     order?: number;
     userId: string;
   }) {
-    const company = await prisma.companies.findUnique({
+    const company = await prisma.company.findUnique({
       where: { id: data.companyId }
     });
 
@@ -430,7 +430,7 @@ export class CompaniesService {
       throw new Error('No tienes permisos para crear productos en esta empresa');
     }
 
-    const producto = await prisma.companyProduct.create({
+    const producto = await prisma.company_products.create({
       data: {
         companyId: data.companyId,
         name: data.name,
@@ -488,7 +488,7 @@ export class CompaniesService {
     }
 
     const [productos, total] = await Promise.all([
-      prisma.companyProduct.findMany({
+      prisma.company_products.findMany({
         where,
         orderBy: [
           { order: 'asc' },
@@ -497,7 +497,7 @@ export class CompaniesService {
         take: filters.limit || 20,
         skip: filters.offset || 0
       }),
-      prisma.companyProduct.count({ where })
+      prisma.company_products.count({ where })
     ]);
 
     return {
@@ -521,7 +521,7 @@ export class CompaniesService {
     deadline?: Date;
     contact?: any;
   }) {
-    const company = await prisma.companies.findUnique({
+    const company = await prisma.company.findUnique({
       where: { id: data.companyId }
     });
 
@@ -529,7 +529,7 @@ export class CompaniesService {
       throw new Error('Empresa no encontrada o inactiva');
     }
 
-    const asesoramiento = await prisma.companyAdvisory.create({
+    const asesoramiento = await prisma.company_advisory.create({
       data: {
         companyId: data.companyId,
         serviceId: data.serviceId,
@@ -561,7 +561,7 @@ export class CompaniesService {
     limit?: number;
     offset?: number;
   }) {
-    const company = await prisma.companies.findUnique({
+    const company = await prisma.company.findUnique({
       where: { id: empresaId }
     });
 
@@ -586,7 +586,7 @@ export class CompaniesService {
     }
 
     const [asesoramientos, total] = await Promise.all([
-      prisma.companyAdvisory.findMany({
+      prisma.company_advisory.findMany({
         where,
         orderBy: [
           { urgency: 'desc' },
@@ -595,7 +595,7 @@ export class CompaniesService {
         take: filters.limit || 20,
         skip: filters.offset || 0
       }),
-      prisma.companyAdvisory.count({ where })
+      prisma.company_advisory.count({ where })
     ]);
 
     return {
@@ -613,10 +613,10 @@ export class CompaniesService {
     finalBudget?: number;
     responseDate?: Date;
   }) {
-    const asesoramiento = await prisma.companyAdvisory.findUnique({
+    const asesoramiento = await prisma.company_advisory.findUnique({
       where: { id },
       include: {
-        company: true
+        companies: true
       }
     });
 
@@ -624,11 +624,11 @@ export class CompaniesService {
       throw new Error('Asesoramiento no encontrado');
     }
 
-    if (asesoramiento.company.userId !== usuarioId) {
+    if (asesoramiento.companies.userId !== usuarioId) {
       throw new Error('No tienes permisos para actualizar este asesoramiento');
     }
 
-    const asesoramientoActualizado = await prisma.companyAdvisory.update({
+    const asesoramientoActualizado = await prisma.company_advisory.update({
       where: { id },
       data: {
         status: data.status,
@@ -656,7 +656,7 @@ export class CompaniesService {
       throw new Error('La puntuación debe estar entre 1 y 5');
     }
 
-    const existingRating = await prisma.companyRating.findFirst({
+    const existingRating = await prisma.company_ratings.findFirst({
       where: {
         companyId: data.companyId,
         userId: data.userId
@@ -667,7 +667,7 @@ export class CompaniesService {
       throw new Error('Ya has valorado esta empresa');
     }
 
-    const valoracion = await prisma.companyRating.create({
+    const valoracion = await prisma.company_ratings.create({
       data: {
         companyId: data.companyId,
         userId: data.userId,
@@ -690,21 +690,21 @@ export class CompaniesService {
     if (filters.rating) where.rating = filters.rating;
 
     const [valoraciones, total, estadisticas] = await Promise.all([
-      prisma.companyRating.findMany({
+      prisma.company_ratings.findMany({
         where,
         orderBy: { createdAt: 'desc' },
         take: filters.limit || 20,
         skip: filters.offset || 0
       }),
-      prisma.companyRating.count({ where }),
-      prisma.companyRating.groupBy({
+      prisma.company_ratings.count({ where }),
+      prisma.company_ratings.groupBy({
         by: ['rating'],
         where: { companyId: empresaId },
         _count: { _all: true }
       })
     ]);
 
-    const promedio = await prisma.companyRating.aggregate({
+    const promedio = await prisma.company_ratings.aggregate({
       where: { companyId: empresaId },
       _avg: { rating: true }
     });

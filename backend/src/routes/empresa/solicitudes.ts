@@ -17,7 +17,7 @@ router.get('/', authMiddleware, async (req: AuthenticatedRequest, res: Response)
   try {
     const userId = req.user!.id;
 
-    const empresa = await (prisma.companies.findUnique as any)({
+    const empresa = await (prisma.company.findUnique as any)({
       where: { userId } as any,
     });
 
@@ -59,7 +59,7 @@ router.post('/', authMiddleware, async (req: AuthenticatedRequest, res: Response
     const userId = req.user!.id;
     const { extrasIds, mensaje, telefono } = req.body;
 
-    const empresa = await (prisma.companies.findUnique as any)({
+    const empresa = await (prisma.company.findUnique as any)({
       where: { userId } as any,
     });
 
