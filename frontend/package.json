@@ -11,7 +11,9 @@
     "seed:group-offers": "tsx prisma/seed-group-offers.ts",
     "seed:verification": "tsx scripts/seed-verification.ts",
     "seed:users": "tsx scripts/seed-test-users.ts",
-    "clean:users": "tsx scripts/clean-fake-users.ts"
+    "clean:users": "tsx scripts/clean-fake-users.ts",
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
   "prisma": {
     "seed": "tsx prisma/seed-group-offers.ts"
@@ -74,7 +76,10 @@
   },
   "devDependencies": {
     "@react-email/render": "^2.0.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
     "@types/bcryptjs": "^3.0.0",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^18",
@@ -85,6 +90,8 @@
     "critters": "^0.0.25",
     "eslint": "^8",
     "eslint-config-next": "14.2.33",
+    "jest": "^30.2.0",
+    "jest-environment-jsdom": "^30.2.0",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "ts-node": "^10.9.2",
