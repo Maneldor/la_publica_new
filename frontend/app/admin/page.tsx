@@ -74,14 +74,16 @@ export default function AdminDashboardPage() {
   const maxChartValue = Math.max(...chartData.map(d => d.count), 1)
 
   return (
-    <div className="space-y-8 mx-4">
+    <div className="space-y-8 mx-4 pt-6">
       {/* Header */}
-      <div className="bg-white rounded-xl border border-slate-200 p-6">
-        <div className="flex items-center mb-2">
-          <LayoutDashboard className="h-6 w-6 mr-3 text-slate-600" strokeWidth={1.5} />
-          <h1 className="text-2xl font-bold text-slate-900">Taulell d'Administració</h1>
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-4">
+          <LayoutDashboard className="h-7 w-7 text-slate-700" strokeWidth={1.5} />
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">Taulell d'Administració</h1>
+            <p className="text-slate-500">Resum general de la plataforma</p>
+          </div>
         </div>
-        <p className="text-slate-600">Resum general de la plataforma</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">

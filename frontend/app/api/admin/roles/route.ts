@@ -11,6 +11,7 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ error: 'No autoritzat' }, { status: 401 })
         }
 
+        // Obtener roles
         const roles = await prisma.role.findMany({
             where: { isActive: true },
             include: {
@@ -23,9 +24,6 @@ export async function GET(req: NextRequest) {
                         },
                     },
                 },
-                _count: {
-                    select: { users: true },
-                },
             },
             orderBy: { createdAt: 'asc' },
         })
@@ -35,7 +33,26 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ error: 'Error interno: Base de datos no devolvió respuesta' }, { status: 500 })
         }
 
-        return NextResponse.json(roles)
+        // Contar usuarios por cada rol basándose en el campo enum 'role'
+        const userCountsByRole = await prisma.user.groupBy({
+            by: ['role'],
+            _count: { id: true },
+        })
+
+        // Crear un mapa de conteo
+        const countMap = new Map(
+            userCountsByRole.map(item => [item.role, item._count.id])
+        )
+
+        // Añadir el conteo a cada rol
+        const rolesWithCount = roles.map(role => ({
+            ...role,
+            _count: { 
+                users: countMap.get(role.name as any) || 0 
+            }
+        }))
+
+        return NextResponse.json(rolesWithCount)
     } catch (error) {
         console.error('Error FATAL llistant rols:', error)
         const errorMessage = error instanceof Error ? error.message : 'Unknown error'

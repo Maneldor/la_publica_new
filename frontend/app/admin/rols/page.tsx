@@ -84,6 +84,7 @@ export default function RolsPermisosPage() {
     const [error, setError] = useState<string | null>(null)
     const [expandedRole, setExpandedRole] = useState<string | null>(null)
     const [viewMode, setViewMode] = useState<'cards' | 'matrix'>('cards')
+    const [matrixGroup, setMatrixGroup] = useState<string>('Administradors')
     const [showCopyModal, setShowCopyModal] = useState<Role | null>(null)
     const [showDeleteModal, setShowDeleteModal] = useState<Role | null>(null)
 
@@ -126,12 +127,16 @@ export default function RolsPermisosPage() {
 
     // Agrupar rols
     const groupedRoles = {
-        'Administradors': roles.filter(r => r.name.includes('ADMIN') || r.name === 'SUPER_ADMIN'),
-        'Equip CRM': roles.filter(r => r.name.includes('CRM')),
-        'Gestors Comercials': roles.filter(r => r.name.includes('GESTOR')),
-        'Usuaris amb Dashboard': roles.filter(r => ['COMPANY', 'ADMINISTRATION'].includes(r.name)),
-        'Altres': roles.filter(r => ['MODERATOR', 'USER'].includes(r.name)),
+        'Administradors': roles.filter(r => ['SUPER_ADMIN', 'ADMIN', 'ADMIN_GESTIO'].includes(r.name)),
+        'Equip CRM': roles.filter(r => ['CRM_COMERCIAL', 'CRM_CONTINGUT'].includes(r.name)),
+        'Gestors Comercials': roles.filter(r => r.name.includes('GESTOR_')),
+        'Usuaris': roles.filter(r => ['EMPLEADO_PUBLICO', 'ADMINISTRADOR_GRUPO', 'MODERATOR', 'COMPANY', 'ADMINISTRACION_PUBLICA'].includes(r.name)),
         'Personalitzats': roles.filter(r => !r.isSystem),
+    }
+
+    // Filtrar rols per la matriu
+    const getMatrixRoles = () => {
+        return groupedRoles[matrixGroup] || []
     }
 
     const totalUsers = roles.reduce((sum, role) => sum + role._count.users, 0)
@@ -191,7 +196,10 @@ export default function RolsPermisosPage() {
                 <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2">
                         <button
-                            onClick={() => setViewMode('cards')}
+                            onClick={() => {
+                                setViewMode('cards')
+                                setMatrixGroup('Administradors')
+                            }}
                             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === 'cards'
                                 ? 'bg-slate-900 text-white'
                                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -200,7 +208,10 @@ export default function RolsPermisosPage() {
                             Targetes
                         </button>
                         <button
-                            onClick={() => setViewMode('matrix')}
+                            onClick={() => {
+                                setViewMode('matrix')
+                                setMatrixGroup('Administradors')
+                            }}
                             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === 'matrix'
                                 ? 'bg-slate-900 text-white'
                                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -382,7 +393,34 @@ export default function RolsPermisosPage() {
 
             {/* Vista Matriu */}
             {viewMode === 'matrix' && (
-                <MatrixView roles={roles} categories={permissionCategories} />
+                <div className="bg-white rounded-xl border border-slate-200">
+                    {/* Pestañas de grupos */}
+                    <div className="border-b border-slate-200 px-4">
+                        <div className="flex gap-1">
+                            {['Administradors', 'Equip CRM', 'Gestors Comercials', 'Usuaris'].map((group) => (
+                                <button
+                                    key={group}
+                                    onClick={() => setMatrixGroup(group)}
+                                    className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                                        matrixGroup === group 
+                                            ? 'border-blue-600 text-blue-600' 
+                                            : 'border-transparent text-slate-500 hover:text-slate-700'
+                                    }`}
+                                >
+                                    {group}
+                                    <span className="ml-2 text-xs opacity-60">
+                                        ({groupedRoles[group]?.length || 0})
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    
+                    {/* Tabla de matriz filtrada */}
+                    <div className="overflow-x-auto p-4">
+                        <MatrixTable roles={getMatrixRoles()} categories={permissionCategories} />
+                    </div>
+                </div>
             )}
 
             {/* Modal Copiar */}
@@ -432,9 +470,19 @@ function getColorClasses(color: string) {
 }
 
 // Component Vista Matriu
-function MatrixView({ roles, categories }: { roles: Role[]; categories: PermissionCategory[] }) {
+function MatrixTable({ roles, categories }: { roles: Role[]; categories: PermissionCategory[] }) {
+    if (roles.length === 0) {
+        return (
+            <div className="text-center py-8 text-slate-500">
+                <Shield className="h-12 w-12 mx-auto mb-4 text-slate-300" />
+                <p className="text-lg mb-2">No hi ha rols en aquesta categoria</p>
+                <p className="text-sm">Selecciona una altra categoria per veure els rols.</p>
+            </div>
+        )
+    }
+
     return (
-        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+        <div className="overflow-hidden">
             <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                     <thead className="bg-slate-50 border-b border-slate-200">
@@ -447,12 +495,12 @@ function MatrixView({ roles, categories }: { roles: Role[]; categories: Permissi
                                 return (
                                     <th
                                         key={role.id}
-                                        className="px-2 py-3 text-center min-w-[90px]"
+                                        className="px-3 py-2 text-xs font-medium text-slate-700 whitespace-nowrap text-center min-w-[120px]"
                                         title={role.description || ''}
                                     >
                                         <div className="flex flex-col items-center gap-1">
                                             <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${colorClasses.bg} ${colorClasses.text}`}>
-                                                {role.label.length > 12 ? role.label.substring(0, 10) + '...' : role.label}
+                                                {role.label}
                                             </span>
                                             <span className="text-xs text-slate-400">{role._count.users}</span>
                                         </div>

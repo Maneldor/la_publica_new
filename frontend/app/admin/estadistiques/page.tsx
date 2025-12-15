@@ -280,50 +280,47 @@ export default function EstadistiquesPage() {
     }
 
     return (
-        <div className="space-y-8 mx-4">
+        <div className="space-y-8 mx-4 pt-6">
             {/* Header */}
-            <div className="bg-white rounded-xl border border-slate-200 p-6">
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-                    <div className="flex-1">
+            <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-4">
+                    <BarChart3 className="h-7 w-7 text-slate-700" strokeWidth={1.5} />
+                    <div>
                         <h1 className="text-2xl font-bold text-slate-900">Estadístiques</h1>
-                        <p className="text-slate-600 mt-1">
-                            Resum d'activitat i mètriques del sistema
-                        </p>
+                        <p className="text-slate-500">Anàlisi i mètriques de la plataforma</p>
                     </div>
-                    
-                    <div className="flex items-center gap-4 mt-4 lg:mt-0">
-                        {/* Selector de període */}
-                        <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-slate-500" strokeWidth={1.5} />
-                            <select 
-                                value={period}
-                                onChange={(e) => setPeriod(e.target.value)}
-                                className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                                <option value="7d">Últims 7 dies</option>
-                                <option value="30d">Últims 30 dies</option>
-                                <option value="90d">Últims 90 dies</option>
-                            </select>
-                        </div>
+                </div>
+                <div className="flex items-center gap-3">
+                    {/* Selector de període */}
+                    <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-slate-500" strokeWidth={1.5} />
+                        <select 
+                            value={period}
+                            onChange={(e) => setPeriod(e.target.value)}
+                            className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            <option value="7d">Últims 7 dies</option>
+                            <option value="30d">Últims 30 dies</option>
+                            <option value="90d">Últims 90 dies</option>
+                        </select>
+                    </div>
 
-                        {/* Botones */}
-                        <button 
-                            onClick={handleRefresh}
-                            disabled={refreshing}
-                            className="inline-flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
-                        >
-                            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} strokeWidth={1.5} />
-                            Actualitzar
-                        </button>
-                        
-                        <button 
-                            onClick={handleExport}
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                        >
-                            <Download className="h-4 w-4" strokeWidth={1.5} />
-                            Exportar
-                        </button>
-                    </div>
+                    <button 
+                        onClick={handleRefresh}
+                        disabled={refreshing}
+                        className="inline-flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
+                    >
+                        <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} strokeWidth={1.5} />
+                        Actualitzar
+                    </button>
+                    
+                    <button 
+                        onClick={handleExport}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                        <Download className="h-4 w-4" strokeWidth={1.5} />
+                        Exportar
+                    </button>
                 </div>
             </div>
 

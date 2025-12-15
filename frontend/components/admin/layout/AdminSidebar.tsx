@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
+import { signOut } from 'next-auth/react'
 import {
     LayoutDashboard,
     Users,
@@ -154,7 +155,10 @@ export function AdminSidebar() {
 
             {/* Footer sidebar */}
             <div className="p-4 border-t border-slate-200">
-                <button className="flex items-center gap-3 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                <button 
+                    onClick={() => signOut({ callbackUrl: '/login' })}
+                    className="flex items-center gap-3 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                >
                     <LogOut className="h-5 w-5" strokeWidth={1.5} />
                     Tancar sessió
                 </button>

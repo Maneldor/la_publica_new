@@ -779,34 +779,29 @@ export default function ConfiguracioPage() {
     }
 
     return (
-        <div className="space-y-8 mx-4">
+        <div className="space-y-8 mx-4 pt-6">
             {/* Header */}
-            <div className="bg-white rounded-xl border border-slate-200 p-6">
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-                    <div className="flex-1">
-                        <div className="flex items-center mb-2">
-                            <Settings className="h-6 w-6 mr-3 text-slate-600" strokeWidth={1.5} />
-                            <h1 className="text-2xl font-bold text-slate-900">Configuració del Sistema</h1>
-                        </div>
-                        <p className="text-slate-600">
-                            Paràmetres generals de la plataforma
-                        </p>
+            <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-4">
+                    <Settings className="h-7 w-7 text-slate-700" strokeWidth={1.5} />
+                    <div>
+                        <h1 className="text-2xl font-bold text-slate-900">Configuració del Sistema</h1>
+                        <p className="text-slate-500">Paràmetres generals de la plataforma</p>
                     </div>
-                    
-                    <div className="mt-4 lg:mt-0">
-                        <button 
-                            onClick={handleSave}
-                            disabled={!isDirty || saving}
-                            className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                                isDirty 
-                                    ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                                    : 'bg-slate-300 text-slate-500 cursor-not-allowed'
-                            }`}
-                        >
-                            <Save className="h-4 w-4" strokeWidth={1.5} />
-                            {saving ? 'Guardant...' : 'Guardar canvis'}
-                        </button>
-                    </div>
+                </div>
+                <div className="flex items-center gap-3">
+                    <button 
+                        onClick={handleSave}
+                        disabled={!isDirty || saving}
+                        className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                            isDirty 
+                                ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                                : 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                        }`}
+                    >
+                        <Save className="h-4 w-4" strokeWidth={1.5} />
+                        {saving ? 'Guardant...' : 'Guardar canvis'}
+                    </button>
                 </div>
             </div>
 

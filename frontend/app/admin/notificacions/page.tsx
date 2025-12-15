@@ -445,38 +445,33 @@ export default function NotificacionsPage() {
     }
 
     return (
-        <div className="space-y-8 mx-4">
+        <div className="space-y-8 mx-4 pt-6">
             {/* Header */}
-            <div className="bg-white rounded-xl border border-slate-200 p-6">
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-                    <div className="flex-1">
-                        <div className="flex items-center mb-2">
-                            <Bell className="h-6 w-6 mr-3 text-slate-600" strokeWidth={1.5} />
-                            <h1 className="text-2xl font-bold text-slate-900">Notificacions del Sistema</h1>
-                        </div>
-                        <p className="text-slate-600">
-                            Gestiona les notificacions enviades als usuaris
-                        </p>
+            <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-4">
+                    <Bell className="h-7 w-7 text-slate-700" strokeWidth={1.5} />
+                    <div>
+                        <h1 className="text-2xl font-bold text-slate-900">Notificacions del Sistema</h1>
+                        <p className="text-slate-500">Gestiona les notificacions enviades als usuaris</p>
                     </div>
+                </div>
+                <div className="flex items-center gap-3">
+                    <button 
+                        onClick={handleRefresh}
+                        disabled={refreshing}
+                        className="inline-flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
+                    >
+                        <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} strokeWidth={1.5} />
+                        Actualitzar
+                    </button>
                     
-                    <div className="flex items-center gap-3 mt-4 lg:mt-0">
-                        <button 
-                            onClick={handleRefresh}
-                            disabled={refreshing}
-                            className="inline-flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
-                        >
-                            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} strokeWidth={1.5} />
-                            Actualitzar
-                        </button>
-                        
-                        <button 
-                            onClick={() => setShowModal(true)}
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                        >
-                            <Plus className="h-4 w-4" strokeWidth={1.5} />
-                            Nova Notificació
-                        </button>
-                    </div>
+                    <button 
+                        onClick={() => setShowModal(true)}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                        <Plus className="h-4 w-4" strokeWidth={1.5} />
+                        Nova Notificació
+                    </button>
                 </div>
             </div>
 
