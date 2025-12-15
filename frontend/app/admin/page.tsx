@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import {
   LayoutDashboard, Users, CheckCircle, UserPlus, LucideIcon,
-  Building2, Tag, Shield
+  Building2, Tag, Shield, ScrollText, Bell, Settings
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -14,6 +14,12 @@ interface DashboardMetrics {
   coupons: { total: number; active: number; used: number }
 }
 
+interface SystemHealth {
+  database: { status: 'healthy' | 'unhealthy'; responseTime?: number }
+  redis: { status: 'healthy' | 'unhealthy' | 'not_configured'; responseTime?: number }
+  email: { status: 'healthy' | 'unhealthy' | 'not_configured'; lastTest?: string }
+}
+
 interface ChartData { day: string; date: string; count: number }
 interface ActivityData { id: string; type: string; description: string; timestamp: string; icon: string }
 
@@ -21,24 +27,28 @@ export default function AdminDashboardPage() {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null)
   const [chartData, setChartData] = useState<ChartData[]>([])
   const [activityData, setActivityData] = useState<ActivityData[]>([])
+  const [systemHealth, setSystemHealth] = useState<SystemHealth | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function loadDashboard() {
       try {
-        const [metricsRes, chartRes, activityRes] = await Promise.all([
+        const [metricsRes, chartRes, activityRes, healthRes] = await Promise.all([
           fetch('/api/admin/dashboard'),
           fetch('/api/admin/dashboard/users-chart'),
-          fetch('/api/admin/dashboard/activity')
+          fetch('/api/admin/dashboard/activity'),
+          fetch('/api/admin/health')
         ])
         
         const metricsData = await metricsRes.json()
         const chartDataRes = await chartRes.json()
         const activityDataRes = await activityRes.json()
+        const healthData = healthRes.ok ? await healthRes.json() : null
         
         if (metricsData.success) setMetrics(metricsData.metrics)
         if (chartDataRes.success) setChartData(chartDataRes.data)
         if (activityDataRes.success) setActivityData(activityDataRes.data)
+        if (healthData?.success) setSystemHealth(healthData.health)
       } catch (err) {
         console.error('Error loading dashboard:', err)
       } finally {
@@ -64,18 +74,17 @@ export default function AdminDashboardPage() {
   const maxChartValue = Math.max(...chartData.map(d => d.count), 1)
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-start gap-4">
-        <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center">
-          <LayoutDashboard className="h-6 w-6 text-slate-600" strokeWidth={1.5} />
+    <div className="space-y-8 mx-4">
+      {/* Header */}
+      <div className="bg-white rounded-xl border border-slate-200 p-6">
+        <div className="flex items-center mb-2">
+          <LayoutDashboard className="h-6 w-6 mr-3 text-slate-600" strokeWidth={1.5} />
+          <h1 className="text-2xl font-bold text-slate-900">Taulell d'Administració</h1>
         </div>
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Panell d Administració</h1>
-          <p className="text-slate-500">Gestió del sistema i usuaris de La Pública</p>
-        </div>
+        <p className="text-slate-600">Resum general de la plataforma</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         <StatCard title="Usuaris totals" value={metrics?.users.total.toString() || '0'} change={`+${metrics?.users.growth || 0} últims 7 dies`} changeType="positive" icon={Users} color="blue" />
         <StatCard title="Empreses" value={metrics?.companies.total.toString() || '0'} change={`${metrics?.companies.pending || 0} pendents`} changeType={metrics?.companies.pending ? 'negative' : 'positive'} icon={Building2} color="green" />
         <StatCard title="Ofertes publicades" value={metrics?.offers.published.toString() || '0'} change={`${metrics?.offers.total || 0} totals`} changeType="positive" icon={Tag} color="purple" />
@@ -124,19 +133,34 @@ export default function AdminDashboardPage() {
         <div className="space-y-6">
           <div className="bg-white border border-slate-200 rounded-xl p-4">
             <h2 className="font-semibold text-slate-900 mb-4">Accions ràpides</h2>
-            <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-3">
               <QuickAction href="/admin/usuaris/crear" icon={UserPlus} label="Crear usuari" description="Afegir nou usuari" color="blue" />
-              <QuickAction href="/admin/empreses-pendents" icon={Building2} label="Empreses pendents" description="Revisar sol·licituds" color="green" />
+              <QuickAction href="/gestio/admin/empreses-pendents" icon={Building2} label="Empreses pendents" description="Revisar sol·licituds" color="green" />
               <QuickAction href="/admin/rols" icon={Shield} label="Gestió de Permisos" description="Editar rols" color="purple" />
+              <QuickAction href="/admin/logs" icon={ScrollText} label="Logs d'Auditoria" description="Revisar activitat" color="slate" />
+              <QuickAction href="/admin/notificacions" icon={Bell} label="Enviar Notificació" description="Comunicar usuaris" color="amber" />
+              <QuickAction href="/admin/configuracio" icon={Settings} label="Configuració" description="Paràmetres sistema" color="indigo" />
             </div>
           </div>
 
           <div className="bg-white border border-slate-200 rounded-xl p-4">
             <h2 className="font-semibold text-slate-900 mb-4">Estat dels serveis</h2>
             <div className="space-y-3">
-              <SystemStatus label="Base de dades" status="online" />
-              <SystemStatus label="Redis Cache" status="online" />
-              <SystemStatus label="Servei de Correu" status="online" />
+              <SystemStatus 
+                label="Base de dades" 
+                status={systemHealth?.database?.status === 'healthy' ? 'online' : 'offline'} 
+                detail={systemHealth?.database?.responseTime ? `${systemHealth.database.responseTime}ms` : undefined}
+              />
+              <SystemStatus 
+                label="Redis Cache" 
+                status={systemHealth?.redis?.status === 'healthy' ? 'online' : systemHealth?.redis?.status === 'not_configured' ? 'not_configured' : 'offline'}
+                detail={systemHealth?.redis?.responseTime ? `${systemHealth.redis.responseTime}ms` : undefined}
+              />
+              <SystemStatus 
+                label="Servei de Correu" 
+                status={systemHealth?.email?.status === 'healthy' ? 'online' : systemHealth?.email?.status === 'not_configured' ? 'not_configured' : 'offline'}
+                detail={systemHealth?.email?.lastTest ? `Últim test: ${systemHealth.email.lastTest}` : undefined}
+              />
             </div>
           </div>
         </div>
@@ -174,7 +198,7 @@ const colorStyles = { slate: 'bg-slate-100 text-slate-600', green: 'bg-green-100
 
 function StatCard({ title, value, change, changeType, icon: Icon, color = 'slate' }: StatCardProps) {
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-4">
+    <div className="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-lg transition-shadow duration-200">
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm text-slate-500">{title}</p>
@@ -187,8 +211,15 @@ function StatCard({ title, value, change, changeType, icon: Icon, color = 'slate
   )
 }
 
-function QuickAction({ href, icon: Icon, label, description, color }: { href: string; icon: LucideIcon; label: string; description: string; color: 'blue' | 'green' | 'purple' }) {
-  const bgStyles = { blue: 'bg-blue-600 hover:bg-blue-700', green: 'bg-green-600 hover:bg-green-700', purple: 'bg-purple-600 hover:bg-purple-700' }
+function QuickAction({ href, icon: Icon, label, description, color }: { href: string; icon: LucideIcon; label: string; description: string; color: 'blue' | 'green' | 'purple' | 'slate' | 'amber' | 'indigo' }) {
+  const bgStyles = { 
+    blue: 'bg-blue-600 hover:bg-blue-700', 
+    green: 'bg-green-600 hover:bg-green-700', 
+    purple: 'bg-purple-600 hover:bg-purple-700',
+    slate: 'bg-slate-600 hover:bg-slate-700',
+    amber: 'bg-amber-600 hover:bg-amber-700',
+    indigo: 'bg-indigo-600 hover:bg-indigo-700'
+  }
   return (
     <Link href={href} className={`flex items-center gap-3 p-3 rounded-lg text-white ${bgStyles[color]} transition-colors`}>
       <Icon className="h-5 w-5" strokeWidth={1.5} />
@@ -197,13 +228,27 @@ function QuickAction({ href, icon: Icon, label, description, color }: { href: st
   )
 }
 
-function SystemStatus({ label, status }: { label: string; status: 'online' | 'offline' }) {
+function SystemStatus({ label, status, detail }: { label: string; status: 'online' | 'offline' | 'not_configured'; detail?: string }) {
+  const getStatusDisplay = (status: string) => {
+    switch(status) {
+      case 'online': return { text: 'Operatiu', color: 'bg-green-500', textColor: 'text-green-700' }
+      case 'offline': return { text: 'Fora de línia', color: 'bg-red-500', textColor: 'text-red-700' }
+      case 'not_configured': return { text: 'No configurat', color: 'bg-yellow-500', textColor: 'text-yellow-700' }
+      default: return { text: 'Operatiu', color: 'bg-green-500', textColor: 'text-green-700' }
+    }
+  }
+  
+  const statusDisplay = getStatusDisplay(status)
+  
   return (
     <div className="flex items-center justify-between">
-      <span className="text-sm text-slate-600">{label}</span>
+      <div>
+        <span className="text-sm text-slate-600">{label}</span>
+        {detail && <p className="text-xs text-slate-500">{detail}</p>}
+      </div>
       <div className="flex items-center gap-2">
-        <span className={`w-2 h-2 rounded-full ${status === 'online' ? 'bg-green-500' : 'bg-red-500'}`} />
-        <span className={`text-xs font-medium ${status === 'online' ? 'text-green-700' : 'text-red-700'}`}>{status === 'online' ? 'Operatiu' : 'Fora de línia'}</span>
+        <span className={`w-2 h-2 rounded-full ${statusDisplay.color}`} />
+        <span className={`text-xs font-medium ${statusDisplay.textColor}`}>{statusDisplay.text}</span>
       </div>
     </div>
   )

@@ -118,7 +118,6 @@ const ADMIN_SIDEBAR_SECTIONS = [
             { label: 'Salut del Sistema', href: '/admin/sistema/salut', icon: Activity },
             { label: 'Manteniment', href: '/admin/sistema/manteniment', icon: Wrench },
             { label: 'Estadístiques', href: '/admin/estadistiques', icon: BarChart3 },
-            { label: 'Configuració IA', href: '/admin/ia', icon: Bot },
             { label: 'Logs', href: '/admin/logs', icon: ScrollText },
             { label: 'Avisos', href: '/admin/avisos', icon: Bell },
             { label: 'Notificacions', href: '/admin/notificacions', icon: Bell },
@@ -133,13 +132,10 @@ export function AdminSidebar() {
     return (
         <aside className="w-64 bg-white border-r border-slate-200 min-h-screen flex flex-col fixed top-0 bottom-0 z-30 overflow-y-auto">
             {/* Logo */}
-            <div className="h-16 flex items-center px-6 border-b border-slate-200">
-                <Link href="/admin" className="flex items-center gap-2">
+            <div className="h-16 flex items-center justify-center px-6 border-b border-slate-200">
+                <Link href="/admin">
                     {/* Using fallback logo logic as per other files since lapublica-logo.svg might not exist */}
-                    <img src="/images/cropped-logo_la-Pública-ok-2.png" alt="La Pública" className="h-8" />
-                    <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
-                        Admin
-                    </span>
+                    <img src="/images/cropped-logo_la-Pública-ok-2.png" alt="La Pública" className="h-14" />
                 </Link>
             </div>
 
