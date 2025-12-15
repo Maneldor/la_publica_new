@@ -102,100 +102,22 @@ export default function AdminUsuarisPage() {
     useEffect(() => {
         const loadUsers = async () => {
             setLoading(true)
-            // TODO: Substituir per fetch a API
-            const mockUsers: User[] = [
-                {
-                    id: '1',
-                    email: 'superadmin@lapublica.cat',
-                    name: 'Super Administrador',
-                    image: null,
-                    role: 'SUPER_ADMIN',
-                    userType: 'ADMIN',
-                    isActive: true,
-                    isEmailVerified: true,
-                    communityId: null,
-                    cargo: 'Director Tecnologia',
-                    createdAt: '2023-01-15T10:00:00Z',
-                    lastLogin: '2024-12-11T08:30:00Z',
-                },
-                {
-                    id: '2',
-                    email: 'crm.comercial@lapublica.cat',
-                    name: 'Laura Sánchez',
-                    image: null,
-                    role: 'CRM_COMERCIAL',
-                    userType: 'ACCOUNT_MANAGER',
-                    isActive: true,
-                    isEmailVerified: true,
-                    communityId: null,
-                    cargo: 'Responsable Comercial',
-                    createdAt: '2023-06-20T10:00:00Z',
-                    lastLogin: '2024-12-11T09:15:00Z',
-                },
-                {
-                    id: '3',
-                    email: 'gestor1@lapublica.cat',
-                    name: 'Marc Fernández',
-                    image: null,
-                    role: 'GESTOR_ESTRATEGIC',
-                    userType: 'ACCOUNT_MANAGER',
-                    isActive: true,
-                    isEmailVerified: true,
-                    communityId: null,
-                    cargo: 'Gestor Comercial',
-                    createdAt: '2023-09-10T10:00:00Z',
-                    lastLogin: '2024-12-10T17:45:00Z',
-                },
-                {
-                    id: '4',
-                    email: 'maria.garcia@gencat.cat',
-                    name: 'Maria Garcia López',
-                    image: null,
-                    role: 'USER',
-                    userType: 'EMPLOYEE',
-                    isActive: true,
-                    isEmailVerified: true,
-                    communityId: 'com_gencat',
-                    cargo: 'Administrativa',
-                    createdAt: '2024-03-15T10:00:00Z',
-                    lastLogin: '2024-12-09T12:00:00Z',
-                },
-                {
-                    id: '5',
-                    email: 'joan.perez@ajbcn.cat',
-                    name: 'Joan Pérez',
-                    image: null,
-                    role: 'USER',
-                    userType: 'EMPLOYEE',
-                    isActive: false,
-                    isEmailVerified: true,
-                    communityId: 'com_ajbcn',
-                    cargo: 'Tècnic',
-                    createdAt: '2024-01-20T10:00:00Z',
-                    lastLogin: '2024-06-15T09:00:00Z',
-                },
-                {
-                    id: '6',
-                    email: 'moderador@lapublica.cat',
-                    name: 'Anna Moderadora',
-                    image: null,
-                    role: 'MODERATOR',
-                    userType: 'ADMIN',
-                    isActive: true,
-                    isEmailVerified: false,
-                    communityId: null,
-                    cargo: 'Moderadora Contingut',
-                    createdAt: '2024-06-01T10:00:00Z',
-                    lastLogin: null,
-                },
-            ]
-
-            setTimeout(() => {
-                setUsers(mockUsers)
+            try {
+                const response = await fetch('/api/admin/users')
+                const data = await response.json()
+                
+                if (data.success && data.data?.users) {
+                    setUsers(data.data.users)
+                } else {
+                    console.error('Error carregant usuaris:', data.error)
+                }
+            } catch (err) {
+                console.error('Error carregant usuaris:', err)
+            } finally {
                 setLoading(false)
-            }, 500)
+            }
         }
-
+        
         loadUsers()
     }, [])
 

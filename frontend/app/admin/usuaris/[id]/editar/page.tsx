@@ -182,35 +182,33 @@ export default function EditarUsuariPage() {
 
     // Carregar dades existents
     useEffect(() => {
-        const loadUser = async () => {
-            setLoading(true)
+        const fetchUser = async () => {
             try {
-                // TODO: fetchData from API
-                // const response = await fetch(`/api/admin/usuaris/${userId}`)
-                // const data = await response.json()
-
-                // Mock data
-                const mockUser = {
-                    email: 'crm.comercial@lapublica.cat',
-                    name: 'Laura Sánchez',
-                    role: 'CRM_COMERCIAL' as UserRole,
-                    userType: 'ACCOUNT_MANAGER' as UserType,
-                    cargo: 'Responsable Comercial',
-                    communityId: '',
-                    isActive: true,
+                const response = await fetch(`/api/admin/users/${userId}`)
+                const data = await response.json()
+                
+                if (data.success && data.user) {
+                    setFormData({
+                        email: data.user.email,
+                        name: data.user.name || '',
+                        role: data.user.role,
+                        userType: data.user.userType,
+                        cargo: data.user.cargo || '',
+                        communityId: data.user.communityId || '',
+                        isActive: data.user.isActive,
+                    })
+                } else {
+                    setError('Error carregant usuari')
                 }
-
-                setTimeout(() => {
-                    setFormData(mockUser)
-                    setLoading(false)
-                }, 500)
-
             } catch (err) {
-                setError('Error carregant dades usuari')
+                console.error('Error:', err)
+                setError('Error carregant usuari')
+            } finally {
                 setLoading(false)
             }
         }
-        loadUser()
+        
+        fetchUser()
     }, [userId])
 
     const selectedRoleInfo = ROLES_INFO[formData.role]
@@ -238,43 +236,41 @@ export default function EditarUsuariPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
+        setSaving(true)
         setError(null)
-
+        
         const validationError = validateForm()
         if (validationError) {
             setError(validationError)
+            setSaving(false)
             return
         }
-
-        setSaving(true)
-
+        
         try {
-            // TODO: Substituir per API real (PUT)
-            const response = await fetch(`/api/admin/usuaris/${userId}`, {
+            const response = await fetch(`/api/admin/users/${userId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    email: formData.email,
                     name: formData.name,
                     role: formData.role,
                     userType: formData.userType,
                     cargo: formData.cargo || null,
-                    communityId: formData.communityId || null,
                     isActive: formData.isActive,
-                }),
+                })
             })
-
-            // Simulate success for mock
-            if (true /* replace with !response.ok check when real API */) {
-                // 
+            const data = await response.json()
+            
+            if (data.success) {
+                setSuccess(true)
+                setTimeout(() => {
+                    router.push(`/admin/usuaris/${userId}`)
+                }, 1500)
+            } else {
+                setError(data.error || 'Error guardant canvis')
             }
-
-            setSuccess(true)
-            setTimeout(() => {
-                router.push(`/admin/usuaris/${userId}`)
-            }, 1500)
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Error desconegut')
+            console.error('Error:', err)
+            setError('Error guardant canvis')
         } finally {
             setSaving(false)
         }

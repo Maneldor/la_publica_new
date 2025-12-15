@@ -60,11 +60,16 @@ export async function GET(request: NextRequest) {
         id: true,
         email: true,
         name: true,
+        image: true,
         role: true,
         userType: true,
         isActive: true,
+        isEmailVerified: true,
+        communityId: true,
+        cargo: true,
         createdAt: true,
         updatedAt: true,
+        lastLogin: true,
       },
       orderBy: {
         createdAt: 'desc'
@@ -75,19 +80,16 @@ export async function GET(request: NextRequest) {
     const formattedUsers = users.map(user => ({
       id: user.id,
       email: user.email,
-      primaryRole: user.userType || user.role || 'USER', // Usar userType o role como primaryRole
+      name: user.name,
+      image: user.image || null,
+      role: user.role,
+      userType: user.userType,
       isActive: user.isActive,
-      lastLogin: undefined, // Campo no disponible en el esquema actual
+      isEmailVerified: user.isEmailVerified || false,
+      communityId: user.communityId || null,
+      cargo: user.cargo || null,
       createdAt: user.createdAt.toISOString(),
-      employee: user.name ? {
-        firstName: user.name.split(' ')[0] || '',
-        lastName: user.name.split(' ').slice(1).join(' ') || '',
-        nick: undefined,
-      } : undefined,
-      company: undefined, // Por ahora no hay relación directa
-      publicAdministration: undefined, // Por ahora no hay relación directa
-      additionalRoles: [], // Por ahora vacío
-      permissions: [], // Por ahora vacío
+      lastLogin: user.lastLogin?.toISOString() || null,
     }));
 
     return NextResponse.json({

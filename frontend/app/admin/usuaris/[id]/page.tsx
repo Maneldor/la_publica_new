@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -98,50 +98,25 @@ export default function DetallUsuariPage() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [showDeleteModal, setShowDeleteModal] = useState(false)
+    const [showDropdown, setShowDropdown] = useState(false)
+    const dropdownRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
         const loadUser = async () => {
             setLoading(true)
             try {
-                // TODO: Substituir per API real
-                // const response = await fetch(`/api/admin/usuaris/${userId}`)
-                // const data = await response.json()
-
-                // Mock data
-                const mockUser: UserDetail = {
-                    id: userId,
-                    email: 'crm.comercial@lapublica.cat',
-                    name: 'Laura Sánchez',
-                    image: null,
-                    role: 'CRM_COMERCIAL',
-                    userType: 'ACCOUNT_MANAGER',
-                    isActive: true,
-                    isEmailVerified: true,
-                    communityId: null,
-                    cargo: 'Responsable Comercial',
-                    createdAt: '2023-06-20T10:00:00Z',
-                    updatedAt: '2024-12-10T15:30:00Z',
-                    lastLogin: '2024-12-11T09:15:00Z',
-                    stats: {
-                        leadsAssignats: 45,
-                        tasquesCompletades: 128,
-                        empresesGestionades: 23,
-                        logsActivitat: 1542,
-                    },
-                    recentActivity: [
-                        { id: '1', action: 'LOGIN', description: 'Inici de sessió', createdAt: '2024-12-11T09:15:00Z' },
-                        { id: '2', action: 'LEAD_UPDATED', description: 'Lead actualitzat: TechCorp', createdAt: '2024-12-10T17:30:00Z' },
-                        { id: '3', action: 'TASK_COMPLETED', description: 'Tasca completada: Trucada seguiment', createdAt: '2024-12-10T16:45:00Z' },
-                        { id: '4', action: 'COMPANY_APPROVED', description: 'Empresa aprovada: Restaurant El Celler', createdAt: '2024-12-10T14:20:00Z' },
-                    ],
+                const response = await fetch(`/api/admin/users/${userId}`)
+                const data = await response.json()
+                
+                if (data.success && data.user) {
+                    setUser(data.user)
+                } else {
+                    setError(data.error || 'Error carregant usuari')
                 }
-
-                setTimeout(() => {
-                    setUser(mockUser)
-                    setLoading(false)
-                }, 500)
             } catch (err) {
+                console.error('Error carregant usuari:', err)
                 setError('Error carregant usuari')
+            } finally {
                 setLoading(false)
             }
         }
@@ -149,25 +124,66 @@ export default function DetallUsuariPage() {
         loadUser()
     }, [userId])
 
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setShowDropdown(false)
+            }
+        }
+
+        if (showDropdown) {
+            document.addEventListener('mousedown', handleClickOutside)
+            return () => document.removeEventListener('mousedown', handleClickOutside)
+        }
+    }, [showDropdown])
+
     const handleToggleStatus = async () => {
         if (!user) return
-        // TODO: Implementar canvi d'estat
-        setUser(prev => prev ? { ...prev, isActive: !prev.isActive } : null)
+        try {
+            const response = await fetch(`/api/admin/users/${userId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ isActive: !user.isActive })
+            })
+            const data = await response.json()
+            if (data.success) {
+                setUser(prev => prev ? { ...prev, isActive: !prev.isActive } : null)
+            } else {
+                alert(data.error || 'Error canviant estat')
+            }
+        } catch (err) {
+            console.error('Error:', err)
+            alert('Error canviant estat de l\'usuari')
+        }
     }
 
     const handleResetPassword = async () => {
-        // TODO: Implementar reset password
-        alert('S\'ha enviat un correu per restablir la contrasenya')
+        // Por ahora solo muestra mensaje - implementar email más adelante
+        alert('Funcionalitat de reset password pendent d\'implementar amb servei de correu')
     }
 
     const handleDelete = async () => {
-        // TODO: Implementar eliminació
-        router.push('/admin/usuaris')
+        if (!user) return
+        try {
+            const response = await fetch(`/api/admin/users/${userId}`, {
+                method: 'DELETE'
+            })
+            const data = await response.json()
+            if (data.success) {
+                router.push('/admin/usuaris')
+            } else {
+                alert(data.error || 'Error eliminant usuari')
+            }
+        } catch (err) {
+            console.error('Error:', err)
+            alert('Error eliminant usuari')
+        }
+        setShowDeleteModal(false)
     }
 
     const handleResendVerification = async () => {
-        // TODO: Implementar reenviar verificació
-        alert('S\'ha reenviat el correu de verificació')
+        // Por ahora solo muestra mensaje - implementar email más adelante
+        alert('Funcionalitat de reenviar verificació pendent d\'implementar amb servei de correu')
     }
 
     const formatDate = (dateStr: string | null) => {
@@ -250,16 +266,56 @@ export default function DetallUsuariPage() {
                     <div className="flex items-center gap-2">
                         <Link
                             href={`/admin/usuaris/${user.id}/editar`}
-                            className="inline-flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                         >
                             <Edit className="h-4 w-4" strokeWidth={1.5} />
                             Editar
                         </Link>
-                        <div className="relative">
-                            <button className="p-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
+                        <div className="relative" ref={dropdownRef}>
+                            <button 
+                                onClick={() => setShowDropdown(!showDropdown)}
+                                className="p-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+                            >
                                 <MoreHorizontal className="h-5 w-5 text-slate-500" strokeWidth={1.5} />
                             </button>
-                            {/* Dropdown menu - implementar amb state */}
+                            
+                            {showDropdown && (
+                                <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-50">
+                                    <div className="py-1">
+                                        <button
+                                            onClick={() => {
+                                                setShowDropdown(false)
+                                                // TODO: Implementar funcionalidad de enviar mensaje
+                                            }}
+                                            className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                                        >
+                                            <Send className="h-4 w-4" strokeWidth={1.5} />
+                                            Enviar mensaje
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setShowDropdown(false)
+                                                // TODO: Implementar funcionalidad de resetear contraseña
+                                            }}
+                                            className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                                        >
+                                            <Key className="h-4 w-4" strokeWidth={1.5} />
+                                            Resetear contraseña
+                                        </button>
+                                        <div className="border-t border-slate-200 my-1"></div>
+                                        <button
+                                            onClick={() => {
+                                                setShowDropdown(false)
+                                                // TODO: Implementar funcionalidad de ver logs de actividad
+                                            }}
+                                            className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                                        >
+                                            <Activity className="h-4 w-4" strokeWidth={1.5} />
+                                            Ver logs de actividad
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
