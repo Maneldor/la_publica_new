@@ -91,8 +91,8 @@ export async function GET(request: NextRequest) {
 
     // Calcular métricas de limpieza
     const [expiredSessions, oldLogs, expiredTokens, unverifiedUsers] = await Promise.all([
-      // Sessions expiradas (ejemplo con tabla sessions si existe)
-      prismaClient.$queryRaw`SELECT COUNT(*) as count FROM sessions WHERE expires < NOW()`.catch(() => [{ count: 0 }]),
+      // Sessions: tabla no existe en este schema
+      Promise.resolve([{ count: 0 }]),
       
       // Logs antiguos >30 días (REAL)
       prismaClient.auditLog.count({
@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
       // Usuarios no verificados >30 días
       prismaClient.user.count({
         where: {
-          emailVerified: null,
+          isEmailVerified: false,
           createdAt: {
             lt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
           }
@@ -260,17 +260,17 @@ export async function POST(request: NextRequest) {
 
       case 'purgeExpiredSessions':
         try {
-          // Eliminar sessions expiradas
-          await prismaClient.$executeRaw`DELETE FROM sessions WHERE expires < NOW()`
+          // Sessions: tabla no existe en este schema
+          console.log('Sessions table does not exist - simulating cleanup')
           return NextResponse.json({ 
             success: true, 
-            message: 'Sessions expirades eliminades correctament' 
+            message: 'Sessions expirades eliminades correctament (simulat)' 
           })
         } catch (error) {
-          console.log('Simulating session cleanup (sessions table may not exist)')
+          console.log('Error in session cleanup simulation')
           return NextResponse.json({ 
             success: true, 
-            message: 'Sessions expirades eliminades correctament' 
+            message: 'Sessions expirades eliminades correctament (simulat)' 
           })
         }
 
@@ -322,7 +322,7 @@ export async function POST(request: NextRequest) {
           const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
           const result = await prismaClient.user.deleteMany({
             where: {
-              emailVerified: null,
+              isEmailVerified: false,
               createdAt: {
                 lt: thirtyDaysAgo
               }
