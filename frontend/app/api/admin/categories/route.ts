@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
 
         // Filtre per scope (obligatori o per nom)
         if (scopeId) {
-            if (!isValidCuid(scopeId)) {
+            if (!scopeId || scopeId.length < 3) {
                 return errorResponse('scopeId invàlid', 400, 'INVALID_SCOPE_ID')
             }
             where.scopeId = scopeId
@@ -176,7 +176,7 @@ export async function POST(req: NextRequest) {
         const { scopeId, name, description, icon, color, image, isActive, isFeatured, parentId } = body
 
         // Verificar scope
-        if (!isValidCuid(scopeId)) {
+        if (!scopeId || scopeId.length < 3) {
             return errorResponse('scopeId invàlid', 400, 'INVALID_SCOPE_ID')
         }
 
@@ -211,7 +211,7 @@ export async function POST(req: NextRequest) {
 
         // Verificar parent si s'ha passat
         if (parentId) {
-            if (!isValidCuid(parentId)) {
+            if (!parentId || parentId.length < 3) {
                 return errorResponse('parentId invàlid', 400, 'INVALID_PARENT_ID')
             }
 
