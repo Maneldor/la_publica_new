@@ -36,6 +36,7 @@ export type LogSeverity = 'INFO' | 'WARNING' | 'ERROR' | 'CRITICAL';
 interface CreateAuditLogParams {
   action: AuditAction;
   entity: string;
+  category?: string;  // AUTH, USER, COMPANY, OFFER, CAMPAIGN, SYSTEM, etc.
   entityId?: string;
   entityName?: string;
   description: string;
@@ -63,12 +64,13 @@ export async function createAuditLog(params: CreateAuditLogParams) {
 
     const log = await prismaClient.auditLog.create({
       data: {
-        userId: session.user.id,
+        user: session.user.id ? { connect: { id: session.user.id } } : undefined,
         userName: session.user.name || 'Unknown',
         userEmail: session.user.email || 'unknown@example.com',
         userRole: session.user.role || 'UNKNOWN',
 
         action: params.action,
+        category: params.category || params.entity || 'SYSTEM',  // Usar entity como fallback
         entity: params.entity,
         entityId: params.entityId,
         entityName: params.entityName,
@@ -77,7 +79,7 @@ export async function createAuditLog(params: CreateAuditLogParams) {
         changes: params.changes || null,
         metadata: params.metadata || null,
 
-        severity: params.severity || 'INFO',
+        level: params.severity || 'INFO',
         success: params.success ?? true,
         errorMessage: params.errorMessage,
 
@@ -143,6 +145,7 @@ export async function logSuccess(
   return await createAuditLog({
     action,
     entity,
+    category: entity, // Usar entity como category por defecto
     entityId,
     entityName,
     description,
@@ -169,6 +172,7 @@ export async function logError(
   return await createAuditLog({
     action,
     entity,
+    category: entity, // Usar entity como category por defecto
     description,
     severity: 'ERROR',
     success: false,
@@ -192,6 +196,7 @@ export async function logSecurityEvent(
   return await createAuditLog({
     action,
     entity: 'Security',
+    category: 'SECURITY', // Category específica para eventos de seguridad
     description,
     severity: 'CRITICAL',
     success: true,

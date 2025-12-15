@@ -3295,6 +3295,7 @@ model AuditLog {
   // Qui
   userId      String?
   user        User?      @relation("UserAuditLogs", fields: [userId], references: [id], onDelete: SetNull)
+  userName    String?    // Nom de l'usuari en el moment de l'acció
   userEmail   String?    // Guardem email per si s'elimina l'usuari
   userRole    String?    // Rol en el moment de l'acció
   
