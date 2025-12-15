@@ -27,7 +27,9 @@ import {
     Link as LinkIcon,
     GraduationCap,
     Newspaper,
-    ScrollText
+    ScrollText,
+    Activity,
+    Wrench
 } from 'lucide-react'
 
 // Using native React state for collapsible sections since @radix-ui/react-collapsible is not available
@@ -113,6 +115,8 @@ const ADMIN_SIDEBAR_SECTIONS = [
         title: 'SISTEMA',
         defaultOpen: false,
         items: [
+            { label: 'Salut del Sistema', href: '/admin/sistema/salut', icon: Activity },
+            { label: 'Manteniment', href: '/admin/sistema/manteniment', icon: Wrench },
             { label: 'Estadístiques', href: '/admin/estadistiques', icon: BarChart3 },
             { label: 'Configuració IA', href: '/admin/ia', icon: Bot },
             { label: 'Logs', href: '/admin/logs', icon: ScrollText },

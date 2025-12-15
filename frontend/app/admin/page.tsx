@@ -2,48 +2,45 @@
 
 import { useState, useEffect } from 'react'
 import {
-  LayoutDashboard,
-  Users,
-  AlertTriangle,
-  CheckCircle,
-  ArrowRight,
-  UserPlus,
-  Activity,
-  LucideIcon,
-  Server,
-  Database,
-  Shield,
-  Settings,
-  Bell,
-  Building2,
-  Tag
+  LayoutDashboard, Users, CheckCircle, UserPlus, LucideIcon,
+  Building2, Tag, Shield
 } from 'lucide-react'
 import Link from 'next/link'
 
 interface DashboardMetrics {
-  users: { total: number; active: number; newToday: number; growth: number; growthPercent: number }
-  companies: { total: number; active: number; pending: number; approved: number }
+  users: { total: number; active: number; newToday: number; growth: number }
+  companies: { total: number; active: number; pending: number }
   offers: { total: number; published: number; pending: number }
   coupons: { total: number; active: number; used: number }
 }
 
+interface ChartData { day: string; date: string; count: number }
+interface ActivityData { id: string; type: string; description: string; timestamp: string; icon: string }
+
 export default function AdminDashboardPage() {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null)
+  const [chartData, setChartData] = useState<ChartData[]>([])
+  const [activityData, setActivityData] = useState<ActivityData[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     async function loadDashboard() {
       try {
-        const res = await fetch('/api/admin/dashboard')
-        const data = await res.json()
-        if (data.success) {
-          setMetrics(data.metrics)
-        } else {
-          setError(data.error || 'Error carregant dades')
-        }
+        const [metricsRes, chartRes, activityRes] = await Promise.all([
+          fetch('/api/admin/dashboard'),
+          fetch('/api/admin/dashboard/users-chart'),
+          fetch('/api/admin/dashboard/activity')
+        ])
+        
+        const metricsData = await metricsRes.json()
+        const chartDataRes = await chartRes.json()
+        const activityDataRes = await activityRes.json()
+        
+        if (metricsData.success) setMetrics(metricsData.metrics)
+        if (chartDataRes.success) setChartData(chartDataRes.data)
+        if (activityDataRes.success) setActivityData(activityDataRes.data)
       } catch (err) {
-        setError('Error de connexió')
+        console.error('Error loading dashboard:', err)
       } finally {
         setLoading(false)
       }
@@ -57,24 +54,14 @@ export default function AdminDashboardPage() {
         <div className="animate-pulse">
           <div className="h-8 bg-slate-200 rounded w-1/3 mb-4"></div>
           <div className="grid grid-cols-4 gap-4">
-            {[1,2,3,4].map(i => (
-              <div key={i} className="h-24 bg-slate-200 rounded-xl"></div>
-            ))}
+            {[1,2,3,4].map(i => <div key={i} className="h-24 bg-slate-200 rounded-xl"></div>)}
           </div>
         </div>
       </div>
     )
   }
 
-  if (error) {
-    return (
-      <div className="p-6">
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700">
-          {error}
-        </div>
-      </div>
-    )
-  }
+  const maxChartValue = Math.max(...chartData.map(d => d.count), 1)
 
   return (
     <div className="p-6 space-y-6">
@@ -89,65 +76,51 @@ export default function AdminDashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Usuaris totals"
-          value={metrics?.users.total.toString() || '0'}
-          change={`+${metrics?.users.growth || 0} últims 7 dies`}
-          changeType="positive"
-          icon={Users}
-          color="blue"
-        />
-        <StatCard
-          title="Empreses"
-          value={metrics?.companies.total.toString() || '0'}
-          change={`${metrics?.companies.pending || 0} pendents`}
-          changeType={metrics?.companies.pending ? 'negative' : 'positive'}
-          icon={Building2}
-          color="green"
-        />
-        <StatCard
-          title="Ofertes publicades"
-          value={metrics?.offers.published.toString() || '0'}
-          change={`${metrics?.offers.total || 0} totals`}
-          changeType="positive"
-          icon={Tag}
-          color="purple"
-        />
-        <StatCard
-          title="Cupons actius"
-          value={metrics?.coupons.active.toString() || '0'}
-          change={`${metrics?.coupons.used || 0} utilitzats`}
-          changeType="positive"
-          icon={CheckCircle}
-          color="amber"
-        />
+        <StatCard title="Usuaris totals" value={metrics?.users.total.toString() || '0'} change={`+${metrics?.users.growth || 0} últims 7 dies`} changeType="positive" icon={Users} color="blue" />
+        <StatCard title="Empreses" value={metrics?.companies.total.toString() || '0'} change={`${metrics?.companies.pending || 0} pendents`} changeType={metrics?.companies.pending ? 'negative' : 'positive'} icon={Building2} color="green" />
+        <StatCard title="Ofertes publicades" value={metrics?.offers.published.toString() || '0'} change={`${metrics?.offers.total || 0} totals`} changeType="positive" icon={Tag} color="purple" />
+        <StatCard title="Cupons actius" value={metrics?.coupons.active.toString() || '0'} change={`${metrics?.coupons.used || 0} utilitzats`} changeType="positive" icon={CheckCircle} color="amber" />
+      </div>
+
+      {/* Gráfico de usuarios */}
+      <div className="bg-white border border-slate-200 rounded-xl p-6">
+        <h2 className="font-semibold text-slate-900 mb-4">Nous usuaris (últims 7 dies)</h2>
+        <div className="h-48 flex items-end justify-between gap-2">
+          {chartData.map(item => (
+            <div key={item.date} className="flex-1 flex flex-col items-center gap-2">
+              <div className="w-full h-32 bg-slate-100 rounded-lg relative overflow-hidden group">
+                <div
+                  className="absolute bottom-0 left-0 right-0 bg-blue-500 rounded-lg transition-all hover:bg-blue-600"
+                  style={{ height: `${(item.count / maxChartValue) * 100}%` }}
+                />
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <span className="bg-slate-800 text-white text-xs px-2 py-1 rounded">{item.count}</span>
+                </div>
+              </div>
+              <span className="text-xs text-slate-500">{item.day}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Actividad reciente */}
         <div className="bg-white border border-slate-200 rounded-xl lg:col-span-2">
-          <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-            <h2 className="font-semibold text-slate-900">Resum del sistema</h2>
+          <div className="p-4 border-b border-slate-100">
+            <h2 className="font-semibold text-slate-900">Activitat recent</h2>
           </div>
           <div className="p-4 space-y-4">
-            <div className="flex justify-between items-center py-2 border-b border-slate-100">
-              <span className="text-slate-600">Usuaris actius</span>
-              <span className="font-semibold">{metrics?.users.active || 0}</span>
-            </div>
-            <div className="flex justify-between items-center py-2 border-b border-slate-100">
-              <span className="text-slate-600">Nous avui</span>
-              <span className="font-semibold text-green-600">+{metrics?.users.newToday || 0}</span>
-            </div>
-            <div className="flex justify-between items-center py-2 border-b border-slate-100">
-              <span className="text-slate-600">Empreses actives</span>
-              <span className="font-semibold">{metrics?.companies.active || 0}</span>
-            </div>
-            <div className="flex justify-between items-center py-2">
-              <span className="text-slate-600">Ofertes pendents revisió</span>
-              <span className="font-semibold text-amber-600">{metrics?.offers.pending || 0}</span>
-            </div>
+            {activityData.length === 0 ? (
+              <p className="text-slate-500 text-sm">No hi ha activitat recent</p>
+            ) : (
+              activityData.map(item => (
+                <ActivityItem key={item.id} type={item.type} text={item.description} time={formatTimeAgo(item.timestamp)} />
+              ))
+            )}
           </div>
         </div>
 
+        {/* Acciones rápidas */}
         <div className="space-y-6">
           <div className="bg-white border border-slate-200 rounded-xl p-4">
             <h2 className="font-semibold text-slate-900 mb-4">Accions ràpides</h2>
@@ -172,11 +145,32 @@ export default function AdminDashboardPage() {
   )
 }
 
-interface StatCardProps {
-  title: string; value: string; change?: string; changeType?: 'positive' | 'negative'; icon: LucideIcon; color?: 'slate' | 'green' | 'amber' | 'red' | 'blue' | 'purple'
+function formatTimeAgo(timestamp: string): string {
+  const seconds = Math.floor((Date.now() - new Date(timestamp).getTime()) / 1000)
+  if (seconds < 60) return 'Ara mateix'
+  if (seconds < 3600) return `Fa ${Math.floor(seconds / 60)} minuts`
+  if (seconds < 86400) return `Fa ${Math.floor(seconds / 3600)} hores`
+  return `Fa ${Math.floor(seconds / 86400)} dies`
 }
 
-const colorStyles = { slate: 'bg-slate-100 text-slate-600', green: 'bg-green-100 text-green-600', amber: 'bg-amber-100 text-amber-600', red: 'bg-red-100 text-red-600', blue: 'bg-blue-100 text-blue-600', purple: 'bg-purple-100 text-purple-600' }
+const iconColors = { USER_CREATED: 'bg-green-100 text-green-600', COMPANY_CREATED: 'bg-blue-100 text-blue-600', OFFER_CREATED: 'bg-purple-100 text-purple-600' }
+
+function ActivityItem({ type, text, time }: { type: string; text: string; time: string }) {
+  const Icon = type === 'USER_CREATED' ? UserPlus : type === 'COMPANY_CREATED' ? Building2 : Tag
+  const colorClass = iconColors[type as keyof typeof iconColors] || 'bg-slate-100 text-slate-600'
+  return (
+    <div className="flex items-start gap-3">
+      <div className={`p-1.5 rounded-lg ${colorClass}`}><Icon className="h-4 w-4" strokeWidth={1.5} /></div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm text-slate-700 truncate">{text}</p>
+        <p className="text-xs text-slate-400">{time}</p>
+      </div>
+    </div>
+  )
+}
+
+interface StatCardProps { title: string; value: string; change?: string; changeType?: 'positive' | 'negative'; icon: LucideIcon; color?: 'slate' | 'green' | 'amber' | 'blue' | 'purple' }
+const colorStyles = { slate: 'bg-slate-100 text-slate-600', green: 'bg-green-100 text-green-600', amber: 'bg-amber-100 text-amber-600', blue: 'bg-blue-100 text-blue-600', purple: 'bg-purple-100 text-purple-600' }
 
 function StatCard({ title, value, change, changeType, icon: Icon, color = 'slate' }: StatCardProps) {
   return (
