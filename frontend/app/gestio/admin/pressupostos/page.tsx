@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Download, CheckSquare, Square, MoreHorizontal, RefreshCw, FileText, Send, Trash2 } from 'lucide-react'
+import { Plus, Download, CheckSquare, Square, MoreHorizontal, RefreshCw, FileText, Send, Trash2, Database } from 'lucide-react'
 import { BudgetStats } from '@/components/gestio-empreses/pressupostos/BudgetStats'
 import { BudgetFilters } from '@/components/gestio-empreses/pressupostos/BudgetFilters'
 import { BudgetCard } from '@/components/gestio-empreses/pressupostos/BudgetCard'
@@ -11,6 +11,7 @@ import { BudgetPreviewPanel } from '@/components/gestio-empreses/pressupostos/Bu
 import {
   getBudgets,
   bulkUpdateBudgets,
+  seedBudgetExamples,
   type BudgetItem,
   type BudgetFilters as BudgetFiltersType
 } from '@/lib/gestio-empreses/budget-actions'
@@ -25,6 +26,7 @@ export default function PressupostosPage() {
   const [showBulkActions, setShowBulkActions] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [refreshTrigger, setRefreshTrigger] = useState(0)
+  const [isSeeding, setIsSeeding] = useState(false)
 
   // Carregar pressupostos
   useEffect(() => {
@@ -120,6 +122,22 @@ export default function PressupostosPage() {
     setRefreshTrigger(prev => prev + 1)
   }
 
+  const handleSeedExamples = async () => {
+    if (confirm('Això crearà 4 pressupostos d\'exemple. Continuar?')) {
+      setIsSeeding(true)
+      try {
+        const result = await seedBudgetExamples()
+        setRefreshTrigger(prev => prev + 1)
+        alert(result.message)
+      } catch (error) {
+        console.error('Error seeding examples:', error)
+        alert('Error al generar pressupostos d\'exemple')
+      } finally {
+        setIsSeeding(false)
+      }
+    }
+  }
+
   const isAllSelected = budgets.length > 0 && selectedBudgets.length === budgets.length
   const isSomeSelected = selectedBudgets.length > 0 && selectedBudgets.length < budgets.length
 
@@ -145,6 +163,14 @@ export default function PressupostosPage() {
           >
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} strokeWidth={1.5} />
             Actualitzar
+          </button>
+          <button
+            onClick={handleSeedExamples}
+            disabled={isSeeding || loading}
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 transition-colors"
+          >
+            <Database className={`h-4 w-4 ${isSeeding ? 'animate-pulse' : ''}`} strokeWidth={1.5} />
+            {isSeeding ? 'Generant...' : 'Generar Exemples'}
           </button>
           <button className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
             <Download className="h-4 w-4" strokeWidth={1.5} />

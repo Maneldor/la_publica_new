@@ -14,6 +14,8 @@ import {
 } from 'lucide-react'
 
 import { authOptions } from '@/lib/auth'
+import { UserRole } from '@prisma/client'
+import { ROLE_GROUPS, getDataAccessLevel } from '@/lib/gestio-empreses/permissions'
 import { PageHeader } from '@/components/gestio-empreses/shared/PageHeader'
 import { StatCard } from '@/components/gestio-empreses/ui/StatCard'
 import {
@@ -45,10 +47,9 @@ export default async function GestorDashboardPage() {
   }
 
   const userId = session.user.id
-  const userType = (session.user as any).userType || 'USER'
-
-  // Determinar si és supervisor
-  const isSupervisor = ['SUPER_ADMIN', 'ADMIN', 'COMPANY_MANAGER', 'ACCOUNT_MANAGER'].includes(userType)
+  const role = (session.user as any).role as UserRole
+  const dataAccess = getDataAccessLevel(role)
+  const isSupervisor = dataAccess === 'all' || dataAccess === 'team'
 
   // Obtenir dades en paral·lel
   const [stats, recentLeads, pendingTasks, pipelineStats] = await Promise.all([

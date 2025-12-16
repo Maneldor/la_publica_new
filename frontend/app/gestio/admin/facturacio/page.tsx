@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, Grid, List, RefreshCw } from 'lucide-react'
+import { Plus, Grid, List, RefreshCw, Database } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { InvoiceStats } from '@/components/gestio-empreses/facturacio/InvoiceStats'
 import { InvoiceFilters } from '@/components/gestio-empreses/facturacio/InvoiceFilters'
@@ -98,6 +98,7 @@ export default function FacturacioPage() {
   const [sortField, setSortField] = useState<SortField>('issueDate')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
   const [isLoading, setIsLoading] = useState(true)
+  const [seeding, setSeeding] = useState(false)
 
   // Load invoices data
   useEffect(() => {
@@ -127,6 +128,32 @@ export default function FacturacioPage() {
       generateMockData()
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleSeedInvoices = async () => {
+    if (!confirm('Crear 4 factures d\'exemple (Pagada, Enviada, Endarrerida, Esborrany)? Això eliminarà factures d\'exemple anteriors.')) return
+
+    setSeeding(true)
+    try {
+      const response = await fetch('/api/admin/invoices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'seed' })
+      })
+      const data = await response.json()
+
+      if (data.success) {
+        toast.success(data.message || 'Factures creades!')
+        fetchInvoices()
+      } else {
+        toast.error(data.error || 'Error creant factures')
+      }
+    } catch (error) {
+      console.error('Error seeding invoices:', error)
+      toast.error('Error creant factures d\'exemple')
+    } finally {
+      setSeeding(false)
     }
   }
 
@@ -347,6 +374,15 @@ export default function FacturacioPage() {
           >
             <RefreshCw className={cn('h-4 w-4', isLoading && 'animate-spin')} strokeWidth={1.5} />
             Actualitzar
+          </button>
+
+          <button
+            onClick={handleSeedInvoices}
+            disabled={seeding || isLoading}
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-amber-700 bg-amber-50 border border-amber-300 rounded-lg hover:bg-amber-100 disabled:opacity-50"
+          >
+            <Database className={cn('h-4 w-4', seeding && 'animate-pulse')} strokeWidth={1.5} />
+            {seeding ? 'Creant...' : 'Generar Exemples'}
           </button>
 
           <div className="flex items-center bg-slate-100 rounded-lg p-1">

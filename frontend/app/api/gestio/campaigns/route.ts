@@ -132,6 +132,11 @@ export async function POST(req: NextRequest) {
             return errorResponse('Format JSON invàlid', 400, 'INVALID_JSON')
         }
 
+        // Si és una petició de seed
+        if (body.action === 'seed') {
+            return await seedExampleCampaigns(auth.user!.id)
+        }
+
         // Validació
         const validationRules: ValidationRule[] = [
             { field: 'name', type: 'string', required: true, minLength: 3, maxLength: 200 },
@@ -215,5 +220,164 @@ export async function POST(req: NextRequest) {
             details: error instanceof Error ? error.message : 'Unknown error',
         })
         return errorResponse('Error del servidor', 500, 'INTERNAL_ERROR')
+    }
+}
+
+// =====================
+// SEED - Crear campanyes d'exemple
+// =====================
+async function seedExampleCampaigns(userId: string) {
+    try {
+        // Eliminar campanyes d'exemple anteriors
+        await prisma.campaign.deleteMany({
+            where: { slug: { startsWith: 'exemple-' } }
+        })
+
+        const now = new Date()
+        const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+        const lastWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+
+        const exampleCampaigns = [
+            {
+                name: 'Benvinguda nous usuaris',
+                slug: 'exemple-benvinguda',
+                description: 'Email automàtic de benvinguda per a nous usuaris registrats',
+                type: 'EMAIL' as const,
+                status: 'ACTIVE' as const,
+                subject: 'Benvingut/da a La Pública! 🎉',
+                content: '<h1>Benvingut/da!</h1><p>Gràcies per unir-te a La Pública. Descobreix totes les ofertes exclusives disponibles per a tu.</p>',
+                ctaText: 'Veure ofertes',
+                ctaUrl: '/ofertes',
+                segmentationType: 'ALL' as const,
+                priority: 10,
+                totalRecipients: 150,
+                sent: 150,
+                delivered: 148,
+                opened: 89,
+                clicked: 45,
+                converted: 12,
+                createdById: userId
+            },
+            {
+                name: 'Promoció Black Friday',
+                slug: 'exemple-black-friday',
+                description: 'Campanya promocional per Black Friday amb descomptes especials',
+                type: 'EMAIL' as const,
+                status: 'SCHEDULED' as const,
+                subject: '🔥 Black Friday: Fins a 50% de descompte!',
+                content: '<h1>Black Friday a La Pública</h1><p>Aprofita els millors descomptes de l\'any en serveis per a funcionaris.</p>',
+                ctaText: 'Veure descomptes',
+                ctaUrl: '/ofertes?tag=black-friday',
+                scheduledAt: nextWeek,
+                segmentationType: 'ALL' as const,
+                priority: 20,
+                totalRecipients: 0,
+                sent: 0,
+                delivered: 0,
+                opened: 0,
+                clicked: 0,
+                converted: 0,
+                createdById: userId
+            },
+            {
+                name: 'Newsletter setmanal',
+                slug: 'exemple-newsletter',
+                description: 'Newsletter amb les novetats i ofertes de la setmana',
+                type: 'EMAIL' as const,
+                status: 'COMPLETED' as const,
+                subject: '📰 Les millors ofertes d\'aquesta setmana',
+                content: '<h1>Newsletter setmanal</h1><p>Descobreix les noves ofertes i promocions disponibles.</p>',
+                ctaText: 'Llegir més',
+                ctaUrl: '/blog',
+                startDate: lastWeek,
+                endDate: now,
+                segmentationType: 'SUBSCRIPTION' as const,
+                priority: 5,
+                totalRecipients: 500,
+                sent: 500,
+                delivered: 485,
+                opened: 210,
+                clicked: 78,
+                converted: 23,
+                createdById: userId
+            },
+            {
+                name: 'Enquesta satisfacció',
+                slug: 'exemple-enquesta',
+                description: 'Enquesta de satisfacció per millorar els serveis',
+                type: 'EMAIL' as const,
+                status: 'DRAFT' as const,
+                subject: '📊 La teva opinió ens importa',
+                content: '<h1>Com ha estat la teva experiència?</h1><p>Ajuda\'ns a millorar completant aquesta breu enquesta.</p>',
+                ctaText: 'Respondre enquesta',
+                ctaUrl: '/enquesta',
+                segmentationType: 'BEHAVIOR' as const,
+                priority: 3,
+                totalRecipients: 0,
+                sent: 0,
+                delivered: 0,
+                opened: 0,
+                clicked: 0,
+                converted: 0,
+                createdById: userId
+            },
+            {
+                name: 'Notificació noves ofertes',
+                slug: 'exemple-push-ofertes',
+                description: 'Notificació push per alertar de noves ofertes',
+                type: 'PUSH' as const,
+                status: 'ACTIVE' as const,
+                subject: 'Nova oferta disponible! 🎁',
+                content: 'Tens una nova oferta exclusiva esperant-te. No te la perdis!',
+                ctaText: 'Veure oferta',
+                ctaUrl: '/ofertes/nova',
+                segmentationType: 'ALL' as const,
+                priority: 15,
+                totalRecipients: 320,
+                sent: 320,
+                delivered: 310,
+                opened: 180,
+                clicked: 95,
+                converted: 28,
+                createdById: userId
+            },
+            {
+                name: 'Banner promocional hivern',
+                slug: 'exemple-banner-hivern',
+                description: 'Banner destacat per la campanya d\'hivern',
+                type: 'BANNER' as const,
+                status: 'ACTIVE' as const,
+                subject: 'Ofertes d\'hivern',
+                content: 'Descomptes exclusius en serveis de temporada',
+                imageUrl: '/images/banners/hivern-2024.jpg',
+                ctaText: 'Descobrir',
+                ctaUrl: '/ofertes?temporada=hivern',
+                startDate: now,
+                endDate: nextWeek,
+                segmentationType: 'ALL' as const,
+                priority: 25,
+                totalRecipients: 0,
+                sent: 0,
+                delivered: 0,
+                opened: 0,
+                clicked: 0,
+                converted: 0,
+                createdById: userId
+            }
+        ]
+
+        let created = 0
+        for (const campaignData of exampleCampaigns) {
+            await prisma.campaign.create({ data: campaignData })
+            created++
+        }
+
+        return successResponse({
+            message: `S'han creat ${created} campanyes d'exemple correctament.`,
+            created
+        })
+    } catch (error) {
+        console.error('Error seeding campaigns:', error)
+        return errorResponse('Error creant campanyes d\'exemple', 500)
     }
 }

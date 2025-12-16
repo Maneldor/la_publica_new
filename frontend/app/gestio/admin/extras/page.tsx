@@ -7,7 +7,8 @@ import {
   RefreshCw,
   Plus,
   LayoutGrid,
-  Table as TableIcon
+  Table as TableIcon,
+  Database
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ExtraStats } from '@/components/gestio-empreses/extras/ExtraStats'
@@ -45,6 +46,7 @@ export default function ExtrasPage() {
   const [extras, setExtras] = useState<Extra[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards')
+  const [seeding, setSeeding] = useState(false)
 
   // Filters
   const [filters, setFilters] = useState({
@@ -83,6 +85,32 @@ export default function ExtrasPage() {
   const handleEdit = (extra: Extra) => {
     // TODO: Obrir modal d'edició o navegar a pàgina d'edició
     toast('Funcionalitat d\'edició pendent')
+  }
+
+  const handleSeedExtras = async () => {
+    if (!confirm('Crear 6 serveis extra d\'exemple? Això eliminarà extras existents amb aquests slugs.')) return
+
+    setSeeding(true)
+    try {
+      const response = await fetch('/api/admin/extras', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'seed' })
+      })
+      const data = await response.json()
+
+      if (data.success) {
+        toast.success(data.message || 'Serveis extra creats!')
+        loadExtras()
+      } else {
+        toast.error(data.error || 'Error creant extras')
+      }
+    } catch (error) {
+      console.error('Error seeding extras:', error)
+      toast.error('Error creant serveis extra')
+    } finally {
+      setSeeding(false)
+    }
   }
 
   const handleToggleActive = async (extra: Extra) => {
@@ -201,6 +229,15 @@ export default function ExtrasPage() {
           >
             <RefreshCw className={cn('h-4 w-4', isLoading && 'animate-spin')} strokeWidth={1.5} />
             Actualitzar
+          </button>
+
+          <button
+            onClick={handleSeedExtras}
+            disabled={seeding || isLoading}
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-amber-700 bg-amber-50 border border-amber-300 rounded-lg hover:bg-amber-100 disabled:opacity-50"
+          >
+            <Database className={cn('h-4 w-4', seeding && 'animate-pulse')} strokeWidth={1.5} />
+            {seeding ? 'Creant...' : 'Generar Exemples'}
           </button>
 
           <Link

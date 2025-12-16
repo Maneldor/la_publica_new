@@ -86,10 +86,19 @@ export function PioneerPlanCard({ plan, onEdit, onToggleActive, onClick, isActiv
               <span className="text-2xl font-bold text-green-600">GRATIS</span>
               <span className="text-slate-500">durant 6 mesos</span>
             </div>
-            {plan.firstYearDiscount > 0 && (
-              <span className="px-2.5 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-                després -{(plan.firstYearDiscount * 100).toFixed(0)}% 1r any
-              </span>
+            {plan.firstYearDiscount > 0 && plan.basePrice > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-slate-500">després</span>
+                <span className="text-lg font-bold text-green-600">
+                  {(plan.basePrice * (1 - plan.firstYearDiscount / 100)).toFixed(0)}€
+                </span>
+                <span className="text-sm text-slate-400 line-through">
+                  {plan.basePrice.toFixed(0)}€
+                </span>
+                <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                  -{plan.firstYearDiscount.toFixed(0)}%
+                </span>
+              </div>
             )}
           </div>
 

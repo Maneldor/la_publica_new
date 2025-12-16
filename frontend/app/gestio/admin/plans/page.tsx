@@ -6,7 +6,8 @@ import {
   RefreshCw,
   Plus,
   LayoutGrid,
-  Table as TableIcon
+  Table as TableIcon,
+  Database
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PlanStats } from '@/components/gestio-empreses/plans/PlanStats'
@@ -45,6 +46,7 @@ export default function PlansPage() {
   const [plans, setPlans] = useState<Plan[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards')
+  const [seeding, setSeeding] = useState(false)
 
   // Filters
   const [filters, setFilters] = useState({
@@ -111,6 +113,32 @@ export default function PlansPage() {
     } catch (error) {
       console.error('Error toggling plan:', error)
       toast.error('Error al canviar l\'estat del pla')
+    }
+  }
+
+  const handleSeedPlans = async () => {
+    if (!confirm('Crear els 4 plans base (Pioneres, Estàndard, Estratègic, Enterprise)? Això eliminarà plans existents amb aquests slugs.')) return
+    
+    setSeeding(true)
+    try {
+      const response = await fetch('/api/admin/plans', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'seed' })
+      })
+      const data = await response.json()
+      
+      if (data.success) {
+        toast.success(data.message || 'Plans creats correctament!')
+        loadPlans()
+      } else {
+        toast.error(data.error || 'Error creant plans')
+      }
+    } catch (error) {
+      console.error('Error seeding plans:', error)
+      toast.error('Error creant plans base')
+    } finally {
+      setSeeding(false)
     }
   }
 
@@ -199,6 +227,16 @@ export default function PlansPage() {
           >
             <RefreshCw className={cn('h-4 w-4', isLoading && 'animate-spin')} strokeWidth={1.5} />
             Actualitzar
+          </button>
+
+          <button
+            onClick={handleSeedPlans}
+            disabled={seeding || isLoading}
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-amber-700 bg-amber-50 border border-amber-300 rounded-lg hover:bg-amber-100 disabled:opacity-50"
+            title="Crear els 4 plans base del sistema"
+          >
+            <Database className={cn('h-4 w-4', seeding && 'animate-pulse')} strokeWidth={1.5} />
+            {seeding ? 'Creant...' : 'Generar Plans Base'}
           </button>
 
           <a

@@ -32,6 +32,7 @@ import {
     ChevronDown,
     FileText,
     Sparkles,
+    Database,
 } from 'lucide-react'
 
 // =====================
@@ -117,6 +118,7 @@ export default function CampanyesPage() {
     const [campaigns, setCampaigns] = useState<Campaign[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [seeding, setSeeding] = useState(false)
 
     // Filtres
     const [search, setSearch] = useState('')
@@ -243,6 +245,32 @@ export default function CampanyesPage() {
         }
     }
 
+    const handleSeedCampaigns = async () => {
+        if (!confirm('Crear 6 campanyes d\'exemple (Email, Push, Banner)? Això eliminarà campanyes d\'exemple anteriors.')) return
+
+        setSeeding(true)
+        try {
+            const response = await fetch('/api/gestio/campaigns', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'seed' })
+            })
+            const data = await response.json()
+
+            if (response.ok) {
+                alert(data.message || 'Campanyes creades!')
+                fetchCampaigns()
+            } else {
+                alert(data.error || 'Error creant campanyes')
+            }
+        } catch (err) {
+            console.error('Error seeding campaigns:', err)
+            alert('Error creant campanyes d\'exemple')
+        } finally {
+            setSeeding(false)
+        }
+    }
+
     // =====================
     // RENDER
     // =====================
@@ -252,8 +280,8 @@ export default function CampanyesPage() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
-                        <Megaphone className="h-6 w-6 text-red-600" strokeWidth={1.5} />
+                    <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                        <Megaphone className="h-6 w-6 text-green-600" strokeWidth={1.5} />
                     </div>
                     <div>
                         <h1 className="text-2xl font-semibold text-slate-900">Campanyes</h1>
@@ -269,11 +297,19 @@ export default function CampanyesPage() {
                         <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} strokeWidth={1.5} />
                     </button>
                     <button
+                        onClick={handleSeedCampaigns}
+                        disabled={seeding || loading}
+                        className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-amber-700 bg-amber-50 border border-amber-300 rounded-lg hover:bg-amber-100 disabled:opacity-50"
+                    >
+                        <Database className={`h-4 w-4 ${seeding ? 'animate-pulse' : ''}`} strokeWidth={1.5} />
+                        {seeding ? 'Creant...' : 'Generar Exemples'}
+                    </button>
+                    <button
                         onClick={() => {
                             setSelectedCampaign(null)
                             setShowCreateModal(true)
                         }}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                     >
                         <Plus className="h-4 w-4" strokeWidth={2} />
                         Nova campanya
@@ -338,14 +374,14 @@ export default function CampanyesPage() {
                         placeholder="Cercar campanyes..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+                        className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
                     />
                 </div>
                 <div className="flex gap-2">
                     <select
                         value={filterType}
                         onChange={(e) => setFilterType(e.target.value as CampaignType | '')}
-                        className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none bg-white"
+                        className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none bg-white"
                     >
                         <option value="">Tots els tipus</option>
                         {Object.entries(CAMPAIGN_TYPES).map(([key, { label }]) => (
@@ -355,7 +391,7 @@ export default function CampanyesPage() {
                     <select
                         value={filterStatus}
                         onChange={(e) => setFilterStatus(e.target.value as CampaignStatus | '')}
-                        className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none bg-white"
+                        className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none bg-white"
                     >
                         <option value="">Tots els estats</option>
                         {Object.entries(CAMPAIGN_STATUS).map(([key, { label }]) => (
@@ -386,7 +422,7 @@ export default function CampanyesPage() {
                         <p className="text-slate-500 mb-4">No hi ha campanyes</p>
                         <button
                             onClick={() => setShowCreateModal(true)}
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                         >
                             <Plus className="h-4 w-4" strokeWidth={2} />
                             Crear primera campanya
@@ -744,7 +780,7 @@ function CampaignFormModal({
                             key={s}
                             onClick={() => setStep(s)}
                             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${step === s
-                                    ? 'bg-red-600 text-white'
+                                    ? 'bg-green-600 text-white'
                                     : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
                                 }`}
                         >
@@ -773,7 +809,7 @@ function CampaignFormModal({
                                     value={formData.name}
                                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                                     placeholder="Ex: Newsletter Gener 2025"
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
                                 />
                             </div>
 
@@ -787,7 +823,7 @@ function CampaignFormModal({
                                     onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                                     placeholder="Descripció interna de la campanya..."
                                     rows={2}
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none resize-none"
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none resize-none"
                                 />
                             </div>
 
@@ -806,14 +842,14 @@ function CampaignFormModal({
                                                 type="button"
                                                 onClick={() => setFormData(prev => ({ ...prev, type: key as CampaignType }))}
                                                 className={`flex items-center gap-2 p-3 rounded-lg border transition-colors ${isSelected
-                                                        ? 'border-red-500 bg-red-50'
+                                                        ? 'border-green-500 bg-green-50'
                                                         : 'border-slate-200 hover:bg-slate-50'
                                                     }`}
                                             >
                                                 <div className={`p-1.5 rounded ${config.bg}`}>
                                                     <Icon className={`h-4 w-4 ${config.color}`} strokeWidth={1.5} />
                                                 </div>
-                                                <span className={`text-sm font-medium ${isSelected ? 'text-red-900' : 'text-slate-700'}`}>
+                                                <span className={`text-sm font-medium ${isSelected ? 'text-green-900' : 'text-slate-700'}`}>
                                                     {config.label}
                                                 </span>
                                             </button>
@@ -837,7 +873,7 @@ function CampaignFormModal({
                                         value={formData.subject}
                                         onChange={(e) => setFormData(prev => ({ ...prev, subject: e.target.value }))}
                                         placeholder="Assumpte del missatge..."
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
                                     />
                                 </div>
                             )}
@@ -852,7 +888,7 @@ function CampaignFormModal({
                                     onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
                                     placeholder="Escriu el contingut del missatge..."
                                     rows={8}
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none resize-none font-mono text-sm"
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none resize-none font-mono text-sm"
                                 />
                                 <p className="text-xs text-slate-500 mt-1">
                                     Pots utilitzar HTML per emails. Variables: {'{{nom}}'}, {'{{email}}'}, etc.
@@ -870,7 +906,7 @@ function CampaignFormModal({
                                         value={formData.ctaText}
                                         onChange={(e) => setFormData(prev => ({ ...prev, ctaText: e.target.value }))}
                                         placeholder="Ex: Veure oferta"
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
                                     />
                                 </div>
                                 <div>
@@ -882,7 +918,7 @@ function CampaignFormModal({
                                         value={formData.ctaUrl}
                                         onChange={(e) => setFormData(prev => ({ ...prev, ctaUrl: e.target.value }))}
                                         placeholder="https://..."
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
                                     />
                                 </div>
                             </div>
@@ -897,7 +933,7 @@ function CampaignFormModal({
                                     value={formData.imageUrl}
                                     onChange={(e) => setFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
                                     placeholder="https://..."
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
                                 />
                             </div>
                         </>
@@ -915,7 +951,7 @@ function CampaignFormModal({
                                         <label
                                             key={key}
                                             className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${formData.segmentationType === key
-                                                    ? 'border-red-500 bg-red-50'
+                                                    ? 'border-green-500 bg-green-50'
                                                     : 'border-slate-200 hover:bg-slate-50'
                                                 }`}
                                         >
@@ -927,11 +963,11 @@ function CampaignFormModal({
                                                 className="sr-only"
                                             />
                                             <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${formData.segmentationType === key
-                                                    ? 'border-red-600'
+                                                    ? 'border-green-600'
                                                     : 'border-slate-300'
                                                 }`}>
                                                 {formData.segmentationType === key && (
-                                                    <div className="w-2 h-2 rounded-full bg-red-600" />
+                                                    <div className="w-2 h-2 rounded-full bg-green-600" />
                                                 )}
                                             </div>
                                             <span className="text-sm text-slate-700">{label}</span>
@@ -949,7 +985,7 @@ function CampaignFormModal({
                                     type="datetime-local"
                                     value={formData.scheduledAt}
                                     onChange={(e) => setFormData(prev => ({ ...prev, scheduledAt: e.target.value }))}
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
                                 />
                                 <p className="text-xs text-slate-500 mt-1">
                                     Deixa buit per enviar manualment
@@ -967,7 +1003,7 @@ function CampaignFormModal({
                                     max="100"
                                     value={formData.priority}
                                     onChange={(e) => setFormData(prev => ({ ...prev, priority: parseInt(e.target.value) || 0 }))}
-                                    className="w-24 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+                                    className="w-24 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
                                 />
                                 <p className="text-xs text-slate-500 mt-1">
                                     0 = normal, 100 = màxima prioritat
@@ -999,7 +1035,7 @@ function CampaignFormModal({
                         {step < 3 ? (
                             <button
                                 onClick={() => setStep(s => s + 1)}
-                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                             >
                                 Següent →
                             </button>
@@ -1007,7 +1043,7 @@ function CampaignFormModal({
                             <button
                                 onClick={handleSubmit}
                                 disabled={loading || !formData.name.trim()}
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
                             >
                                 {loading ? (
                                     <>

@@ -17,10 +17,11 @@ export async function GET(request: NextRequest) {
     // Verificar rol de admin
     const user = await prismaClient.user.findUnique({
       where: { email: session.user.email! },
-      select: { userType: true, isActive: true }
+      select: { role: true, isActive: true }
     });
 
-    if (!user || user.userType !== 'ADMIN') {
+    const adminRoles = ['SUPER_ADMIN', 'ADMIN', 'ADMIN_GESTIO'];
+    if (!user || !adminRoles.includes(user.role)) {
       return NextResponse.json(
         { error: 'No autorizado. Solo administradores.' },
         { status: 403 }

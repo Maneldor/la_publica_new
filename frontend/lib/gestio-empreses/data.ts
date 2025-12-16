@@ -4,6 +4,7 @@
 import { prismaClient } from '@/lib/prisma'
 import { LeadStatus, LeadPriority } from '@prisma/client'
 import type { DashboardStats, LeadSummary, LeadFilters, PaginatedResponse } from '@/types/gestio-empreses'
+import { ROLE_GROUPS } from '@/lib/gestio-empreses/permissions'
 
 /**
  * Obté les estadístiques del dashboard per a un gestor
@@ -89,7 +90,7 @@ export async function getDashboardStats(userId: string, isSupervidor: boolean = 
     // Total gestors (usuaris amb rol ACCOUNT_MANAGER)
     totalGestors = await prismaClient.user.count({
       where: {
-        userType: 'ACCOUNT_MANAGER',
+        role: { in: ROLE_GROUPS.GESTORS },
         isActive: true
       }
     })

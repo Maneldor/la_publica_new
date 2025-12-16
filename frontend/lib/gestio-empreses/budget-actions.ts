@@ -3,6 +3,8 @@
 
 import { prismaClient as prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
+import { Prisma } from '@prisma/client'
+import { ROLE_GROUPS } from '@/lib/gestio-empreses/permissions'
 
 
 // ============================================
@@ -63,38 +65,50 @@ export interface BudgetFilters {
  */
 export async function getBudgetStats(): Promise<BudgetStats> {
   try {
-    // Simulació de dades - en una implementació real faríeu queries a la BD
-    const budgets = await getMockBudgets()
+    const [
+      total,
+      pending,
+      approved,
+      rejected,
+      draft,
+      sent,
+      totalAmountResult,
+      pendingAmountResult,
+      approvedAmountResult
+    ] = await Promise.all([
+      prisma.budget.count(),
+      prisma.budget.count({ where: { status: 'SENT' } }),
+      prisma.budget.count({ where: { status: 'APPROVED' } }),
+      prisma.budget.count({ where: { status: 'REJECTED' } }),
+      prisma.budget.count({ where: { status: 'DRAFT' } }),
+      prisma.budget.count({ where: { status: 'SENT' } }),
+      prisma.budget.aggregate({ _sum: { total: true } }),
+      prisma.budget.aggregate({ where: { status: 'SENT' }, _sum: { total: true } }),
+      prisma.budget.aggregate({ where: { status: 'APPROVED' }, _sum: { total: true } })
+    ])
 
-    // Calcular pressupostos que vencen en els propers 7 dies
+    // Calcular pressupostos que vencen en 7 dies
     const sevenDaysFromNow = new Date()
     sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7)
+    const expiring = await prisma.budget.count({
+      where: {
+        validUntil: { lte: sevenDaysFromNow, gt: new Date() },
+        status: { in: ['DRAFT', 'SENT'] }
+      }
+    })
 
-    const expiring = budgets.filter(b =>
-      b.dueDate &&
-      new Date(b.dueDate) <= sevenDaysFromNow &&
-      new Date(b.dueDate) > new Date() &&
-      (b.status === 'pending' || b.status === 'draft')
-    ).length
-
-    const stats: BudgetStats = {
-      total: budgets.length,
-      pending: budgets.filter(b => b.status === 'pending').length,
-      approved: budgets.filter(b => b.status === 'approved').length,
-      rejected: budgets.filter(b => b.status === 'rejected').length,
-      draft: budgets.filter(b => b.status === 'draft').length,
-      sent: budgets.filter(b => b.status === 'pending').length, // Pending = Sent in this context
+    return {
+      total,
+      pending,
+      approved,
+      rejected,
+      draft,
+      sent,
       expiring,
-      totalAmount: budgets.reduce((sum, b) => sum + b.amount, 0),
-      pendingAmount: budgets
-        .filter(b => b.status === 'pending')
-        .reduce((sum, b) => sum + b.amount, 0),
-      approvedAmount: budgets
-        .filter(b => b.status === 'approved')
-        .reduce((sum, b) => sum + b.amount, 0)
+      totalAmount: Number(totalAmountResult._sum.total || 0),
+      pendingAmount: Number(pendingAmountResult._sum.total || 0),
+      approvedAmount: Number(approvedAmountResult._sum.total || 0)
     }
-
-    return stats
   } catch (error) {
     console.error('Error fetching budget stats:', error)
     throw new Error('Error al obtenir les estadístiques dels pressupostos')
@@ -106,48 +120,114 @@ export async function getBudgetStats(): Promise<BudgetStats> {
  */
 export async function getBudgets(filters: BudgetFilters = {}): Promise<BudgetItem[]> {
   try {
-    let budgets = await getMockBudgets()
+    // Construir where clause
+    const where: Prisma.BudgetWhereInput = {}
 
-    // Aplicar filtres
+    // Aplicar filtres d'estat
     if (filters.status && filters.status !== 'all') {
-      budgets = budgets.filter(b => b.status === filters.status)
+      // Mapeig d'estats de la UI als de la BD
+      const statusMap: Record<string, string> = {
+        'pending': 'SENT',
+        'approved': 'APPROVED',
+        'rejected': 'REJECTED',
+        'draft': 'DRAFT'
+      }
+      where.status = statusMap[filters.status] || filters.status
     }
 
+    // Filtrar per gestor
     if (filters.gestor && filters.gestor !== 'all') {
-      budgets = budgets.filter(b => b.gestorId === filters.gestor)
+      where.createdBy = filters.gestor
     }
 
+    // Cerca per text
     if (filters.search) {
-      const search = filters.search.toLowerCase()
-      budgets = budgets.filter(b =>
-        b.number.toLowerCase().includes(search) ||
-        b.client.toLowerCase().includes(search) ||
-        b.description?.toLowerCase().includes(search)
-      )
+      where.OR = [
+        { budgetNumber: { contains: filters.search, mode: 'insensitive' } },
+        { clientName: { contains: filters.search, mode: 'insensitive' } },
+        { description: { contains: filters.search, mode: 'insensitive' } },
+      ]
     }
 
-    if (filters.minAmount) {
-      budgets = budgets.filter(b => b.amount >= filters.minAmount!)
+    // Filtres d'import
+    if (filters.minAmount || filters.maxAmount) {
+      where.total = {}
+      if (filters.minAmount) {
+        where.total.gte = new Prisma.Decimal(filters.minAmount)
+      }
+      if (filters.maxAmount) {
+        where.total.lte = new Prisma.Decimal(filters.maxAmount)
+      }
     }
 
-    if (filters.maxAmount) {
-      budgets = budgets.filter(b => b.amount <= filters.maxAmount!)
+    // Filtres de data
+    if (filters.dateFrom || filters.dateTo) {
+      where.createdAt = {}
+      if (filters.dateFrom) {
+        where.createdAt.gte = new Date(filters.dateFrom)
+      }
+      if (filters.dateTo) {
+        const endDate = new Date(filters.dateTo)
+        endDate.setHours(23, 59, 59, 999) // Final del dia
+        where.createdAt.lte = endDate
+      }
     }
 
-    if (filters.dateFrom) {
-      const dateFrom = new Date(filters.dateFrom)
-      budgets = budgets.filter(b => b.createdAt >= dateFrom)
-    }
+    // Query principal
+    const budgets = await prisma.budget.findMany({
+      where,
+      orderBy: { issueDate: 'desc' },
+      include: {
+        company: {
+          select: { id: true, name: true }
+        },
+        items: {
+          orderBy: { order: 'asc' },
+          select: {
+            id: true,
+            description: true,
+            quantity: true,
+            unitPrice: true,
+            subtotal: true
+          }
+        }
+      }
+    })
 
-    if (filters.dateTo) {
-      const dateTo = new Date(filters.dateTo)
-      budgets = budgets.filter(b => b.createdAt <= dateTo)
-    }
+    // Transformar a format de la UI
+    const budgetItems: BudgetItem[] = budgets.map(budget => {
+      // Mapeig d'estats de BD a UI
+      const statusMap: Record<string, 'pending' | 'approved' | 'rejected' | 'draft'> = {
+        'SENT': 'pending',
+        'APPROVED': 'approved',
+        'REJECTED': 'rejected',
+        'DRAFT': 'draft',
+        'EXPIRED': 'rejected', // Tractar expirats com rebutjats a la UI
+        'CONVERTED': 'approved' // Tractar convertits com aprovats a la UI
+      }
 
-    // Ordenar per data de creació (més recent primer)
-    budgets.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      return {
+        id: budget.id,
+        number: budget.budgetNumber,
+        client: budget.clientName || 'Sense nom',
+        amount: Number(budget.total),
+        status: statusMap[budget.status] || 'draft',
+        createdAt: budget.createdAt,
+        dueDate: budget.validUntil,
+        description: budget.description || undefined,
+        gestorId: budget.createdBy || '',
+        gestorName: 'Gestor', // Simplificat - el camp createdBy és un ID string
+        items: budget.items.map(item => ({
+          id: item.id,
+          description: item.description,
+          quantity: item.quantity,
+          unitPrice: Number(item.unitPrice),
+          total: Number(item.subtotal)
+        }))
+      }
+    })
 
-    return budgets
+    return budgetItems
   } catch (error) {
     console.error('Error fetching budgets:', error)
     throw new Error('Error al obtenir els pressupostos')
@@ -159,8 +239,58 @@ export async function getBudgets(filters: BudgetFilters = {}): Promise<BudgetIte
  */
 export async function getBudgetById(id: string): Promise<BudgetItem | null> {
   try {
-    const budgets = await getMockBudgets()
-    return budgets.find(b => b.id === id) || null
+    const budget = await prisma.budget.findUnique({
+      where: { id },
+      include: {
+        company: {
+          select: { id: true, name: true }
+        },
+        items: {
+          orderBy: { order: 'asc' },
+          select: {
+            id: true,
+            description: true,
+            quantity: true,
+            unitPrice: true,
+            subtotal: true
+          }
+        }
+      }
+    })
+
+    if (!budget) {
+      return null
+    }
+
+    // Mapeig d'estats de BD a UI
+    const statusMap: Record<string, 'pending' | 'approved' | 'rejected' | 'draft'> = {
+      'SENT': 'pending',
+      'APPROVED': 'approved',
+      'REJECTED': 'rejected',
+      'DRAFT': 'draft',
+      'EXPIRED': 'rejected',
+      'CONVERTED': 'approved'
+    }
+
+    return {
+      id: budget.id,
+      number: budget.budgetNumber,
+      client: budget.clientName || 'Sense nom',
+      amount: Number(budget.total),
+      status: statusMap[budget.status] || 'draft',
+      createdAt: budget.createdAt,
+      dueDate: budget.validUntil,
+      description: budget.description || undefined,
+      gestorId: budget.createdBy || '',
+      gestorName: 'Gestor', // Simplificat - el camp createdBy és un ID string
+      items: budget.items.map(item => ({
+        id: item.id,
+        description: item.description,
+        quantity: item.quantity,
+        unitPrice: Number(item.unitPrice),
+        total: Number(item.subtotal)
+      }))
+    }
   } catch (error) {
     console.error('Error fetching budget:', error)
     throw new Error('Error al obtenir el pressupost')
@@ -314,13 +444,26 @@ export async function bulkUpdateBudgets(
  */
 export async function getGestors(): Promise<{ id: string; name: string }[]> {
   try {
-    // En una implementació real, es faria un query a la BD per obtenir els gestors
-    return [
-      { id: 'gestor-1', name: 'Anna García' },
-      { id: 'gestor-2', name: 'Marc Puig' },
-      { id: 'gestor-3', name: 'Laura Martí' },
-      { id: 'gestor-4', name: 'Jordi Vila' },
-    ]
+    const gestors = await prisma.user.findMany({
+      where: {
+        role: {
+          in: [...ROLE_GROUPS.ADMINS, ...ROLE_GROUPS.GESTORS]
+        },
+        isActive: true
+      },
+      select: {
+        id: true,
+        name: true
+      },
+      orderBy: {
+        name: 'asc'
+      }
+    })
+
+    return gestors.map(gestor => ({
+      id: gestor.id,
+      name: gestor.name || 'Sense nom'
+    }))
   } catch (error) {
     console.error('Error fetching gestors:', error)
     throw new Error('Error al obtenir els gestors')
@@ -341,69 +484,37 @@ export async function getCompaniesForSelect(): Promise<{
   postalCode?: string
 }[]> {
   try {
-    // En una implementació real, es faria un query a la BD
-    return [
-      {
-        id: 'company-1',
-        name: 'Empresa Catalana SL',
-        cif: 'B12345678',
-        email: 'info@empresacatalana.cat',
-        phone: '+34 93 123 45 67',
-        address: 'Carrer Major 123',
-        city: 'Barcelona',
-        postalCode: '08001'
+    const companies = await prisma.company.findMany({
+      where: {
+        isActive: true,
+        status: 'PUBLISHED'
       },
-      {
-        id: 'company-2',
-        name: 'Innovació Tech BCN',
-        cif: 'B87654321',
-        email: 'contacte@innovaciotech.com',
-        phone: '+34 93 987 65 43',
-        address: 'Avinguda Diagonal 456',
-        city: 'Barcelona',
-        postalCode: '08008'
+      select: {
+        id: true,
+        name: true,
+        cif: true,
+        email: true,
+        phone: true,
+        address: true,
+        city: true,
+        postalCode: true
       },
-      {
-        id: 'company-3',
-        name: 'Consultoría Digital',
-        cif: 'B11223344',
-        email: 'hello@consultoriadigital.es',
-        phone: '+34 93 112 23 34',
-        address: 'Plaça Catalunya 10',
-        city: 'Barcelona',
-        postalCode: '08002'
+      orderBy: {
+        name: 'asc'
       },
-      {
-        id: 'company-4',
-        name: 'Fundació Emprenedoria',
-        cif: 'G55667788',
-        email: 'info@fundacioemprenedoria.org',
-        phone: '+34 93 556 67 78',
-        address: 'Passeig de Gràcia 89',
-        city: 'Barcelona',
-        postalCode: '08007'
-      },
-      {
-        id: 'company-5',
-        name: 'StartUp Analytics',
-        cif: 'B99887766',
-        email: 'contact@startupanalytics.io',
-        phone: '+34 93 998 87 76',
-        address: 'Carrer Aragó 234',
-        city: 'Barcelona',
-        postalCode: '08011'
-      },
-      {
-        id: 'company-6',
-        name: 'Cooperativa Agrària',
-        cif: 'F44556677',
-        email: 'administracio@coopagraria.cat',
-        phone: '+34 973 445 566',
-        address: 'Carrer de la Pau 15',
-        city: 'Lleida',
-        postalCode: '25001'
-      }
-    ]
+      take: 100 // Limitar per rendiment
+    })
+
+    return companies.map(company => ({
+      id: company.id,
+      name: company.name,
+      cif: company.cif || '',
+      email: company.email,
+      phone: company.phone || undefined,
+      address: company.address || undefined,
+      city: company.city || undefined,
+      postalCode: company.postalCode || undefined
+    }))
   } catch (error) {
     console.error('Error fetching companies:', error)
     throw new Error('Error al obtenir les empreses')
@@ -531,258 +642,139 @@ export async function getExtrasForSelect(): Promise<{
 }
 
 // ============================================
-// FUNCIONS D'UTILITAT I MOCK DATA
+// FUNCIONS D'UTILITAT I SEEDING
 // ============================================
 
 /**
- * Genera dades mock per als pressupostos
+ * Genera pressupostos d'exemple per testing (només ADMIN)
  */
-async function getMockBudgets(): Promise<BudgetItem[]> {
-  const gestors = await getGestors()
-
-  return [
-    {
-      id: 'budget-1',
-      number: 'PRS-2024-001',
-      client: 'Empresa Catalana SL',
-      amount: 15750,
-      status: 'pending',
-      createdAt: new Date('2024-03-15'),
-      dueDate: new Date('2024-04-15'),
-      description: 'Sistema de gestió d\'inventari personalitzat',
-      gestorId: 'gestor-1',
-      gestorName: 'Anna García',
-      items: [
-        {
-          id: 'item-1',
-          description: 'Desenvolupament aplicació web',
-          quantity: 80,
-          unitPrice: 125,
-          total: 10000
-        },
-        {
-          id: 'item-2',
-          description: 'Base de dades i configuració',
-          quantity: 30,
-          unitPrice: 95,
-          total: 2850
-        },
-        {
-          id: 'item-3',
-          description: 'Formació i documentació',
-          quantity: 20,
-          unitPrice: 145,
-          total: 2900
-        }
-      ]
-    },
-    {
-      id: 'budget-2',
-      number: 'PRS-2024-002',
-      client: 'Innovació Tech BCN',
-      amount: 22350,
-      status: 'approved',
-      createdAt: new Date('2024-03-12'),
-      dueDate: new Date('2024-05-01'),
-      description: 'Plataforma e-commerce amb integració ERP',
-      gestorId: 'gestor-2',
-      gestorName: 'Marc Puig',
-      items: [
-        {
-          id: 'item-4',
-          description: 'Desenvolupament frontend React',
-          quantity: 60,
-          unitPrice: 135,
-          total: 8100
-        },
-        {
-          id: 'item-5',
-          description: 'API Backend i integracions',
-          quantity: 45,
-          unitPrice: 155,
-          total: 6975
-        },
-        {
-          id: 'item-6',
-          description: 'Testing i deployment',
-          quantity: 25,
-          unitPrice: 115,
-          total: 2875
-        },
-        {
-          id: 'item-7',
-          description: 'Manteniment 6 mesos',
-          quantity: 6,
-          unitPrice: 750,
-          total: 4500
-        }
-      ]
-    },
-    {
-      id: 'budget-3',
-      number: 'PRS-2024-003',
-      client: 'Consultoría Digital',
-      amount: 8900,
-      status: 'rejected',
-      createdAt: new Date('2024-03-10'),
-      description: 'App mòbil per gestió de clients',
-      gestorId: 'gestor-3',
-      gestorName: 'Laura Martí',
-      items: [
-        {
-          id: 'item-8',
-          description: 'Disseny UX/UI',
-          quantity: 25,
-          unitPrice: 120,
-          total: 3000
-        },
-        {
-          id: 'item-9',
-          description: 'Desenvolupament React Native',
-          quantity: 40,
-          unitPrice: 145,
-          total: 5800
-        },
-        {
-          id: 'item-10',
-          description: 'Testing i publicació stores',
-          quantity: 10,
-          unitPrice: 110,
-          total: 1100
-        }
-      ]
-    },
-    {
-      id: 'budget-4',
-      number: 'PRS-2024-004',
-      client: 'Fundació Emprenedoria',
-      amount: 32500,
-      status: 'pending',
-      createdAt: new Date('2024-03-08'),
-      dueDate: new Date('2024-06-30'),
-      description: 'Portal web institutional amb gestor de continguts',
-      gestorId: 'gestor-1',
-      gestorName: 'Anna García',
-      items: [
-        {
-          id: 'item-11',
-          description: 'Disseny web responsive',
-          quantity: 40,
-          unitPrice: 125,
-          total: 5000
-        },
-        {
-          id: 'item-12',
-          description: 'CMS personalitzat',
-          quantity: 80,
-          unitPrice: 165,
-          total: 13200
-        },
-        {
-          id: 'item-13',
-          description: 'Integració sistemes existents',
-          quantity: 30,
-          unitPrice: 185,
-          total: 5550
-        },
-        {
-          id: 'item-14',
-          description: 'Migració de contingut',
-          quantity: 35,
-          unitPrice: 95,
-          total: 3325
-        },
-        {
-          id: 'item-15',
-          description: 'Formació administradors',
-          quantity: 20,
-          unitPrice: 135,
-          total: 2700
-        },
-        {
-          id: 'item-16',
-          description: 'Suport post-llançament',
-          quantity: 15,
-          unitPrice: 185,
-          total: 2775
-        }
-      ]
-    },
-    {
-      id: 'budget-5',
-      number: 'PRS-2024-005',
-      client: 'StartUp Analytics',
-      amount: 18750,
-      status: 'approved',
-      createdAt: new Date('2024-03-05'),
-      dueDate: new Date('2024-05-15'),
-      description: 'Dashboard d\'analytics i reporting automatitzat',
-      gestorId: 'gestor-4',
-      gestorName: 'Jordi Vila',
-      items: [
-        {
-          id: 'item-17',
-          description: 'Frontend Dashboard React',
-          quantity: 50,
-          unitPrice: 145,
-          total: 7250
-        },
-        {
-          id: 'item-18',
-          description: 'APIs de dades i ETL',
-          quantity: 45,
-          unitPrice: 165,
-          total: 7425
-        },
-        {
-          id: 'item-19',
-          description: 'Visualitzacions i gràfics',
-          quantity: 25,
-          unitPrice: 125,
-          total: 3125
-        },
-        {
-          id: 'item-20',
-          description: 'Testing i optimització',
-          quantity: 15,
-          unitPrice: 130,
-          total: 1950
-        }
-      ]
-    },
-    {
-      id: 'budget-6',
-      number: 'PRS-2024-006',
-      client: 'Cooperativa Agrària',
-      amount: 12400,
-      status: 'draft',
-      createdAt: new Date('2024-03-03'),
-      description: 'Sistema de gestió de cooperatives rurals',
-      gestorId: 'gestor-2',
-      gestorName: 'Marc Puig',
-      items: [
-        {
-          id: 'item-21',
-          description: 'Anàlisi de requeriments',
-          quantity: 20,
-          unitPrice: 115,
-          total: 2300
-        },
-        {
-          id: 'item-22',
-          description: 'Desenvolupament web application',
-          quantity: 60,
-          unitPrice: 135,
-          total: 8100
-        },
-        {
-          id: 'item-23',
-          description: 'Integració sistemes comptables',
-          quantity: 20,
-          unitPrice: 155,
-          total: 3100
-        }
-      ]
+export async function seedBudgetExamples(): Promise<{ created: number; message: string }> {
+  try {
+    // Obtenir una empresa existent
+    const company = await prisma.company.findFirst({ where: { isActive: true } })
+    if (!company) {
+      return { created: 0, message: 'No hi ha empreses actives. Crea una empresa primer.' }
     }
-  ]
+
+    // Obtenir un gestor existent
+    const gestor = await prisma.user.findFirst({
+      where: {
+        role: { in: [...ROLE_GROUPS.ADMINS, ...ROLE_GROUPS.GESTORS] },
+        isActive: true
+      }
+    })
+
+    // Eliminar pressupostos d'exemple anteriors
+    await prisma.budget.deleteMany({
+      where: { budgetNumber: { startsWith: 'EXEMPLE-' } }
+    })
+
+    const exampleBudgets = [
+      {
+        budgetNumber: 'EXEMPLE-2024-001',
+        clientName: 'Empresa Catalana SL',
+        clientEmail: 'info@empresacatalana.cat',
+        clientPhone: '+34 93 123 45 67',
+        clientNIF: 'B12345678',
+        notes: 'Sistema de gestió d\'inventari personalitzat',
+        status: 'SENT' as const,
+        subtotal: new Prisma.Decimal(13016.53),
+        taxRate: new Prisma.Decimal(21),
+        taxAmount: new Prisma.Decimal(2733.47),
+        total: new Prisma.Decimal(15750),
+        validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        createdBy: gestor?.id || null,
+        company: { connect: { id: company.id } },
+        items: {
+          create: [
+            { order: 1, itemType: 'CUSTOM' as const, description: 'Desenvolupament aplicació web', quantity: new Prisma.Decimal(80), unitPrice: new Prisma.Decimal(125), subtotal: new Prisma.Decimal(10000) },
+            { order: 2, itemType: 'CUSTOM' as const, description: 'Base de dades i configuració', quantity: new Prisma.Decimal(30), unitPrice: new Prisma.Decimal(95), subtotal: new Prisma.Decimal(2850) },
+            { order: 3, itemType: 'CUSTOM' as const, description: 'Formació i documentació', quantity: new Prisma.Decimal(1), unitPrice: new Prisma.Decimal(166.53), subtotal: new Prisma.Decimal(166.53) }
+          ]
+        }
+      },
+      {
+        budgetNumber: 'EXEMPLE-2024-002',
+        clientName: 'Innovació Tech BCN',
+        clientEmail: 'contacte@innovaciotech.com',
+        clientNIF: 'B87654321',
+        notes: 'Plataforma e-commerce amb integració ERP',
+        status: 'APPROVED' as const,
+        subtotal: new Prisma.Decimal(22000),
+        taxRate: new Prisma.Decimal(21),
+        taxAmount: new Prisma.Decimal(4620),
+        total: new Prisma.Decimal(26620),
+        validUntil: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
+        approvedAt: new Date(),
+        createdBy: gestor?.id || null,
+        company: { connect: { id: company.id } },
+        items: {
+          create: [
+            { order: 1, itemType: 'CUSTOM' as const, description: 'Desenvolupament frontend React', quantity: new Prisma.Decimal(60), unitPrice: new Prisma.Decimal(135), subtotal: new Prisma.Decimal(8100) },
+            { order: 2, itemType: 'CUSTOM' as const, description: 'API Backend i integracions', quantity: new Prisma.Decimal(45), unitPrice: new Prisma.Decimal(155), subtotal: new Prisma.Decimal(6975) },
+            { order: 3, itemType: 'CUSTOM' as const, description: 'Testing i deployment', quantity: new Prisma.Decimal(25), unitPrice: new Prisma.Decimal(115), subtotal: new Prisma.Decimal(2875) },
+            { order: 4, itemType: 'CUSTOM' as const, description: 'Manteniment 6 mesos', quantity: new Prisma.Decimal(6), unitPrice: new Prisma.Decimal(675), subtotal: new Prisma.Decimal(4050) }
+          ]
+        }
+      },
+      {
+        budgetNumber: 'EXEMPLE-2024-003',
+        clientName: 'Consultoría Digital',
+        clientEmail: 'hello@consultoriadigital.es',
+        clientNIF: 'B11223344',
+        notes: 'App mòbil - Rebutjat per pressupost',
+        status: 'REJECTED' as const,
+        subtotal: new Prisma.Decimal(8900),
+        taxRate: new Prisma.Decimal(21),
+        taxAmount: new Prisma.Decimal(1869),
+        total: new Prisma.Decimal(10769),
+        validUntil: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+        rejectedAt: new Date(),
+        createdBy: gestor?.id || null,
+        company: { connect: { id: company.id } },
+        items: {
+          create: [
+            { order: 1, itemType: 'CUSTOM' as const, description: 'Disseny UX/UI', quantity: new Prisma.Decimal(25), unitPrice: new Prisma.Decimal(120), subtotal: new Prisma.Decimal(3000) },
+            { order: 2, itemType: 'CUSTOM' as const, description: 'Desenvolupament React Native', quantity: new Prisma.Decimal(40), unitPrice: new Prisma.Decimal(145), subtotal: new Prisma.Decimal(5800) },
+            { order: 3, itemType: 'CUSTOM' as const, description: 'Testing', quantity: new Prisma.Decimal(1), unitPrice: new Prisma.Decimal(100), subtotal: new Prisma.Decimal(100) }
+          ]
+        }
+      },
+      {
+        budgetNumber: 'EXEMPLE-2024-004',
+        clientName: 'StartUp Analytics',
+        clientEmail: 'contact@startupanalytics.io',
+        clientNIF: 'B99887766',
+        notes: 'Dashboard d\'analytics - Esborrany',
+        status: 'DRAFT' as const,
+        subtotal: new Prisma.Decimal(12400),
+        taxRate: new Prisma.Decimal(21),
+        taxAmount: new Prisma.Decimal(2604),
+        total: new Prisma.Decimal(15004),
+        validUntil: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
+        createdBy: gestor?.id || null,
+        company: { connect: { id: company.id } },
+        items: {
+          create: [
+            { order: 1, itemType: 'CUSTOM' as const, description: 'Anàlisi de requeriments', quantity: new Prisma.Decimal(20), unitPrice: new Prisma.Decimal(115), subtotal: new Prisma.Decimal(2300) },
+            { order: 2, itemType: 'CUSTOM' as const, description: 'Desenvolupament dashboard', quantity: new Prisma.Decimal(60), unitPrice: new Prisma.Decimal(135), subtotal: new Prisma.Decimal(8100) },
+            { order: 3, itemType: 'CUSTOM' as const, description: 'Integració APIs', quantity: new Prisma.Decimal(20), unitPrice: new Prisma.Decimal(100), subtotal: new Prisma.Decimal(2000) }
+          ]
+        }
+      }
+    ]
+
+    let created = 0
+    for (const budgetData of exampleBudgets) {
+      await prisma.budget.create({ data: budgetData })
+      created++
+    }
+
+    revalidatePath('/gestio/admin/pressupostos')
+    return { created, message: `S'han creat ${created} pressupostos d'exemple correctament.` }
+  } catch (error) {
+    console.error('Error seeding budget examples:', error)
+    throw new Error('Error al generar pressupostos d\'exemple')
+  }
 }
+

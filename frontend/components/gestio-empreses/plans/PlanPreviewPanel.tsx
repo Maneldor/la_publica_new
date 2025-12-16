@@ -137,23 +137,38 @@ export function PlanPreviewPanel({ plan, onClose, onEdit, onToggleActive }: Plan
         <div className="bg-slate-50 rounded-lg p-4">
           <h3 className="text-xs font-medium text-slate-500 uppercase mb-3">Preus</h3>
           <div className="space-y-3">
-            <div className="flex items-baseline justify-between">
-              <span className="text-sm text-slate-600">Preu base anual</span>
-              <span className="text-2xl font-bold text-slate-900">{plan.basePrice}€</span>
-            </div>
-            {plan.precioMensual && plan.precioMensual > 0 && (
+            {plan.firstYearDiscount > 0 ? (
+              <>
+                <div className="flex items-baseline justify-between">
+                  <span className="text-sm text-slate-600">Preu 1r any (amb descompte)</span>
+                  <span className="text-2xl font-bold text-green-600">
+                    {(plan.basePrice * (1 - plan.firstYearDiscount / 100)).toFixed(0)}€
+                  </span>
+                </div>
+                <div className="flex items-baseline justify-between">
+                  <span className="text-sm text-slate-600">Preu base anual</span>
+                  <span className="text-lg text-slate-400 line-through">
+                    {plan.basePrice.toFixed(0)}€
+                  </span>
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t border-slate-200">
+                  <div className="flex items-center gap-1.5 text-green-600">
+                    <Percent className="h-4 w-4" strokeWidth={1.5} />
+                    <span className="text-sm">Descompte 1r any</span>
+                  </div>
+                  <span className="font-medium text-green-600">-{plan.firstYearDiscount.toFixed(0)}%</span>
+                </div>
+              </>
+            ) : (
               <div className="flex items-baseline justify-between">
-                <span className="text-sm text-slate-600">Preu mensual</span>
-                <span className="font-medium text-slate-700">{plan.precioMensual}€/mes</span>
+                <span className="text-sm text-slate-600">Preu base anual</span>
+                <span className="text-2xl font-bold text-slate-900">{plan.basePrice.toFixed(0)}€</span>
               </div>
             )}
-            {plan.firstYearDiscount > 0 && (
-              <div className="flex items-center justify-between pt-2 border-t border-slate-200">
-                <div className="flex items-center gap-1.5 text-green-600">
-                  <Percent className="h-4 w-4" strokeWidth={1.5} />
-                  <span className="text-sm">Descompte 1r any</span>
-                </div>
-                <span className="font-medium text-green-600">-{(plan.firstYearDiscount * 100).toFixed(0)}%</span>
+            {plan.precioMensual && plan.precioMensual > 0 && (
+              <div className="flex items-baseline justify-between pt-2 border-t border-slate-200">
+                <span className="text-sm text-slate-600">Equivalent mensual</span>
+                <span className="font-medium text-slate-700">{plan.precioMensual.toFixed(2)}€/mes</span>
               </div>
             )}
           </div>

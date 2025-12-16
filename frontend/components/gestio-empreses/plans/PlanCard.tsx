@@ -107,15 +107,27 @@ export function PlanCard({ plan, onEdit, onToggleActive }: PlanCardProps) {
         </div>
 
         {/* Price */}
-        <div className="flex items-baseline gap-2">
-          <span className="text-3xl font-bold text-slate-900">
-            {plan.basePrice.toFixed(0)}€
-          </span>
-          <span className="text-slate-500">/any</span>
-          {plan.firstYearDiscount > 0 && (
-            <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-              -{(plan.firstYearDiscount * 100).toFixed(0)}% 1r any
-            </span>
+        <div className="flex items-baseline gap-2 flex-wrap">
+          {plan.firstYearDiscount > 0 ? (
+            <>
+              <span className="text-3xl font-bold text-green-600">
+                {(plan.basePrice * (1 - plan.firstYearDiscount / 100)).toFixed(0)}€
+              </span>
+              <span className="text-lg text-slate-400 line-through">
+                {plan.basePrice.toFixed(0)}€
+              </span>
+              <span className="text-slate-500">/any</span>
+              <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                -{plan.firstYearDiscount.toFixed(0)}% 1r any
+              </span>
+            </>
+          ) : (
+            <>
+              <span className="text-3xl font-bold text-slate-900">
+                {plan.basePrice.toFixed(0)}€
+              </span>
+              <span className="text-slate-500">/any</span>
+            </>
           )}
         </div>
       </div>
