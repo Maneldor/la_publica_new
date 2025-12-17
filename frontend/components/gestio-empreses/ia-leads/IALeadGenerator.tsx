@@ -10,15 +10,17 @@ import {
   Tag,
   Hash,
   Loader2,
-  Cpu
+  Bot
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { AdvancedCriteria } from './AdvancedCriteria'
-import { generateLeadsWithAI, AIModel, GenerationCriteria, GeneratedLead } from '@/lib/gestio-empreses/ia-lead-actions'
+import { generateLeadsWithAI, GenerationCriteria, GeneratedLead } from '@/lib/gestio-empreses/ia-lead-actions'
+import { LeadsAIConfig } from '@/lib/gestio-empreses/actions/ai-config-actions'
 
 interface IALeadGeneratorProps {
   onGenerated: (generationId: string, leads: GeneratedLead[], warning?: string) => void
   userId: string
+  leadsConfig: LeadsAIConfig
 }
 
 const sectorOptions = [
@@ -50,35 +52,15 @@ const quantityOptions = [
   { value: 20, label: '20 leads' },
 ]
 
-const modelOptions: { value: AIModel; label: string; description: string; icon: string; badge?: string; cost?: string }[] = [
-  {
-    value: 'deepseek-chat',
-    label: 'DeepSeek Chat',
-    description: 'General - Ultra econòmic',
-    icon: '🟡',
-    badge: 'Per defecte',
-    cost: '~$0.001/lead'
-  },
-  {
-    value: 'deepseek-reasoner',
-    label: 'DeepSeek Pro',
-    description: 'Raonament complex',
-    icon: '🟠',
-    badge: 'Avançat',
-    cost: '~$0.002/lead'
-  },
-  {
-    value: 'gemini',
-    label: 'Gemini',
-    description: 'Backup - Multimodal',
-    icon: '🔵',
-    cost: '~$0.005/lead'
-  },
-]
+const providerIcons: Record<string, string> = {
+  'ANTHROPIC': '🟣',
+  'OPENAI': '🟢',
+  'GEMINI': '🔵',
+  'DEEPSEEK': '🟡'
+}
 
-export function IALeadGenerator({ onGenerated, userId }: IALeadGeneratorProps) {
+export function IALeadGenerator({ onGenerated, userId, leadsConfig }: IALeadGeneratorProps) {
   const [isPending, startTransition] = useTransition()
-  const [model, setModel] = useState<AIModel>('deepseek-chat')
   const [sector, setSector] = useState('')
   const [location, setLocation] = useState('')
   const [companySize, setCompanySize] = useState('')
@@ -106,13 +88,16 @@ export function IALeadGenerator({ onGenerated, userId }: IALeadGeneratorProps) {
 
     startTransition(async () => {
       try {
-        const result = await generateLeadsWithAI(criteria, model, userId)
+        // Usar el model configurat per l'admin
+        const result = await generateLeadsWithAI(criteria, leadsConfig.modelId, userId)
         onGenerated(result.generationId, result.leads, result.warning)
       } catch (error) {
         console.error('Error generant leads:', error)
       }
     })
   }
+
+  const providerIcon = providerIcons[leadsConfig.providerType] || '🤖'
 
   return (
     <div className="bg-gradient-to-br from-purple-50 via-white to-blue-50 rounded-xl border border-purple-100 p-6">
@@ -127,66 +112,17 @@ export function IALeadGenerator({ onGenerated, userId }: IALeadGeneratorProps) {
       </div>
 
       <div className="space-y-5">
-        {/* Selecció de model */}
-        <div>
-          <label className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
-            <Cpu className="h-4 w-4 text-slate-400" strokeWidth={1.5} />
-            Model IA
-          </label>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {modelOptions.map((m) => (
-              <button
-                key={m.value}
-                type="button"
-                onClick={() => setModel(m.value)}
-                className={cn(
-                  'p-3 rounded-lg border text-left transition-all relative',
-                  model === m.value
-                    ? 'border-purple-300 bg-purple-50 ring-2 ring-purple-200'
-                    : 'border-slate-200 hover:border-slate-300'
-                )}
-              >
-                {m.badge && (
-                  <span className="absolute -top-2 -right-2 px-2 py-0.5 text-xs font-medium bg-green-500 text-white rounded-full">
-                    {m.badge}
-                  </span>
-                )}
-                <div className="flex items-center gap-2 mb-1">
-                  <span>{m.icon}</span>
-                  <span className="font-medium text-slate-900">{m.label}</span>
-                </div>
-                <p className="text-xs text-slate-500 mb-1">{m.description}</p>
-                {m.cost && (
-                  <p className="text-xs text-green-600 font-medium">{m.cost}</p>
-                )}
-              </button>
-            ))}
-          </div>
-
-          {/* Informació de cost per model seleccionat */}
-          {model === 'deepseek' && (
-            <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-              <p className="text-sm text-green-800">
-                <span className="font-medium">DeepSeek:</span> Fins a 20x més econòmic que OpenAI/Anthropic.
-                Cost estimat: ~$0.003 per 10 leads vs $0.05 amb altres models.
-              </p>
-            </div>
-          )}
-
-          {model !== 'deepseek' && (
-            <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-              <p className="text-sm text-amber-800">
-                <span className="font-medium">Consell:</span> DeepSeek ofereix qualitat similar amb cost molt menor.
-                <button
-                  type="button"
-                  onClick={() => setModel('deepseek')}
-                  className="ml-2 text-amber-700 underline hover:text-amber-900"
-                >
-                  Provar DeepSeek
-                </button>
-              </p>
-            </div>
-          )}
+        {/* Indicador del model configurat */}
+        <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+          <Bot className="h-5 w-5 text-blue-600" strokeWidth={1.5} />
+          <span className="text-sm text-slate-700">
+            Model: <span className="font-medium">{providerIcon} {leadsConfig.modelDisplayName}</span>
+            <span className="text-slate-400 mx-2">|</span>
+            <span className="text-slate-500">{leadsConfig.providerName}</span>
+          </span>
+          <span className="text-xs text-slate-400 ml-auto">
+            Configurat per l'administrador
+          </span>
         </div>
 
         {/* Camps principals */}
@@ -200,9 +136,9 @@ export function IALeadGenerator({ onGenerated, userId }: IALeadGeneratorProps) {
             <select
               value={sector}
               onChange={(e) => setSector(e.target.value)}
-              className="w-full px-3 py-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white"
+              className="w-full px-3 py-2.5 text-sm text-slate-900 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white"
             >
-              <option value="">Selecciona un sector...</option>
+              <option value="" className="text-slate-500">Selecciona un sector...</option>
               {sectorOptions.map((s) => (
                 <option key={s.value} value={s.value}>{s.label}</option>
               ))}
@@ -220,7 +156,7 @@ export function IALeadGenerator({ onGenerated, userId }: IALeadGeneratorProps) {
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="Ex: Barcelona, Catalunya"
-              className="w-full px-3 py-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              className="w-full px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
             />
           </div>
 
@@ -233,9 +169,9 @@ export function IALeadGenerator({ onGenerated, userId }: IALeadGeneratorProps) {
             <select
               value={companySize}
               onChange={(e) => setCompanySize(e.target.value)}
-              className="w-full px-3 py-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white"
+              className="w-full px-3 py-2.5 text-sm text-slate-900 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white"
             >
-              <option value="">Qualsevol mida</option>
+              <option value="" className="text-slate-500">Qualsevol mida</option>
               {sizeOptions.map((s) => (
                 <option key={s.value} value={s.value}>{s.label}</option>
               ))}
@@ -254,7 +190,7 @@ export function IALeadGenerator({ onGenerated, userId }: IALeadGeneratorProps) {
             value={keywords}
             onChange={(e) => setKeywords(e.target.value)}
             placeholder="Ex: innovació, sostenibilitat, digital, cloud"
-            className="w-full px-3 py-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+            className="w-full px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
           />
         </div>
 
@@ -274,7 +210,7 @@ export function IALeadGenerator({ onGenerated, userId }: IALeadGeneratorProps) {
             <select
               value={quantity}
               onChange={(e) => setQuantity(Number(e.target.value))}
-              className="px-3 py-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white"
+              className="px-3 py-2.5 text-sm text-slate-900 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white"
             >
               {quantityOptions.map((q) => (
                 <option key={q.value} value={q.value}>{q.label}</option>

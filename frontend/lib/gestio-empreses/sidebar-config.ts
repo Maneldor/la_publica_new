@@ -35,6 +35,7 @@ import {
   Euro,
   GitBranch,
   Brain,
+  Network,
   type LucideIcon,
 } from 'lucide-react'
 import { ROLE_GROUPS } from './permissions'
@@ -134,10 +135,10 @@ export const SIDEBAR_CONFIG: SidebarSection[] = [
         roles: [...ROLE_GROUPS.ADMINS],
       },
       {
-        id: 'pipeline',
-        label: 'Pipeline',
-        href: '/gestio/admin/pipeline',
-        icon: GitBranch,
+        id: 'supervision',
+        label: 'Supervisio',
+        href: '/gestio/admin/supervision',
+        icon: Network,
         roles: [...ROLE_GROUPS.ADMINS],
       },
       {
@@ -237,7 +238,6 @@ export const SIDEBAR_CONFIG: SidebarSection[] = [
         href: '/gestio/empreses/pipeline',
         icon: GitBranch,
         roles: [...ROLE_GROUPS.ADMINS, ...ROLE_GROUPS.CRM_TEAM],
-        disabled: true, // Activar quan es creï la pàgina
       },
     ],
   },

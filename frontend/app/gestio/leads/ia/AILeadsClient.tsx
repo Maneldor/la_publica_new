@@ -11,19 +11,22 @@ import { IALeadHistory } from '@/components/gestio-empreses/ia-leads/IALeadHisto
 import { IALeadPreview } from '@/components/gestio-empreses/ia-leads/IALeadPreview'
 import { IALeadChart } from '@/components/gestio-empreses/ia-leads/IALeadChart'
 import { GeneratedLead, getIALeadStats } from '@/lib/gestio-empreses/ia-lead-actions'
+import { LeadsAIConfig } from '@/lib/gestio-empreses/actions/ai-config-actions'
 
 interface AILeadsClientProps {
     userId: string
     initialStats: any
     initialHistory: any[]
     initialChartData: any[]
+    leadsConfig: LeadsAIConfig
 }
 
 export function AILeadsClient({
     userId,
     initialStats,
     initialHistory,
-    initialChartData
+    initialChartData,
+    leadsConfig
 }: AILeadsClientProps) {
     const router = useRouter()
     const [stats, setStats] = useState(initialStats)
@@ -138,6 +141,7 @@ export function AILeadsClient({
                 <IALeadGenerator
                     onGenerated={handleGenerated}
                     userId={userId}
+                    leadsConfig={leadsConfig}
                 />
             )}
 

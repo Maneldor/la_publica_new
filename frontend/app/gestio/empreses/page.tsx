@@ -1,24 +1,47 @@
-import { getEmpresesLlista, getEmpresesStats, getGestorsPerFiltre } from '@/lib/gestio-empreses/actions/empreses-llista-actions'
-import { EmpresesClientPage } from './EmpresesClient'
+// app/gestio/empreses/page.tsx
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/lib/auth'
+import { redirect } from 'next/navigation'
+import { EmpresesListClient } from './EmpresesListClient'
+import { getEmpresesList } from '@/lib/gestio-empreses/empreses-list-actions'
 
 export default async function EmpresesPage() {
-  // Fetch initial data on the server (parallel)
-  const [empresesRes, statsRes, gestorsRes] = await Promise.all([
-    getEmpresesLlista(), // TODO: Pass searchParams here when URL filters are implemented
-    getEmpresesStats(),
-    getGestorsPerFiltre()
-  ])
+  const session = await getServerSession(authOptions)
 
-  // Extract data safely
-  const initialEmpreses = empresesRes.success && empresesRes.data ? empresesRes.data : []
-  const initialStats = statsRes.success && statsRes.data ? statsRes.data : null
-  const initialGestors = gestorsRes.success && gestorsRes.data ? gestorsRes.data : []
+  if (!session?.user) {
+    redirect('/login')
+  }
+
+  const userId = session.user.id
+  const userRole = (session.user as any).role
+
+  // Verificar permisos
+  const allowedRoles = [
+    'SUPER_ADMIN',
+    'ADMIN',
+    'ADMIN_GESTIO',
+    'CRM_COMERCIAL',
+    'CRM_CONTINGUT',
+    'GESTOR_ESTANDARD',
+    'GESTOR_ESTRATEGIC',
+    'GESTOR_ENTERPRISE'
+  ]
+
+  if (!allowedRoles.includes(userRole)) {
+    redirect('/gestio')
+  }
+
+  // Obtener datos del listado
+  const data = await getEmpresesList(userId, userRole)
 
   return (
-    <EmpresesClientPage
-      initialEmpreses={initialEmpreses}
-      initialStats={initialStats}
-      initialGestors={initialGestors}
+    <EmpresesListClient
+      initialData={data}
+      currentUser={{
+        id: userId,
+        role: userRole,
+        name: session.user.name
+      }}
     />
   )
 }

@@ -154,10 +154,28 @@ export async function assignLeadToGestor(
 
   const assignedById = session.user.id
 
+  // Obtenir el rol del gestor per determinar el nou stage
+  const gestor = await prismaClient.user.findUnique({
+    where: { id: gestorId },
+    select: { role: true }
+  })
+
+  // Determinar el nou stage segons el rol del gestor
+  let newStage = 'ASSIGNAT' // Per defecte per GESTOR_*
+  if (gestor?.role) {
+    if (gestor.role.includes('CRM')) {
+      newStage = 'PER_VERIFICAR'
+    } else if (['ADMIN_GESTIO', 'ADMIN', 'SUPER_ADMIN'].includes(gestor.role)) {
+      newStage = 'PRE_CONTRACTE'
+    }
+  }
+
   const lead = await prismaClient.companyLead.update({
     where: { id: leadId },
     data: {
       assignedToId: gestorId,
+      assignedAt: new Date(),
+      stage: newStage,
       updatedAt: new Date(),
     },
     include: {
@@ -504,9 +522,29 @@ export async function assignLeadsToGestor(
     select: { id: true, companyName: true }
   })
 
+  // Obtenir el rol del gestor per determinar el nou stage
+  const gestor = await prismaClient.user.findUnique({
+    where: { id: gestorId },
+    select: { role: true }
+  })
+
+  // Determinar el nou stage segons el rol del gestor
+  let newStage = 'ASSIGNAT' // Per defecte per GESTOR_*
+  if (gestor?.role) {
+    if (gestor.role.includes('CRM')) {
+      newStage = 'PER_VERIFICAR'
+    } else if (['ADMIN_GESTIO', 'ADMIN', 'SUPER_ADMIN'].includes(gestor.role)) {
+      newStage = 'PRE_CONTRACTE'
+    }
+  }
+
   await prismaClient.companyLead.updateMany({
     where: { id: { in: leadIds } },
-    data: { assignedToId: gestorId },
+    data: {
+      assignedToId: gestorId,
+      assignedAt: new Date(),
+      stage: newStage,
+    },
   })
 
   // Crear activitats

@@ -13,12 +13,12 @@ import { cn } from '@/lib/utils'
 import { getCategoriesAsOptions, getCategoryLabel, getCategoryColors } from '@/lib/constants/categories'
 
 const LEAD_TABS = [
-    { id: 'NOUS', label: 'Nous', stages: ['NEW'] },
-    { id: 'GESTOR', label: 'Gestor', stages: ['PROSPECTING', 'CONTACTED', 'QUALIFIED', 'PROPOSAL_SENT'] },
-    { id: 'CRM', label: 'CRM', stages: ['PENDING_CRM', 'CRM_APPROVED'] },
-    { id: 'ADMIN', label: 'Admin', stages: ['PENDING_ADMIN'] },
-    { id: 'GUANYATS', label: 'Guanyats', stages: ['WON'] },
-    { id: 'PERDUTS', label: 'Perduts', stages: ['LOST', 'ON_HOLD'] },
+    { id: 'NOUS', label: 'Nous', stages: ['NOU'] },
+    { id: 'GESTOR', label: 'Gestor', stages: ['ASSIGNAT', 'TREBALLANT'] },
+    { id: 'CRM', label: 'CRM', stages: ['PER_VERIFICAR', 'VERIFICAT'] },
+    { id: 'ADMIN', label: 'Admin', stages: ['PRE_CONTRACTE'] },
+    { id: 'GUANYATS', label: 'Guanyats', stages: ['CONTRACTAT'] },
+    { id: 'PERDUTS', label: 'Perduts', stages: ['PERDUT'] },
 ]
 
 interface LeadsClientProps {
@@ -95,14 +95,14 @@ export function LeadsClient({ initialLeads, currentUser }: LeadsClientProps) {
     const getCountForTab = (tabId: string) => {
         const tab = LEAD_TABS.find(t => t.id === tabId)
         if (!tab) return 0
-        return leads.filter(lead => tab.stages.includes(lead.status)).length
+        return leads.filter(lead => tab.stages.includes(lead.stage || 'NOU')).length
     }
 
     // Filtrar leads per cerca i pestanya activa
     const filteredLeads = leads.filter(lead => {
         // Filtre per pestanya activa
         const activeTabData = LEAD_TABS.find(tab => tab.id === activeTab)
-        const matchesTab = activeTabData ? activeTabData.stages.includes(lead.status) : true
+        const matchesTab = activeTabData ? activeTabData.stages.includes(lead.stage || 'NOU') : true
 
         // Filtre per cerca
         const matchesSearch = !search ||
@@ -382,15 +382,17 @@ export function LeadsClient({ initialLeads, currentUser }: LeadsClientProps) {
                                 </tr>
                             ) : (
                                 filteredLeads.map((lead) => {
-                                    const statusConfig: any = {
-                                        NEW: { label: 'Nou', color: 'bg-blue-100 text-blue-800' },
-                                        PROSPECTING: { label: 'Prospecció', color: 'bg-purple-100 text-purple-800' },
-                                        CONTACTED: { label: 'Contactat', color: 'bg-cyan-100 text-cyan-800' },
-                                        QUALIFIED: { label: 'Qualificat', color: 'bg-green-100 text-green-800' },
-                                        PROPOSAL_SENT: { label: 'Proposta enviada', color: 'bg-amber-100 text-amber-800' },
-                                        WON: { label: 'Guanyat', color: 'bg-emerald-100 text-emerald-800' },
-                                        LOST: { label: 'Perdut', color: 'bg-slate-100 text-slate-800' },
-                                    }[lead.status] || { label: lead.status, color: 'bg-slate-100 text-slate-800' }
+                                    const stageConfigs: Record<string, { label: string; color: string }> = {
+                                        NOU: { label: 'Nou', color: 'bg-blue-100 text-blue-800' },
+                                        ASSIGNAT: { label: 'Assignat', color: 'bg-purple-100 text-purple-800' },
+                                        TREBALLANT: { label: 'Treballant', color: 'bg-cyan-100 text-cyan-800' },
+                                        PER_VERIFICAR: { label: 'Per verificar', color: 'bg-amber-100 text-amber-800' },
+                                        VERIFICAT: { label: 'Verificat', color: 'bg-green-100 text-green-800' },
+                                        PRE_CONTRACTE: { label: 'Pre-contracte', color: 'bg-indigo-100 text-indigo-800' },
+                                        CONTRACTAT: { label: 'Contractat', color: 'bg-emerald-100 text-emerald-800' },
+                                        PERDUT: { label: 'Perdut', color: 'bg-slate-100 text-slate-800' },
+                                    }
+                                    const stageConfig = stageConfigs[lead.stage || 'NOU'] || { label: lead.stage || 'Nou', color: 'bg-slate-100 text-slate-800' }
 
                                     const priorityConfig: any = {
                                         LOW: { label: 'Baixa', color: 'bg-slate-100 text-slate-600' },
@@ -446,8 +448,8 @@ export function LeadsClient({ initialLeads, currentUser }: LeadsClientProps) {
                                                 className="px-6 py-4 cursor-pointer"
                                                 onClick={() => handleLeadClick(lead.id)}
                                             >
-                                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${statusConfig.color}`}>
-                                                    {statusConfig.label}
+                                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${stageConfig.color}`}>
+                                                    {stageConfig.label}
                                                 </span>
                                             </td>
                                             <td

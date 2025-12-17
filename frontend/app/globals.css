@@ -1,3 +1,6 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Dynalight&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -23,6 +26,9 @@ body {
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+  .border-l-3 {
+    border-left-width: 3px;
   }
 }
 
@@ -178,4 +184,39 @@ body {
 .ql-editor.ql-blank::before {
   color: #9ca3af !important;
   font-style: normal !important;
+}
+
+/* Page Turn Animation for Welcome Tour */
+@keyframes pageTurnOut {
+  0% {
+    transform: perspective(1500px) rotateY(0deg);
+    transform-origin: left center;
+    opacity: 1;
+  }
+  100% {
+    transform: perspective(1500px) rotateY(-90deg);
+    transform-origin: left center;
+    opacity: 0;
+  }
+}
+
+@keyframes pageTurnIn {
+  0% {
+    transform: perspective(1500px) rotateY(90deg);
+    transform-origin: right center;
+    opacity: 0;
+  }
+  100% {
+    transform: perspective(1500px) rotateY(0deg);
+    transform-origin: right center;
+    opacity: 1;
+  }
+}
+
+.page-turn-exit {
+  animation: pageTurnOut 0.6s ease-in-out forwards;
+}
+
+.page-turn-enter {
+  animation: pageTurnIn 0.6s ease-in-out forwards;
 }

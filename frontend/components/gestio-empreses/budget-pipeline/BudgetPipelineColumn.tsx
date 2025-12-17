@@ -19,6 +19,7 @@ interface BudgetPipelineItem {
   paidPercentage?: number
   linkedInvoice?: string
   linkedBudget?: string
+  status: string
 }
 
 interface BudgetPipelineColumnProps {
@@ -29,7 +30,7 @@ interface BudgetPipelineColumnProps {
   color: string
   items: BudgetPipelineItem[]
   totalAmount: number
-  onCardClick: (item: BudgetPipelineItem) => void
+  onCardClick?: (item: BudgetPipelineItem) => void
 }
 
 const colorClasses: Record<string, { bg: string; border: string; text: string; iconBg: string }> = {
@@ -103,7 +104,7 @@ export function BudgetPipelineColumn({
             <BudgetPipelineCard
               key={item.id}
               item={item}
-              onClick={() => onCardClick(item)}
+              onClick={() => onCardClick?.(item)}
             />
           ))}
         </SortableContext>

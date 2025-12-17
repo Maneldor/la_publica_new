@@ -87,17 +87,38 @@ export function UseCaseCard({ config, providers, onUpdate }: UseCaseCardProps) {
     }
 
     setIsUpdating(true)
-    await updateAIConfiguration(config.id, {
-      providerId: formData.providerId,
-      modelId: formData.modelId,
-      temperature: formData.temperature,
-      maxTokens: formData.maxTokens,
-      maxRequestsPerDay: formData.maxRequestsPerDay || null,
-      maxTokensPerDay: formData.maxTokensPerDay || null
-    })
-    onUpdate()
-    setIsUpdating(false)
-    setIsEditing(false)
+    try {
+      console.log('Guardant configuració:', {
+        configId: config.id,
+        providerId: formData.providerId,
+        modelId: formData.modelId
+      })
+
+      const result = await updateAIConfiguration(config.id, {
+        providerId: formData.providerId,
+        modelId: formData.modelId,
+        temperature: formData.temperature,
+        maxTokens: formData.maxTokens,
+        maxRequestsPerDay: formData.maxRequestsPerDay || null,
+        maxTokensPerDay: formData.maxTokensPerDay || null
+      })
+
+      console.log('Resultat:', result)
+
+      if (!result.success) {
+        alert('Error guardant: ' + (result.error || 'Error desconegut'))
+        setIsUpdating(false)
+        return
+      }
+
+      onUpdate()
+      setIsEditing(false)
+    } catch (error) {
+      console.error('Error guardant configuració:', error)
+      alert('Error inesperat guardant la configuració')
+    } finally {
+      setIsUpdating(false)
+    }
   }
 
   const handleCancel = () => {
@@ -197,7 +218,7 @@ export function UseCaseCard({ config, providers, onUpdate }: UseCaseCardProps) {
                   <select
                     value={formData.providerId}
                     onChange={(e) => handleProviderChange(e.target.value)}
-                    className="w-full h-10 px-3 pr-10 text-sm border border-slate-200 rounded-lg appearance-none bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
+                    className="w-full h-10 px-3 pr-10 text-sm text-slate-900 border border-slate-300 rounded-lg appearance-none bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
                   >
                     {providers.filter(p => p.isActive).map((provider) => (
                       <option key={provider.id} value={provider.id}>
@@ -218,7 +239,7 @@ export function UseCaseCard({ config, providers, onUpdate }: UseCaseCardProps) {
                   <select
                     value={formData.modelId}
                     onChange={(e) => handleModelChange(e.target.value)}
-                    className="w-full h-10 px-3 pr-10 text-sm border border-slate-200 rounded-lg appearance-none bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
+                    className="w-full h-10 px-3 pr-10 text-sm text-slate-900 border border-slate-300 rounded-lg appearance-none bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
                   >
                     {availableModels.length === 0 ? (
                       <option value="">No hi ha models actius</option>
@@ -233,7 +254,7 @@ export function UseCaseCard({ config, providers, onUpdate }: UseCaseCardProps) {
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" strokeWidth={1.5} />
                 </div>
                 {selectedModel && (
-                  <p className="mt-1 text-xs text-slate-400">
+                  <p className="mt-1 text-xs text-slate-500">
                     {selectedModel.description}
                   </p>
                 )}
@@ -277,7 +298,7 @@ export function UseCaseCard({ config, providers, onUpdate }: UseCaseCardProps) {
                   type="number"
                   value={formData.maxTokens}
                   onChange={(e) => setFormData({ ...formData, maxTokens: parseInt(e.target.value) || 0 })}
-                  className="w-full h-10 px-3 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full h-10 px-3 text-sm text-slate-900 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   min="100"
                   max="16000"
                 />
@@ -302,10 +323,10 @@ export function UseCaseCard({ config, providers, onUpdate }: UseCaseCardProps) {
                   value={formData.maxRequestsPerDay}
                   onChange={(e) => setFormData({ ...formData, maxRequestsPerDay: parseInt(e.target.value) || 0 })}
                   placeholder="Sense límit"
-                  className="w-full h-10 px-3 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full h-10 px-3 text-sm text-slate-900 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-slate-400"
                   min="0"
                 />
-                <p className="mt-1 text-xs text-slate-400">0 = sense límit</p>
+                <p className="mt-1 text-xs text-slate-500">0 = sense límit</p>
               </div>
 
               {/* Tokens/dia */}
@@ -318,10 +339,10 @@ export function UseCaseCard({ config, providers, onUpdate }: UseCaseCardProps) {
                   value={formData.maxTokensPerDay}
                   onChange={(e) => setFormData({ ...formData, maxTokensPerDay: parseInt(e.target.value) || 0 })}
                   placeholder="Sense límit"
-                  className="w-full h-10 px-3 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full h-10 px-3 text-sm text-slate-900 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-slate-400"
                   min="0"
                 />
-                <p className="mt-1 text-xs text-slate-400">0 = sense límit</p>
+                <p className="mt-1 text-xs text-slate-500">0 = sense límit</p>
               </div>
             </div>
           </div>

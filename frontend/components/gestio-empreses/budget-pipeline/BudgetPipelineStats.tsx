@@ -13,9 +13,10 @@ interface BudgetPipelineStatsProps {
     overdue: { count: number; amount: number }
     conversionRate: number
   } | null
+  compact?: boolean
 }
 
-export function BudgetPipelineStats({ stats }: BudgetPipelineStatsProps) {
+export function BudgetPipelineStats({ stats, compact = false }: BudgetPipelineStatsProps) {
   if (!stats) return null
 
   const formatCurrency = (value: number) => {
@@ -27,7 +28,10 @@ export function BudgetPipelineStats({ stats }: BudgetPipelineStatsProps) {
   const totalPipeline = stats.draft.amount + stats.sent.amount + stats.approved.amount + stats.invoiced.amount
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+    <div className={cn(
+      'grid gap-3',
+      compact ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-2 md:grid-cols-4 mb-6'
+    )}>
       <div className="bg-white rounded-xl border border-slate-200 p-3">
         <div className="flex items-center justify-between">
           <div>

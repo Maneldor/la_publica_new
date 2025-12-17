@@ -69,7 +69,7 @@ export function AdvancedCriteria({ values, onChange }: AdvancedCriteriaProps) {
                   placeholder="Mínim €"
                   value={values.minRevenue || ''}
                   onChange={(e) => onChange({ ...values, minRevenue: Number(e.target.value) || undefined })}
-                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full px-3 py-2 text-sm text-slate-900 placeholder-slate-400 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                 />
               </div>
               <div>
@@ -78,7 +78,7 @@ export function AdvancedCriteria({ values, onChange }: AdvancedCriteriaProps) {
                   placeholder="Màxim €"
                   value={values.maxRevenue || ''}
                   onChange={(e) => onChange({ ...values, maxRevenue: Number(e.target.value) || undefined })}
-                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full px-3 py-2 text-sm text-slate-900 placeholder-slate-400 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                 />
               </div>
             </div>
@@ -97,7 +97,7 @@ export function AdvancedCriteria({ values, onChange }: AdvancedCriteriaProps) {
               max={new Date().getFullYear()}
               value={values.foundedAfter || ''}
               onChange={(e) => onChange({ ...values, foundedAfter: Number(e.target.value) || undefined })}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              className="w-full px-3 py-2 text-sm text-slate-900 placeholder-slate-400 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
             />
           </div>
 

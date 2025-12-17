@@ -44,6 +44,8 @@ model User {
   companiesReviewed        Company[]                  @relation("CompanyLastReviewedBy")
   companiesRejected        Company[]                  @relation("CompanyRejectedBy")
   assignedLeads            CompanyLead[]              @relation("LeadAssignee")
+  createdLeads             CompanyLead[]              @relation("LeadCreator")
+  verifiedLeads            CompanyLead[]              @relation("LeadVerifier")
   company_ratings          company_ratings[]
   coupons                  Coupon[]                   @relation("UserCoupons")
   emailLogs                EmailLog[]                 @relation("UserEmailLogs")
@@ -88,6 +90,23 @@ model User {
   noticesCreated      PlatformNotice[]   @relation("NoticeCreator")
   noticeDismissals    NoticeDismissal[]  @relation("UserNoticeDismissals")
 
+  // Jerarquia de supervisors
+  supervisorId        String?
+  supervisor          User?              @relation("UserSupervisor", fields: [supervisorId], references: [id], onDelete: SetNull)
+  subordinates        User[]             @relation("UserSupervisor")
+
+  // Onboarding
+  hasCompletedOnboarding   Boolean    @default(false)
+  onboardingCompletedAt    DateTime?
+
+  // Relacions Agenda
+  agendaEvents      AgendaEvent[]
+  agendaGoals       AgendaGoal[]
+  agendaHabits      AgendaHabit[]
+  agendaReflections AgendaReflection[]
+  agendaModules     AgendaModule[]
+  agendaConfig      AgendaUserConfig?
+
   @@index([email])
   @@index([role])
   @@index([communityId])
@@ -96,6 +115,7 @@ model User {
   @@index([memberCompanyId])
   @@index([createdAt])
   @@index([isActive, createdAt])
+  @@index([supervisorId])
 
   employee                 Employee?
   publicAdministration     PublicAdministration?
@@ -240,6 +260,13 @@ model Company {
   tags             String[]               @default([])
   userId           String?
   isVerified       Boolean                @default(false)
+
+  // Camps per pipeline comercial
+  stage                   String?                @default("CREADA")
+  assignedAt              DateTime?
+  onboardingCompletedAt   DateTime?
+  fromLeadId              String?
+
   offers           Offer[]
   teamMembers      User[]                 @relation("CompanyMembers")
   owner            User?                  @relation("CompanyOwner")
@@ -273,6 +300,7 @@ model Company {
   @@index([createdAt])
   @@index([isActive])
   @@index([status, isActive])
+  @@index([stage])
   @@map("companies")
 }
 
@@ -1160,14 +1188,25 @@ model CompanyLead {
   scrapedAt             DateTime?
   segment               String?
   sourceId              String?
-  stage                 String?
+  stage                 String?           @default("NOU")
   twitterProfile        String?
   userId                String?
   validatedAt           DateTime?
   aiProviderId          String?
   employees             Int?
   estimatedValue        Decimal?          @db.Decimal(10, 2)
+
+  // Camps per pipeline comercial
+  createdById           String?
+  verifiedById          String?
+  verifiedAt            DateTime?
+  preContractAt         DateTime?
+  contractedAt          DateTime?
+  assignedAt            DateTime?
+
   assignedTo            User?             @relation("LeadAssignee", fields: [assignedToId], references: [id])
+  createdByUser         User?             @relation("LeadCreator", fields: [createdById], references: [id])
+  verifiedBy            User?             @relation("LeadVerifier", fields: [verifiedById], references: [id])
   convertedCompany      Company?          @relation("ConvertedLead", fields: [convertedToCompanyId], references: [id])
   contacts              contacts[]
   activities            LeadActivity[]
@@ -1194,6 +1233,9 @@ model CompanyLead {
   @@index([dataQualityScore])
   @@index([lastAiProcessed])
   @@index([status, createdAt])
+  @@index([stage])
+  @@index([createdById])
+  @@index([verifiedById])
   @@map("company_leads")
 }
 
@@ -1477,9 +1519,11 @@ model AIModel {
 /// Configuració d'IA per cada cas d'ús
 model AIConfiguration {
   id                String     @id @default(cuid())
-  useCase           AIUseCase  @unique
+  useCase           AIUseCase
   name              String
   description       String?
+  icon              String     @default("Sparkles")
+  color             String     @default("purple")
   isActive          Boolean    @default(true)
   providerId        String
   modelId           String
@@ -1518,6 +1562,45 @@ model AIUsageLog {
   @@index([useCase, createdAt])
   @@index([userId, createdAt])
   @@map("ai_usage_logs_v2")
+}
+
+/// Quotes i permisos d'IA per rol (totalment editable)
+model AIRoleQuota {
+  id                String   @id @default(cuid())
+  role              UserRole @unique
+
+  // Models permesos (JSON array de modelIds)
+  allowedProviders  Json?    // ["ANTHROPIC", "OPENAI", "GEMINI", "DEEPSEEK"]
+  allowedModels     Json?    // ["claude-sonnet-4-20250514", "gpt-4o-mini", ...]
+  defaultProvider   AIProviderType?
+  defaultModelId    String?
+
+  // Quotes editables
+  maxLeadsPerDay    Int?
+  maxLeadsPerMonth  Int?
+  maxTokensPerDay   Int?
+  maxTokensPerMonth Int?
+  creditsPerMonth   Int      @default(50)
+  creditsUsed       Int      @default(0)
+
+  // Permisos editables
+  canUseAdvancedModels Boolean @default(false)  // Models cars (Sonnet, GPT-4o)
+  canUseVision         Boolean @default(false)  // Funcions de visió
+  canUseTools          Boolean @default(false)  // Function calling
+  canGenerateContent   Boolean @default(true)   // Generar contingut
+  canGenerateLeads     Boolean @default(true)   // Generar leads
+
+  // Prioritat i límits de cost
+  priorityLevel     Int      @default(0)       // 0=normal, 1=alta, 2=màxima
+  maxCostPerDay     Float?                     // Cost màxim diari en $
+  maxCostPerMonth   Float?                     // Cost màxim mensual en $
+
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  updatedById       String?
+
+  @@map("ai_role_quotas")
 }
 
 model ai_logs {
@@ -2116,12 +2199,20 @@ enum AIProviderType {
   OPENAI
   ANTHROPIC
   GEMINI
+  DEEPSEEK
 }
 
 /// Casos d'ús de la IA
 enum AIUseCase {
   LEADS
   CONTENT
+  DOCUMENTS
+  CHAT
+  TRANSLATION
+  SUMMARY
+  ANALYSIS
+  AUTOMATION
+  CUSTOM
 }
 
 enum UserRole {
@@ -3435,5 +3526,123 @@ model SystemSettings {
   updatedBy   String?
   
   @@map("system_settings")
+}
+
+// ==========================================
+// AGENDA - Módulos de productividad personal
+// ==========================================
+
+model AgendaEvent {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date        DateTime @db.Date
+  time        String   // Formato "HH:MM"
+  title       String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId, date])
+  @@map("agenda_events")
+}
+
+model AgendaGoal {
+  id        String       @id @default(cuid())
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime     @db.Date
+  text      String
+  tasks     AgendaTask[]
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@unique([userId, date])
+  @@map("agenda_goals")
+}
+
+model AgendaTask {
+  id        String     @id @default(cuid())
+  goalId    String
+  goal      AgendaGoal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  text      String
+  completed Boolean    @default(false)
+  position  Int        @default(0)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@index([goalId])
+  @@map("agenda_tasks")
+}
+
+model AgendaHabit {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emoji     String
+  name      String
+  isActive  Boolean          @default(true)
+  position  Int              @default(0)
+  logs      AgendaHabitLog[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@index([userId])
+  @@map("agenda_habits")
+}
+
+model AgendaHabitLog {
+  id        String      @id @default(cuid())
+  habitId   String
+  habit     AgendaHabit @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  date      DateTime    @db.Date
+  completed Boolean     @default(true)
+  createdAt DateTime    @default(now())
+
+  @@unique([habitId, date])
+  @@map("agenda_habit_logs")
+}
+
+model AgendaReflection {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  mood      String?  // Emoji del estado de ánimo
+  text      String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, date])
+  @@map("agenda_reflections")
+}
+
+model AgendaModule {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  moduleType String   // 'desafiament', 'agraiments', 'conclusions', etc.
+  isActive   Boolean  @default(false)
+  position   Int      @default(0)
+  config     Json?    // Configuración específica del módulo
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, moduleType])
+  @@map("agenda_modules")
+}
+
+model AgendaUserConfig {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hasCompletedSetup  Boolean  @default(false)
+  hasSeenWelcome     Boolean  @default(false)
+  showBaseModules    Json     @default("{\"events\": true, \"goals\": true, \"habits\": true, \"reflection\": true}")
+  customPhrase       String?  // Frase personalizada del usuario
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("agenda_user_config")
 }
 

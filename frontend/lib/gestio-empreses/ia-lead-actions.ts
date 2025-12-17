@@ -4,7 +4,7 @@
 import { generateLeadsWithDeepSeek } from '@/lib/ai/deepseek-client'
 import { prismaClient } from '@/lib/prisma'
 
-export type AIModel = 'deepseek-chat' | 'deepseek-reasoner' | 'gemini'
+export type AIModel = string  // Ara és dinàmic des de la BD
 
 export interface GenerationCriteria {
   sector: string

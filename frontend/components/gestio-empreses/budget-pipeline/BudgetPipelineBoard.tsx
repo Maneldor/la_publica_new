@@ -53,8 +53,8 @@ interface Column {
 
 interface BudgetPipelineBoardProps {
   items: BudgetPipelineItem[]
-  onTransition: (itemId: string, fromStatus: string, toStatus: string) => Promise<void>
-  onCardClick: (item: BudgetPipelineItem) => void
+  onTransition?: (itemId: string, fromStatus: string, toStatus: string) => Promise<void>
+  onCardClick?: (item: BudgetPipelineItem) => void
 }
 
 const COLUMNS: Column[] = [
@@ -169,7 +169,7 @@ export function BudgetPipelineBoard({ items, onTransition, onCardClick }: Budget
   }
 
   const handleConfirmTransition = async () => {
-    if (!transitionModal.item) return
+    if (!transitionModal.item || !onTransition) return
 
     await onTransition(
       transitionModal.item.id,

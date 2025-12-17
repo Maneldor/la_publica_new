@@ -34,6 +34,12 @@ const nextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'digitalassets.tesla.com',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
 
