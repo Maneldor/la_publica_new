@@ -3,11 +3,18 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import {
+  ShoppingBag,
+  FileText,
+  MapPin,
+  Phone,
+  Image,
+  CheckCircle
+} from 'lucide-react';
 import { useCreateAnunci } from './hooks/useCreateAnunci';
 import { useCreateAnuncio } from '@/hooks/useAnuncios';
 import { toast } from 'sonner';
-import { ProgressIndicator } from './components/ProgressIndicator';
+import { WizardLayout } from '@/components/ui/enterprise/WizardLayout';
 import { Step1BasicInfo } from './components/steps/Step1BasicInfo';
 import { Step2Details } from './components/steps/Step2Details';
 import { Step3Location } from './components/steps/Step3Location';
@@ -134,13 +141,14 @@ export default function CrearAnunciPage() {
     }
   };
 
+  // Steps para WizardLayout Enterprise
   const steps = [
-    'Informació',
-    'Detalls',
-    'Ubicació',
-    'Contacte',
-    'Imatges',
-    'Revisió'
+    { label: 'Informació', description: 'Títol i descripció', icon: ShoppingBag },
+    { label: 'Detalls', description: 'Preu i estat', icon: FileText },
+    { label: 'Ubicació', description: 'Localització', icon: MapPin },
+    { label: 'Contacte', description: 'Dades de contacte', icon: Phone },
+    { label: 'Imatges', description: 'Fotos del producte', icon: Image },
+    { label: 'Revisió', description: 'Confirmar i publicar', icon: CheckCircle },
   ];
 
   const renderStep = () => {
@@ -194,7 +202,6 @@ export default function CrearAnunciPage() {
             isPublishing={isPublishing || createAnuncioMutation.isPending}
           />
         );
-      // Más steps después
       default:
         return (
           <div className="text-center py-12">
@@ -203,73 +210,46 @@ export default function CrearAnunciPage() {
               Step {currentStep} - En construcció
             </h3>
             <p className="text-gray-600">
-              Aquest pas s'està desenvolupant.
+              Aquest pas s&apos;està desenvolupant.
             </p>
           </div>
         );
     }
   };
 
+  const handleNext = () => {
+    if (currentStep < 6) {
+      nextStep();
+    } else {
+      // En el último paso, publicar
+      handlePublish();
+    }
+  };
+
+  const handlePrev = () => {
+    if (currentStep > 1) {
+      prevStep();
+    }
+  };
+
+  const handleCancel = () => {
+    router.back();
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4">
-        {/* Header */}
-        <div className="mb-8">
-          <button
-            onClick={() => router.back()}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Tornar
-          </button>
-          <h1 className="text-3xl font-bold text-gray-900">
-            Crear Nou Anunci
-          </h1>
-          <p className="text-gray-600 mt-2">
-            Publica el teu anunci a La Pública
-          </p>
-        </div>
-
-        {/* Progress Indicator */}
-        <ProgressIndicator
-          currentStep={currentStep}
-          totalSteps={6}
-          steps={steps}
-        />
-
-        {/* Form Card */}
-        <div className="bg-white rounded-lg shadow-sm p-8 mb-6">
-          {renderStep()}
-        </div>
-
-        {/* Navigation Buttons */}
-        <div className="flex justify-between">
-          <button
-            onClick={prevStep}
-            disabled={currentStep === 1}
-            className={`
-              flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all
-              ${currentStep === 1
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
-              }
-            `}
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Anterior
-          </button>
-
-          {currentStep < 6 && (
-            <button
-              onClick={nextStep}
-              className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all"
-            >
-              Següent
-              <ArrowRight className="w-5 h-5" />
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
+    <WizardLayout
+      title="Crear Nou Anunci"
+      description="Publica el teu anunci a La Pública"
+      steps={steps}
+      currentStep={currentStep}
+      onNext={handleNext}
+      onPrev={handlePrev}
+      onCancel={handleCancel}
+      canProceed={true}
+      isLoading={isPublishing || createAnuncioMutation.isPending}
+      finalLabel="Publicar Anunci"
+    >
+      {renderStep()}
+    </WizardLayout>
   );
 }

@@ -3,8 +3,18 @@ import { render } from '@react-email/render';
 import { EmailTemplate, EmailStatus } from '@prisma/client';
 import { prismaClient } from './prisma';
 
-// Configuración del cliente Resend
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Configuración del cliente Resend (lazy initialization para evitar error si no hay API key)
+let resendClient: Resend | null = null;
+
+function getResendClient(): Resend {
+  if (!resendClient) {
+    if (!process.env.RESEND_API_KEY) {
+      throw new Error('RESEND_API_KEY is not configured');
+    }
+    resendClient = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resendClient;
+}
 
 // Configuración por defecto
 const DEFAULT_FROM = {
@@ -54,14 +64,14 @@ export class EmailService {
         return { success: true, messageId: 'disabled' };
       }
 
-      // Detectar modo desarrollo
-      const isDevelopment = process.env.NODE_ENV === 'development' ||
-                           !process.env.RESEND_API_KEY ||
-                           process.env.RESEND_API_KEY === 're_test_placeholder';
+      // Verificar si hay API key configurada
+      const hasValidApiKey = process.env.RESEND_API_KEY &&
+                             process.env.RESEND_API_KEY !== 're_test_placeholder' &&
+                             process.env.RESEND_API_KEY.startsWith('re_');
 
-      // Modo desarrollo - simular envío sin error
-      if (isDevelopment) {
-        console.log(`🧪 [Email] DEV MODE - Email NOT sent (simulated)`);
+      // Si no hay API key válida, simular envío
+      if (!hasValidApiKey) {
+        console.log(`🧪 [Email] NO API KEY - Email NOT sent (simulated)`);
         console.log(`   To: ${options.to}`);
         console.log(`   Subject: ${options.subject}`);
         console.log(`   Template: ${options.template}`);
@@ -79,11 +89,11 @@ export class EmailService {
           metadata: options.templateProps
         }) : null;
 
-        console.log('✅ [Email] DEV MODE - Email logged successfully');
+        console.log('✅ [Email] Simulated - Email logged successfully');
 
         return {
           success: true,
-          messageId: `dev-${Date.now()}`,
+          messageId: `simulated-${Date.now()}`,
           emailLogId: emailLog?.id
         };
       }
@@ -110,6 +120,7 @@ export class EmailService {
       console.log(`📧 [Email] Sending ${options.template} to ${options.to}`);
 
       // Enviar email con Resend
+      const resend = getResendClient();
       const result = await resend.emails.send({
         from: `${DEFAULT_FROM.name} <${DEFAULT_FROM.email}>`,
         to: options.to,

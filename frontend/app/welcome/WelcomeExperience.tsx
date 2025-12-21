@@ -418,7 +418,7 @@ export function WelcomeExperience({ userName, userId }: WelcomeExperienceProps) 
   const [isLoading, setIsLoading] = useState(false)
   const [visibleElements, setVisibleElements] = useState<number[]>([])
 
-  const fullLetterText = `Benvinguda, ${userName}.
+  const fullLetterText = `Hola, ${userName}.
 
 Ens alegra que siguis aquí.
 
@@ -426,7 +426,7 @@ A La Pública trobaràs una comunitat de persones com tu, que cada dia treballen
 
 Un espai on connectar, aprendre, compartir i gaudir de beneficis exclusius.
 
-Benvinguda a casa.`
+Benvingut a casa.`
 
   // Efecto typewriter
   useEffect(() => {

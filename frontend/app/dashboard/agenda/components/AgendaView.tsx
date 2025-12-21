@@ -3,65 +3,123 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  CalendarDays,
   ChevronLeft,
   ChevronRight,
-  Settings,
-  Target,
-  TrendingUp,
-  MessageSquare,
-  Sparkles,
-  GripVertical,
   Plus,
   X,
   Check,
   Trash2,
   Edit2,
   Edit3,
-  Clock,
+  Settings,
+  Package,
 } from 'lucide-react'
+import {
+  CalendarDaysIcon,
+  TargetIcon,
+  HabitsIcon,
+  ReflectionIcon,
+  SparklesIcon,
+  ModulesIcon,
+  ClockIcon,
+  TrophyIcon,
+  GratitudeIcon,
+  ConclusionsIcon,
+  ReadingIcon,
+  TravelIcon,
+  TriangleIcon,
+  TimeCapsuleIcon,
+  VisualizationIcon,
+  PrivateIcon,
+  IconWrapper,
+} from '@/components/icons'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { TYPOGRAPHY, BUTTONS } from '@/lib/design-system'
 
 import { useAgenda } from '@/lib/hooks/useAgenda'
 import { WelcomeBanner } from './WelcomeBanner'
 import { ConfigModal } from './ConfigModal'
+import {
+  DesafiamentModule,
+  AgraïmentsModule,
+  ConclusionsModule,
+  LecturesModule,
+  ViatgesModule,
+  TrianglesModule,
+  CapsulaModule,
+  VisualitzacionsModule,
+  DiariPrivatModule,
+} from './modules'
 
 interface AgendaViewProps {
   userId: string
   userName: string
 }
 
+// Mapeo de iconos por módulo
+const MODULE_ICONS: Record<string, React.ReactNode> = {
+  desafiament: <TrophyIcon size="sm" />,
+  agraiments: <GratitudeIcon size="sm" />,
+  conclusions: <ConclusionsIcon size="sm" />,
+  lectures: <ReadingIcon size="sm" />,
+  viatges: <TravelIcon size="sm" />,
+  triangles: <TriangleIcon size="sm" />,
+  capsula: <TimeCapsuleIcon size="sm" />,
+  visualitzacions: <VisualizationIcon size="sm" />,
+  diari: <PrivateIcon size="sm" />,
+}
+
 // Constante para módulos opcionales
 const OPTIONAL_MODULES_LIST = [
-  { id: 'desafiament', name: 'Desafiament 21 dies', emoji: '🏆' },
-  { id: 'agraiments', name: 'Agraïments', emoji: '🙏' },
-  { id: 'conclusions', name: 'Conclusions', emoji: '📝' },
-  { id: 'lectures', name: 'Les meves lectures', emoji: '📖' },
-  { id: 'viatges', name: 'Els meus viatges', emoji: '✈️' },
-  { id: 'triangles', name: '6 Triangles de la vida', emoji: '🔺' },
-  { id: 'capsula', name: 'Càpsula del temps', emoji: '💊' },
-  { id: 'visualitzacions', name: 'Visualitzacions', emoji: '👁️' },
-  { id: 'diari', name: 'Diari Privat', emoji: '🔒' },
+  { id: 'desafiament', name: 'Desafiament 21 dies' },
+  { id: 'agraiments', name: 'Agraïments' },
+  { id: 'conclusions', name: 'Conclusions' },
+  { id: 'lectures', name: 'Les meves lectures' },
+  { id: 'viatges', name: 'Els meus viatges' },
+  { id: 'triangles', name: '6 Triangles de la vida' },
+  { id: 'capsula', name: 'Càpsula del temps' },
+  { id: 'visualitzacions', name: 'Visualitzacions' },
+  { id: 'diari', name: 'Diari Privat' },
 ]
 
+// Mapeo de componentes de módulos
+const MODULE_COMPONENTS: Record<string, React.ComponentType<{ onClose?: () => void }>> = {
+  desafiament: DesafiamentModule,
+  agraiments: AgraïmentsModule,
+  conclusions: ConclusionsModule,
+  lectures: LecturesModule,
+  viatges: ViatgesModule,
+  triangles: TrianglesModule,
+  capsula: CapsulaModule,
+  visualitzacions: VisualitzacionsModule,
+  diari: DiariPrivatModule,
+}
+
 // Componente para módulos activos
-function ActiveModuleCard({ moduleType, onDeactivate }: { moduleType: string, onDeactivate: () => void }) {
-  const moduleInfo = OPTIONAL_MODULES_LIST.find(m => m.id === moduleType)
-  
+function ActiveModuleCard({ moduleType, onDeactivate }: { moduleType: string; onDeactivate: () => void }) {
+  const ModuleComponent = MODULE_COMPONENTS[moduleType]
+
+  // Si existe un componente para este módulo, renderizarlo
+  if (ModuleComponent) {
+    return <ModuleComponent onClose={onDeactivate} />
+  }
+
+  // Fallback para módulos sin componente
+  const moduleInfo = OPTIONAL_MODULES_LIST.find((m) => m.id === moduleType)
+  const ModuleIcon = MODULE_ICONS[moduleType] || <IconWrapper icon={Package} color="gray" size="sm" />
+
   return (
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <span className="text-2xl">{moduleInfo?.emoji || '📦'}</span>
+          {ModuleIcon}
           <h3 className="font-semibold text-gray-900">{moduleInfo?.name || moduleType}</h3>
         </div>
-        <button 
-          onClick={onDeactivate}
-          className="p-1 hover:bg-gray-100 rounded transition-colors"
-        >
+        <button onClick={onDeactivate} className="p-1 hover:bg-gray-100 rounded transition-colors">
           <X className="w-4 h-4 text-gray-400" />
         </button>
       </div>
-      
+
       <div className="text-center py-8 text-gray-400">
         <p className="text-sm">Mòdul {moduleInfo?.name || moduleType} activat</p>
         <p className="text-xs mt-1">Funcionalitat en desenvolupament</p>
@@ -70,10 +128,16 @@ function ActiveModuleCard({ moduleType, onDeactivate }: { moduleType: string, on
   )
 }
 
+// Constantes para el banner de bienvenida
+const WELCOME_VISITS_KEY = 'agenda_welcome_visits'
+const WELCOME_DISMISSED_KEY = 'agenda_welcome_dismissed'
+const MAX_WELCOME_VISITS = 3
+
 export function AgendaView({ userId, userName }: AgendaViewProps) {
   const [currentView, setCurrentView] = useState<'diaria' | 'setmanal' | 'mensual' | 'anual'>('diaria')
   const [currentDate, setCurrentDate] = useState(new Date())
   const [showConfigModal, setShowConfigModal] = useState(false)
+  const [showWelcome, setShowWelcome] = useState(false)
   
   // Estados locales para inputs
   const [localGoalText, setLocalGoalText] = useState('')
@@ -119,8 +183,7 @@ export function AgendaView({ userId, userName }: AgendaViewProps) {
     toggleHabitDay,
     deleteHabit,
     saveReflection,
-    toggleModule,
-    dismissWelcome
+    toggleModule
   } = useAgenda(currentDate)
 
   // Sincronizar estados locales con datos del hook
@@ -133,6 +196,40 @@ export function AgendaView({ userId, userName }: AgendaViewProps) {
   useEffect(() => {
     setLocalReflexio(reflexio)
   }, [reflexio])
+
+  // Lógica del banner de bienvenida con 3 visitas máximo
+  useEffect(() => {
+    // Comprobar si el usuario ha cerrado permanentemente el banner
+    const dismissed = localStorage.getItem(WELCOME_DISMISSED_KEY) === 'true'
+    if (dismissed) {
+      setShowWelcome(false)
+      return
+    }
+
+    // Comprobar número de visitas
+    const visits = parseInt(localStorage.getItem(WELCOME_VISITS_KEY) || '0')
+
+    if (visits < MAX_WELCOME_VISITS) {
+      setShowWelcome(true)
+      // Incrementar contador de visitas
+      localStorage.setItem(WELCOME_VISITS_KEY, (visits + 1).toString())
+    } else {
+      // Ya ha visto el banner 3 veces, no mostrar más
+      setShowWelcome(false)
+    }
+  }, [])
+
+  // Cerrar temporalmente (solo esta sesión/visita)
+  const dismissWelcomeTemporarily = () => {
+    setShowWelcome(false)
+    // No hacemos nada más, la próxima visita volverá a salir si no ha llegado a 3
+  }
+
+  // Cerrar permanentemente (no vuelve a salir nunca)
+  const dismissWelcomePermanently = () => {
+    setShowWelcome(false)
+    localStorage.setItem(WELCOME_DISMISSED_KEY, 'true')
+  }
 
   // Cerrar emoji pickers al hacer clic fuera
   useEffect(() => {
@@ -220,59 +317,41 @@ export function AgendaView({ userId, userName }: AgendaViewProps) {
   const isToday = currentDate.toDateString() === new Date().toDateString()
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
-      {/* Banner de bienvenida (solo primera vez) */}
+    <div className="space-y-6">
+      {/* Banner de bienvenida (máximo 3 visitas o hasta configurar) */}
       <AnimatePresence>
-        {config && !config.hasSeenWelcome && (
-          <WelcomeBanner 
-            onDismiss={dismissWelcome}
-            onConfigure={() => {
-              dismissWelcome()
+        {showWelcome && (
+          <WelcomeBanner
+            onDismissTemporary={dismissWelcomeTemporarily}
+            onDismissPermanent={() => {
+              dismissWelcomePermanently()
               setShowConfigModal(true)
             }}
           />
         )}
       </AnimatePresence>
 
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-indigo-100 rounded-xl">
-              <CalendarDays className="w-6 h-6 text-indigo-600" />
-            </div>
+      {/* Frase del día */}
+      <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200 mb-6">
+        <CardContent padding="default">
+          <div className="flex items-start gap-3">
+            <SparklesIcon size="sm" />
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">La Meva Agenda</h1>
-              <p className="text-gray-600 text-sm">Organitza el teu dia de manera eficient</p>
+              <p className="text-xs font-medium text-amber-600 uppercase tracking-wide mb-1">
+                Frase del dia
+              </p>
+              <p className="text-amber-800 italic leading-relaxed">
+                &quot;El secret de progressar és començar. El secret de començar és dividir les teves tasques complexes i aclaparadores en petites tasques manejables, i després començar per la primera.&quot;
+              </p>
+              <p className={`${TYPOGRAPHY.small} text-amber-600 mt-2`}>— Mark Twain</p>
             </div>
           </div>
-        </div>
+        </CardContent>
+      </Card>
 
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={() => setShowConfigModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-          >
-            <Settings className="w-4 h-4" />
-            Configurar Agenda
-          </button>
-        </div>
-      </div>
-
-      {/* Frase del día */}
-      <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-6 mb-6">
-        <div className="flex items-center gap-3 mb-2">
-          <Sparkles className="w-5 h-5 text-amber-600" />
-          <span className="font-medium text-amber-900">Frase del dia</span>
-        </div>
-        <p className="text-amber-800 text-lg leading-relaxed">
-          "El secret de progressar és començar. El secret de començar és dividir les teves tasques complexes i aclaparadores en petites tasques manejables, i després començar per la primera."
-        </p>
-        <p className="text-amber-600 text-sm mt-2">— Mark Twain</p>
-      </div>
-
-      {/* Vista selector */}
-      <div className="flex items-center justify-between mb-6">
+      {/* Vista selector amb botó de configuració */}
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
+        {/* Tabs a l'esquerra */}
         <div className="flex items-center gap-2 p-1 bg-gray-100 rounded-lg">
           {(['diaria', 'setmanal', 'mensual', 'anual'] as const).map((view) => (
             <button
@@ -289,6 +368,16 @@ export function AgendaView({ userId, userName }: AgendaViewProps) {
           ))}
         </div>
 
+        {/* Botó Configurar Agenda - BOTÓ SIMPLE HORITZONTAL */}
+        <button
+          onClick={() => setShowConfigModal(true)}
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+        >
+          <Settings className="w-4 h-4" />
+          <span>Configurar Agenda</span>
+        </button>
+
+        {/* Selector de data a la dreta */}
         <div className="flex items-center gap-3">
           <button
             onClick={goToPrevious}
@@ -296,18 +385,18 @@ export function AgendaView({ userId, userName }: AgendaViewProps) {
           >
             <ChevronLeft className="w-5 h-5 text-gray-600" />
           </button>
-          
-          <h2 className="text-lg font-semibold text-gray-900 min-w-0 text-center">
+
+          <h2 className="text-lg font-semibold text-gray-900 min-w-[180px] text-center">
             {formatDate(currentDate)}
           </h2>
-          
+
           <button
             onClick={goToNext}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <ChevronRight className="w-5 h-5 text-gray-600" />
           </button>
-          
+
           {!isToday && (
             <button
               onClick={goToToday}
@@ -328,16 +417,16 @@ export function AgendaView({ userId, userName }: AgendaViewProps) {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               
               {/* MÓDULO 1: Agenda del Dia */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-blue-50 rounded-lg">
-                    <CalendarDays className="w-5 h-5 text-blue-500" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Agenda del Dia</h3>
-                    <p className="text-sm text-gray-500">Les teves cites i esdeveniments</p>
-                  </div>
-                </div>
+              <Card>
+                <CardHeader noDivider>
+                  <CardTitle
+                    icon={<CalendarDaysIcon size="md" />}
+                    subtitle="Les teves cites i esdeveniments"
+                  >
+                    Agenda del Dia
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
                 
                 {esdeveniments.length > 0 ? (
                   <div className="space-y-2">
@@ -372,7 +461,9 @@ export function AgendaView({ userId, userName }: AgendaViewProps) {
                   </div>
                 ) : (
                   <div className="text-center py-8">
-                    <Clock className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                    <div className="flex justify-center mb-2">
+                      <ClockIcon size="lg" variant="ghost" />
+                    </div>
                     <p className="text-gray-400 text-sm">No tens esdeveniments avui</p>
                   </div>
                 )}
@@ -384,19 +475,20 @@ export function AgendaView({ userId, userName }: AgendaViewProps) {
                   <Plus className="w-4 h-4" />
                   Afegir esdeveniment
                 </button>
-              </div>
+                </CardContent>
+              </Card>
 
               {/* MÓDULO 2: Objectius */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-emerald-50 rounded-lg">
-                    <Target className="w-5 h-5 text-emerald-500" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Objectius</h3>
-                    <p className="text-sm text-gray-500">Defineix i segueix els teus objectius</p>
-                  </div>
-                </div>
+              <Card>
+                <CardHeader noDivider>
+                  <CardTitle
+                    icon={<TargetIcon size="md" />}
+                    subtitle="Defineix i segueix els teus objectius"
+                  >
+                    Objectius
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
 
                 {/* Objectiu del dia */}
                 <div className="mb-4">
@@ -407,7 +499,7 @@ export function AgendaView({ userId, userName }: AgendaViewProps) {
                     onChange={(e) => setLocalGoalText(e.target.value)}
                     onBlur={() => goal && updateGoalText(localGoalText)}
                     placeholder="Quin és el teu objectiu principal avui?"
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900"
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 placeholder:text-gray-400"
                   />
                 </div>
 
@@ -469,19 +561,20 @@ export function AgendaView({ userId, userName }: AgendaViewProps) {
                   <Plus className="w-4 h-4" />
                   Afegir tasca
                 </button>
-              </div>
+                </CardContent>
+              </Card>
 
               {/* MÓDULO 3: Seguiment d'Hàbits */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-orange-50 rounded-lg">
-                    <TrendingUp className="w-5 h-5 text-orange-500" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Seguiment d'Hàbits</h3>
-                    <p className="text-sm text-gray-500">Construeix rutines positives</p>
-                  </div>
-                </div>
+              <Card>
+                <CardHeader noDivider>
+                  <CardTitle
+                    icon={<HabitsIcon size="md" />}
+                    subtitle="Construeix rutines positives"
+                  >
+                    Seguiment d'Hàbits
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
 
                 {habits.length > 0 ? (
                   <div className="space-y-3">
@@ -628,7 +721,9 @@ export function AgendaView({ userId, userName }: AgendaViewProps) {
                   </div>
                 ) : (
                   <div className="text-center py-8">
-                    <TrendingUp className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                    <div className="flex justify-center mb-2">
+                      <HabitsIcon size="lg" variant="ghost" />
+                    </div>
                     <p className="text-gray-400 text-sm">No tens hàbits configurats</p>
                   </div>
                 )}
@@ -689,7 +784,7 @@ export function AgendaView({ userId, userName }: AgendaViewProps) {
                         }
                       }}
                       placeholder="Nom de l'hàbit..."
-                      className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900"
+                      className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900 placeholder:text-gray-400"
                     />
                     
                     {/* Botón añadir */}
@@ -712,19 +807,20 @@ export function AgendaView({ userId, userName }: AgendaViewProps) {
                     </button>
                   </div>
                 </div>
-              </div>
+                </CardContent>
+              </Card>
 
               {/* MÓDULO 4: Reflexió del Dia */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-purple-50 rounded-lg">
-                    <MessageSquare className="w-5 h-5 text-purple-500" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Reflexió del Dia</h3>
-                    <p className="text-sm text-gray-500">Com t'has sentit avui?</p>
-                  </div>
-                </div>
+              <Card>
+                <CardHeader noDivider>
+                  <CardTitle
+                    icon={<ReflectionIcon size="md" />}
+                    subtitle="Com t'has sentit avui?"
+                  >
+                    Reflexió del Dia
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
 
                 {/* Selector de mood */}
                 <div className="mb-4">
@@ -754,7 +850,7 @@ export function AgendaView({ userId, userName }: AgendaViewProps) {
                     onChange={(e) => setLocalReflexio(prev => ({ ...prev, text: e.target.value }))}
                     placeholder="Què ha passat avui? Com et sents? Què has après?"
                     rows={4}
-                    className="w-full p-3 border border-gray-200 rounded-lg resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-800"
+                    className="w-full p-3 text-sm border border-gray-200 rounded-lg resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900 placeholder:text-gray-400"
                   />
                 </div>
 
@@ -764,7 +860,8 @@ export function AgendaView({ userId, userName }: AgendaViewProps) {
                 >
                   Guardar Reflexió
                 </button>
-              </div>
+                </CardContent>
+              </Card>
             </div>
 
             {/* Módulos activos (opcionales activados) */}
@@ -783,12 +880,16 @@ export function AgendaView({ userId, userName }: AgendaViewProps) {
 
           {/* Panel lateral derecho - Módulos opcionales */}
           <div className="w-72 flex-shrink-0 hidden xl:block">
-            <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 sticky top-6">
-              <h3 className="font-semibold text-gray-900 mb-1 flex items-center gap-2">
-                <GripVertical className="w-4 h-4 text-gray-400" />
-                Mòduls opcionals
-              </h3>
-              <p className="text-xs text-gray-500 mb-4">Clica per afegir a la teva agenda</p>
+            <Card className="sticky top-6">
+              <CardHeader noDivider>
+                <CardTitle
+                  icon={<ModulesIcon size="xs" variant="ghost" />}
+                  subtitle="Clica per afegir a la teva agenda"
+                >
+                  Mòduls opcionals
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
               
               {/* Módulos disponibles (no activos) */}
               <div className="space-y-2">
@@ -800,7 +901,7 @@ export function AgendaView({ userId, userName }: AgendaViewProps) {
                       onClick={() => toggleModule(modul.id, true)}
                       className="w-full flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg hover:bg-indigo-50 hover:border-indigo-300 transition-all text-left"
                     >
-                      <span className="text-lg">{modul.emoji}</span>
+                      {MODULE_ICONS[modul.id] || <IconWrapper icon={Package} color="gray" size="sm" />}
                       <span className="text-sm text-gray-700 flex-1">{modul.name}</span>
                       <Plus className="w-4 h-4 text-gray-400" />
                     </button>
@@ -811,7 +912,7 @@ export function AgendaView({ userId, userName }: AgendaViewProps) {
               {activeModules.length > 0 && (
                 <>
                   <div className="border-t border-gray-200 my-4" />
-                  <h4 className="text-sm font-medium text-gray-700 mb-3">Actius</h4>
+                  <h4 className={`${TYPOGRAPHY.label} mb-3`}>Actius</h4>
                   <div className="space-y-2">
                     {activeModules.map((mod) => {
                       const modulInfo = OPTIONAL_MODULES_LIST.find(m => m.id === mod.moduleType)
@@ -820,9 +921,9 @@ export function AgendaView({ userId, userName }: AgendaViewProps) {
                           key={mod.moduleType}
                           className="flex items-center gap-2 px-3 py-2 bg-indigo-50 border border-indigo-200 rounded-lg"
                         >
-                          <span className="text-lg">{modulInfo?.emoji || '📦'}</span>
+                          {MODULE_ICONS[mod.moduleType] || <IconWrapper icon={Package} color="gray" size="sm" />}
                           <span className="text-sm text-indigo-700 flex-1">{modulInfo?.name || mod.moduleType}</span>
-                          <button 
+                          <button
                             onClick={() => toggleModule(mod.moduleType, false)}
                             className="p-1 hover:bg-indigo-100 rounded"
                           >
@@ -834,7 +935,8 @@ export function AgendaView({ userId, userName }: AgendaViewProps) {
                   </div>
                 </>
               )}
-            </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       )}
@@ -862,9 +964,7 @@ export function AgendaView({ userId, userName }: AgendaViewProps) {
             >
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 rounded-xl">
-                    <CalendarDays className="w-5 h-5 text-blue-600" />
-                  </div>
+                  <CalendarDaysIcon size="md" />
                   <h3 className="text-lg font-semibold text-gray-900">
                     {editingEvent ? 'Editar esdeveniment' : 'Nou esdeveniment'}
                   </h3>
@@ -905,7 +1005,7 @@ export function AgendaView({ userId, userName }: AgendaViewProps) {
                     value={eventForm.title}
                     onChange={(e) => setEventForm(prev => ({ ...prev, title: e.target.value }))}
                     placeholder="Ex: Reunió d'equip"
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
                     autoFocus
                   />
                 </div>
@@ -920,7 +1020,7 @@ export function AgendaView({ userId, userName }: AgendaViewProps) {
                     onChange={(e) => setEventForm(prev => ({ ...prev, description: e.target.value }))}
                     placeholder="Detalls addicionals de l'esdeveniment..."
                     rows={3}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                    className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none text-gray-900 placeholder:text-gray-400"
                   />
                 </div>
               </div>
@@ -988,9 +1088,7 @@ export function AgendaView({ userId, userName }: AgendaViewProps) {
             >
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-emerald-100 rounded-xl">
-                    <Target className="w-5 h-5 text-emerald-600" />
-                  </div>
+                  <TargetIcon size="md" />
                   <h3 className="text-lg font-semibold text-gray-900">Nova tasca</h3>
                 </div>
                 <button
@@ -1017,7 +1115,7 @@ export function AgendaView({ userId, userName }: AgendaViewProps) {
                     }
                   }}
                   placeholder="Ex: Revisar documentació"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
                   autoFocus
                 />
               </div>

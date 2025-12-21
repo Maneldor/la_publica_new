@@ -1,27 +1,40 @@
 'use client';
 
 import { GraduationCap, Plus, X } from 'lucide-react';
-import { ProfileFormData, Education } from '../../hooks/useProfileWizard';
+
+interface Education {
+  id?: string;
+  institution: string;
+  degree: string;
+  field?: string;
+  startDate?: string;
+  endDate?: string;
+  isCurrent: boolean;
+  description?: string;
+}
 
 interface Step4Props {
-  formData: ProfileFormData;
-  errors: Record<string, string>;
-  updateField: (field: keyof ProfileFormData, value: any) => void;
-  addEducation: () => void;
-  updateEducation: (id: string, field: keyof Education, value: string) => void;
-  removeEducation: (id: string) => void;
+  data: {
+    education: Education[];
+  };
+  addEducation: (education: Omit<Education, 'id'>) => Promise<Education | null>;
+  updateEducation: (id: string, updates: Partial<Education>) => Promise<boolean>;
+  deleteEducation: (id: string) => Promise<boolean>;
+  isSaving: boolean;
 }
 
 export const Step4Education = ({
-  formData,
-  errors,
-  updateField,
+  data,
   addEducation,
   updateEducation,
-  removeEducation
+  deleteEducation,
+  isSaving
 }: Step4Props) => {
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: currentYear - 1960 + 5 }, (_, i) => currentYear + 4 - i);
+
+  // Protecció contra data undefined
+  const education = data?.education || [];
 
   const commonDegrees = [
     'Grau en Administració i Direcció d\'Empreses',
@@ -52,7 +65,7 @@ export const Step4Education = ({
 
       {/* Education List */}
       <div className="space-y-6">
-        {formData.education.map((edu, index) => (
+        {education.map((edu, index) => (
           <div key={edu.id} className="bg-white border border-gray-200 rounded-lg p-6">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
@@ -64,7 +77,7 @@ export const Step4Education = ({
                 </h3>
               </div>
               <button
-                onClick={() => removeEducation(edu.id)}
+                onClick={() => edu.id && deleteEducation(edu.id)}
                 className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
               >
                 <X className="w-4 h-4" />
@@ -79,25 +92,21 @@ export const Step4Education = ({
                 </label>
                 <input
                   type="text"
-                  value={edu.title}
-                  onChange={(e) => updateEducation(edu.id, 'title', e.target.value)}
+                  value={edu.degree || ''}
+                  onChange={(e) => {
+                    if (edu.id) {
+                      updateEducation(edu.id, { degree: e.target.value });
+                    }
+                  }}
                   placeholder="Ex: Màster en Administració i Direcció d'Empreses (MBA)"
                   list={`degrees-${edu.id}`}
-                  className={`
-                    w-full px-4 py-3 rounded-lg border
-                    ${errors[`education_${index}_title`] ? 'border-red-500 bg-red-50' : 'border-gray-300'}
-                    focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                    transition-all
-                  `}
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 />
                 <datalist id={`degrees-${edu.id}`}>
                   {commonDegrees.map((degree) => (
                     <option key={degree} value={degree} />
                   ))}
                 </datalist>
-                {errors[`education_${index}_title`] && (
-                  <p className="text-sm text-red-600 mt-1">{errors[`education_${index}_title`]}</p>
-                )}
               </div>
 
               {/* Institution */}
@@ -107,19 +116,15 @@ export const Step4Education = ({
                 </label>
                 <input
                   type="text"
-                  value={edu.institution}
-                  onChange={(e) => updateEducation(edu.id, 'institution', e.target.value)}
+                  value={edu.institution || ''}
+                  onChange={(e) => {
+                    if (edu.id) {
+                      updateEducation(edu.id, { institution: e.target.value });
+                    }
+                  }}
                   placeholder="Ex: Universitat Pompeu Fabra"
-                  className={`
-                    w-full px-4 py-3 rounded-lg border
-                    ${errors[`education_${index}_institution`] ? 'border-red-500 bg-red-50' : 'border-gray-300'}
-                    focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                    transition-all
-                  `}
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 />
-                {errors[`education_${index}_institution`] && (
-                  <p className="text-sm text-red-600 mt-1">{errors[`education_${index}_institution`]}</p>
-                )}
               </div>
 
               {/* Specialization */}
@@ -129,8 +134,12 @@ export const Step4Education = ({
                 </label>
                 <input
                   type="text"
-                  value={edu.specialization}
-                  onChange={(e) => updateEducation(edu.id, 'specialization', e.target.value)}
+                  value={edu.field || ''}
+                  onChange={(e) => {
+                    if (edu.id) {
+                      updateEducation(edu.id, { field: e.target.value });
+                    }
+                  }}
                   placeholder="Ex: Especialització en Gestió Pública"
                   className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 />
@@ -190,10 +199,10 @@ export const Step4Education = ({
       </div>
 
       {/* Quick Add Suggestions */}
-      {formData.education.length === 0 && (
+      {education.length === 0 && (
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
           <h4 className="text-sm font-medium text-gray-900 mb-3">
-            🎓 Exemples de formació habitual en l'administració pública:
+            Exemples de formació habitual en l'administració pública:
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {[
@@ -207,14 +216,11 @@ export const Step4Education = ({
               <button
                 key={degree}
                 onClick={() => {
-                  addEducation();
-                  // Wait for the education to be added and then update it
-                  setTimeout(() => {
-                    const newEducation = formData.education[formData.education.length];
-                    if (newEducation) {
-                      updateEducation(newEducation.id, 'title', degree);
-                    }
-                  }, 100);
+                  addEducation({
+                    institution: '',
+                    degree: degree,
+                    isCurrent: false
+                  });
                 }}
                 className="text-left p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors text-sm"
               >
@@ -240,13 +246,13 @@ export const Step4Education = ({
       </div>
 
       {/* Education Summary */}
-      {formData.education.length > 0 && (
+      {education.length > 0 && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
           <h4 className="text-sm font-medium text-green-800 mb-2">
             ✅ Resum de la teva formació:
           </h4>
           <div className="space-y-2">
-            {formData.education.map((edu, index) => (
+            {education.map((edu, index) => (
               <div key={edu.id} className="text-sm text-green-700">
                 <strong>{index + 1}.</strong> {edu.title || 'Títol pendent'}
                 {edu.institution && ` - ${edu.institution}`}

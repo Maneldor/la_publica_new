@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import {
     Users,
     Plus,
@@ -19,7 +20,11 @@ import {
     UserPlus,
     MoreHorizontal,
     Mail,
-    RefreshCw
+    RefreshCw,
+    AlertTriangle,
+    Loader2,
+    UserX,
+    UserCheck
 } from 'lucide-react'
 
 // Tipus basats en Prisma schema
@@ -43,6 +48,7 @@ type UserType = 'EMPLOYEE' | 'COMPANY_OWNER' | 'COMPANY_MEMBER' | 'ACCOUNT_MANAG
 
 interface User {
     id: string
+    nick: string
     email: string
     name: string | null
     image: string | null
@@ -91,6 +97,7 @@ const ROLE_GROUPS = {
 }
 
 export default function AdminUsuarisPage() {
+    const router = useRouter()
     const [users, setUsers] = useState<User[]>([])
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
@@ -98,28 +105,134 @@ export default function AdminUsuarisPage() {
     const [statusFilter, setStatusFilter] = useState<string>('all')
     const [selectedUsers, setSelectedUsers] = useState<string[]>([])
 
-    // Carregar usuaris (mock - substituir per API real)
-    useEffect(() => {
-        const loadUsers = async () => {
-            setLoading(true)
-            try {
-                const response = await fetch('/api/admin/users')
-                const data = await response.json()
-                
-                if (data.success && data.data?.users) {
-                    setUsers(data.data.users)
-                } else {
-                    console.error('Error carregant usuaris:', data.error)
-                }
-            } catch (err) {
-                console.error('Error carregant usuaris:', err)
-            } finally {
-                setLoading(false)
+    // Estado para el modal de confirmación de eliminación
+    const [deleteModal, setDeleteModal] = useState<{ open: boolean; user: User | null }>({
+        open: false,
+        user: null,
+    })
+    const [isDeleting, setIsDeleting] = useState(false)
+    const [toast, setToast] = useState<{ show: boolean; message: string; type: 'success' | 'error' }>({
+        show: false,
+        message: '',
+        type: 'success'
+    })
+
+    // Estado para el modal de activar/desactivar
+    const [toggleActiveModal, setToggleActiveModal] = useState<{
+        open: boolean
+        user: User | null
+        action: 'activate' | 'deactivate'
+    }>({
+        open: false,
+        user: null,
+        action: 'deactivate',
+    })
+    const [isToggling, setIsToggling] = useState(false)
+
+    // Función para cargar usuarios
+    const loadUsers = async () => {
+        setLoading(true)
+        try {
+            const response = await fetch('/api/admin/users')
+            const data = await response.json()
+
+            if (data.success && data.data?.users) {
+                setUsers(data.data.users)
+            } else {
+                console.error('Error carregant usuaris:', data.error)
             }
+        } catch (err) {
+            console.error('Error carregant usuaris:', err)
+        } finally {
+            setLoading(false)
         }
-        
+    }
+
+    // Carregar usuaris
+    useEffect(() => {
         loadUsers()
     }, [])
+
+    // Mostrar toast
+    const showToast = (message: string, type: 'success' | 'error') => {
+        setToast({ show: true, message, type })
+        setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000)
+    }
+
+    // Función para eliminar usuario
+    const handleDeleteUser = async () => {
+        if (!deleteModal.user) return
+
+        setIsDeleting(true)
+        try {
+            const res = await fetch(`/api/admin/users/${deleteModal.user.id}`, {
+                method: 'DELETE',
+            })
+
+            if (res.ok) {
+                showToast('Usuari eliminat correctament', 'success')
+                loadUsers()
+                setDeleteModal({ open: false, user: null })
+            } else {
+                const error = await res.json()
+                showToast(error.error || 'Error eliminant usuari', 'error')
+            }
+        } catch (error) {
+            console.error('Error:', error)
+            showToast('Error de connexió', 'error')
+        } finally {
+            setIsDeleting(false)
+        }
+    }
+
+    // Función para abrir modal de eliminación
+    const openDeleteModal = (user: User) => {
+        setDeleteModal({ open: true, user })
+    }
+
+    // Función para activar/desactivar usuario
+    const handleToggleActive = async () => {
+        if (!toggleActiveModal.user) return
+
+        setIsToggling(true)
+        try {
+            const res = await fetch(`/api/admin/users/${toggleActiveModal.user.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    isActive: toggleActiveModal.action === 'activate'
+                }),
+            })
+
+            if (res.ok) {
+                showToast(
+                    toggleActiveModal.action === 'activate'
+                        ? 'Usuari activat correctament'
+                        : 'Usuari desactivat correctament',
+                    'success'
+                )
+                loadUsers()
+                setToggleActiveModal({ open: false, user: null, action: 'deactivate' })
+            } else {
+                const error = await res.json()
+                showToast(error.error || "Error canviant estat de l'usuari", 'error')
+            }
+        } catch (error) {
+            console.error('Error:', error)
+            showToast('Error de connexió', 'error')
+        } finally {
+            setIsToggling(false)
+        }
+    }
+
+    // Función para abrir modal de activar/desactivar
+    const openToggleActiveModal = (user: User) => {
+        setToggleActiveModal({
+            open: true,
+            user,
+            action: user.isActive ? 'deactivate' : 'activate'
+        })
+    }
 
     // Filtrar usuaris
     const filteredUsers = users.filter(user => {
@@ -179,7 +292,7 @@ export default function AdminUsuarisPage() {
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
-                    <button className="inline-flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
+                    <button className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 transition-colors font-medium">
                         <Download className="h-4 w-4" strokeWidth={1.5} />
                         Exportar
                     </button>
@@ -222,7 +335,7 @@ export default function AdminUsuarisPage() {
                     <select
                         value={roleFilter}
                         onChange={(e) => setRoleFilter(e.target.value)}
-                        className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                        className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white text-gray-700 text-sm min-w-[180px] cursor-pointer"
                     >
                         <option value="all">Tots els rols</option>
                         <optgroup label="Administradors">
@@ -254,7 +367,7 @@ export default function AdminUsuarisPage() {
                     <select
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
-                        className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                        className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white text-gray-700 text-sm min-w-[160px] cursor-pointer"
                     >
                         <option value="all">Tots els estats</option>
                         <option value="active">Actius</option>
@@ -343,6 +456,8 @@ export default function AdminUsuarisPage() {
                                         user={user}
                                         isSelected={selectedUsers.includes(user.id)}
                                         onToggleSelect={() => toggleSelectUser(user.id)}
+                                        onDelete={openDeleteModal}
+                                        onToggleActive={openToggleActiveModal}
                                     />
                                 ))}
                             </tbody>
@@ -366,7 +481,151 @@ export default function AdminUsuarisPage() {
                     </>
                 )}
             </div>
-        </div >
+            {/* Modal de confirmación de eliminación */}
+            {deleteModal.open && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                    <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 overflow-hidden">
+                        <div className="p-6">
+                            <div className="flex items-center gap-4 mb-4">
+                                <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                                    <AlertTriangle className="w-6 h-6 text-red-600" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-semibold text-gray-900">Eliminar usuari</h3>
+                                    <p className="text-gray-500 text-sm">Aquesta acció no es pot desfer</p>
+                                </div>
+                            </div>
+
+                            <p className="text-gray-600 mb-6">
+                                Estàs segur que vols eliminar l&apos;usuari <strong>{deleteModal.user?.name || deleteModal.user?.email}</strong>?
+                                <br />
+                                Es perdran totes les seves dades, publicacions i activitat.
+                            </p>
+
+                            <div className="flex justify-end gap-3">
+                                <button
+                                    onClick={() => setDeleteModal({ open: false, user: null })}
+                                    className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                                    disabled={isDeleting}
+                                >
+                                    Cancel·lar
+                                </button>
+                                <button
+                                    onClick={handleDeleteUser}
+                                    disabled={isDeleting}
+                                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                                >
+                                    {isDeleting ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                            Eliminant...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Trash2 className="w-4 h-4" />
+                                            Eliminar
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal Activar/Desactivar */}
+            {toggleActiveModal.open && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                    <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 overflow-hidden">
+                        <div className="p-6">
+                            <div className="flex items-center gap-4 mb-4">
+                                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                                    toggleActiveModal.action === 'activate'
+                                        ? 'bg-green-100'
+                                        : 'bg-amber-100'
+                                }`}>
+                                    {toggleActiveModal.action === 'activate' ? (
+                                        <UserCheck className="w-6 h-6 text-green-600" />
+                                    ) : (
+                                        <UserX className="w-6 h-6 text-amber-600" />
+                                    )}
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-semibold text-gray-900">
+                                        {toggleActiveModal.action === 'activate' ? 'Activar usuari' : 'Desactivar usuari'}
+                                    </h3>
+                                    <p className="text-gray-500 text-sm">
+                                        {toggleActiveModal.action === 'activate'
+                                            ? "L'usuari podrà accedir al sistema"
+                                            : "L'usuari no podrà accedir al sistema"}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <p className="text-gray-600 mb-6">
+                                Estàs segur que vols {toggleActiveModal.action === 'activate' ? 'activar' : 'desactivar'} l&apos;usuari{' '}
+                                <strong>{toggleActiveModal.user?.name || toggleActiveModal.user?.email}</strong>?
+                                {toggleActiveModal.action === 'deactivate' && (
+                                    <>
+                                        <br />
+                                        <span className="text-amber-600">No podrà iniciar sessió fins que el tornis a activar.</span>
+                                    </>
+                                )}
+                            </p>
+
+                            <div className="flex justify-end gap-3">
+                                <button
+                                    onClick={() => setToggleActiveModal({ open: false, user: null, action: 'deactivate' })}
+                                    className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                                    disabled={isToggling}
+                                >
+                                    Cancel·lar
+                                </button>
+                                <button
+                                    onClick={handleToggleActive}
+                                    disabled={isToggling}
+                                    className={`px-4 py-2 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2 ${
+                                        toggleActiveModal.action === 'activate'
+                                            ? 'bg-green-600 hover:bg-green-700'
+                                            : 'bg-amber-600 hover:bg-amber-700'
+                                    }`}
+                                >
+                                    {isToggling ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                            {toggleActiveModal.action === 'activate' ? 'Activant...' : 'Desactivant...'}
+                                        </>
+                                    ) : (
+                                        <>
+                                            {toggleActiveModal.action === 'activate' ? (
+                                                <UserCheck className="w-4 h-4" />
+                                            ) : (
+                                                <UserX className="w-4 h-4" />
+                                            )}
+                                            {toggleActiveModal.action === 'activate' ? 'Activar' : 'Desactivar'}
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Toast de notificación */}
+            {toast.show && (
+                <div className={`fixed bottom-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 ${
+                    toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+                }`}>
+                    {toast.type === 'success' ? (
+                        <CheckCircle className="w-5 h-5" />
+                    ) : (
+                        <XCircle className="w-5 h-5" />
+                    )}
+                    {toast.message}
+                </div>
+            )}
+        </div>
     )
 }
 
@@ -410,9 +669,11 @@ interface UserRowProps {
     user: User
     isSelected: boolean
     onToggleSelect: () => void
+    onDelete: (user: User) => void
+    onToggleActive: (user: User) => void
 }
 
-function UserRow({ user, isSelected, onToggleSelect }: UserRowProps) {
+function UserRow({ user, isSelected, onToggleSelect, onDelete, onToggleActive }: UserRowProps) {
     const roleConfig = ROLE_CONFIG[user.role]
     const initials = user.name
         ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
@@ -489,21 +750,42 @@ function UserRow({ user, isSelected, onToggleSelect }: UserRowProps) {
             <td className="px-4 py-3 text-right">
                 <div className="flex items-center justify-end gap-1">
                     <Link
-                        href={`/admin/usuaris/${user.id}`}
+                        href={`/admin/usuaris/${user.nick || user.id}`}
                         className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                        title="Veure detalls"
                     >
                         <Eye className="h-4 w-4" strokeWidth={1.5} />
                     </Link>
                     <Link
-                        href={`/admin/usuaris/${user.id}/editar`}
-                        className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                        href={user.role === 'USER' && user.nick ? `/admin/usuaris/${user.nick}/wizard` : `/admin/usuaris/${user.nick || user.id}/editar`}
+                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                        title={user.role === 'USER' ? 'Editar perfil complet' : 'Editar'}
                     >
                         <Edit className="h-4 w-4" strokeWidth={1.5} />
                     </Link>
                     <button className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                         <Mail className="h-4 w-4" strokeWidth={1.5} />
                     </button>
-                    <button className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                    <button
+                        onClick={() => onToggleActive(user)}
+                        className={`p-1.5 rounded-lg transition-colors ${
+                            user.isActive
+                                ? 'text-slate-400 hover:text-amber-600 hover:bg-amber-50'
+                                : 'text-amber-500 hover:text-green-600 hover:bg-green-50'
+                        }`}
+                        title={user.isActive ? 'Desactivar' : 'Activar'}
+                    >
+                        {user.isActive ? (
+                            <UserX className="h-4 w-4" strokeWidth={1.5} />
+                        ) : (
+                            <UserCheck className="h-4 w-4" strokeWidth={1.5} />
+                        )}
+                    </button>
+                    <button
+                        onClick={() => onDelete(user)}
+                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Eliminar"
+                    >
                         <Trash2 className="h-4 w-4" strokeWidth={1.5} />
                     </button>
                 </div>

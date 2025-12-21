@@ -11,6 +11,10 @@ model User {
   id                       String                     @id @default(cuid())
   email                    String                     @unique
   name                     String?
+  nick                     String?                    @unique
+  firstName                String?
+  lastName                 String?                    // Primer cognom
+  secondLastName           String?                    // Segon cognom
   image                    String?
   role                     UserRole                   @default(USER)
   customRoleId             String?
@@ -28,6 +32,12 @@ model User {
   primaryRole              UserRole?
   isEmailVerified          Boolean                    @default(false)
   lastLogin                DateTime?
+
+  // Preferències de visualització i aparença
+  displayPreference        String                     @default("NICK") // NICK, NOM, NOM_COGNOM
+  administration           String?                    // LOCAL, AUTONOMICA, CENTRAL
+  coverColor               String?                    // Color de fons de la portada
+  coverImage               String?                    // URL de la imatge de portada
   anunciosCreados          Anuncio[]                  @relation("AnunciosCreados")
   comentariosCreados       AnuncioComment[]           @relation("ComentariosCreados")
   offersApproved           Offer[]                    @relation("OfferApprovals")
@@ -100,14 +110,49 @@ model User {
   onboardingCompletedAt    DateTime?
 
   // Relacions Agenda
-  agendaEvents      AgendaEvent[]
-  agendaGoals       AgendaGoal[]
-  agendaHabits      AgendaHabit[]
-  agendaReflections AgendaReflection[]
-  agendaModules     AgendaModule[]
-  agendaConfig      AgendaUserConfig?
+  agendaEvents        AgendaEvent[]
+  agendaGoals         AgendaGoal[]
+  agendaHabits        AgendaHabit[]
+  agendaReflections   AgendaReflection[]
+  agendaModules       AgendaModule[]
+  agendaConfig        AgendaUserConfig?
+
+  // Relacions Mòduls Opcionals Agenda
+  agendaChallenges    AgendaChallenge[]
+  agendaGratitudes    AgendaGratitude[]
+  agendaConclusions   AgendaConclusion[]
+  agendaBooks         AgendaBook[]
+  agendaTravels       AgendaTravel[]
+  agendaLifeAreas     AgendaLifeArea[]
+  agendaTimeCapsules  AgendaTimeCapsule[]
+  agendaVisualizations AgendaVisualization[]
+  agendaDiaries       AgendaDiary[]
+
+  // Relacions Perfil Extendido
+  profile           UserProfile?
+  education         UserEducation[]
+  experiences       UserExperience[]
+  skills            UserSkill[]
+  languages         UserLanguage[]
+  socialLinks       UserSocialLink[]
+
+  // Estat online i connexions
+  isOnline          Boolean            @default(false)
+  lastSeenAt        DateTime?
+  connectionsSent     UserConnection[] @relation("ConnectionsSent")
+  connectionsReceived UserConnection[] @relation("ConnectionsReceived")
+
+  // Tokens de verificación
+  verificationTokens  VerificationToken[]
+
+  // Relacions Xarxa Social (Posts)
+  posts             Post[]
+  postLikes         PostLike[]
+  postComments      PostComment[]  @relation("PostCommentAuthor")
+  postShares        PostShare[]
 
   @@index([email])
+  @@index([nick])
   @@index([role])
   @@index([communityId])
   @@index([userType])
@@ -116,9 +161,75 @@ model User {
   @@index([createdAt])
   @@index([isActive, createdAt])
   @@index([supervisorId])
+  @@index([isOnline])
+  @@index([lastSeenAt])
 
   employee                 Employee?
   publicAdministration     PublicAdministration?
+}
+
+// Connexions entre usuaris (sol·licituds d'amistat/connexió professional)
+model UserConnection {
+  id          String   @id @default(cuid())
+
+  // Usuari que envia la sol·licitud
+  senderId    String
+  sender      User     @relation("ConnectionsSent", fields: [senderId], references: [id], onDelete: Cascade)
+
+  // Usuari que rep la sol·licitud
+  receiverId  String
+  receiver    User     @relation("ConnectionsReceived", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  // Estat: PENDING, ACCEPTED, REJECTED, CANCELLED, EXPIRED
+  status      ConnectionStatus @default(PENDING)
+
+  // Data d'expiració (15 dies per defecte per a PENDING)
+  expiresAt   DateTime?
+
+  // Missatge opcional amb la sol·licitud
+  message     String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  acceptedAt  DateTime?
+  rejectedAt  DateTime?
+
+  @@unique([senderId, receiverId])
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([status])
+  @@index([expiresAt])
+  @@map("user_connections")
+}
+
+enum ConnectionStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+  EXPIRED
+}
+
+// Token de verificación de email y recuperación de contraseña
+model VerificationToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  type      TokenType
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("verification_tokens")
+}
+
+enum TokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
 }
 
 model Comunidad {
@@ -2398,25 +2509,42 @@ enum CompanyStatus {
 }
 
 enum NotificationType {
+  // Empreses
   COMPANY_PENDING
   COMPANY_APPROVED
   COMPANY_REJECTED
+  COMPANY_ASSIGNED
+  COMPANY_COMPLETED
+  COMPANY_PUBLISHED
   PROFILE_CHANGE
-  GENERAL
-  SYSTEM
+
+  // Connexions entre usuaris
+  CONNECTION_REQUEST
+  CONNECTION_ACCEPTED
+  CONNECTION_REJECTED
+  CONNECTION_EXPIRED
+
+  // Missatgeria
+  NEW_MESSAGE
+
+  // Ofertes i cupons
   COUPON_GENERATED
   COUPON_USED
   OFFER_EXPIRING
   NEW_FAVORITE
-  WEEKLY_SUMMARY
+
+  // Leads i tasques
   LEAD_VERIFIED
-  COMPANY_ASSIGNED
-  COMPANY_COMPLETED
-  COMPANY_PUBLISHED
-  NEW_MESSAGE
   TASK_ASSIGNED
+
+  // Pagaments i plans
   PAYMENT_RECEIVED
   PLAN_EXPIRING
+
+  // Generals
+  GENERAL
+  SYSTEM
+  WEEKLY_SUMMARY
   INFO
   WARNING
   SUCCESS
@@ -3644,5 +3772,485 @@ model AgendaUserConfig {
   updatedAt          DateTime @updatedAt
 
   @@map("agenda_user_config")
+}
+
+// ========================================
+// MÓDULOS OPCIONALES DE AGENDA
+// ========================================
+
+// Desafiament 21 dies - Retos de 21 días para formar hábitos
+model AgendaChallenge {
+  id          String                   @id @default(cuid())
+  userId      String
+  user        User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  startDate   DateTime                 @db.Date
+  endDate     DateTime                 @db.Date
+  isActive    Boolean                  @default(true)
+  isCompleted Boolean                  @default(false)
+  completedAt DateTime?
+  logs        AgendaChallengeLog[]
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @updatedAt
+
+  @@index([userId])
+  @@map("agenda_challenges")
+}
+
+model AgendaChallengeLog {
+  id          String          @id @default(cuid())
+  challengeId String
+  challenge   AgendaChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  day         Int             // Día 1-21
+  date        DateTime        @db.Date
+  completed   Boolean         @default(false)
+  notes       String?
+  createdAt   DateTime        @default(now())
+
+  @@unique([challengeId, day])
+  @@map("agenda_challenge_logs")
+}
+
+// Agraïments - Diario de gratitud
+model AgendaGratitude {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  item1     String?
+  item2     String?
+  item3     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, date])
+  @@map("agenda_gratitudes")
+}
+
+// Conclusions - Reflexiones y aprendizajes
+model AgendaConclusion {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  type      String   @default("daily") // daily, weekly, monthly
+  whatWentWell    String? @db.Text
+  whatToImprove   String? @db.Text
+  lessonsLearned  String? @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, date, type])
+  @@map("agenda_conclusions")
+}
+
+// Lectures - Registro de libros
+model AgendaBook {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title        String
+  author       String?
+  status       String    @default("reading") // to_read, reading, completed
+  rating       Int?      // 1-5
+  notes        String?   @db.Text
+  startDate    DateTime?
+  finishDate   DateTime?
+  currentPage  Int?
+  totalPages   Int?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("agenda_books")
+}
+
+// Viatges - Lista de viajes
+model AgendaTravel {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  destination String
+  country     String?
+  status      String    @default("dream") // dream, planning, completed
+  startDate   DateTime?
+  endDate     DateTime?
+  notes       String?   @db.Text
+  highlights  String?   @db.Text
+  rating      Int?      // 1-5
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("agenda_travels")
+}
+
+// 6 Triangles de la vida - Evaluación de áreas de vida
+model AgendaLifeArea {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  health    Int      @default(5) // 1-10
+  relationships Int  @default(5)
+  career    Int      @default(5)
+  finances  Int      @default(5)
+  growth    Int      @default(5)
+  fun       Int      @default(5)
+  notes     String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, date])
+  @@map("agenda_life_areas")
+}
+
+// Càpsula del temps - Mensajes al yo futuro
+model AgendaTimeCapsule {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message     String    @db.Text
+  openDate    DateTime  @db.Date
+  isOpened    Boolean   @default(false)
+  openedAt    DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+  @@map("agenda_time_capsules")
+}
+
+// Visualitzacions - Metas visualizadas
+model AgendaVisualization {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String?  @db.Text
+  category    String?  // career, health, relationships, wealth, etc.
+  imageUrl    String?
+  isAchieved  Boolean  @default(false)
+  achievedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@map("agenda_visualizations")
+}
+
+// Diari Privat - Entradas de diario privado
+model AgendaDiary {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  title     String?
+  content   String   @db.Text
+  mood      String?  // Emoji o estado de ánimo
+  tags      String[] // Tags para organizar
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, date])
+  @@map("agenda_diaries")
+}
+
+// ========================================
+// PERFIL EXTENDIDO - MODELOS DE USUARIO
+// ========================================
+
+model UserProfile {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Información personal
+  bio             String?   @db.Text
+  headline        String?   // Título profesional corto
+  birthDate       DateTime?
+  
+  // Ubicación
+  city            String?
+  province        String?
+  country         String?   @default("Espanya")
+  
+  // Información profesional pública
+  organization    String?   // Administración/organización
+  department      String?   // Departamento
+  position        String?   // Cargo actual
+  yearsInPublicSector Int?  // Años en el sector público
+  
+  // Web y contacto público
+  website         String?
+  publicEmail     String?
+  phone           String?
+  
+  // Configuración de privacidad
+  isPublic        Boolean   @default(true)
+  showEmail       Boolean   @default(false)
+  showPhone       Boolean   @default(false)
+  showBirthDate   Boolean   @default(false)
+  
+  // Timestamps
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("user_profiles")
+}
+
+model UserEducation {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  institution     String    // Universidad, escuela, etc.
+  degree          String    // Título obtenido
+  field           String?   // Campo de estudio
+  startDate       DateTime?
+  endDate         DateTime?
+  isCurrent       Boolean   @default(false)
+  description     String?   @db.Text
+  
+  // Ordenación
+  position        Int       @default(0)
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId, position])
+  @@map("user_education")
+}
+
+model UserExperience {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  organization    String    // Administración/empresa
+  position        String    // Cargo
+  department      String?   // Departamento
+  location        String?   // Ubicación
+  startDate       DateTime?
+  endDate         DateTime?
+  isCurrent       Boolean   @default(false)
+  description     String?   @db.Text
+  
+  // Tipo de empleo
+  employmentType  String?   // "funcionario", "laboral", "interino", etc.
+  
+  // Ordenación
+  displayOrder    Int       @default(0)
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId, displayOrder])
+  @@map("user_experiences")
+}
+
+model UserSkill {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  name            String    // Nombre de la habilidad
+  category        String?   // "technical", "soft", "legal", "administrative"
+  level           Int?      // 1-5 (principiante a experto)
+  isEndorsed      Boolean   @default(false)
+  endorsements    Int       @default(0)
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([userId, name])
+  @@index([userId, category])
+  @@map("user_skills")
+}
+
+model UserLanguage {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  language        String    // "Català", "Castellà", "Anglès", etc.
+  level           String    // "native", "fluent", "professional", "intermediate", "basic"
+  certification   String?   // Certificación oficial si tiene
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([userId, language])
+  @@map("user_languages")
+}
+
+model UserSocialLink {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  platform        String    // "linkedin", "twitter", "github", "instagram", etc.
+  url             String
+  username        String?   // Handle/username en esa red
+  isVerified      Boolean   @default(false)
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([userId, platform])
+  @@map("user_social_links")
+}
+
+// =============================================
+// SISTEMA DE PUBLICACIONS (XARXA SOCIAL)
+// =============================================
+
+model Post {
+  id            String    @id @default(cuid())
+  content       String    @db.Text
+
+  // Autor
+  authorId      String
+  author        User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  // Tipus de post
+  type          PostType  @default(TEXT)
+
+  // Visibilitat
+  visibility    PostVisibility @default(PUBLIC)
+
+  // Grup (opcional - si és un post dins d'un grup)
+  groupId       String?
+
+  // Estadístiques (denormalitzades per rendiment)
+  likesCount    Int       @default(0)
+  commentsCount Int       @default(0)
+  sharesCount   Int       @default(0)
+
+  // Timestamps
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  publishedAt   DateTime  @default(now())
+
+  // Relacions
+  likes         PostLike[]
+  comments      PostComment[]
+  attachments   PostAttachment[]
+  shares        PostShare[]
+
+  @@index([authorId])
+  @@index([groupId])
+  @@index([createdAt])
+  @@index([visibility])
+  @@map("posts_social")
+}
+
+enum PostType {
+  TEXT
+  PHOTO
+  DOCUMENT
+  POLL
+  EVENT
+  SHARED
+}
+
+enum PostVisibility {
+  PUBLIC        // Visible per a tothom
+  CONNECTIONS   // Només connexions
+  GROUP         // Només membres del grup
+  PRIVATE       // Només l'autor
+}
+
+model PostLike {
+  id        String   @id @default(cuid())
+
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId])  // Un usuari només pot donar like un cop
+  @@index([postId])
+  @@index([userId])
+  @@map("post_likes")
+}
+
+model PostComment {
+  id        String   @id @default(cuid())
+  content   String   @db.Text
+
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  authorId  String
+  author    User     @relation("PostCommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  // Comentari pare (per a respostes niades)
+  parentId  String?
+  parent    PostComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   PostComment[] @relation("CommentReplies")
+
+  likesCount Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([postId])
+  @@index([authorId])
+  @@index([parentId])
+  @@map("post_comments_social")
+}
+
+model PostAttachment {
+  id        String   @id @default(cuid())
+
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  type      AttachmentType
+  url       String
+  filename  String?
+  filesize  Int?
+  mimeType  String?
+
+  // Per a imatges
+  width     Int?
+  height    Int?
+
+  createdAt DateTime @default(now())
+
+  @@index([postId])
+  @@map("post_attachments")
+}
+
+enum AttachmentType {
+  IMAGE
+  VIDEO
+  DOCUMENT
+  LINK
+}
+
+model PostShare {
+  id            String   @id @default(cuid())
+
+  // Post original
+  originalPostId String
+  originalPost   Post     @relation(fields: [originalPostId], references: [id], onDelete: Cascade)
+
+  // Usuari que comparteix
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Comentari opcional al compartir
+  comment       String?  @db.Text
+
+  createdAt     DateTime @default(now())
+
+  @@index([originalPostId])
+  @@index([userId])
+  @@map("post_shares")
 }
 

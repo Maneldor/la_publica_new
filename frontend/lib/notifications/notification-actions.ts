@@ -3,17 +3,24 @@
 import { prismaClient } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 
-// Tipus de notificacions del flux de leads
+// Tipus de notificacions del flux de leads i connexions
 export type NotificationType =
-  | 'LEAD_ASSIGNED'           // Lead assignat a Gestor (usar COMPANY_ASSIGNED del enum)
-  | 'LEAD_TO_VERIFY'          // Gestor envia lead a verificar (usar COMPANY_PENDING)
-  | 'LEAD_VERIFIED'           // CRM ha verificat el lead (usar LEAD_VERIFIED del enum)
-  | 'LEAD_TO_ADMIN'           // Lead enviat a Admin per contractar (usar COMPANY_PENDING)
-  | 'COMPANY_REGISTERED'      // Admin ha registrat l'empresa (usar COMPANY_APPROVED)
-  | 'COMPANY_ASSIGNED'        // CRM ha assignat empresa a Gestor (usar COMPANY_ASSIGNED del enum)
-  | 'NEW_MESSAGE'             // Nou missatge (usar GENERAL)
-  | 'TASK_ASSIGNED'           // Nova tasca assignada (usar GENERAL)
-  | 'GENERAL'                 // Notificació general (usar GENERAL del enum)
+  // Leads
+  | 'LEAD_ASSIGNED'           // Lead assignat a Gestor
+  | 'LEAD_TO_VERIFY'          // Gestor envia lead a verificar
+  | 'LEAD_VERIFIED'           // CRM ha verificat el lead
+  | 'LEAD_TO_ADMIN'           // Lead enviat a Admin per contractar
+  | 'COMPANY_REGISTERED'      // Admin ha registrat l'empresa
+  | 'COMPANY_ASSIGNED'        // CRM ha assignat empresa a Gestor
+  // Connexions entre usuaris
+  | 'CONNECTION_REQUEST'      // Sol·licitud de connexió rebuda
+  | 'CONNECTION_ACCEPTED'     // Sol·licitud acceptada
+  | 'CONNECTION_REJECTED'     // Sol·licitud rebutjada
+  | 'CONNECTION_EXPIRED'      // Sol·licitud expirada
+  // Missatgeria
+  | 'NEW_MESSAGE'             // Nou missatge
+  | 'TASK_ASSIGNED'           // Nova tasca assignada
+  | 'GENERAL'                 // Notificació general
 
 export interface CreateNotificationParams {
   userId: string
@@ -35,7 +42,13 @@ function mapNotificationTypeToPrisma(type: NotificationType): string {
     'LEAD_TO_ADMIN': 'COMPANY_PENDING',
     'COMPANY_REGISTERED': 'COMPANY_APPROVED',
     'COMPANY_ASSIGNED': 'COMPANY_ASSIGNED',
-    'NEW_MESSAGE': 'GENERAL',
+    // Connexions
+    'CONNECTION_REQUEST': 'CONNECTION_REQUEST',
+    'CONNECTION_ACCEPTED': 'CONNECTION_ACCEPTED',
+    'CONNECTION_REJECTED': 'CONNECTION_REJECTED',
+    'CONNECTION_EXPIRED': 'CONNECTION_EXPIRED',
+    // Missatgeria
+    'NEW_MESSAGE': 'NEW_MESSAGE',
     'TASK_ASSIGNED': 'GENERAL',
     'GENERAL': 'GENERAL'
   }
@@ -371,4 +384,97 @@ export async function getUserById(userId: string) {
     console.error('Error obtenint usuari:', error)
     return null
   }
+}
+
+// ============================================
+// FUNCIONS ESPECÍFIQUES DE CONNEXIONS
+// ============================================
+
+/**
+ * Notificar usuari: Sol·licitud de connexió rebuda
+ */
+export async function notifyConnectionRequest(
+  receiverId: string,
+  senderId: string,
+  senderName: string,
+  connectionId: string,
+  message?: string
+) {
+  return createNotification({
+    userId: receiverId,
+    type: 'CONNECTION_REQUEST',
+    title: 'Nova sol·licitud de connexió',
+    message: message
+      ? `${senderName} vol connectar amb tu: "${message}"`
+      : `${senderName} vol connectar amb tu.`,
+    link: `/dashboard/missatges?tab=sol·licituds`,
+    metadata: { senderId, senderName, connectionId }
+  })
+}
+
+/**
+ * Notificar usuari: Sol·licitud acceptada
+ */
+export async function notifyConnectionAccepted(
+  senderId: string,
+  receiverId: string,
+  receiverName: string,
+  connectionId: string
+) {
+  return createNotification({
+    userId: senderId,
+    type: 'CONNECTION_ACCEPTED',
+    title: 'Sol·licitud acceptada!',
+    message: `${receiverName} ha acceptat la teva sol·licitud de connexió.`,
+    link: `/dashboard/missatges`,
+    metadata: { receiverId, receiverName, connectionId }
+  })
+}
+
+/**
+ * Notificar usuari: Sol·licitud rebutjada
+ */
+export async function notifyConnectionRejected(
+  senderId: string,
+  receiverId: string,
+  receiverName: string,
+  connectionId: string
+) {
+  return createNotification({
+    userId: senderId,
+    type: 'CONNECTION_REJECTED',
+    title: 'Sol·licitud no acceptada',
+    message: `${receiverName} no ha acceptat la teva sol·licitud de connexió.`,
+    link: `/dashboard/comunitat`,
+    metadata: { receiverId, receiverName, connectionId }
+  })
+}
+
+// ============================================
+// FUNCIONS ESPECÍFIQUES DE MISSATGERIA
+// ============================================
+
+/**
+ * Notificar usuari: Nou missatge rebut
+ */
+export async function notifyNewMessage(
+  receiverId: string,
+  senderId: string,
+  senderName: string,
+  conversationId: string,
+  messagePreview: string
+) {
+  // Truncar missatge si és massa llarg
+  const preview = messagePreview.length > 50
+    ? messagePreview.substring(0, 50) + '...'
+    : messagePreview
+
+  return createNotification({
+    userId: receiverId,
+    type: 'NEW_MESSAGE',
+    title: `Nou missatge de ${senderName}`,
+    message: preview,
+    link: `/dashboard/missatges?conversation=${conversationId}`,
+    metadata: { senderId, senderName, conversationId, messagePreview: preview }
+  })
 }

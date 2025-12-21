@@ -58,6 +58,7 @@ export async function GET(request: NextRequest) {
     const users = await prismaClient.user.findMany({
       select: {
         id: true,
+        nick: true,
         email: true,
         name: true,
         image: true,
@@ -79,6 +80,7 @@ export async function GET(request: NextRequest) {
     // Formatear respuesta para compatibilidad con el frontend
     const formattedUsers = users.map(user => ({
       id: user.id,
+      nick: user.nick,
       email: user.email,
       name: user.name,
       image: user.image || null,

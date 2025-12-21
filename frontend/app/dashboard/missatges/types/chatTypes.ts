@@ -1,39 +1,45 @@
 // Interfaces y tipos para el sistema de chat
 
 export interface User {
-  id: number;
-  name: string;
-  avatar: string;
-  isOnline: boolean;
-  lastSeen: string;
+  id: string;
+  name: string | null;
+  nick?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  image?: string | null;
+  avatar?: string | null;
+  isOnline?: boolean;
+  lastSeen?: string;
   status?: string;
 }
 
 export interface Attachment {
-  id: number;
+  id: string;
   type: 'image' | 'document' | 'audio' | 'video';
   url: string;
   name?: string;
-  size?: number;
+  size?: number | null;
   duration?: number;
   thumbnail?: string;
 }
 
 export interface Reaction {
-  userId: number;
+  userId: string;
   emoji: string;
 }
 
 export interface Message {
-  id: number;
-  conversationId: number;
-  senderId: number;
+  id: string;
+  conversationId: string;
+  senderId: string;
+  sender?: User;
   content: string;
   type: 'text' | 'image' | 'document' | 'audio' | 'video' | 'link' | 'system';
-  timestamp: Date;
+  timestamp: Date | string;
   status: 'sending' | 'sent' | 'delivered' | 'read';
+  isRead?: boolean;
   isEdited?: boolean;
-  replyTo?: number;
+  replyTo?: string;
   attachments?: Attachment[];
   reactions?: Reaction[];
   isStarred?: boolean;
@@ -41,19 +47,31 @@ export interface Message {
 }
 
 export interface Conversation {
-  id: number;
+  id: string;
   type: 'individual' | 'group' | 'company';
-  name: string;
-  avatar: string;
+  name?: string;
+  title?: string;
+  avatar?: string | null;
   lastMessage: Message | null;
   unreadCount: number;
   isPinned: boolean;
   isMuted: boolean;
   isArchived: boolean;
   participants: User[];
+  updatedAt?: Date | string;
+  createdAt?: Date | string;
   groupInfo?: {
     description: string;
-    admins: number[];
+    admins: string[];
     createdAt: Date;
   };
+}
+
+// Tipus per a l'usuari actual de la sessió
+export interface CurrentUser {
+  id: string;
+  name: string | null;
+  nick?: string | null;
+  image?: string | null;
+  email?: string | null;
 }

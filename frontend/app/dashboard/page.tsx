@@ -1,45 +1,69 @@
 'use client';
 
-import { PageTemplate } from '../../components/ui/PageTemplate';
-import { SocialFeed } from '../../components/ui/SocialFeed';
-import { ProfileCompletionCard } from '../../components/ui/ProfileCompletionCard';
-import { MembresOnlineCard } from '../../components/ui/MembresOnlineCard';
-import { ElsMeusGrupsCard } from '../../components/ui/ElsMeusGrupsCard';
+import { PageLayout } from '@/components/layout/PageLayout';
+import { StatsGrid } from '@/components/ui/StatsGrid';
+import { LAYOUTS } from '@/lib/design-system';
+import { SocialFeed } from '@/components/ui/SocialFeed';
+import { ProfileCompletionCard } from '@/components/ui/ProfileCompletionCard';
+import { MembresOnlineCard } from '@/components/ui/MembresOnlineCard';
+import { ElsMeusGrupsCard } from '@/components/ui/ElsMeusGrupsCard';
+import { Users, UserCheck, Activity, UsersRound, MessageSquare } from 'lucide-react';
 
 export default function DashboardPage() {
-  const statsData = [
-    { label: 'Membres Actius', value: '2.4K', trend: '+18%' },
-    { label: 'Activitat Avui', value: '156', trend: '+7%' },
-    { label: 'Grups', value: '89', trend: '+5%' },
-    { label: 'Missatges', value: '1.2K', trend: '+23%' }
+  const stats = [
+    {
+      label: 'Membres Actius',
+      value: '2.4K',
+      trend: '+18%',
+      icon: <UserCheck className="w-5 h-5" />,
+      color: 'indigo' as const
+    },
+    {
+      label: 'Activitat Avui',
+      value: '156',
+      trend: '+7%',
+      icon: <Activity className="w-5 h-5" />,
+      color: 'green' as const
+    },
+    {
+      label: 'Grups',
+      value: '89',
+      trend: '+5%',
+      icon: <UsersRound className="w-5 h-5" />,
+      color: 'blue' as const
+    },
+    {
+      label: 'Missatges',
+      value: '1.2K',
+      trend: '+23%',
+      icon: <MessageSquare className="w-5 h-5" />,
+      color: 'amber' as const
+    }
   ];
 
   return (
-    <PageTemplate
+    <PageLayout
       title="Xarxa Social"
       subtitle="Benvingut a la comunitat de La Pública"
-      statsData={statsData}
+      icon={<Users className="w-6 h-6" />}
     >
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 330px',
-        gap: '24px',
-        padding: '0 24px 24px 24px',
-        maxWidth: '1400px',
-        margin: '0 auto'
-      }}>
-      {/* Main Column - Social Feed (70%) */}
-      <div>
-        <SocialFeed />
-      </div>
+      {/* Stats Grid */}
+      <StatsGrid stats={stats} columns={4} />
 
-      {/* Right Column - Profile & Members */}
-      <div>
-        <ProfileCompletionCard />
-        <MembresOnlineCard />
-        <ElsMeusGrupsCard />
+      {/* Main content with sidebar */}
+      <div className={LAYOUTS.withSidebar}>
+        {/* Main Column - Social Feed */}
+        <div className={LAYOUTS.mainContent}>
+          <SocialFeed />
+        </div>
+
+        {/* Sidebar - Profile & Members */}
+        <div className={LAYOUTS.sidebar}>
+          <ProfileCompletionCard />
+          <MembresOnlineCard />
+          <ElsMeusGrupsCard />
+        </div>
       </div>
-      </div>
-    </PageTemplate>
+    </PageLayout>
   );
 }

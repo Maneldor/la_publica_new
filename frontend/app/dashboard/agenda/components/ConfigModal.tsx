@@ -2,12 +2,11 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  X, 
-  Settings, 
-  CalendarDays, 
-  Target, 
-  TrendingUp, 
+import {
+  X,
+  CalendarDays,
+  Target,
+  TrendingUp,
   MessageSquare,
   Trophy,
   Heart,
@@ -20,8 +19,10 @@ import {
   Lock,
   RotateCcw,
   Download,
-  Check
+  Check,
 } from 'lucide-react'
+import { SettingsIcon, TodoIcon, SparklesIcon, RefreshIcon } from '@/components/icons'
+import { TYPOGRAPHY, BUTTONS } from '@/lib/design-system'
 
 interface ConfigModalProps {
   isOpen: boolean
@@ -191,9 +192,7 @@ export function ConfigModal({ isOpen, onClose, modules, onToggleModule, onResetD
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-indigo-100 rounded-xl">
-                <Settings className="w-6 h-6 text-indigo-600" />
-              </div>
+              <SettingsIcon size="lg" />
               <h2 className="text-xl font-bold text-gray-900">Configurar la Meva Agenda</h2>
             </div>
             <button
@@ -209,7 +208,8 @@ export function ConfigModal({ isOpen, onClose, modules, onToggleModule, onResetD
             {/* Módulos Base */}
             <div className="mb-8">
               <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-                📌 Mòduls Base
+                <TodoIcon size="xs" variant="ghost" />
+                Mòduls Base
               </h3>
               <p className="text-sm text-gray-600 mb-4">
                 Aquests mòduls formen el nucli de la teva agenda i sempre estan visibles.
@@ -246,7 +246,8 @@ export function ConfigModal({ isOpen, onClose, modules, onToggleModule, onResetD
             {/* Módulos Opcionales */}
             <div>
               <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-                ✨ Mòduls Opcionals
+                <SparklesIcon size="xs" variant="ghost" />
+                Mòduls Opcionals
               </h3>
               <p className="text-sm text-gray-600 mb-4">
                 Activa els mòduls que vulguis afegir a la teva agenda. Pots canviar-ho en qualsevol moment.
@@ -273,8 +274,7 @@ export function ConfigModal({ isOpen, onClose, modules, onToggleModule, onResetD
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center justify-between">
-                            <h4 className="font-semibold text-gray-900 flex items-center gap-2">
-                              <span>{module.emoji}</span>
+                            <h4 className="font-semibold text-gray-900">
                               {module.name}
                             </h4>
                             <button
@@ -310,16 +310,17 @@ export function ConfigModal({ isOpen, onClose, modules, onToggleModule, onResetD
             {/* Acciones */}
             <div>
               <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-                🔄 Accions
+                <RefreshIcon size="xs" variant="ghost" />
+                Accions
               </h3>
-              
+
               <div className="flex flex-wrap gap-3">
-                <button 
+                <button
                   onClick={onResetData}
                   className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm"
                 >
                   <RotateCcw className="w-4 h-4" />
-                  Restablir dades d'exemple
+                  Restablir dades d&apos;exemple
                 </button>
                 <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm">
                   <Download className="w-4 h-4" />

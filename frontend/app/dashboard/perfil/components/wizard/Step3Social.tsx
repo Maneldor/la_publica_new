@@ -1,20 +1,99 @@
 'use client';
 
-import { Twitter, Linkedin, Instagram } from 'lucide-react';
-import { ProfileFormData } from '../../hooks/useProfileWizard';
+import { useState, useEffect } from 'react';
+import { Twitter, Linkedin, Instagram, Plus, X } from 'lucide-react';
 
-interface Step3Props {
-  formData: ProfileFormData;
-  errors: Record<string, string>;
-  updateField: (field: keyof ProfileFormData, value: any) => void;
+interface SocialLink {
+  id?: string;
+  platform: string;
+  url: string;
+  username?: string;
 }
 
-export const Step3Social = ({ formData, errors, updateField }: Step3Props) => {
-  const updateSocialNetwork = (platform: keyof ProfileFormData['socialNetworks'], value: string) => {
-    updateField('socialNetworks', {
-      ...formData.socialNetworks,
-      [platform]: value
+interface Step3Props {
+  data: {
+    socialLinks: SocialLink[];
+  };
+  addSocialLink: (link: Omit<SocialLink, 'id'>) => Promise<SocialLink | null>;
+  deleteSocialLink: (id: string) => Promise<boolean>;
+  isSaving: boolean;
+}
+
+export const Step3Social = ({ data, addSocialLink, deleteSocialLink, isSaving }: Step3Props) => {
+  const [socialInputs, setSocialInputs] = useState({
+    twitter: '',
+    linkedin: '',
+    instagram: ''
+  });
+
+  // Cargar datos existentes
+  useEffect(() => {
+    if (data.socialLinks) {
+      const inputs = { twitter: '', linkedin: '', instagram: '' };
+      data.socialLinks.forEach(link => {
+        if (link.platform === 'Twitter' && link.username) {
+          inputs.twitter = link.username;
+        } else if (link.platform === 'LinkedIn' && (link.username || link.url)) {
+          inputs.linkedin = link.username || link.url;
+        } else if (link.platform === 'Instagram' && link.username) {
+          inputs.instagram = link.username;
+        }
+      });
+      setSocialInputs(inputs);
+    }
+  }, [data.socialLinks]);
+
+  const handleSocialChange = (platform: string, value: string) => {
+    setSocialInputs(prev => ({ ...prev, [platform]: value }));
+  };
+
+  const handleSocialSave = async (platform: string) => {
+    const value = socialInputs[platform as keyof typeof socialInputs];
+    if (!value.trim()) return;
+
+    // Eliminar link existente si existe
+    const existing = data.socialLinks.find(link => 
+      link.platform.toLowerCase() === platform.toLowerCase()
+    );
+    if (existing?.id) {
+      await deleteSocialLink(existing.id);
+    }
+
+    // Crear nuevo link
+    let url = '';
+    let username = value;
+
+    if (platform === 'twitter') {
+      url = `https://twitter.com/${value}`;
+      username = value;
+    } else if (platform === 'linkedin') {
+      if (value.startsWith('http')) {
+        url = value;
+        username = value.split('/').pop() || value;
+      } else {
+        url = `https://linkedin.com/in/${value}`;
+        username = value;
+      }
+    } else if (platform === 'instagram') {
+      url = `https://instagram.com/${value}`;
+      username = value;
+    }
+
+    await addSocialLink({
+      platform: platform.charAt(0).toUpperCase() + platform.slice(1),
+      url,
+      username
     });
+  };
+
+  const handleSocialRemove = async (platform: string) => {
+    const existing = data.socialLinks.find(link => 
+      link.platform.toLowerCase() === platform.toLowerCase()
+    );
+    if (existing?.id) {
+      await deleteSocialLink(existing.id);
+      setSocialInputs(prev => ({ ...prev, [platform]: '' }));
+    }
   };
 
   return (
@@ -53,23 +132,24 @@ export const Step3Social = ({ formData, errors, updateField }: Step3Props) => {
               </span>
               <input
                 type="text"
-                value={formData.socialNetworks.twitter || ''}
-                onChange={(e) => updateSocialNetwork('twitter', e.target.value.replace('@', ''))}
+                value={socialInputs.twitter}
+                onChange={(e) => handleSocialChange('twitter', e.target.value.replace('@', ''))}
+                onBlur={() => handleSocialSave('twitter')}
                 placeholder="jordi_garcia"
-                className={`
-                  w-full pl-8 pr-4 py-3 rounded-lg border
-                  ${errors.twitter ? 'border-red-500 bg-red-50' : 'border-gray-300'}
-                  focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                  transition-all
-                `}
+                className="w-full pl-8 pr-12 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               />
+              {socialInputs.twitter && (
+                <button
+                  onClick={() => handleSocialRemove('twitter')}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-red-500"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
-            {errors.twitter && (
-              <p className="text-sm text-red-600 mt-1">{errors.twitter}</p>
-            )}
-            {formData.socialNetworks.twitter && (
+            {socialInputs.twitter && (
               <p className="text-sm text-blue-600 mt-1">
-                📱 Perfil: https://twitter.com/{formData.socialNetworks.twitter}
+                📱 Perfil: https://twitter.com/{socialInputs.twitter}
               </p>
             )}
           </div>
@@ -91,26 +171,29 @@ export const Step3Social = ({ formData, errors, updateField }: Step3Props) => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Nom d'usuari o URL completa
             </label>
-            <input
-              type="text"
-              value={formData.socialNetworks.linkedin || ''}
-              onChange={(e) => updateSocialNetwork('linkedin', e.target.value)}
-              placeholder="jordi-garcia-martinez o https://linkedin.com/in/jordi-garcia-martinez"
-              className={`
-                w-full px-4 py-3 rounded-lg border
-                ${errors.linkedin ? 'border-red-500 bg-red-50' : 'border-gray-300'}
-                focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                transition-all
-              `}
-            />
-            {errors.linkedin && (
-              <p className="text-sm text-red-600 mt-1">{errors.linkedin}</p>
-            )}
-            {formData.socialNetworks.linkedin && (
+            <div className="relative">
+              <input
+                type="text"
+                value={socialInputs.linkedin}
+                onChange={(e) => handleSocialChange('linkedin', e.target.value)}
+                onBlur={() => handleSocialSave('linkedin')}
+                placeholder="jordi-garcia-martinez o https://linkedin.com/in/jordi-garcia-martinez"
+                className="w-full px-4 pr-12 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              />
+              {socialInputs.linkedin && (
+                <button
+                  onClick={() => handleSocialRemove('linkedin')}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-red-500"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+            {socialInputs.linkedin && (
               <p className="text-sm text-blue-600 mt-1">
-                💼 Perfil: {formData.socialNetworks.linkedin.startsWith('http')
-                  ? formData.socialNetworks.linkedin
-                  : `https://linkedin.com/in/${formData.socialNetworks.linkedin}`}
+                💼 Perfil: {socialInputs.linkedin.startsWith('http')
+                  ? socialInputs.linkedin
+                  : `https://linkedin.com/in/${socialInputs.linkedin}`}
               </p>
             )}
           </div>
@@ -138,23 +221,24 @@ export const Step3Social = ({ formData, errors, updateField }: Step3Props) => {
               </span>
               <input
                 type="text"
-                value={formData.socialNetworks.instagram || ''}
-                onChange={(e) => updateSocialNetwork('instagram', e.target.value.replace('@', ''))}
+                value={socialInputs.instagram}
+                onChange={(e) => handleSocialChange('instagram', e.target.value.replace('@', ''))}
+                onBlur={() => handleSocialSave('instagram')}
                 placeholder="jordigarcia_public"
-                className={`
-                  w-full pl-8 pr-4 py-3 rounded-lg border
-                  ${errors.instagram ? 'border-red-500 bg-red-50' : 'border-gray-300'}
-                  focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                  transition-all
-                `}
+                className="w-full pl-8 pr-12 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               />
+              {socialInputs.instagram && (
+                <button
+                  onClick={() => handleSocialRemove('instagram')}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-red-500"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
-            {errors.instagram && (
-              <p className="text-sm text-red-600 mt-1">{errors.instagram}</p>
-            )}
-            {formData.socialNetworks.instagram && (
+            {socialInputs.instagram && (
               <p className="text-sm text-pink-600 mt-1">
-                📸 Perfil: https://instagram.com/{formData.socialNetworks.instagram}
+                📸 Perfil: https://instagram.com/{socialInputs.instagram}
               </p>
             )}
           </div>
@@ -188,34 +272,33 @@ export const Step3Social = ({ formData, errors, updateField }: Step3Props) => {
       </div>
 
       {/* Preview Section */}
-      {(formData.socialNetworks.twitter || formData.socialNetworks.linkedin || formData.socialNetworks.instagram) && (
+      {data.socialLinks && data.socialLinks.length > 0 && (
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
           <h4 className="text-sm font-medium text-gray-900 mb-3">
             👀 Vista prèvia de les teves xarxes:
           </h4>
           <div className="flex flex-wrap gap-3">
-            {formData.socialNetworks.twitter && (
-              <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200">
-                <Twitter className="w-4 h-4 text-blue-600" />
-                <span className="text-sm text-gray-700">@{formData.socialNetworks.twitter}</span>
-              </div>
-            )}
-            {formData.socialNetworks.linkedin && (
-              <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200">
-                <Linkedin className="w-4 h-4 text-blue-700" />
-                <span className="text-sm text-gray-700">
-                  {formData.socialNetworks.linkedin.startsWith('http')
-                    ? 'LinkedIn Profile'
-                    : formData.socialNetworks.linkedin}
-                </span>
-              </div>
-            )}
-            {formData.socialNetworks.instagram && (
-              <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200">
-                <Instagram className="w-4 h-4 text-pink-600" />
-                <span className="text-sm text-gray-700">@{formData.socialNetworks.instagram}</span>
-              </div>
-            )}
+            {data.socialLinks.map((link) => {
+              const getPlatformIcon = () => {
+                switch (link.platform) {
+                  case 'Twitter': return <Twitter className="w-4 h-4 text-blue-600" />;
+                  case 'LinkedIn': return <Linkedin className="w-4 h-4 text-blue-700" />;
+                  case 'Instagram': return <Instagram className="w-4 h-4 text-pink-600" />;
+                  default: return <Plus className="w-4 h-4 text-gray-600" />;
+                }
+              };
+              
+              return (
+                <div key={link.id} className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200">
+                  {getPlatformIcon()}
+                  <span className="text-sm text-gray-700">
+                    {link.platform === 'LinkedIn' && link.url.startsWith('http')
+                      ? 'LinkedIn Profile'
+                      : link.username || link.url}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

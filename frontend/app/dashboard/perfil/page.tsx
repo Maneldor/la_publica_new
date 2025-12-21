@@ -1,874 +1,825 @@
-'use client';
+'use client'
 
-import { useState, useEffect, useRef } from 'react';
-import { PageTemplate } from '../../../components/ui/PageTemplate';
-import TimelineTab from './components/tabs/TimelineTab';
-import AboutTab from './components/tabs/AboutTab';
-import FriendsTab from './components/tabs/FriendsTab';
-import GroupsTab from './components/tabs/GroupsTab';
-import PostsTab from './components/tabs/PostsTab';
-import PhotosTab from './components/tabs/PhotosTab';
-import SavedTab from './components/tabs/SavedTab';
-import SettingsTab from './components/tabs/SettingsTab';
-import { Camera, Upload, User, Users, MessageSquare, Heart,
-         Activity, Info, UserPlus, FileText, Image, Settings, Bookmark } from 'lucide-react';
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
+import {
+  Edit2, MoreHorizontal, MapPin, Building2, Calendar,
+  Mail, Phone, Users, FileText, ExternalLink,
+  AlertCircle, Camera, Image as ImageIcon
+} from 'lucide-react'
+import { ImageCropModal } from '@/components/ui/image/ImageCropModal'
+import {
+  ProfileInfoIcon,
+  EducationIcon,
+  ExperienceIcon,
+  SkillsIcon,
+  LanguagesIcon,
+  SocialIcon,
+  ActivityIcon,
+  ContactIcon,
+  PrivateIcon,
+  UserIcon,
+} from '@/components/icons'
+import { PageLayout } from '@/components/layout/PageLayout'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { TYPOGRAPHY } from '@/lib/design-system'
+import { ProfileCompletionCard } from './components/ProfileCompletionCard'
 
-type AdministrationType = 'LOCAL' | 'AUTONOMICA' | 'CENTRAL';
-type TabType = 'timeline' | 'about' | 'friends' | 'groups' | 'posts' | 'photos' | 'guardats' | 'settings';
-
-interface Education {
-  id: string;
-  title: string;
-  institution: string;
-  startYear: string;
-  endYear: string;
-  description: string;
-}
-
-interface Experience {
-  id: string;
-  position: string;
-  company: string;
-  startDate: string;
-  endDate: string;
-  description: string;
-}
-
-interface Language {
-  name: string;
-  level: string;
-}
-
+// Tipos
 interface UserProfile {
-  id: string;
-  nick: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  administration: AdministrationType;
-  createdAt: string;
-  avatar?: string;
-  coverImage?: string;
+  id: string
+  nick: string
+  firstName: string
+  lastName: string
+  secondLastName?: string
+  email: string
+  image?: string
+  coverImage?: string
+  coverColor?: string
+  administration?: 'LOCAL' | 'AUTONOMICA' | 'CENTRAL'
+  displayPreference?: 'NICK' | 'NOM' | 'NOM_COGNOM'
+  createdAt: string
+  profile?: {
+    bio?: string
+    headline?: string
+    city?: string
+    province?: string
+    organization?: string
+    department?: string
+    position?: string
+    professionalGroup?: string
+    phone?: string
+  }
+  education?: Array<{
+    id: string
+    institution: string
+    degree: string
+    field?: string
+    startDate: string
+    endDate?: string
+    isCurrent: boolean
+  }>
+  experiences?: Array<{
+    id: string
+    organization: string
+    position: string
+    department?: string
+    startDate: string
+    endDate?: string
+    isCurrent: boolean
+  }>
+  skills?: Array<{
+    id: string
+    name: string
+    category?: string
+    level?: number
+  }>
+  languages?: Array<{
+    id: string
+    language: string
+    level: string
+  }>
+  socialLinks?: Array<{
+    id: string
+    platform: string
+    url: string
+    username?: string
+  }>
 }
 
-interface Activity {
-  id: string;
-  type: 'post' | 'group' | 'comment' | 'like' | 'share';
-  content: string;
-  timestamp: string;
-  icon: any;
+interface ProfileCompleteness {
+  percentage: number
+  level: 'low' | 'medium' | 'high'
+  pendingSections: string[]
 }
 
-interface Friend {
-  id: string;
-  name: string;
-  nick: string;
-  avatar: string;
-  administration: AdministrationType;
+// Componente para labels privados
+function PrivateLabel() {
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs text-amber-600 ml-2">
+      <PrivateIcon size="xs" variant="ghost" />
+      Privat
+    </span>
+  )
 }
 
-interface Group {
-  id: string;
-  name: string;
-  avatar: string;
-  members: number;
-  lastActivity: string;
-  role: 'admin' | 'moderator' | 'member';
+// Componente Card reutilizable - Usa el sistema de disseny
+function ProfileCard({
+  title,
+  iconComponent,
+  onEdit,
+  isPrivate = false,
+  children
+}: {
+  title: string
+  iconComponent: React.ReactNode
+  onEdit?: () => void
+  isPrivate?: boolean
+  children: React.ReactNode
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle
+          icon={iconComponent}
+          action={
+            onEdit ? (
+              <button
+                onClick={onEdit}
+                className={TYPOGRAPHY.link}
+              >
+                Editar
+              </button>
+            ) : undefined
+          }
+        >
+          <span className="flex items-center gap-2">
+            {title}
+            {isPrivate && <PrivateLabel />}
+          </span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {children}
+      </CardContent>
+    </Card>
+  )
 }
 
+// Componente principal
 export default function PerfilPage() {
-  // Refs for file inputs
-  const avatarInputRef = useRef<HTMLInputElement>(null);
-  const coverInputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter()
+  const { data: session } = useSession()
+  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [completeness, setCompleteness] = useState<ProfileCompleteness | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [stats, setStats] = useState({
+    posts: 0,
+    groups: 0,
+    friends: 0,
+    saved: 0,
+  })
 
-  const [profile, setProfile] = useState<UserProfile>({
-    id: '1',
-    nick: 'jordi_funcionari',
-    firstName: 'Jordi',
-    lastName: 'García Martínez',
-    email: 'jordi.garcia@lapublica.cat',
-    administration: 'LOCAL',
-    createdAt: '2024-01-15',
-    avatar: '',
-    coverImage: ''
-  });
+  // Estados para modales de crop de imagen
+  const [showAvatarCropModal, setShowAvatarCropModal] = useState(false)
+  const [showCoverCropModal, setShowCoverCropModal] = useState(false)
+  const [avatarToCrop, setAvatarToCrop] = useState<string | null>(null)
+  const [coverToCrop, setCoverToCrop] = useState<string | null>(null)
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
 
-  // Tab navigation state
-  const [activeTab, setActiveTab] = useState<TabType>('timeline');
-
-  // Form and UI states
-  const [formData, setFormData] = useState<UserProfile>({
-    id: '1',
-    nick: 'jordi_funcionari',
-    firstName: 'Jordi',
-    lastName: 'García Martínez',
-    email: 'jordi.garcia@lapublica.cat',
-    administration: 'LOCAL',
-    createdAt: '2024-01-15',
-    avatar: '',
-    coverImage: ''
-  });
-
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
-  });
-
-  const [previewAvatar, setPreviewAvatar] = useState('');
-  const [previewCover, setPreviewCover] = useState('');
-  const [isDragOver, setIsDragOver] = useState<'avatar' | 'cover' | null>(null);
-  const [isHoveringAvatar, setIsHoveringAvatar] = useState(false);
-  const [isHoveringCover, setIsHoveringCover] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
-  const [showPasswordSection, setShowPasswordSection] = useState(false);
-  const [uploadError, setUploadError] = useState('');
-  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string; show: boolean }>({
-    type: 'success',
-    message: '',
-    show: false
-  });
-
-  const statsData = [
-    {
-      label: 'Perfil Completat',
-      value: '85%',
-      trend: '+5%',
-      icon: User,
-      color: '#10b981'
-    },
-    {
-      label: 'Connexions',
-      value: '142',
-      trend: '+12',
-      icon: Users,
-      color: '#3b82f6'
-    },
-    {
-      label: 'Posts Publicats',
-      value: '23',
-      trend: '+3',
-      icon: MessageSquare,
-      color: '#8b5cf6'
-    },
-    {
-      label: 'Likes Rebuts',
-      value: '367',
-      trend: '+45',
-      icon: Heart,
-      color: '#ef4444'
-    }
-  ];
-
-  // Sample data
-  const [aboutData, setAboutData] = useState({
-    bio: "Funcionari públic apassionat per la innovació tecnològica i la modernització de l'administració. M'especialitzo en transformació digital i processos administratius eficients. Sempre buscant maneres de millorar l'experiència ciutadana a través de la tecnologia.",
-    birthDate: '1985-03-15',
-    location: 'Barcelona, Catalunya',
-    workplace: 'Ajuntament de Barcelona',
-    position: 'Tècnic en Transformació Digital',
-    website: 'https://jordi-garcia.dev',
-    socialNetworks: {
-      twitter: '@jordi_garcia',
-      linkedin: 'jordi-garcia-martinez',
-      instagram: '@jordigarcia_public'
-    }
-  });
-
-  const [education, setEducation] = useState<Education[]>([
-    {
-      id: '1',
-      title: 'Màster en Administració i Direcció d\'Empreses (MBA)',
-      institution: 'ESADE Business School',
-      startYear: '2010',
-      endYear: '2012',
-      description: 'Especialització en Gestió Pública i Transformació Digital'
-    },
-    {
-      id: '2',
-      title: 'Grau en Administració i Direcció d\'Empreses',
-      institution: 'Universitat Pompeu Fabra',
-      startYear: '2003',
-      endYear: '2007',
-      description: 'Especialitat en Gestió d\'Organitzacions Públiques'
-    },
-    {
-      id: '3',
-      title: 'Postgrau en Transformació Digital',
-      institution: 'UOC - Universitat Oberta de Catalunya',
-      startYear: '2018',
-      endYear: '2019',
-      description: 'Certificació en tecnologies emergents aplicades al sector públic'
-    }
-  ]);
-
-  const [experience, setExperience] = useState<Experience[]>([
-    {
-      id: '1',
-      position: 'Tècnic en Transformació Digital',
-      company: 'Ajuntament de Barcelona',
-      startDate: '2015-09',
-      endDate: 'Present',
-      description: 'Lidero projectes de digitalització de serveis ciutadans. He implementat més de 20 tràmits online, reduint els temps de gestió en un 60%.'
-    },
-    {
-      id: '2',
-      position: 'Analista de Processos',
-      company: 'Diputació de Barcelona',
-      startDate: '2012-03',
-      endDate: '2015-08',
-      description: 'Optimització de processos administratius i implementació de sistemes de gestió documental electrònica.'
-    },
-    {
-      id: '3',
-      position: 'Consultor Junior',
-      company: 'Deloitte Public Sector',
-      startDate: '2008-01',
-      endDate: '2012-02',
-      description: 'Assessorament en projectes de modernització administrativa per a diversos organismes públics.'
-    }
-  ]);
-
-  const [skills, setSkills] = useState([
-    'Transformació Digital', 'Gestió de Projectes', 'Administració Electrònica',
-    'Lean Management', 'Process Mining', 'React', 'Node.js', 'TypeScript',
-    'Power BI', 'Agile', 'Scrum', 'Leadership', 'Change Management', 'UX/UI Design'
-  ]);
-
-  const [interests, setInterests] = useState([
-    'Innovació Pública', 'Smart Cities', 'Sostenibilitat', 'Ciclisme',
-    'Fotografia', 'Tecnologia', 'Política Local', 'Educació Digital'
-  ]);
-
-  const [languages, setLanguages] = useState([
-    { name: 'Català', level: 'Natiu' },
-    { name: 'Castellà', level: 'Natiu' },
-    { name: 'Anglès', level: 'Avançat (C1)' },
-    { name: 'Francès', level: 'Intermedi (B2)' }
-  ]);
-
-  const [activities] = useState<Activity[]>([
-    {
-      id: '1',
-      type: 'post',
-      content: 'Ha publicat: "Nou sistema de cita prèvia digital implementat amb èxit"',
-      timestamp: 'fa 2 hores',
-      icon: FileText
-    },
-    {
-      id: '2',
-      type: 'group',
-      content: 'S\'ha unit al grup "Innovació en Administració Pública"',
-      timestamp: 'fa 1 dia',
-      icon: Users
-    },
-    {
-      id: '3',
-      type: 'comment',
-      content: 'Ha comentat la publicació de Maria González sobre processos digitals',
-      timestamp: 'fa 2 dies',
-      icon: MessageSquare
-    },
-    {
-      id: '4',
-      type: 'like',
-      content: 'Li ha agradat la publicació "Millores en l\'atenció ciutadana"',
-      timestamp: 'fa 3 dies',
-      icon: Heart
-    },
-    {
-      id: '5',
-      type: 'share',
-      content: 'Ha compartit l\'article "Futur de l\'administració digital"',
-      timestamp: 'fa 5 dies',
-      icon: Upload
-    }
-  ]);
-
-  const [friends] = useState<Friend[]>([
-    { id: '1', name: 'Maria González', nick: 'maria_admin', avatar: '', administration: 'LOCAL' },
-    { id: '2', name: 'Carles Puig', nick: 'carles_tech', avatar: '', administration: 'AUTONOMICA' },
-    { id: '3', name: 'Anna Soler', nick: 'anna_design', avatar: '', administration: 'LOCAL' },
-    { id: '4', name: 'David Martín', nick: 'david_dev', avatar: '', administration: 'CENTRAL' },
-    { id: '5', name: 'Laura Vidal', nick: 'laura_pm', avatar: '', administration: 'AUTONOMICA' },
-    { id: '6', name: 'Marc Torres', nick: 'marc_frontend', avatar: '', administration: 'LOCAL' }
-  ]);
-
-  const [groups] = useState<Group[]>([
-    { id: '1', name: 'Innovació en Administració', avatar: '', members: 247, lastActivity: 'fa 2 hores', role: 'admin' },
-    { id: '2', name: 'Desenvolupadors Frontend', avatar: '', members: 189, lastActivity: 'fa 1 dia', role: 'member' },
-    { id: '3', name: 'Transformació Digital', avatar: '', members: 156, lastActivity: 'fa 3 dies', role: 'moderator' },
-    { id: '4', name: 'UX/UI Barcelona', avatar: '', members: 234, lastActivity: 'fa 1 setmana', role: 'member' }
-  ]);
-
-  const tabs = [
-    { id: 'timeline', label: 'Timeline', icon: Activity },
-    { id: 'about', label: 'Sobre mi', icon: Info },
-    { id: 'friends', label: 'Amistats', icon: UserPlus },
-    { id: 'groups', label: 'Grups', icon: Users },
-    { id: 'posts', label: 'Publicacions', icon: FileText },
-    { id: 'photos', label: 'Fotos', icon: Image },
-    { id: 'guardats', label: 'Guardats', icon: Bookmark },
-    { id: 'settings', label: 'Configuració', icon: Settings }
-  ];
-
+  // Cargar datos del perfil
   useEffect(() => {
-    const hasProfileChanges = JSON.stringify(profile) !== JSON.stringify(formData);
-    const hasImageChanges = previewAvatar !== '' || previewCover !== '';
-    setHasChanges(hasProfileChanges || hasImageChanges);
-  }, [formData, profile, previewAvatar, previewCover]);
+    const loadProfile = async () => {
+      try {
+        const [profileRes, completenessRes] = await Promise.all([
+          fetch('/api/profile'),
+          fetch('/api/profile/completeness'),
+        ])
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+        if (profileRes.ok) {
+          const data = await profileRes.json()
+          setProfile(data)
+        }
 
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setPasswordData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const getAdministrationBadge = (type: AdministrationType) => {
-    const badges = {
-      LOCAL: { label: 'Local', color: 'bg-green-100 text-green-800' },
-      AUTONOMICA: { label: 'Autonòmica', color: 'bg-purple-100 text-purple-800' },
-      CENTRAL: { label: 'Central', color: 'bg-blue-100 text-blue-800' }
-    };
-    return badges[type];
-  };
-
-  const getAvatarInitials = (firstName: string, lastName: string) => {
-    return `${firstName[0]}${lastName[0]}`.toUpperCase();
-  };
-
-  // Toast notification function
-  const showToast = (type: 'success' | 'error', message: string) => {
-    setToast({ type, message, show: true });
-    setTimeout(() => setToast(prev => ({ ...prev, show: false })), 3000);
-  };
-
-  // Image validation
-  const validateImage = (file: File): string | null => {
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    const maxSize = 5 * 1024 * 1024; // 5MB
-
-    if (!validTypes.includes(file.type)) {
-      return 'Només s\'accepten imatges JPG, PNG o WebP';
-    }
-    if (file.size > maxSize) {
-      return 'La imatge no pot superar els 5MB';
-    }
-    return null;
-  };
-
-  // Handle image file selection
-  const handleImageSelect = (file: File, type: 'avatar' | 'cover') => {
-    const error = validateImage(file);
-    if (error) {
-      setUploadError(error);
-      showToast('error', error);
-      return;
-    }
-
-    setUploadError('');
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const result = e.target?.result as string;
-      if (type === 'avatar') {
-        setPreviewAvatar(result);
-      } else {
-        setPreviewCover(result);
+        if (completenessRes.ok) {
+          const data = await completenessRes.json()
+          setCompleteness(data)
+        }
+      } catch (error) {
+        console.error('Error carregant perfil:', error)
+      } finally {
+        setIsLoading(false)
       }
-    };
-    reader.readAsDataURL(file);
-  };
-
-  // Enhanced drag and drop handlers
-  const handleDragEnter = (e: React.DragEvent, type: 'avatar' | 'cover') => {
-    e.preventDefault();
-    setIsDragOver(type);
-  };
-
-  // Drag and drop handlers
-  const handleDragOver = (e: React.DragEvent, type: 'avatar' | 'cover') => {
-    e.preventDefault();
-    setIsDragOver(type);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(null);
-  };
-
-  const handleDrop = (e: React.DragEvent, type: 'avatar' | 'cover') => {
-    e.preventDefault();
-    setIsDragOver(null);
-
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      handleImageSelect(files[0], type);
     }
-  };
 
-  // Password strength calculator
-  const calculatePasswordStrength = (password: string): number => {
-    let strength = 0;
-    if (password.length >= 8) strength++;
-    if (/[a-z]/.test(password)) strength++;
-    if (/[A-Z]/.test(password)) strength++;
-    if (/[0-9]/.test(password)) strength++;
-    if (/[^A-Za-z0-9]/.test(password)) strength++;
-    return strength;
-  };
+    loadProfile()
+  }, [])
 
-  const getPasswordStrengthText = (strength: number): string => {
-    if (strength <= 2) return 'Dèbil';
-    if (strength <= 3) return 'Mitjana';
-    return 'Forta';
-  };
+  // Navegar al wizard con step específico
+  const navigateToWizardStep = (step: number) => {
+    router.push(`/dashboard/perfil/editar?step=${step}`)
+  }
 
-  const getPasswordStrengthColor = (strength: number): string => {
-    if (strength <= 2) return 'bg-red-500';
-    if (strength <= 3) return 'bg-yellow-500';
-    return 'bg-green-500';
-  };
+  // Manejar selección de imagen de avatar
+  const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file && file.type.startsWith('image/')) {
+      const url = URL.createObjectURL(file)
+      setAvatarToCrop(url)
+      setShowAvatarCropModal(true)
+    }
+    e.target.value = '' // Reset input
+  }
 
-  const handleSaveProfile = async () => {
-    setLoading(true);
+  // Manejar selección de imagen de cover
+  const handleCoverSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file && file.type.startsWith('image/')) {
+      const url = URL.createObjectURL(file)
+      setCoverToCrop(url)
+      setShowCoverCropModal(true)
+    }
+    e.target.value = '' // Reset input
+  }
+
+  // Guardar avatar después del crop
+  const handleSaveAvatar = async (croppedFile: File) => {
+    setIsUploadingImage(true)
     try {
-      // Simular API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('🖼️ [Avatar] Starting upload...', croppedFile.name, croppedFile.size)
 
-      // Update profile with form data and images
-      const updatedProfile = {
-        ...formData,
-        avatar: previewAvatar || profile.avatar,
-        coverImage: previewCover || profile.coverImage
-      };
+      // 1. Subir imagen
+      const formData = new FormData()
+      formData.append('file', croppedFile)
+      formData.append('type', 'profile')
 
-      setProfile(updatedProfile);
-      setPreviewAvatar('');
-      setPreviewCover('');
-      showToast('success', '✓ Perfil actualitzat correctament!');
-    } catch (error) {
-      showToast('error', 'Error al guardar el perfil');
+      const uploadRes = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const uploadData = await uploadRes.json()
+      console.log('🖼️ [Avatar] Upload response:', uploadRes.status, uploadData)
+
+      if (!uploadRes.ok) {
+        throw new Error(uploadData.error || uploadData.details || 'Error pujant imatge')
+      }
+
+      const { url } = uploadData
+      console.log('🖼️ [Avatar] Uploaded URL:', url)
+
+      // 2. Actualizar perfil
+      console.log('🖼️ [Avatar] Updating profile with image:', url)
+      const updateRes = await fetch('/api/user/profile/images', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: url }),
+      })
+
+      const updateData = await updateRes.json()
+      console.log('🖼️ [Avatar] Update response:', updateRes.status, updateData)
+
+      if (!updateRes.ok) {
+        throw new Error(updateData.error || updateData.details || 'Error actualitzant perfil')
+      }
+
+      // 3. Actualizar estado local
+      setProfile(prev => prev ? { ...prev, image: url } : null)
+      setShowAvatarCropModal(false)
+      setAvatarToCrop(null)
+    } catch (error: any) {
+      console.error('🖼️ [Avatar] Error:', error)
+      alert(`Error: ${error.message || 'Hi ha hagut un error guardant la imatge'}`)
     } finally {
-      setLoading(false);
+      setIsUploadingImage(false)
     }
-  };
+  }
 
-  const handleChangePassword = async () => {
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      showToast('error', 'Les contrasenyes no coincideixen');
-      return;
-    }
-
-    if (calculatePasswordStrength(passwordData.newPassword) < 3) {
-      showToast('error', 'La contrasenya és massa feble');
-      return;
-    }
-
-    setLoading(true);
+  // Guardar cover después del crop
+  const handleSaveCover = async (croppedFile: File) => {
+    setIsUploadingImage(true)
     try {
-      // Simular API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      setShowPasswordSection(false);
-      showToast('success', '✓ Contrasenya actualitzada correctament!');
-    } catch (error) {
-      showToast('error', 'Error al canviar la contrasenya');
+      console.log('🖼️ [Cover] Starting upload...', croppedFile.name, croppedFile.size)
+
+      // 1. Subir imagen
+      const formData = new FormData()
+      formData.append('file', croppedFile)
+      formData.append('type', 'cover')
+
+      const uploadRes = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const uploadData = await uploadRes.json()
+      console.log('🖼️ [Cover] Upload response:', uploadRes.status, uploadData)
+
+      if (!uploadRes.ok) {
+        throw new Error(uploadData.error || uploadData.details || 'Error pujant imatge')
+      }
+
+      const { url } = uploadData
+      console.log('🖼️ [Cover] Uploaded URL:', url)
+
+      // 2. Actualizar perfil
+      console.log('🖼️ [Cover] Updating profile with coverImage:', url)
+      const updateRes = await fetch('/api/user/profile/images', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ coverImage: url }),
+      })
+
+      const updateData = await updateRes.json()
+      console.log('🖼️ [Cover] Update response:', updateRes.status, updateData)
+
+      if (!updateRes.ok) {
+        throw new Error(updateData.error || updateData.details || 'Error actualitzant perfil')
+      }
+
+      // 3. Actualizar estado local
+      setProfile(prev => prev ? { ...prev, coverImage: url } : null)
+      setShowCoverCropModal(false)
+      setCoverToCrop(null)
+    } catch (error: any) {
+      console.error('🖼️ [Cover] Error:', error)
+      alert(`Error: ${error.message || 'Hi ha hagut un error guardant la imatge'}`)
     } finally {
-      setLoading(false);
+      setIsUploadingImage(false)
     }
-  };
+  }
 
-  const handleProfileUpdate = async (updatedData: any) => {
-    setLoading(true);
-    try {
-      // Simular API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+  // Obtener iniciales
+  const getInitials = () => {
+    if (!profile) return '??'
+    return `${profile.firstName?.charAt(0) || ''}${profile.lastName?.charAt(0) || ''}`.toUpperCase()
+  }
 
-      // Update all the state with the new data from wizard
-      setAboutData(updatedData.aboutData);
-      setEducation(updatedData.education);
-      setExperience(updatedData.experience);
-      setSkills(updatedData.skills);
-      setInterests(updatedData.interests);
-      setLanguages(updatedData.languages);
-
-      showToast('success', '✓ Perfil actualitzat correctament amb el wizard!');
-    } catch (error) {
-      showToast('error', 'Error al guardar el perfil');
-    } finally {
-      setLoading(false);
+  // Obtener gradiente de portada según administración
+  const getCoverGradient = () => {
+    switch (profile?.administration) {
+      case 'LOCAL':
+        return 'bg-gradient-to-r from-green-200 via-green-100 to-emerald-200'
+      case 'AUTONOMICA':
+        return 'bg-gradient-to-r from-blue-200 via-blue-100 to-indigo-200'
+      case 'CENTRAL':
+        return 'bg-gradient-to-r from-violet-200 via-purple-100 to-violet-200'
+      default:
+        return 'bg-gradient-to-r from-gray-200 via-gray-100 to-slate-200'
     }
-  };
+  }
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const months = [
-      'gener', 'febrer', 'març', 'abril', 'maig', 'juny',
-      'juliol', 'agost', 'setembre', 'octubre', 'novembre', 'desembre'
-    ];
-    const day = date.getDate();
-    const month = months[date.getMonth()];
-    const year = date.getFullYear();
-    return `${day} de ${month} de ${year}`;
-  };
+  // Obtener color de administración
+  const getAdminColor = () => {
+    switch (profile?.administration) {
+      case 'LOCAL': return 'bg-green-100 text-green-700 border-green-200'
+      case 'AUTONOMICA': return 'bg-blue-100 text-blue-700 border-blue-200'
+      case 'CENTRAL': return 'bg-violet-100 text-violet-700 border-violet-200'
+      default: return 'bg-gray-100 text-gray-700 border-gray-200'
+    }
+  }
 
-  const passwordStrength = calculatePasswordStrength(passwordData.newPassword);
+  // Obtener nombre de administración
+  const getAdminName = () => {
+    switch (profile?.administration) {
+      case 'LOCAL': return 'Administració Local'
+      case 'AUTONOMICA': return 'Administració Autonòmica'
+      case 'CENTRAL': return 'Administració Central'
+      default: return 'No especificada'
+    }
+  }
+
+  // Obtener nivel de idioma visual
+  const getLanguageLevelDots = (level: string) => {
+    const levels: Record<string, number> = {
+      'native': 5, 'fluent': 5, 'C2': 5, 'C1': 4, 'professional': 4, 'B2': 3, 'intermediate': 3, 'B1': 3, 'A2': 2, 'basic': 2, 'A1': 1
+    }
+    const filled = levels[level] || levels[level.toLowerCase()] || 3
+    return (
+      <div className="flex gap-0.5">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div
+            key={i}
+            className={`w-2 h-2 rounded-full ${i <= filled ? 'bg-indigo-500' : 'bg-gray-200'}`}
+          />
+        ))}
+      </div>
+    )
+  }
+
+  // Formatear fecha
+  const formatDate = (date: string) => {
+    if (!date) return ''
+    return new Date(date).toLocaleDateString('ca-ES', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    })
+  }
+
+  if (isLoading) {
+    return (
+      <PageLayout
+        title="El Meu Perfil"
+        subtitle="Gestiona la teva informació personal i professional"
+        icon={<UserIcon size="md" />}
+      >
+        <div className="flex items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        </div>
+      </PageLayout>
+    )
+  }
 
   return (
-    <PageTemplate
+    <>
+    <PageLayout
       title="El Meu Perfil"
-      subtitle="Gestiona la teva informació personal i configuració"
-      statsData={statsData}
-    >
-      <div style={{ padding: '0 24px 24px 24px', maxWidth: '1400px', margin: '0 auto' }}>
-        {/* Toast Notification */}
-        {toast.show && (
-          <div style={{
-            position: 'fixed',
-            top: '16px',
-            right: '16px',
-            padding: '16px',
-            borderRadius: '8px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-            zIndex: 50,
-            backgroundColor: toast.type === 'success' ? '#f0f9ff' : '#fef2f2',
-            border: `1px solid ${toast.type === 'success' ? '#e0f2fe' : '#fecaca'}`,
-            color: toast.type === 'success' ? '#075985' : '#dc2626'
-          }}>
-            {toast.message}
-          </div>
-        )}
-
-        {/* Hidden file inputs */}
-        <input
-          ref={avatarInputRef}
-          type="file"
-          accept="image/*"
-          style={{ display: 'none' }}
-          onChange={(e) => e.target.files?.[0] && handleImageSelect(e.target.files[0], 'avatar')}
-        />
-        <input
-          ref={coverInputRef}
-          type="file"
-          accept="image/*"
-          style={{ display: 'none' }}
-          onChange={(e) => e.target.files?.[0] && handleImageSelect(e.target.files[0], 'cover')}
-        />
-
-        {/* Cover Image Section */}
-        <div style={{ position: 'relative', marginBottom: '20px' }}>
-          <div
-            style={{
-              position: 'relative',
-              height: '310px',
-              borderRadius: '12px',
-              overflow: 'hidden',
-              cursor: 'pointer',
-              background: previewCover || profile.coverImage ?
-                `url(${previewCover || profile.coverImage}) center/cover` :
-                'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-              border: isDragOver === 'cover' ? '4px dashed #3b82f6' : 'none',
-              transition: 'all 0.2s',
-              boxShadow: isDragOver === 'cover' ? '0 0 20px rgba(59, 130, 246, 0.3)' : 'none',
-              zIndex: 10
-            }}
-            onClick={() => coverInputRef.current?.click()}
-            onMouseEnter={() => setIsHoveringCover(true)}
-            onMouseLeave={() => setIsHoveringCover(false)}
-            onDragEnter={(e) => handleDragEnter(e, 'cover')}
-            onDragOver={(e) => handleDragOver(e, 'cover')}
-            onDragLeave={handleDragLeave}
-            onDrop={(e) => handleDrop(e, 'cover')}
+      subtitle="Gestiona la teva informació personal i professional"
+      icon={<UserIcon size="md" />}
+      actions={
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => router.push('/dashboard/perfil/editar')}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
           >
-            {/* Cover overlay */}
-            <div
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: isHoveringCover || isDragOver === 'cover' ? 'rgba(0, 0, 0, 0.6)' : 'rgba(0, 0, 0, 0.2)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.3s',
-                borderRadius: '12px'
-              }}
-            >
-              <div
-                style={{
-                  color: 'white',
-                  textAlign: 'center',
-                  opacity: isHoveringCover || isDragOver === 'cover' ? 1 : 0,
-                  transition: 'opacity 0.3s',
-                  transform: isHoveringCover || isDragOver === 'cover' ? 'translateY(0)' : 'translateY(10px)'
-                }}
-              >
-                <Camera style={{ width: '40px', height: '40px', margin: '0 auto 12px' }} />
-                <p style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 6px 0' }}>
-                  {isDragOver === 'cover' ? 'Deixa anar la imatge' : 'Canviar imatge de portada'}
-                </p>
-                <p style={{ fontSize: '13px', opacity: 0.85, margin: 0 }}>
-                  {isDragOver === 'cover' ? 'Formats: JPG, PNG, WebP (màx. 5MB)' : 'Arrossega una imatge aquí o fes clic'}
-                </p>
-              </div>
+            <Edit2 className="w-4 h-4" />
+            Editar Perfil
+          </button>
+          <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+            <MoreHorizontal className="w-5 h-5 text-gray-600" />
+          </button>
+        </div>
+      }
+    >
+        {/* Profile Header Card with Cover */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
+          {/* Cover Image - MÉS GRAN */}
+          <div className="relative h-40 group">
+            {profile?.coverImage ? (
+              <img
+                src={profile.coverImage}
+                alt="Portada"
+                className="w-full h-full object-cover"
+              />
+            ) : profile?.coverColor ? (
+              <div className="w-full h-full" style={{ backgroundColor: profile.coverColor }} />
+            ) : (
+              <div className={`w-full h-full ${getCoverGradient()}`} />
+            )}
+
+            {/* Botó Canviar foto - ESQUERRA (al costat de l'avatar, sense tapar-lo) */}
+            <label className="absolute bottom-3 left-36 opacity-0 group-hover:opacity-100 transition-opacity inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-black/50 hover:bg-black/70 rounded-lg backdrop-blur-sm cursor-pointer">
+              <Camera className="w-4 h-4" />
+              Canviar foto
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarSelect}
+                className="hidden"
+              />
+            </label>
+
+            {/* Botó Canviar portada - DRETA */}
+            <label className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-black/50 hover:bg-black/70 rounded-lg backdrop-blur-sm cursor-pointer">
+              <ImageIcon className="w-4 h-4" />
+              Canviar portada
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleCoverSelect}
+                className="hidden"
+              />
+            </label>
+          </div>
+
+          {/* Profile Info with overlapping avatar - COMPACTE */}
+          <div className="relative px-6 pb-3">
+            {/* Avatar superpuesto */}
+            <div className="absolute -top-12 left-6">
+              {profile?.image ? (
+                <img
+                  src={profile.image}
+                  alt={profile.firstName}
+                  className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
+                />
+              ) : (
+                <div className="w-24 h-24 rounded-full bg-indigo-500 flex items-center justify-center text-white text-2xl font-bold border-4 border-white shadow-lg">
+                  {getInitials()}
+                </div>
+              )}
             </div>
 
-          </div>
+            {/* Nick + Tags en la MATEIXA LÍNIA */}
+            <div className="pt-14 flex flex-wrap items-center gap-4">
+              {/* Nick */}
+              <p className="text-xl font-semibold text-gray-900">@{profile?.nick}</p>
 
-          {/* Avatar - COMPLETAMENT VISIBLE FORA DE LA PORTADA */}
-          <div
-            style={{
-              position: 'relative',
-              zIndex: 40,
-              marginTop: '-64px',
-              paddingLeft: '24px',
-              marginBottom: '16px'
-            }}
-          >
-            <div
-              style={{
-                position: 'relative',
-                width: '128px',
-                height: '128px'
-              }}
-            >
-              <div
-                style={{
-                  position: 'relative',
-                  width: '100%',
-                  height: '100%',
-                  borderRadius: '50%',
-                  border: '4px solid white',
-                  backgroundColor: 'white',
-                  overflow: 'hidden',
-                  boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  transform: isHoveringAvatar || isDragOver === 'avatar' ? 'scale(1.05)' : 'scale(1)'
-                }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  avatarInputRef.current?.click();
-                }}
-                onMouseEnter={() => setIsHoveringAvatar(true)}
-                onMouseLeave={() => setIsHoveringAvatar(false)}
-                onDragEnter={(e) => {
-                  e.stopPropagation();
-                  handleDragEnter(e, 'avatar');
-                }}
-                onDragOver={(e) => {
-                  e.stopPropagation();
-                  handleDragOver(e, 'avatar');
-                }}
-                onDragLeave={(e) => {
-                  e.stopPropagation();
-                  handleDragLeave(e);
-                }}
-                onDrop={(e) => {
-                  e.stopPropagation();
-                  handleDrop(e, 'avatar');
-                }}
-              >
-                {previewAvatar || profile.avatar ? (
-                  <img
-                    src={previewAvatar || profile.avatar}
-                    alt="Avatar"
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover'
-                    }}
-                  />
-                ) : (
-                  <div style={{
-                    width: '100%',
-                    height: '100%',
-                    backgroundColor: '#3b82f6',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    <span style={{
-                      fontSize: '32px',
-                      fontWeight: 'bold',
-                      color: 'white'
-                    }}>
-                      {getAvatarInitials(profile.firstName, profile.lastName)}
-                    </span>
-                  </div>
+              {/* Badge Administració - NOMÉS si té valor */}
+              {profile?.administration && (
+                <span className={`flex items-center gap-1.5 text-sm px-2.5 py-1 rounded-full border ${getAdminColor()}`}>
+                  <Building2 className="w-4 h-4" />
+                  {getAdminName()}
+                </span>
+              )}
+
+              {/* Data de registre */}
+              {profile?.createdAt && (
+                <span className="flex items-center gap-1.5 text-sm text-gray-500">
+                  <Calendar className="w-4 h-4" />
+                  Registrat el {formatDate(profile.createdAt)}
+                </span>
+              )}
+
+              {/* Ubicació - NOMÉS si té valor */}
+              {profile?.profile?.city && (
+                <span className="flex items-center gap-1.5 text-sm text-gray-600">
+                  <MapPin className="w-4 h-4" />
+                  {profile.profile.city}
+                  {profile.profile.province && `, ${profile.profile.province}`}
+                </span>
+              )}
+            </div>
+
+            {/* Headline i bio - sota */}
+            {(profile?.profile?.headline || profile?.profile?.bio) && (
+              <div className="mt-2">
+                {profile?.profile?.headline && (
+                  <p className="text-gray-700 text-sm">{profile.profile.headline}</p>
                 )}
+                {profile?.profile?.bio && (
+                  <p className="mt-1 text-gray-600 text-sm">{profile.profile.bio}</p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
 
-                {/* Overlay Camera - DENTRO del avatar para que funcione el hover */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    borderRadius: '50%',
-                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                    opacity: isHoveringAvatar || isDragOver === 'avatar' ? 1 : 0,
-                    transition: 'opacity 0.3s',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    pointerEvents: 'none'
-                  }}
-                >
-                  <Camera style={{ width: '32px', height: '32px', color: 'white' }} />
+        {/* Grid de contenido */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+          {/* Columna izquierda (2/3) */}
+          <div className="lg:col-span-2 space-y-6">
+
+            {/* Información Profesional */}
+            <ProfileCard
+              title="Informació Professional"
+              iconComponent={<ProfileInfoIcon />}
+              onEdit={() => navigateToWizardStep(2)}
+              isPrivate={true}
+            >
+              {profile?.profile?.organization || profile?.profile?.position ? (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Organització</p>
+                    <p className="text-gray-900">{profile?.profile?.organization || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Càrrec</p>
+                    <p className="text-gray-900">{profile?.profile?.position || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Departament</p>
+                    <p className="text-gray-900">{profile?.profile?.department || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Grup Professional</p>
+                    <p className="text-gray-900">{profile?.profile?.professionalGroup || '-'}</p>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-gray-500 text-sm italic">No has afegit informació professional encara</p>
+              )}
+            </ProfileCard>
+
+            {/* Formació */}
+            <ProfileCard
+              title="Formació"
+              iconComponent={<EducationIcon />}
+              onEdit={() => navigateToWizardStep(4)}
+            >
+              {profile?.education && profile.education.length > 0 ? (
+                <div className="space-y-4">
+                  {profile.education.map((edu) => (
+                    <div key={edu.id} className="flex gap-3">
+                      <EducationIcon size="md" />
+                      <div>
+                        <p className="font-medium text-gray-900">{edu.degree}</p>
+                        <p className="text-sm text-gray-600">{edu.institution}</p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(edu.startDate).getFullYear()} - {edu.isCurrent ? 'Actual' : (edu.endDate ? new Date(edu.endDate).getFullYear() : '')}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-sm italic">No has afegit formació encara</p>
+              )}
+            </ProfileCard>
+
+            {/* Experiència */}
+            <ProfileCard
+              title="Experiència"
+              iconComponent={<ExperienceIcon />}
+              onEdit={() => navigateToWizardStep(5)}
+            >
+              {profile?.experiences && profile.experiences.length > 0 ? (
+                <div className="space-y-4">
+                  {profile.experiences.map((exp) => (
+                    <div key={exp.id} className="flex gap-3">
+                      <ExperienceIcon size="md" />
+                      <div>
+                        <p className="font-medium text-gray-900">{exp.position}</p>
+                        <p className="text-sm text-gray-600">{exp.organization}</p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(exp.startDate).getFullYear()} - {exp.isCurrent ? 'Actual' : (exp.endDate ? new Date(exp.endDate).getFullYear() : '')}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-sm italic">No has afegit experiència encara</p>
+              )}
+            </ProfileCard>
+
+            {/* Habilitats */}
+            <ProfileCard
+              title="Habilitats"
+              iconComponent={<SkillsIcon />}
+              onEdit={() => navigateToWizardStep(6)}
+            >
+              {profile?.skills && profile.skills.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {profile.skills.map((skill) => (
+                    <span
+                      key={skill.id}
+                      className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-full text-sm font-medium"
+                    >
+                      {skill.name}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-sm italic">No has afegit habilitats encara</p>
+              )}
+            </ProfileCard>
+
+            {/* Activitat Recent */}
+            <ProfileCard
+              title="Activitat Recent"
+              iconComponent={<ActivityIcon />}
+            >
+              <div className="space-y-3">
+                <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                    <FileText className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-900">Ha publicat: &quot;Nou sistema de cita prèvia digital implementat amb èxit&quot;</p>
+                    <p className="text-xs text-gray-500 mt-1">fa 2 hores</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                  <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                    <Users className="w-4 h-4 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-900">S&apos;ha unit al grup &quot;Innovació en Administració Pública&quot;</p>
+                    <p className="text-xs text-gray-500 mt-1">fa 1 dia</p>
+                  </div>
                 </div>
               </div>
-            </div>
+              <button className="mt-4 text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+                Veure tota l&apos;activitat →
+              </button>
+            </ProfileCard>
           </div>
 
-          {/* User info below avatar */}
-          <div style={{ marginTop: '16px', padding: '0 24px 24px' }}>
-            <h2 style={{
-              fontSize: '30px',
-              fontWeight: 'bold',
-              color: '#1f2937',
-              margin: 0
-            }}>
-              {profile.firstName} {profile.lastName}
-            </h2>
-            <p style={{
-              fontSize: '20px',
-              color: '#6b7280',
-              margin: '4px 0 0 0'
-            }}>
-              @{profile.nick}
-            </p>
+          {/* Columna derecha (1/3) */}
+          <div className="space-y-6">
 
-            <div style={{
-              marginTop: '16px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '8px'
-            }}>
-              <span style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                padding: '4px 12px',
-                borderRadius: '20px',
-                fontSize: '14px',
-                fontWeight: '500',
-                backgroundColor: getAdministrationBadge(profile.administration).color.includes('green') ? '#dcfce7' :
-                                 getAdministrationBadge(profile.administration).color.includes('purple') ? '#f3e8ff' : '#dbeafe',
-                color: getAdministrationBadge(profile.administration).color.includes('green') ? '#166534' :
-                       getAdministrationBadge(profile.administration).color.includes('purple') ? '#7c3aed' : '#1d4ed8'
-              }}>
-                {getAdministrationBadge(profile.administration).label}
-              </span>
-              <span style={{
-                fontSize: '14px',
-                color: '#6b7280'
-              }}>
-                Registrat el {formatDate(profile.createdAt)}
-              </span>
-            </div>
+            {/* Completat del Perfil - Nou component amb cercle */}
+            <ProfileCompletionCard user={profile} />
+
+            {/* Estadístiques */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Estadístiques</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className={TYPOGRAPHY.small}>Publicacions</span>
+                    <span className="font-semibold text-gray-900">{stats.posts}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className={TYPOGRAPHY.small}>Grups</span>
+                    <span className="font-semibold text-gray-900">{stats.groups}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className={TYPOGRAPHY.small}>Amistats</span>
+                    <span className="font-semibold text-gray-900">{stats.friends}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className={TYPOGRAPHY.small}>Guardats</span>
+                    <span className="font-semibold text-gray-900">{stats.saved}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Xarxes Socials */}
+            <ProfileCard
+              title="Xarxes Socials"
+              iconComponent={<SocialIcon />}
+              onEdit={() => navigateToWizardStep(3)}
+            >
+              {profile?.socialLinks && profile.socialLinks.length > 0 ? (
+                <div className="space-y-2">
+                  {profile.socialLinks.map((link) => (
+                    <a
+                      key={link.id}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors group"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-900 font-medium text-sm">{link.platform}</span>
+                        {link.username && (
+                          <span className="text-gray-500 text-sm">@{link.username}</span>
+                        )}
+                      </div>
+                      <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-indigo-600" />
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-sm italic">No has afegit xarxes socials</p>
+              )}
+            </ProfileCard>
+
+            {/* Idiomes */}
+            <ProfileCard
+              title="Idiomes"
+              iconComponent={<LanguagesIcon />}
+              onEdit={() => navigateToWizardStep(7)}
+            >
+              {profile?.languages && profile.languages.length > 0 ? (
+                <div className="space-y-3">
+                  {profile.languages.map((lang) => (
+                    <div key={lang.id} className="flex items-center justify-between">
+                      <span className="text-gray-900 font-medium text-sm">{lang.language}</span>
+                      <div className="flex items-center gap-2">
+                        {getLanguageLevelDots(lang.level)}
+                        <span className="text-xs text-gray-500 capitalize w-16 text-right">
+                          {lang.level}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-sm italic">No has afegit idiomes</p>
+              )}
+            </ProfileCard>
+
+            {/* Contacte Privat */}
+            <ProfileCard
+              title="Contacte"
+              iconComponent={<ContactIcon size="sm" />}
+              isPrivate={true}
+            >
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <Mail className="w-4 h-4 text-gray-400" />
+                  <span className={TYPOGRAPHY.small}>{profile?.email}</span>
+                </div>
+                {profile?.profile?.phone && (
+                  <div className="flex items-center gap-3">
+                    <Phone className="w-4 h-4 text-gray-400" />
+                    <span className={TYPOGRAPHY.small}>{profile.profile.phone}</span>
+                  </div>
+                )}
+              </div>
+            </ProfileCard>
           </div>
         </div>
+    </PageLayout>
 
-        {/* Navigation Tabs */}
-        <div style={{
-          backgroundColor: '#fff',
-          borderRadius: '12px',
-          padding: '0',
-          boxShadow: '0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06)',
-          marginBottom: '20px',
-          border: '2px solid #e5e7eb',
-          position: 'sticky',
-          top: '80px',
-          zIndex: 10
-        }}>
-          <div style={{
-            display: 'flex',
-            overflowX: 'auto',
-            borderBottom: '1px solid #f0f0f0'
-          }}>
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as TabType)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '16px 24px',
-                    border: 'none',
-                    background: 'none',
-                    color: isActive ? '#3b82f6' : '#6b7280',
-                    fontSize: '14px',
-                    fontWeight: isActive ? '600' : '500',
-                    cursor: 'pointer',
-                    borderBottom: isActive ? '3px solid #3b82f6' : '3px solid transparent',
-                    transition: 'all 0.2s',
-                    whiteSpace: 'nowrap',
-                    minWidth: 'fit-content'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.color = '#374151';
-                      e.currentTarget.style.backgroundColor = '#f9fafb';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.color = '#6b7280';
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                    }
-                  }}
-                >
-                  <Icon style={{ width: '18px', height: '18px' }} />
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Tab Content */}
-        {activeTab === 'timeline' && <TimelineTab />}
-
-        {activeTab === 'about' && <AboutTab
-          aboutData={aboutData}
-          education={education}
-          experience={experience}
-          skills={skills}
-          interests={interests}
-          languages={languages}
-          onProfileUpdate={handleProfileUpdate}
-          userProfile={{
-            fullName: `${profile.firstName} ${profile.lastName}`,
-            username: profile.nick,
-            administration: profile.administration,
-            registrationDate: profile.createdAt
+      {/* Modal per canviar foto de perfil */}
+      {avatarToCrop && (
+        <ImageCropModal
+          imageUrl={avatarToCrop}
+          onClose={() => {
+            URL.revokeObjectURL(avatarToCrop)
+            setAvatarToCrop(null)
+            setShowAvatarCropModal(false)
           }}
-        />}
+          onCropComplete={handleSaveAvatar}
+          aspectRatio={1}
+          cropShape="round"
+          title="Retallar foto de perfil"
+        />
+      )}
 
-        {activeTab === 'friends' && <FriendsTab />}
-
-        {activeTab === 'groups' && <GroupsTab />}
-
-        {activeTab === 'posts' && <PostsTab />}
-
-        {activeTab === 'photos' && <PhotosTab />}
-
-        {activeTab === 'guardats' && <SavedTab />}
-
-        {activeTab === 'settings' && <SettingsTab profile={profile} setProfile={setProfile} />}
-      </div>
-    </PageTemplate>
-  );
+      {/* Modal per canviar imatge de portada */}
+      {coverToCrop && (
+        <ImageCropModal
+          imageUrl={coverToCrop}
+          onClose={() => {
+            URL.revokeObjectURL(coverToCrop)
+            setCoverToCrop(null)
+            setShowCoverCropModal(false)
+          }}
+          onCropComplete={handleSaveCover}
+          aspectRatio={4}
+          cropShape="rect"
+          title="Retallar imatge de portada"
+        />
+      )}
+    </>
+  )
 }

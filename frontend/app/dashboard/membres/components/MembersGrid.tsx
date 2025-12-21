@@ -1,12 +1,22 @@
 import { MemberCard } from '../../../../components/ui/MemberCard';
-import { Member } from '../data/sampleMembers';
+import { Member } from '../page';
+import { MessageCircle } from 'lucide-react';
+
+interface ConnectionActions {
+  onConnect: (memberId: string) => Promise<void>;
+  onAccept: (connectionId: string, memberId: string) => Promise<void>;
+  onReject: (connectionId: string, memberId: string) => Promise<void>;
+  onDisconnect: (connectionId: string, memberId: string) => Promise<void>;
+  onCancel: (connectionId: string, memberId: string) => Promise<void>;
+}
 
 interface MembersGridProps {
   members: Member[];
   viewMode: 'grid' | 'list';
+  connectionActions?: ConnectionActions;
 }
 
-export function MembersGrid({ members, viewMode }: MembersGridProps) {
+export function MembersGrid({ members, viewMode, connectionActions }: MembersGridProps) {
   if (members.length === 0) {
     return (
       <div style={{
@@ -16,7 +26,9 @@ export function MembersGrid({ members, viewMode }: MembersGridProps) {
         borderRadius: '12px',
         border: '2px dashed #e9ecef'
       }}>
-        <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔍</div>
+        <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'center' }}>
+          <MessageCircle className="w-12 h-12 text-gray-300" />
+        </div>
         <h3 style={{
           fontSize: '18px',
           fontWeight: '600',
@@ -39,7 +51,7 @@ export function MembersGrid({ members, viewMode }: MembersGridProps) {
   return (
     <div style={{
       display: viewMode === 'grid' ? 'grid' : 'block',
-      gridTemplateColumns: viewMode === 'grid' ? 'repeat(4, 1fr)' : 'none',
+      gridTemplateColumns: viewMode === 'grid' ? 'repeat(auto-fill, minmax(280px, 1fr))' : 'none',
       gap: viewMode === 'grid' ? '20px' : '0'
     }}>
       {members.map((member) => (
@@ -47,6 +59,7 @@ export function MembersGrid({ members, viewMode }: MembersGridProps) {
           key={member.id}
           member={member}
           viewMode={viewMode}
+          connectionActions={connectionActions}
         />
       ))}
     </div>

@@ -34,15 +34,15 @@ import { CalendarProvider } from '@/lib/context/CalendarContext';
 import { Settings } from 'lucide-react';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { OnboardingCheck } from './OnboardingCheck';
-import { 
-  CalendarDays, 
-  UserCircle, 
-  MessageCircle, 
-  Users, 
-  Home, 
-  UsersRound, 
-  MessagesSquare, 
-  FileText, 
+import {
+  CalendarDays,
+  UserCircle,
+  MessageCircle,
+  Users,
+  Home,
+  UsersRound,
+  MessagesSquare,
+  FileText,
   Megaphone,
   Building2,
   Gift,
@@ -53,6 +53,16 @@ import {
   Calendar,
   ChevronDown,
   ChevronRight,
+  Image as ImageIcon,
+  X,
+  Search,
+  Plus,
+  Loader2,
+  Globe,
+  Lock,
+  User,
+  LogOut,
+  BarChart3,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -67,16 +77,145 @@ export default function DashboardLayout({
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [showPostModal, setShowPostModal] = useState(false);
   const [postContent, setPostContent] = useState('');
-  const [postImage, setPostImage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchModal, setShowSearchModal] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [postVisibility, setPostVisibility] = useState<'PUBLIC' | 'CONNECTIONS' | 'PRIVATE'>('PUBLIC');
+  const [postAttachments, setPostAttachments] = useState<{ type: 'IMAGE' | 'DOCUMENT'; url: string; filename?: string }[]>([]);
+  const [showPollForm, setShowPollForm] = useState(false);
+  const [pollOptions, setPollOptions] = useState(['', '']);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const modalImageInputRef = useRef<HTMLInputElement>(null);
+  const modalDocumentInputRef = useRef<HTMLInputElement>(null);
+
+  // Upload file to API
+  const uploadFile = async (file: File, type: 'IMAGE' | 'DOCUMENT'): Promise<{ type: 'IMAGE' | 'DOCUMENT'; url: string; filename?: string } | null> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('type', type === 'IMAGE' ? 'image' : 'document');
+
+    try {
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Error pujant fitxer');
+      }
+
+      const data = await response.json();
+      return {
+        type,
+        url: data.url,
+        filename: file.name,
+      };
+    } catch (error) {
+      console.error('Error pujant fitxer:', error);
+      return null;
+    }
+  };
+
+  // Handle image selection in modal
+  const handleModalImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsUploading(true);
+    for (const file of Array.from(files)) {
+      if (!file.type.startsWith('image/')) {
+        alert('Nomes es permeten imatges');
+        continue;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        alert('La imatge no pot superar els 5MB');
+        continue;
+      }
+      const attachment = await uploadFile(file, 'IMAGE');
+      if (attachment) {
+        setPostAttachments(prev => [...prev, attachment]);
+      }
+    }
+    setIsUploading(false);
+    if (modalImageInputRef.current) modalImageInputRef.current.value = '';
+  };
+
+  // Handle document selection in modal
+  const handleModalDocumentSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsUploading(true);
+    for (const file of Array.from(files)) {
+      const allowedTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'text/plain',
+      ];
+      if (!allowedTypes.includes(file.type)) {
+        alert('Tipus de fitxer no permes. Acceptem: PDF, Word, Excel, TXT');
+        continue;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        alert('El document no pot superar els 10MB');
+        continue;
+      }
+      const attachment = await uploadFile(file, 'DOCUMENT');
+      if (attachment) {
+        setPostAttachments(prev => [...prev, attachment]);
+      }
+    }
+    setIsUploading(false);
+    if (modalDocumentInputRef.current) modalDocumentInputRef.current.value = '';
+  };
+
+  // Remove attachment
+  const removeModalAttachment = (index: number) => {
+    setPostAttachments(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Reset modal state
+  const resetModalState = () => {
+    setShowPostModal(false);
+    setPostContent('');
+    setPostAttachments([]);
+    setPostVisibility('PUBLIC');
+    setShowPollForm(false);
+    setPollOptions(['', '']);
+  };
 
   // NotificationBell component now handles its own state
 
   // Messages state
   const [showMessagesDropdown, setShowMessagesDropdown] = useState(false);
-  const [unreadMessagesCount, setUnreadMessagesCount] = useState(5); // Mock data
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+
+  // Carregar comptador de missatges no llegits des de l'API
+  useEffect(() => {
+    const fetchUnreadMessages = async () => {
+      if (!session?.user?.id) return;
+
+      try {
+        const res = await fetch('/api/messages/unread-count');
+        if (res.ok) {
+          const data = await res.json();
+          setUnreadMessagesCount(data.count || 0);
+        }
+      } catch (error) {
+        console.error('Error carregant comptador de missatges:', error);
+      }
+    };
+
+    fetchUnreadMessages();
+
+    // Polling cada 30 segons
+    const interval = setInterval(fetchUnreadMessages, 30000);
+    return () => clearInterval(interval);
+  }, [session?.user?.id]);
 
   // NotificationBell component now manages notifications internally
 
@@ -118,9 +257,9 @@ export default function DashboardLayout({
       defaultOpen: true,
       items: [
         { name: 'Agenda', href: '/dashboard/agenda', icon: CalendarDays, iconColor: 'text-amber-300' },
+        { name: 'Avui', href: '/dashboard/avui', icon: Home, iconColor: 'text-rose-300' },
         { name: 'El Meu Perfil', href: '/dashboard/perfil', icon: UserCircle, iconColor: 'text-cyan-300' },
         { name: 'Missatges', href: '/dashboard/missatges', icon: MessageCircle, iconColor: 'text-teal-300' },
-        { name: 'Els Meus Grups', href: '/dashboard/els-meus-grups', icon: Users, iconColor: 'text-green-300' },
       ],
     },
     {
@@ -163,10 +302,10 @@ export default function DashboardLayout({
     <OnboardingCheck>
       <CalendarProvider>
         {/* Nueva estructura: Sidebar height completa | Header + Content */}
-        <div className="flex min-h-screen">
-          {/* SIDEBAR - Altura completa */}
+        <div className="flex h-screen overflow-hidden">
+          {/* SIDEBAR - Fijo con sticky */}
           <aside 
-            className="w-64 min-h-screen flex flex-col sticky top-0 border-r-2 border-gray-300"
+            className="w-64 flex-shrink-0 h-screen sticky top-0 flex flex-col border-r-2 border-gray-300"
             style={{
               background: 'linear-gradient(180deg, #A78BFA 0%, #60A5FA 100%)',
             }}
@@ -246,15 +385,13 @@ export default function DashboardLayout({
           </aside>
 
           {/* CONTENEDOR DERECHO: Header + Contenido */}
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col overflow-hidden">
             {/* HEADER - Sin logo, solo funcionalidades */}
-            <header className="bg-white border-b-2 border-gray-300 flex items-center justify-between px-6 sticky top-0 z-10" style={{ height: '72px' }}>
+            <header className="bg-white border-b-2 border-gray-300 flex items-center justify-between px-6 flex-shrink-0 sticky top-0 z-10" style={{ height: '72px' }}>
               {/* Barra de búsqueda */}
               <div className="flex-1 max-w-xl">
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                    🔍
-                  </span>
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
                     ref={searchInputRef}
                     type="text"
@@ -273,22 +410,25 @@ export default function DashboardLayout({
 
               {/* Acciones */}
               <div className="flex items-center gap-4">
-                <button 
+                <button
                   onClick={() => setShowPostModal(true)}
                   className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
                 >
-                  <span className="text-lg">+</span>
+                  <Plus className="w-4 h-4" />
                   Crear Post
                 </button>
                 
                 <div className="relative messages-dropdown">
                   <button
-                    onClick={() => setShowMessagesDropdown(!showMessagesDropdown)}
+                    onClick={() => router.push('/dashboard/missatges')}
                     className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                    title="Missatges"
                   >
-                    💬
+                    <MessageCircle className="w-5 h-5" />
                     {unreadMessagesCount > 0 && (
-                      <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+                      <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-xs font-bold text-white bg-red-500 rounded-full">
+                        {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
+                      </span>
                     )}
                   </button>
 
@@ -296,9 +436,12 @@ export default function DashboardLayout({
                     <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-[100]">
                       <div className="p-4 border-b border-gray-200 bg-gray-50">
                         <h3 className="text-lg font-semibold text-gray-900">Missatges</h3>
+                        {unreadMessagesCount > 0 && (
+                          <span className="text-sm text-gray-500">{unreadMessagesCount} no llegits</span>
+                        )}
                       </div>
                       <div className="p-4 text-center text-gray-500">
-                        <p>Funcionalitat de missatges en desenvolupament</p>
+                        <p>Fes clic per veure els teus missatges</p>
                         <button
                           onClick={() => router.push('/dashboard/missatges')}
                           className="mt-2 text-blue-600 hover:text-blue-700 font-medium"
@@ -344,7 +487,7 @@ export default function DashboardLayout({
                         onClick={() => setShowProfileDropdown(false)}
                         className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
                       >
-                        <span className="text-lg">👤</span>
+                        <User className="w-4 h-4 text-gray-500" />
                         El meu perfil
                       </Link>
                       <Link
@@ -353,27 +496,27 @@ export default function DashboardLayout({
                         onClick={() => setShowProfileDropdown(false)}
                         className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
                       >
-                        <span className="text-lg">💬</span>
+                        <MessageCircle className="w-4 h-4 text-gray-500" />
                         Missatges
                       </Link>
                       <hr className="my-1 border-gray-200" />
                       <Link
-                        href="/dashboard/perfil"
+                        href="/dashboard/configuracio/preferencies"
                         onClick={() => setShowProfileDropdown(false)}
                         className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
                       >
-                        <span className="text-lg">⚙️</span>
-                        Configuració
+                        <Settings className="w-4 h-4 text-gray-500" />
+                        Configuracio
                       </Link>
                       <button
                         onClick={() => {
                           setShowProfileDropdown(false);
-                          // Aquí aniria la lògica de logout
+                          // Aqui aniria la logica de logout
                         }}
                         className="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200 w-full text-left"
                       >
-                        <span className="text-lg">🚪</span>
-                        Tancar sessió
+                        <LogOut className="w-4 h-4" />
+                        Tancar sessio
                       </button>
                     </div>
                   )}
@@ -411,9 +554,9 @@ export default function DashboardLayout({
                     setShowSearchModal(false);
                     setSearchQuery('');
                   }}
-                  className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                  className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                 >
-                  ×
+                  <X className="w-5 h-5" />
                 </button>
               </div>
 
@@ -428,7 +571,7 @@ export default function DashboardLayout({
                         JD
                       </div>
                       <div>
-                        <p className="font-medium">Joan Domènech</p>
+                        <p className="font-medium">Joan Domenech</p>
                         <p className="text-sm text-gray-500">@jdomenech</p>
                       </div>
                     </div>
@@ -449,14 +592,18 @@ export default function DashboardLayout({
                   <h3 className="text-sm font-semibold text-gray-600 uppercase mb-3">Grups</h3>
                   <div className="space-y-2">
                     <div className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
-                      <span className="text-2xl">👫</span>
+                      <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center">
+                        <Users className="w-5 h-5 text-indigo-600" />
+                      </div>
                       <div>
                         <p className="font-medium">Economia Social</p>
                         <p className="text-sm text-gray-500">234 membres</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
-                      <span className="text-2xl">🌱</span>
+                      <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                        <Users className="w-5 h-5 text-green-600" />
+                      </div>
                       <div>
                         <p className="font-medium">Sostenibilitat</p>
                         <p className="text-sm text-gray-500">189 membres</p>
@@ -469,13 +616,23 @@ export default function DashboardLayout({
                 <div className="p-4">
                   <h3 className="text-sm font-semibold text-gray-600 uppercase mb-3">Activitats</h3>
                   <div className="space-y-2">
-                    <div className="p-3 hover:bg-gray-50 rounded-lg cursor-pointer">
-                      <p className="font-medium">Assemblea General 2025</p>
-                      <p className="text-sm text-gray-500">📅 15 de gener • 🏛️ Fòrum General</p>
+                    <div className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer">
+                      <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
+                        <Calendar className="w-5 h-5 text-amber-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Assemblea General 2025</p>
+                        <p className="text-sm text-gray-500">15 de gener - Forum General</p>
+                      </div>
                     </div>
-                    <div className="p-3 hover:bg-gray-50 rounded-lg cursor-pointer">
-                      <p className="font-medium">Taller de Cooperatives</p>
-                      <p className="text-sm text-gray-500">📅 22 de gener • 🎓 Formació</p>
+                    <div className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer">
+                      <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+                        <GraduationCap className="w-5 h-5 text-purple-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Taller de Cooperatives</p>
+                        <p className="text-sm text-gray-500">22 de gener - Formacio</p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -490,38 +647,47 @@ export default function DashboardLayout({
             {/* Overlay */}
             <div
               className="fixed inset-0 bg-black bg-opacity-50 z-[200] transition-opacity"
-              onClick={() => setShowPostModal(false)}
+              onClick={() => !isPublishing && resetModalState()}
             />
 
-            {/* Modal - Ajustado para nueva estructura */}
+            {/* Modal */}
             <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2
-              z-[201] w-full max-w-lg bg-white rounded-xl shadow-xl">
+              z-[201] w-full max-w-2xl bg-white rounded-xl shadow-xl max-h-[90vh] overflow-y-auto">
               {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b">
-                <h2 className="text-lg font-semibold">Crear nou post</h2>
+              <div className="flex items-center justify-between p-5 border-b sticky top-0 bg-white z-10">
+                <h2 className="text-xl font-semibold text-gray-900">Crear nou post</h2>
                 <button
-                  onClick={() => setShowPostModal(false)}
-                  className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                  onClick={() => !isPublishing && resetModalState()}
+                  className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                 >
-                  ×
+                  <X className="w-5 h-5" />
                 </button>
               </div>
 
               {/* Body */}
-              <div className="p-4">
+              <div className="p-5">
                 {/* User info */}
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-blue-700
-                    flex items-center justify-center text-white font-bold text-sm">
-                    AL
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-12 h-12 rounded-full bg-indigo-600
+                    flex items-center justify-center text-white font-bold">
+                    {session?.user?.name?.charAt(0) || 'U'}
                   </div>
                   <div>
-                    <p className="font-medium">Admin</p>
-                    <select className="text-xs text-gray-500 border border-gray-200 rounded px-2 py-1">
-                      <option>🌍 Públic</option>
-                      <option>👥 Només membres</option>
-                      <option>🔒 Privat</option>
-                    </select>
+                    <p className="font-semibold text-gray-900">{session?.user?.name || 'Usuari'}</p>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      {postVisibility === 'PUBLIC' && <Globe className="w-3.5 h-3.5 text-gray-500" />}
+                      {postVisibility === 'CONNECTIONS' && <Users className="w-3.5 h-3.5 text-gray-500" />}
+                      {postVisibility === 'PRIVATE' && <Lock className="w-3.5 h-3.5 text-gray-500" />}
+                      <select
+                        value={postVisibility}
+                        onChange={(e) => setPostVisibility(e.target.value as 'PUBLIC' | 'CONNECTIONS' | 'PRIVATE')}
+                        className="text-sm text-gray-600 border border-gray-200 rounded-md px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      >
+                        <option value="PUBLIC">Public</option>
+                        <option value="CONNECTIONS">Nomes connexions</option>
+                        <option value="PRIVATE">Privat</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
 
@@ -529,90 +695,202 @@ export default function DashboardLayout({
                 <textarea
                   value={postContent}
                   onChange={(e) => setPostContent(e.target.value)}
-                  placeholder="Què vols compartir?"
-                  className="w-full p-3 border border-gray-200 rounded-lg resize-none focus:outline-none
-                    focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  rows={4}
+                  placeholder="Que vols compartir amb la comunitat?"
+                  className="w-full p-4 border border-gray-200 rounded-xl resize-none focus:outline-none
+                    focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900 bg-white
+                    placeholder:text-gray-400"
+                  rows={6}
                 />
 
-                {/* Image preview if exists */}
-                {postImage && (
-                  <div className="mt-3 relative">
-                    <img
-                      src={postImage}
-                      alt="Preview"
-                      className="w-full max-h-64 object-cover rounded-lg"
-                    />
-                    <button
-                      onClick={() => setPostImage('')}
-                      className="absolute top-2 right-2 bg-white rounded-full p-1 shadow-md hover:bg-gray-100"
-                    >
-                      <span className="text-xl leading-none">×</span>
-                    </button>
+                {/* Attachments preview */}
+                {postAttachments.length > 0 && (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {postAttachments.map((att, index) => (
+                      <div key={index} className="relative group">
+                        {att.type === 'IMAGE' ? (
+                          <div className="w-24 h-24 rounded-lg overflow-hidden border border-gray-200">
+                            <img src={att.url} alt="" className="w-full h-full object-cover" />
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg border border-gray-200">
+                            <FileText className="w-4 h-4 text-gray-500" />
+                            <span className="text-xs text-gray-700 max-w-[100px] truncate">{att.filename}</span>
+                          </div>
+                        )}
+                        <button
+                          onClick={() => removeModalAttachment(index)}
+                          className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 )}
 
+                {/* Poll form */}
+                {showPollForm && (
+                  <div className="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm font-medium text-gray-700">Opcions de l'enquesta</span>
+                      <button
+                        onClick={() => setShowPollForm(false)}
+                        className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-lg transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                      {pollOptions.map((option, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={option}
+                            onChange={(e) => {
+                              const newOptions = [...pollOptions];
+                              newOptions[index] = e.target.value;
+                              setPollOptions(newOptions);
+                            }}
+                            placeholder={`Opcio ${index + 1}`}
+                            className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg text-gray-900 bg-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                          {pollOptions.length > 2 && (
+                            <button
+                              onClick={() => setPollOptions(pollOptions.filter((_, i) => i !== index))}
+                              className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    {pollOptions.length < 4 && (
+                      <button
+                        onClick={() => setPollOptions([...pollOptions, ''])}
+                        className="mt-3 flex items-center gap-1 text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Afegir opcio
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Hidden file inputs */}
+                <input
+                  ref={modalImageInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleModalImageSelect}
+                  className="hidden"
+                />
+                <input
+                  ref={modalDocumentInputRef}
+                  type="file"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.txt"
+                  multiple
+                  onChange={handleModalDocumentSelect}
+                  className="hidden"
+                />
+
                 {/* Actions bar */}
-                <div className="flex items-center justify-between mt-4 pt-3 border-t">
-                  <div className="flex gap-2">
+                <div className="flex items-center justify-between mt-5 pt-4 border-t">
+                  <div className="flex gap-1">
                     <button
-                      onClick={() => {
-                        const input = document.createElement('input');
-                        input.type = 'file';
-                        input.accept = 'image/*';
-                        input.onchange = (e) => {
-                          const file = (e.target as HTMLInputElement).files?.[0];
-                          if (file) {
-                            const reader = new FileReader();
-                            reader.onload = (e) => setPostImage(e.target?.result as string);
-                            reader.readAsDataURL(file);
-                          }
-                        };
-                        input.click();
-                      }}
-                      className="px-3 py-1.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors
-                        flex items-center gap-2 text-sm"
+                      onClick={() => modalImageInputRef.current?.click()}
+                      disabled={isUploading}
+                      className="px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors
+                        flex items-center gap-2 text-sm disabled:opacity-50"
                     >
-                      📷 Foto
+                      {isUploading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <ImageIcon className="w-4 h-4" />
+                      )}
+                      Foto
                     </button>
-                    <button className="px-3 py-1.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors
-                      flex items-center gap-2 text-sm">
-                      🎥 Vídeo
+                    <button
+                      onClick={() => modalDocumentInputRef.current?.click()}
+                      disabled={isUploading}
+                      className="px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors
+                        flex items-center gap-2 text-sm disabled:opacity-50"
+                    >
+                      <FileText className="w-4 h-4" />
+                      Document
                     </button>
-                    <button className="px-3 py-1.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors
-                      flex items-center gap-2 text-sm">
-                      😊 Emoji
-                    </button>
-                    <button className="px-3 py-1.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors
-                      flex items-center gap-2 text-sm">
-                      📍 Ubicació
+                    <button
+                      onClick={() => setShowPollForm(!showPollForm)}
+                      className={`px-3 py-2 text-sm rounded-lg transition-colors flex items-center gap-2 ${
+                        showPollForm
+                          ? 'bg-indigo-100 text-indigo-600'
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      <BarChart3 className="w-4 h-4" />
+                      Enquesta
                     </button>
                   </div>
 
                   <div className="flex gap-2">
                     <button
-                      onClick={() => {
-                        setShowPostModal(false);
-                        setPostContent('');
-                        setPostImage('');
-                      }}
-                      className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                      onClick={resetModalState}
+                      disabled={isPublishing}
+                      className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
                     >
-                      Cancel·lar
+                      Cancellar
                     </button>
                     <button
-                      onClick={() => {
-                        // Aquí iria la lògica per publicar el post
-                        console.log('Publicant:', { content: postContent, image: postImage });
-                        setShowPostModal(false);
-                        setPostContent('');
-                        setPostImage('');
+                      onClick={async () => {
+                        if ((!postContent.trim() && postAttachments.length === 0) || isPublishing) return;
+
+                        setIsPublishing(true);
+                        try {
+                          const res = await fetch('/api/posts', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              content: postContent.trim(),
+                              type: postAttachments.some(a => a.type === 'IMAGE') ? 'PHOTO' : 'TEXT',
+                              visibility: postVisibility,
+                              attachments: postAttachments,
+                            })
+                          });
+
+                          if (!res.ok) {
+                            const errorData = await res.json();
+                            throw new Error(errorData.error || 'Error creant el post');
+                          }
+
+                          // Reset and close
+                          resetModalState();
+
+                          // Refresh page
+                          router.refresh();
+                          if (pathname === '/dashboard') {
+                            window.location.reload();
+                          }
+                        } catch (error) {
+                          console.error('Error creant post:', error);
+                          alert(error instanceof Error ? error.message : 'Hi ha hagut un error creant la publicacio');
+                        } finally {
+                          setIsPublishing(false);
+                        }
                       }}
-                      disabled={!postContent.trim()}
-                      className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium
-                        hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={(!postContent.trim() && postAttachments.length === 0) || isPublishing || isUploading}
+                      className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg font-medium
+                        hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed
+                        flex items-center gap-2"
                     >
-                      Publicar
+                      {isPublishing ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Publicant...
+                        </>
+                      ) : (
+                        'Publicar'
+                      )}
                     </button>
                   </div>
                 </div>

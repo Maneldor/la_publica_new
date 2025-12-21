@@ -30,10 +30,41 @@ function LoginContent() {
       if (result?.error) {
         setError('Credenciales incorrectas');
       } else {
-        // Obtener la sesión para verificar el rol
+        // Obtener la sesión para verificar el rol y redirigir según corresponda
         const session = await getSession();
         if (session?.user?.role) {
-          router.push(callbackUrl);
+          // Si hay un callbackUrl específico (no el default), usarlo
+          const hasCustomCallback = searchParams.get('callbackUrl');
+          if (hasCustomCallback) {
+            router.push(callbackUrl);
+          } else {
+            // Redirigir según el rol del usuario
+            let redirectUrl = '/gestio';
+            switch (session.user.role) {
+              case 'SUPER_ADMIN':
+              case 'ADMIN':
+                redirectUrl = '/admin';
+                break;
+              case 'ADMIN_GESTIO':
+              case 'CRM_COMERCIAL':
+              case 'CRM_CONTINGUT':
+              case 'GESTOR_ESTANDARD':
+              case 'GESTOR_ESTRATEGIC':
+              case 'GESTOR_ENTERPRISE':
+                redirectUrl = '/gestio';
+                break;
+              case 'COMPANY':
+                redirectUrl = '/empresa';
+                break;
+              case 'USER':
+                redirectUrl = '/dashboard';
+                break;
+              default:
+                redirectUrl = '/dashboard';
+                break;
+            }
+            router.push(redirectUrl);
+          }
         }
       }
     } catch (err: any) {
