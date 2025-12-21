@@ -7,6 +7,7 @@ import {
   Briefcase,
   Lock,
   EyeOff,
+  Globe,
   Upload,
   Image as ImageIcon,
   Trash2,
@@ -62,7 +63,7 @@ interface Group {
   name: string
   slug: string
   description?: string | null
-  type: 'PRIVATE' | 'SECRET' | 'PROFESSIONAL'
+  type: 'PUBLIC' | 'PRIVATE' | 'SECRET' | 'PROFESSIONAL'
   image?: string | null
   coverImage?: string | null
   joinPolicy?: 'OPEN' | 'REQUEST' | 'INVITE_ONLY'
@@ -187,12 +188,12 @@ export function GroupModal({ isOpen, onClose, group, onSubmit }: GroupModalProps
         name: '',
         slug: '',
         description: '',
-        type: 'PROFESSIONAL',
+        type: 'PUBLIC',
         image: '',
         coverImage: '',
-        joinPolicy: 'REQUEST',
-        contentVisibility: 'MEMBERS_ONLY',
-        memberListVisibility: 'MEMBERS_ONLY',
+        joinPolicy: 'OPEN',
+        contentVisibility: 'PUBLIC',
+        memberListVisibility: 'PUBLIC',
         postPermission: 'ALL_MEMBERS',
         enableForum: true,
         enableGallery: false,
@@ -446,10 +447,10 @@ export function GroupModal({ isOpen, onClose, group, onSubmit }: GroupModalProps
             </div>
             <div>
               <h2 className={TYPOGRAPHY.sectionTitle}>
-                {isEditing ? 'Editar Grup' : 'Nou Grup Restringit'}
+                {isEditing ? 'Editar Grup' : 'Nou Grup'}
               </h2>
               <p className="text-sm text-gray-500">
-                {isEditing ? 'Modifica la configuracio del grup' : 'Configura tots els detalls del grup'}
+                {isEditing ? 'Modifica la configuració del grup' : 'Configura tots els detalls del grup'}
               </p>
             </div>
           </div>
@@ -533,15 +534,16 @@ export function GroupModal({ isOpen, onClose, group, onSubmit }: GroupModalProps
                   <label className={`block ${TYPOGRAPHY.label} mb-3`}>
                     Tipus de grup <span className="text-red-500">*</span>
                   </label>
-                  <div className="grid grid-cols-3 gap-3">
-                    {(['PROFESSIONAL', 'PRIVATE', 'SECRET'] as const).map((type) => {
-                      const icons = { PROFESSIONAL: Briefcase, PRIVATE: Lock, SECRET: EyeOff }
-                      const colors = { PROFESSIONAL: 'indigo', PRIVATE: 'amber', SECRET: 'red' }
-                      const titles = { PROFESSIONAL: 'Professional', PRIVATE: 'Privat', SECRET: 'Secret' }
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {(['PUBLIC', 'PRIVATE', 'PROFESSIONAL', 'SECRET'] as const).map((type) => {
+                      const icons = { PUBLIC: Globe, PROFESSIONAL: Briefcase, PRIVATE: Lock, SECRET: EyeOff }
+                      const colors = { PUBLIC: 'green', PROFESSIONAL: 'indigo', PRIVATE: 'amber', SECRET: 'red' }
+                      const titles = { PUBLIC: 'Públic', PROFESSIONAL: 'Professional', PRIVATE: 'Privat', SECRET: 'Secret' }
                       const descs = {
-                        PROFESSIONAL: 'Cada usuari nomes pot pertanyer a UN grup professional',
-                        PRIVATE: 'Visible pero cal sol·licitar acces',
-                        SECRET: 'No visible, nomes per invitacio'
+                        PUBLIC: 'Qualsevol pot veure i unir-se',
+                        PROFESSIONAL: 'Nomes 1 per usuari, pot ser sensible',
+                        PRIVATE: 'Visible pero cal sol·licitar accés',
+                        SECRET: 'No visible, nomes per invitació'
                       }
                       const Icon = icons[type]
                       const color = colors[type]

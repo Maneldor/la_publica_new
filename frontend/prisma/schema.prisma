@@ -166,7 +166,12 @@ model User {
   privacySettings         UserPrivacySettings?
 
   // Relacions Grups Professionals
-  groupMemberships        GroupMember[]    @relation("UserGroupMembers")
+  groupMemberships          GroupMember[]         @relation("UserGroupMembers")
+  groupJoinRequests         GroupJoinRequest[]    @relation("GroupJoinRequests")
+  groupJoinRequestsReviewed GroupJoinRequest[]    @relation("GroupJoinRequestsReviewed")
+  groupsCreated             Group[]               @relation("GroupsCreated")
+  groupInvitationsReceived  GroupInvitation[]     @relation("GroupInvitationsReceived")
+  groupInvitationsSent      GroupInvitation[]     @relation("GroupInvitationsSent")
 
   // Relacions Alertes Admin
   alerts                  AdminAlert[]     @relation("UserAlerts")
@@ -2564,6 +2569,14 @@ enum NotificationType {
   PAYMENT_RECEIVED
   PLAN_EXPIRING
 
+  // Grups
+  GROUP_JOIN_REQUEST
+  GROUP_REQUEST_APPROVED
+  GROUP_REQUEST_REJECTED
+  GROUP_INVITATION
+  GROUP_INVITATION_ACCEPTED
+  GROUP_INVITATION_REJECTED
+
   // Generals
   GENERAL
   SYSTEM
@@ -4475,6 +4488,8 @@ model Group {
   // Relacions
   members       GroupMember[]
   sectorOffers  GroupSectorOffer[]
+  joinRequests  GroupJoinRequest[]
+  invitations   GroupInvitation[]
 
   // Categoria sensible associada (per grups professionals)
   sensitiveJobCategoryId  String?
@@ -4482,6 +4497,7 @@ model Group {
 
   // Creador
   createdById   String?
+  createdBy     User?       @relation("GroupsCreated", fields: [createdById], references: [id])
 
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
@@ -4520,6 +4536,85 @@ model GroupMember {
   @@index([userId])
   @@index([groupId])
   @@index([role])
+}
+
+// =====================================
+// SOL·LICITUDS D'UNIÓ A GRUPS
+// =====================================
+
+enum JoinRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+model GroupJoinRequest {
+  id            String              @id @default(cuid())
+  groupId       String
+  group         Group               @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User                @relation("GroupJoinRequests", fields: [userId], references: [id], onDelete: Cascade)
+
+  status        JoinRequestStatus   @default(PENDING)
+  message       String?             // Missatge opcional de l'usuari
+
+  // Revisió
+  reviewedById  String?
+  reviewedBy    User?               @relation("GroupJoinRequestsReviewed", fields: [reviewedById], references: [id])
+  reviewedAt    DateTime?
+  reviewNote    String?             // Nota de l'admin (motiu rebuig, etc.)
+
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@unique([groupId, userId])
+  @@index([groupId])
+  @@index([userId])
+  @@index([status])
+  @@map("group_join_requests")
+}
+
+// =====================================
+// INVITACIONS A GRUPS (per grups SECRET)
+// =====================================
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  CANCELLED
+}
+
+model GroupInvitation {
+  id            String              @id @default(cuid())
+  groupId       String
+  group         Group               @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  // Usuari convidat
+  userId        String
+  user          User                @relation("GroupInvitationsReceived", fields: [userId], references: [id], onDelete: Cascade)
+
+  // Qui ha enviat la invitació
+  invitedById   String
+  invitedBy     User                @relation("GroupInvitationsSent", fields: [invitedById], references: [id])
+
+  status        InvitationStatus    @default(PENDING)
+  message       String?             // Missatge de la invitació
+
+  respondedAt   DateTime?           // Quan l'usuari ha respost
+  expiresAt     DateTime?           // Data d'expiració opcional (30 dies per defecte)
+
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@unique([groupId, userId])
+  @@index([groupId])
+  @@index([userId])
+  @@index([invitedById])
+  @@index([status])
+  @@map("group_invitations")
 }
 
 // =====================================

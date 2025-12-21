@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prismaClient } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 
-// GET - Llistar grups (amb filtre per restringits)
+// GET - Llistar tots els grups (inclòs PUBLIC)
 export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions)
 
@@ -18,32 +18,65 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20')
     const type = searchParams.get('type')
     const search = searchParams.get('search')
-    const restricted = searchParams.get('restricted') === 'true'
+    const withoutAdmin = searchParams.get('withoutAdmin') === 'true'
     const statsOnly = searchParams.get('stats') === 'true'
 
     // Si nomes volem stats
     if (statsOnly) {
-      const [professional, privateCount, secret] = await Promise.all([
+      // Comptar grups sense admin (cap membre amb rol ADMIN)
+      const groupsWithAdminIds = await prismaClient.groupMember.findMany({
+        where: { role: 'ADMIN' },
+        select: { groupId: true },
+        distinct: ['groupId']
+      })
+      const groupsWithAdminSet = new Set(groupsWithAdminIds.map(g => g.groupId))
+
+      const allGroups = await prismaClient.group.findMany({
+        select: { id: true, type: true }
+      })
+
+      const withoutAdminCount = allGroups.filter(g => !groupsWithAdminSet.has(g.id)).length
+
+      // Comptar sol·licituds pendents de grups sense admin
+      const pendingRequestsCount = await prismaClient.groupJoinRequest.count({
+        where: {
+          status: 'PENDING',
+          group: {
+            members: {
+              none: { role: 'ADMIN' }
+            }
+          }
+        }
+      })
+
+      const [publicCount, professional, privateCount, secret, total] = await Promise.all([
+        prismaClient.group.count({ where: { type: 'PUBLIC' } }),
         prismaClient.group.count({ where: { type: 'PROFESSIONAL' } }),
         prismaClient.group.count({ where: { type: 'PRIVATE' } }),
         prismaClient.group.count({ where: { type: 'SECRET' } }),
+        prismaClient.group.count(),
       ])
 
       return NextResponse.json({
         stats: {
+          total,
+          public: publicCount,
           professional,
           private: privateCount,
           secret,
-          total: professional + privateCount + secret
+          withoutAdmin: withoutAdminCount,
+          pendingRequests: pendingRequestsCount
         }
       })
     }
 
     const where: Prisma.GroupWhereInput = {}
 
-    // Filtrar per tipus restringits
-    if (restricted) {
-      where.type = { in: ['PROFESSIONAL', 'PRIVATE', 'SECRET'] }
+    // Filtrar per grups sense admin
+    if (withoutAdmin) {
+      where.members = {
+        none: { role: 'ADMIN' }
+      }
     }
 
     // Filtrar per tipus especific
@@ -70,7 +103,10 @@ export async function GET(request: NextRequest) {
         take: limit,
         include: {
           _count: {
-            select: { members: true }
+            select: {
+              members: true,
+              joinRequests: true
+            }
           },
           members: {
             where: {
@@ -88,6 +124,10 @@ export async function GET(request: NextRequest) {
               }
             }
           },
+          joinRequests: {
+            where: { status: 'PENDING' },
+            select: { id: true }
+          },
           sectorOffers: {
             include: {
               offer: {
@@ -104,26 +144,42 @@ export async function GET(request: NextRequest) {
                 }
               }
             }
+          },
+          sensitiveJobCategory: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+            }
           }
         }
       }),
       prismaClient.group.count({ where })
     ])
 
-    // Formatejar ofertes
-    const formattedGroups = groups.map(group => ({
-      ...group,
-      sectorOffers: group.sectorOffers.map(so => ({
-        offerId: so.offerId,
-        offer: so.offer ? {
-          id: so.offer.id,
-          title: so.offer.title,
-          image: so.offer.images?.[0] || null,
-          company: so.offer.company?.name || null,
-          category: so.offer.category?.name || null,
-        } : null
-      }))
-    }))
+    // Formatejar grups amb informació d'admin
+    const formattedGroups = groups.map(group => {
+      const admin = group.members.find(m => m.role === 'ADMIN')
+      const moderators = group.members.filter(m => m.role === 'MODERATOR')
+
+      return {
+        ...group,
+        hasAdmin: !!admin,
+        admin: admin ? admin.user : null,
+        moderators: moderators.map(m => m.user),
+        pendingRequestsCount: group.joinRequests.length,
+        sectorOffers: group.sectorOffers.map(so => ({
+          offerId: so.offerId,
+          offer: so.offer ? {
+            id: so.offer.id,
+            title: so.offer.title,
+            image: so.offer.images?.[0] || null,
+            company: so.offer.company?.name || null,
+            category: so.offer.category?.name || null,
+          } : null
+        }))
+      }
+    })
 
     return NextResponse.json({
       groups: formattedGroups,
@@ -178,10 +234,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validar tipus restringit
-    if (!['PROFESSIONAL', 'PRIVATE', 'SECRET'].includes(type)) {
+    // Validar tipus de grup
+    if (!['PUBLIC', 'PROFESSIONAL', 'PRIVATE', 'SECRET'].includes(type)) {
       return NextResponse.json(
-        { error: 'El tipus ha de ser PROFESSIONAL, PRIVATE o SECRET' },
+        { error: 'El tipus ha de ser PUBLIC, PROFESSIONAL, PRIVATE o SECRET' },
         { status: 400 }
       )
     }

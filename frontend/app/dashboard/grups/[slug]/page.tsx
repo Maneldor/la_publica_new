@@ -1,2113 +1,1035 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { PageTemplate } from '../../../../components/ui/PageTemplate';
+import { useState, useEffect } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
+import Image from 'next/image'
+import Link from 'next/link'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { JoinRequestButton } from '../components/JoinRequestButton'
+import {
+  Users,
+  Lock,
+  Globe,
+  EyeOff,
+  Briefcase,
+  Settings,
+  UserPlus,
+  MessageCircle,
+  Calendar,
+  Shield,
+  Crown,
+  MoreHorizontal,
+  FileText,
+  Image as ImageIcon,
+  Info,
+  ChevronLeft,
+  Bell,
+  BellOff,
+  Flag,
+  LogOut,
+  ExternalLink,
+  Clock,
+  Tag,
+  CheckCircle,
+  XCircle,
+  Loader2,
+  ClipboardList,
+} from 'lucide-react'
 
-// Tipos e interfaces
+// Types
 interface GroupMember {
-  id: number;
-  username: string;
-  name: string;
-  avatar: string;
-  role: 'admin' | 'moderator' | 'member';
-  joinDate: string;
-  lastActive: string;
-  department: string;
-}
-
-interface GroupPost {
-  id: number;
-  authorId: number;
-  authorName: string;
-  authorAvatar: string;
-  content: string;
-  images?: string[];
-  createdAt: string;
-  likes: number;
-  loves: number;
-  useful: number;
-  comments: number;
-  isLiked: boolean;
-  isLoved: boolean;
-  isUseful: boolean;
-  isPinned: boolean;
-  visibility: 'all' | 'members';
+  id: string
+  nick: string
+  name: string
+  image: string | null
+  isOnline: boolean
+  lastSeenAt: string | null
+  position: string | null
+  department: string | null
+  role: 'ADMIN' | 'MODERATOR' | 'MEMBER'
+  joinedAt: string
 }
 
 interface GroupOffer {
-  id: number;
-  title: string;
-  description: string;
-  category: string;
-  image: string;
-  discount: string;
-  companyName: string;
-  companyLogo: string;
-  validUntil: string;
-  promoCode?: string;
-  externalLink?: string;
-  maxUses?: number;
-  currentUses: number;
-  rating: number;
-  isExclusive: boolean;
-  createdBy: 'admin' | 'company' | 'member';
+  id: string
+  title: string
+  description: string | null
+  discount: string | null
+  image: string | null
+  validFrom: string | null
+  validUntil: string | null
+  company: {
+    id: string
+    name: string
+    logo: string | null
+  } | null
+}
+
+interface SensitiveCategory {
+  id: string
+  name: string
+  slug: string
+  icon: string | null
+  color: string | null
 }
 
 interface Group {
-  id: number;
-  slug: string;
-  name: string;
-  description: string;
-  longDescription: string;
-  category: string;
-  privacy: 'public' | 'private' | 'secret';
-  coverImage: string;
-  groupAvatar: string;
-  membersCount: number;
-  postsCount: number;
-  lastActivity: string;
-  isMember: boolean;
-  isAdmin: boolean;
-  isModerator: boolean;
-  adminName: string;
-  tags: string[];
-  membershipStatus: 'none' | 'pending' | 'approved' | 'rejected';
-  createdDate: string;
-  members: GroupMember[];
-  posts: GroupPost[];
-  offers: GroupOffer[];
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  type: 'PUBLIC' | 'PRIVATE' | 'SECRET' | 'PROFESSIONAL'
+  image: string | null
+  coverImage: string | null
+  membersCount: number
+  createdAt: string
+  joinPolicy: 'OPEN' | 'REQUEST' | 'INVITE_ONLY'
+  contentVisibility: 'PUBLIC' | 'MEMBERS_ONLY'
+  memberListVisibility: 'PUBLIC' | 'MEMBERS_ONLY'
+  postPermission: 'ALL_MEMBERS' | 'MODS_AND_ADMINS' | 'ADMINS_ONLY'
+  enableForum: boolean
+  enableGallery: boolean
+  enableDocuments: boolean
+  enableGroupChat: boolean
+  sensitiveJobCategory: SensitiveCategory | null
+  hasSensitiveCategory: boolean
+  createdBy: {
+    id: string
+    nick: string
+    name: string
+    image: string | null
+  } | null
+  isMember: boolean
+  isAdmin: boolean
+  isModerator: boolean
+  userRole: 'ADMIN' | 'MODERATOR' | 'MEMBER' | null
+  admins: GroupMember[]
+  moderators: GroupMember[]
+  members: GroupMember[]
+  recentMembers: GroupMember[]
+  offers: GroupOffer[]
+  offersCount: number
 }
 
-// Datos de ejemplo expandidos
-const sampleGroups: Group[] = [
-  {
-    id: 1,
-    slug: 'desenvolupadors-frontend',
-    name: 'Desenvolupadors Frontend',
-    description: 'Comunitat de desenvolupadors especialitzats en tecnologies frontend',
-    longDescription: 'Comunitat de desenvolupadors especialitzats en tecnologies frontend: React, Vue, Angular, TypeScript i les últimes tendències en desenvolupament web. Aquest grup està dedicat a compartir coneixements, bones pràctiques i ajudar-nos mútuament en els reptes tècnics del dia a dia.',
-    category: 'Tecnologia',
-    privacy: 'public',
-    coverImage: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&h=300&fit=crop',
-    groupAvatar: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=150&h=150&fit=crop',
-    membersCount: 247,
-    postsCount: 89,
-    lastActivity: 'fa 2 hores',
-    isMember: true,
-    isAdmin: false,
-    isModerator: false,
-    adminName: 'Marc Torres',
-    tags: ['React', 'TypeScript', 'Frontend', 'JavaScript'],
-    membershipStatus: 'approved',
-    createdDate: '2025-01-15T10:00:00Z',
-    members: [
-      {
-        id: 1,
-        username: 'marc_torres',
-        name: 'Marc Torres',
-        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-        role: 'admin',
-        joinDate: '2025-01-15T10:00:00Z',
-        lastActive: 'fa 1 hora',
-        department: 'Departament de Tecnologia'
-      },
-      {
-        id: 2,
-        username: 'anna_garcia',
-        name: 'Anna García',
-        avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face',
-        role: 'moderator',
-        joinDate: '2025-01-16T14:30:00Z',
-        lastActive: 'fa 30 min',
-        department: 'Departament de Disseny'
-      },
-      {
-        id: 3,
-        username: 'david_fernandez',
-        name: 'David Fernández',
-        avatar: '',
-        role: 'member',
-        joinDate: '2025-01-18T09:15:00Z',
-        lastActive: 'fa 3 hores',
-        department: 'Departament de Tecnologia'
-      }
-    ],
-    posts: [
-      {
-        id: 1,
-        authorId: 1,
-        authorName: 'Marc Torres',
-        authorAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-        content: 'Hola compañeros! He trobat aquest nou framework de React que pot ser molt útil per optimitzar el rendiment de les nostres aplicacions. Què en penseu? 🚀\n\nHe estat provant-lo en un projecte pilot i els resultats són impressionants. Redueix el bundle size en un 30% aproximadament.',
-        images: ['https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600&h=300&fit=crop'],
-        createdAt: '2025-10-15T10:30:00Z',
-        likes: 12,
-        loves: 3,
-        useful: 8,
-        comments: 5,
-        isLiked: false,
-        isLoved: false,
-        isUseful: true,
-        isPinned: true,
-        visibility: 'members'
-      },
-      {
-        id: 2,
-        authorId: 2,
-        authorName: 'Anna García',
-        authorAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face',
-        content: 'Comparteixo aquest article sobre les millors pràctiques en TypeScript. Molt recomanable! 👨‍💻\n\nhttps://typescript-best-practices.dev',
-        createdAt: '2025-10-14T16:45:00Z',
-        likes: 8,
-        loves: 2,
-        useful: 6,
-        comments: 3,
-        isLiked: true,
-        isLoved: false,
-        isUseful: false,
-        isPinned: false,
-        visibility: 'all'
-      },
-      {
-        id: 3,
-        authorId: 3,
-        authorName: 'David Fernández',
-        authorAvatar: '',
-        content: 'Algú ha provat les noves funcionalitats de React 18? M\'agradaria escoltar les vostres experiències amb Concurrent Features.',
-        createdAt: '2025-10-13T11:20:00Z',
-        likes: 15,
-        loves: 1,
-        useful: 4,
-        comments: 8,
-        isLiked: false,
-        isLoved: false,
-        isUseful: false,
-        isPinned: false,
-        visibility: 'members'
-      }
-    ],
-    offers: [
-      {
-        id: 1,
-        title: 'Curs Avançat de React - 50% descompte',
-        description: 'Curs intensiu de React amb les últimes funcionalitats. Inclou hooks avançats, Context API, i optimització de rendiment.',
-        category: 'Formació',
-        image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=200&fit=crop',
-        discount: '50% OFF',
-        companyName: 'TechAcademy Barcelona',
-        companyLogo: 'https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=80&h=80&fit=crop',
-        validUntil: '2025-12-31',
-        promoCode: 'FRONTEND50',
-        externalLink: 'https://techacademy.barcelona/react-course',
-        maxUses: 50,
-        currentUses: 23,
-        rating: 4.8,
-        isExclusive: true,
-        createdBy: 'company'
-      },
-      {
-        id: 2,
-        title: 'Llicències JetBrains - Preu especial',
-        description: 'Accés complet a totes les eines JetBrains: WebStorm, IntelliJ IDEA, PhpStorm i més.',
-        category: 'Eines',
-        image: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=400&h=200&fit=crop',
-        discount: '30% OFF',
-        companyName: 'JetBrains',
-        companyLogo: 'https://images.unsplash.com/photo-1614064641938-3bbee52942c7?w=80&h=80&fit=crop',
-        validUntil: '2025-11-30',
-        promoCode: 'DEV30',
-        maxUses: 100,
-        currentUses: 67,
-        rating: 4.9,
-        isExclusive: true,
-        createdBy: 'admin'
-      },
-      {
-        id: 3,
-        title: 'Consultoria gratuïta en arquitectura Frontend',
-        description: 'Sessió de consultoria d\'1 hora amb experts en arquitectura de projectes React/Vue.',
-        category: 'Serveis',
-        image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=200&fit=crop',
-        discount: 'GRATUÏT',
-        companyName: 'Frontend Experts',
-        companyLogo: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=80&h=80&fit=crop',
-        validUntil: '2025-10-31',
-        maxUses: 20,
-        currentUses: 8,
-        rating: 4.7,
-        isExclusive: true,
-        createdBy: 'member'
-      }
-    ]
+// Tab definitions
+const TABS = [
+  { id: 'about', label: 'Sobre', icon: Info },
+  { id: 'members', label: 'Membres', icon: Users },
+  { id: 'offers', label: 'Ofertes', icon: Tag },
+  { id: 'files', label: 'Fitxers', icon: FileText, requiresEnabled: 'enableDocuments' },
+  { id: 'gallery', label: 'Galeria', icon: ImageIcon, requiresEnabled: 'enableGallery' },
+]
+
+// Type badge component
+function TypeBadge({ type }: { type: Group['type'] }) {
+  const config = {
+    PUBLIC: { icon: Globe, label: 'Públic', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+    PRIVATE: { icon: Lock, label: 'Privat', color: 'bg-amber-100 text-amber-700 border-amber-200' },
+    SECRET: { icon: EyeOff, label: 'Secret', color: 'bg-red-100 text-red-700 border-red-200' },
+    PROFESSIONAL: { icon: Briefcase, label: 'Professional', color: 'bg-indigo-100 text-indigo-700 border-indigo-200' },
   }
-];
+
+  const { icon: Icon, label, color } = config[type]
+
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${color}`}>
+      <Icon className="w-3.5 h-3.5" />
+      {label}
+    </span>
+  )
+}
+
+// Member avatar component
+function MemberAvatar({ member, size = 'md' }: { member: GroupMember; size?: 'sm' | 'md' | 'lg' }) {
+  const sizeClasses = {
+    sm: 'w-8 h-8 text-xs',
+    md: 'w-10 h-10 text-sm',
+    lg: 'w-12 h-12 text-base',
+  }
+
+  const initials = member.name
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
+
+  return (
+    <div className={`relative ${sizeClasses[size]} rounded-full overflow-hidden flex-shrink-0`}>
+      {member.image ? (
+        <Image
+          src={member.image}
+          alt={member.name}
+          fill
+          className="object-cover"
+        />
+      ) : (
+        <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold">
+          {initials}
+        </div>
+      )}
+      {member.isOnline && (
+        <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full" />
+      )}
+    </div>
+  )
+}
+
+// Role badge
+function RoleBadge({ role }: { role: GroupMember['role'] }) {
+  const config = {
+    ADMIN: { icon: Crown, label: 'Admin', color: 'bg-amber-100 text-amber-700' },
+    MODERATOR: { icon: Shield, label: 'Mod', color: 'bg-blue-100 text-blue-700' },
+    MEMBER: { icon: Users, label: 'Membre', color: 'bg-gray-100 text-gray-600' },
+  }
+
+  const { icon: Icon, label, color } = config[role]
+
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${color}`}>
+      <Icon className="w-3 h-3" />
+      {label}
+    </span>
+  )
+}
 
 export default function GroupDetailPage() {
-  const params = useParams();
-  const router = useRouter();
-  const groupSlug = params.slug as string;
+  const params = useParams()
+  const router = useRouter()
+  const { data: session } = useSession()
+  const slug = params.slug as string
 
-  const [group, setGroup] = useState<Group | null>(null);
-  const [activeTab, setActiveTab] = useState<'feed' | 'members' | 'offers' | 'documents' | 'photos' | 'events' | 'settings'>('feed');
-  const [isLoading, setIsLoading] = useState(false);
-  const [showMoreOptions, setShowMoreOptions] = useState(false);
+  const [group, setGroup] = useState<Group | null>(null)
+  const [activeTab, setActiveTab] = useState('about')
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<'not_found' | 'forbidden' | 'error' | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [isJoining, setIsJoining] = useState(false)
+  const [showMoreMenu, setShowMoreMenu] = useState(false)
+  const [memberFilter, setMemberFilter] = useState<'all' | 'admins' | 'moderators'>('all')
+  const [memberSearch, setMemberSearch] = useState('')
 
-  // Estados para el feed
-  const [newPost, setNewPost] = useState('');
-  const [postVisibility, setPostVisibility] = useState<'all' | 'members'>('members');
-  const [feedSortBy, setSortBy] = useState<'recent' | 'popular' | 'pinned'>('recent');
-
-  // Estados para las ofertas
-  const [offerFilter, setOfferFilter] = useState<'all' | 'active' | 'expiring'>('active');
-  const [offerCategory, setOfferCategory] = useState<string>('');
-  const [selectedOffer, setSelectedOffer] = useState<GroupOffer | null>(null);
-
-  // Estados para miembros
-  const [memberFilter, setMemberFilter] = useState<'all' | 'admins' | 'moderators' | 'members'>('all');
-  const [memberSearch, setMemberSearch] = useState('');
-
+  // Fetch group data
   useEffect(() => {
-    // Buscar el grupo por slug
-    const foundGroup = sampleGroups.find(g => g.slug === groupSlug);
-    setGroup(foundGroup || null);
-  }, [groupSlug]);
+    const fetchGroup = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
+        setErrorMessage(null)
 
-  // Función para obtener iniciales del avatar
-  const getAvatarInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-  };
+        const response = await fetch(`/api/groups/by-slug/${slug}`)
 
-  // Función para mostrar notificaciones
-  const showNotification = (type: 'success' | 'error' | 'info' | 'warning', message: string) => {
-    console.log(`🔔 ${type.toUpperCase()}: ${message}`);
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ca-ES', {
-      day: 'numeric',
-      month: 'short',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const getPrivacyInfo = (privacy: string) => {
-    switch (privacy) {
-      case 'public':
-        return { icon: '🌐', label: 'Públic', color: '#10b981' };
-      case 'private':
-        return { icon: '🔒', label: 'Privat', color: '#f59e0b' };
-      case 'secret':
-        return { icon: '🤫', label: 'Secret', color: '#ef4444' };
-      default:
-        return { icon: '🌐', label: 'Públic', color: '#10b981' };
-    }
-  };
-
-  // Handlers para acciones del grupo
-  const handleCreatePost = async () => {
-    if (!newPost.trim()) return;
-
-    setIsLoading(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      const post: GroupPost = {
-        id: Date.now(),
-        authorId: 999, // Usuario actual
-        authorName: 'Usuari Actual',
-        authorAvatar: '',
-        content: newPost,
-        createdAt: new Date().toISOString(),
-        likes: 0,
-        loves: 0,
-        useful: 0,
-        comments: 0,
-        isLiked: false,
-        isLoved: false,
-        isUseful: false,
-        isPinned: false,
-        visibility: postVisibility
-      };
-
-      setGroup(prev => prev ? {
-        ...prev,
-        posts: [post, ...prev.posts],
-        postsCount: prev.postsCount + 1
-      } : null);
-
-      setNewPost('');
-      showNotification('success', 'Publicació creada correctament!');
-
-    } catch (error) {
-      showNotification('error', 'Error al crear la publicació');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleReaction = async (postId: number, reactionType: 'like' | 'love' | 'useful') => {
-    if (!group) return;
-
-    try {
-      setGroup(prev => prev ? {
-        ...prev,
-        posts: prev.posts.map(post => {
-          if (post.id === postId) {
-            const postAny = post as any;
-            const reactionKey = `is${reactionType.charAt(0).toUpperCase() + reactionType.slice(1)}` as keyof GroupPost;
-            const countKey = `${reactionType}s` as keyof GroupPost;
-            const currentReaction = postAny[reactionKey] as boolean;
-            return {
-              ...post,
-              [countKey]: currentReaction ? (postAny[countKey] as number) - 1 : (postAny[countKey] as number) + 1,
-              [reactionKey]: !currentReaction
-            } as GroupPost;
+        if (!response.ok) {
+          if (response.status === 404) {
+            setError('not_found')
+            return
           }
-          return post;
-        })
-      } : null);
-    } catch (error) {
-      showNotification('error', 'Error al processar la reacció');
-    }
-  };
 
-  const handleUseOffer = (offer: GroupOffer) => {
-    if (offer.promoCode) {
-      navigator.clipboard.writeText(offer.promoCode);
-      showNotification('success', `Codi "${offer.promoCode}" copiat al portapapers!`);
+          if (response.status === 403) {
+            const data = await response.json()
+            setError('forbidden')
+            setErrorMessage(data.error || 'No tens accés a aquest grup')
+            return
+          }
+
+          setError('error')
+          return
+        }
+
+        const data = await response.json()
+        setGroup(data)
+      } catch (err) {
+        console.error('Error fetching group:', err)
+        setError('error')
+        setErrorMessage('Error de connexió')
+      } finally {
+        setIsLoading(false)
+      }
     }
 
-    if (offer.externalLink) {
-      window.open(offer.externalLink, '_blank');
+    if (slug) {
+      fetchGroup()
+    }
+  }, [slug])
+
+  // Handle join group
+  const handleJoinGroup = async () => {
+    if (!group || !session) {
+      router.push('/login')
+      return
     }
 
-    // Incrementar usos
-    setGroup(prev => prev ? {
-      ...prev,
-      offers: prev.offers.map(o =>
-        o.id === offer.id ? { ...o, currentUses: o.currentUses + 1 } : o
+    setIsJoining(true)
+    try {
+      const response = await fetch(`/api/groups/${group.id}/join`, {
+        method: 'POST',
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        if (data.needsAdminApproval) {
+          alert(`Ja ets membre del grup "${data.currentGroup}". Només pots pertànyer a un grup professional. Contacta amb un administrador per canviar de grup.`)
+        } else {
+          alert(data.error || 'Error al unir-se al grup')
+        }
+        return
+      }
+
+      // Refresh group data
+      const refreshResponse = await fetch(`/api/groups/by-slug/${slug}`)
+      if (refreshResponse.ok) {
+        const refreshData = await refreshResponse.json()
+        setGroup(refreshData)
+      }
+    } catch (err) {
+      console.error('Error joining group:', err)
+      alert('Error de connexió')
+    } finally {
+      setIsJoining(false)
+    }
+  }
+
+  // Format date
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('ca-ES', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    })
+  }
+
+  // Format relative time
+  const formatRelativeTime = (dateString: string | null) => {
+    if (!dateString) return 'Mai'
+    const date = new Date(dateString)
+    const now = new Date()
+    const diff = now.getTime() - date.getTime()
+    const minutes = Math.floor(diff / 60000)
+    const hours = Math.floor(diff / 3600000)
+    const days = Math.floor(diff / 86400000)
+
+    if (minutes < 1) return 'Ara mateix'
+    if (minutes < 60) return `Fa ${minutes} min`
+    if (hours < 24) return `Fa ${hours}h`
+    if (days < 7) return `Fa ${days} dies`
+    return formatDate(dateString)
+  }
+
+  // Filter members
+  const filteredMembers = group?.members.filter(member => {
+    if (memberFilter === 'admins' && member.role !== 'ADMIN') return false
+    if (memberFilter === 'moderators' && member.role !== 'MODERATOR') return false
+    if (memberSearch) {
+      const search = memberSearch.toLowerCase()
+      return (
+        member.name.toLowerCase().includes(search) ||
+        member.nick.toLowerCase().includes(search)
       )
-    } : null);
-  };
+    }
+    return true
+  }) || []
 
-  if (!group) {
+  // Loading state
+  if (isLoading) {
     return (
-      <PageTemplate
-        title="Grup no trobat"
-        subtitle="El grup que busques no existeix"
-        statsData={[]}
-      >
-        <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>❌</div>
-          <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#6c757d', marginBottom: '8px' }}>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mx-auto mb-4" />
+          <p className="text-gray-600">Carregant grup...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Error state - 404 Not Found
+  if (error === 'not_found') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-4">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Users className="w-8 h-8 text-gray-400" />
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
             Grup no trobat
-          </h3>
-          <p style={{ fontSize: '14px', color: '#8e8e93', marginBottom: '20px' }}>
-            El grup que busques no existeix o ha estat eliminat
+          </h2>
+          <p className="text-gray-600 mb-6">
+            El grup que busques no existeix o ha estat eliminat.
           </p>
           <button
             onClick={() => router.push('/dashboard/grups')}
-            style={{
-              padding: '10px 20px',
-              backgroundColor: '#3b82f6',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '14px',
-              fontWeight: '500',
-              cursor: 'pointer'
-            }}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
           >
+            <ChevronLeft className="w-4 h-4" />
             Tornar als grups
           </button>
         </div>
-      </PageTemplate>
-    );
+      </div>
+    )
   }
 
-  const statsData = [
-    { label: 'Membres', value: group.membersCount.toString(), trend: '+12' },
-    { label: 'Publicacions', value: group.postsCount.toString(), trend: '+5' },
-    { label: 'Ofertes actives', value: group.offers.filter(o => new Date(o.validUntil) > new Date()).length.toString(), trend: '+2' },
-    { label: 'Activitat', value: group.lastActivity, trend: 'recent' }
-  ];
+  // Error state - 403 Forbidden (professional group when user already has one)
+  if (error === 'forbidden') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-4">
+          <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Briefcase className="w-8 h-8 text-amber-600" />
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            Grup no disponible
+          </h2>
+          <p className="text-gray-600 mb-6">
+            {errorMessage || 'No tens accés a aquest grup.'}
+          </p>
+          <button
+            onClick={() => router.push('/dashboard/grups')}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Tornar als grups
+          </button>
+        </div>
+      </div>
+    )
+  }
 
-  const privacy = getPrivacyInfo(group.privacy);
+  // Error state - General error
+  if (error === 'error' || !group) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-4">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <XCircle className="w-8 h-8 text-red-500" />
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            Error al carregar el grup
+          </h2>
+          <p className="text-gray-600 mb-6">
+            {errorMessage || 'Hi ha hagut un problema al carregar el grup. Torna-ho a intentar.'}
+          </p>
+          <button
+            onClick={() => router.push('/dashboard/grups')}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Tornar als grups
+          </button>
+        </div>
+      </div>
+    )
+  }
 
-  // Filtrar posts
-  const filteredPosts = group.posts
-    .filter(post => {
-      if (feedSortBy === 'pinned') return post.isPinned;
-      return true;
-    })
-    .sort((a, b) => {
-      if (feedSortBy === 'recent') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      if (feedSortBy === 'popular') return (b.likes + b.loves + b.useful) - (a.likes + a.loves + a.useful);
-      if (feedSortBy === 'pinned') return b.isPinned ? 1 : -1;
-      return 0;
-    });
-
-  // Filtrar ofertas
-  const filteredOffers = group.offers
-    .filter(offer => {
-      const now = new Date();
-      const validUntil = new Date(offer.validUntil);
-      const daysUntilExpiry = Math.ceil((validUntil.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-
-      if (offerFilter === 'active') return validUntil > now;
-      if (offerFilter === 'expiring') return daysUntilExpiry <= 7 && validUntil > now;
-      return true;
-    })
-    .filter(offer => offerCategory ? offer.category === offerCategory : true);
-
-  // Filtrar miembros
-  const filteredMembers = group.members
-    .filter(member => {
-      if (memberFilter === 'all') return true;
-      if (memberFilter === 'admins') return member.role === 'admin';
-      if (memberFilter === 'moderators') return member.role === 'moderator';
-      if (memberFilter === 'members') return member.role === 'member';
-      return true;
-    })
-    .filter(member =>
-      memberSearch ? member.name.toLowerCase().includes(memberSearch.toLowerCase()) : true
-    );
+  // Available tabs based on group settings
+  const availableTabs = TABS.filter(tab => {
+    if (tab.requiresEnabled) {
+      return group[tab.requiresEnabled as keyof Group]
+    }
+    return true
+  })
 
   return (
-    <PageTemplate
-      title={group.name}
-      subtitle={group.description}
-      statsData={statsData}
-    >
-      <div style={{ padding: '0 24px 24px 24px', maxWidth: '1400px', margin: '0 auto' }}>
+    <div className="max-w-6xl mx-auto pb-12">
+      {/* Back button */}
+      <div className="px-4 sm:px-6 py-4">
+        <button
+          onClick={() => router.push('/dashboard/grups')}
+          className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          <span className="text-sm font-medium">Tornar als grups</span>
+        </button>
+      </div>
 
-        {/* 1. CAPÇALERA DEL GRUP MILLORADA */}
-        <div style={{
-          backgroundColor: '#fff',
-          borderRadius: '12px',
-          overflow: 'hidden',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-          marginBottom: '32px',
-          border: '1px solid #f0f0f0'
-        }}>
-          {/* Cover Image */}
-          <div style={{
-            height: '250px',
-            backgroundImage: `url(${group.coverImage})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            position: 'relative'
-          }}>
-            <div style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.5) 100%)'
-            }} />
+      {/* Header with cover */}
+      <div className="relative">
+        {/* Cover Image */}
+        <div className="h-48 sm:h-64 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-b-2xl overflow-hidden">
+          {group.coverImage && (
+            <Image
+              src={group.coverImage}
+              alt={group.name}
+              fill
+              className="object-cover"
+              priority
+            />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+        </div>
 
-            {/* Avatar del grup superposat */}
-            <div style={{
-              position: 'absolute',
-              bottom: '-40px',
-              left: '30px',
-              width: '80px',
-              height: '80px',
-              borderRadius: '50%',
-              border: '4px solid #fff',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-              overflow: 'hidden',
-              backgroundColor: '#fff'
-            }}>
-              {group.groupAvatar ? (
-                <img
-                  src={group.groupAvatar}
+        {/* Avatar and info */}
+        <div className="relative px-4 sm:px-6 -mt-16 sm:-mt-20">
+          <div className="flex flex-col sm:flex-row sm:items-end gap-4 sm:gap-6">
+            {/* Avatar */}
+            <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl border-4 border-white shadow-lg overflow-hidden bg-white flex-shrink-0">
+              {group.image ? (
+                <Image
+                  src={group.image}
                   alt={group.name}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover'
-                  }}
+                  width={144}
+                  height={144}
+                  className="w-full h-full object-cover"
                 />
               ) : (
-                <div style={{
-                  width: '100%',
-                  height: '100%',
-                  backgroundColor: '#3b82f6',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <span style={{
-                    fontSize: '24px',
-                    fontWeight: 'bold',
-                    color: 'white'
-                  }}>
-                    {getAvatarInitials(group.name)}
-                  </span>
+                <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                  <Users className="w-12 h-12 sm:w-16 sm:h-16 text-white/80" />
                 </div>
               )}
             </div>
 
-            {/* Badge de privacitat */}
-            <div style={{
-              position: 'absolute',
-              top: '20px',
-              right: '20px',
-              backgroundColor: privacy.color,
-              color: 'white',
-              borderRadius: '8px',
-              padding: '6px 12px',
-              fontSize: '12px',
-              fontWeight: '600',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}>
-              {privacy.icon} {privacy.label}
-            </div>
-          </div>
-
-          {/* Informació del grup */}
-          <div style={{
-            padding: '50px 30px 20px 30px'
-          }}>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'flex-start',
-              marginBottom: '16px'
-            }}>
-              <div style={{ flex: 1 }}>
-                <h1 style={{
-                  fontSize: '24px',
-                  fontWeight: '700',
-                  color: '#2c3e50',
-                  margin: '0 0 8px 0'
-                }}>
+            {/* Info */}
+            <div className="flex-1 pb-2 sm:pb-4">
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
                   {group.name}
                 </h1>
-                <p style={{
-                  fontSize: '16px',
-                  color: '#6c757d',
-                  margin: '0 0 12px 0',
-                  lineHeight: '1.5'
-                }}>
-                  {group.description}
-                </p>
-
-                {/* Tags */}
-                <div style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: '8px',
-                  marginBottom: '16px'
-                }}>
-                  {group.tags.map((tag, index) => (
-                    <span
-                      key={index}
-                      style={{
-                        backgroundColor: '#f0f7ff',
-                        color: '#3b82f6',
-                        padding: '4px 10px',
-                        borderRadius: '8px',
-                        fontSize: '12px',
-                        fontWeight: '500'
-                      }}
-                    >
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
+                <TypeBadge type={group.type} />
+                {group.hasSensitiveCategory && group.sensitiveJobCategory && (
+                  <span
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border"
+                    style={{
+                      backgroundColor: `${group.sensitiveJobCategory.color}15`,
+                      borderColor: `${group.sensitiveJobCategory.color}30`,
+                      color: group.sensitiveJobCategory.color || '#6366f1',
+                    }}
+                  >
+                    <Shield className="w-3 h-3" />
+                    {group.sensitiveJobCategory.name}
+                  </span>
+                )}
               </div>
 
-              {/* Botons d'acció */}
-              <div style={{
-                display: 'flex',
-                gap: '12px',
-                alignItems: 'center'
-              }}>
-                <button
-                  onClick={() => setActiveTab('members')}
-                  style={{
-                    padding: '10px 16px',
-                    backgroundColor: '#10b981',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
+              {group.description && (
+                <p className="text-gray-600 mb-3 line-clamp-2">
+                  {group.description}
+                </p>
+              )}
+
+              <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
+                <span className="flex items-center gap-1">
+                  <Users className="w-4 h-4" />
+                  {group.membersCount} membres
+                </span>
+                <span className="flex items-center gap-1">
+                  <Calendar className="w-4 h-4" />
+                  Creat el {formatDate(group.createdAt)}
+                </span>
+                {group.offersCount > 0 && (
+                  <span className="flex items-center gap-1">
+                    <Tag className="w-4 h-4" />
+                    {group.offersCount} ofertes
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-2 pb-4">
+              {!group.isMember ? (
+                <JoinRequestButton
+                  groupId={group.id}
+                  groupName={group.name}
+                  groupType={group.type}
+                  isMember={group.isMember}
+                  onJoined={() => {
+                    // Refresh group data
+                    fetch(`/api/groups/by-slug/${slug}`)
+                      .then(res => res.json())
+                      .then(data => setGroup(data))
+                      .catch(console.error)
                   }}
+                  className="px-5 py-2.5"
+                />
+              ) : (
+                <>
+                  {group.enableGroupChat && (
+                    <button className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium">
+                      <MessageCircle className="w-4 h-4" />
+                      Xat
+                    </button>
+                  )}
+                  {(group.isAdmin || group.isModerator) && group.type !== 'SECRET' && (
+                    <Link
+                      href={`/dashboard/grups/${group.slug}/gestio/solicituds`}
+                      className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                    >
+                      <ClipboardList className="w-4 h-4" />
+                      Sol·licituds
+                    </Link>
+                  )}
+                  {(group.isAdmin || group.isModerator) && group.type === 'SECRET' && (
+                    <Link
+                      href={`/dashboard/grups/${group.slug}/gestio/invitacions`}
+                      className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                    >
+                      <UserPlus className="w-4 h-4" />
+                      Invitacions
+                    </Link>
+                  )}
+                  {group.isAdmin && (
+                    <Link
+                      href={`/admin/grups/${group.id}`}
+                      className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                    >
+                      <Settings className="w-4 h-4" />
+                      Gestionar
+                    </Link>
+                  )}
+                </>
+              )}
+
+              {/* More menu */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowMoreMenu(!showMoreMenu)}
+                  className="p-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                 >
-                  👥 Veure membres
+                  <MoreHorizontal className="w-5 h-5" />
                 </button>
 
-                {(group.isAdmin || group.isModerator) && (
-                  <button
-                    onClick={() => setActiveTab('settings')}
-                    style={{
-                      padding: '10px 16px',
-                      backgroundColor: 'transparent',
-                      color: '#6c757d',
-                      border: '2px solid #e9ecef',
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px'
-                    }}
-                  >
-                    ⚙️ Configuració
-                  </button>
+                {showMoreMenu && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-10"
+                      onClick={() => setShowMoreMenu(false)}
+                    />
+                    <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                      <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                        <Bell className="w-4 h-4" />
+                        Notificacions
+                      </button>
+                      <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                        <BellOff className="w-4 h-4" />
+                        Silenciar
+                      </button>
+                      {group.isMember && (
+                        <button className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
+                          <LogOut className="w-4 h-4" />
+                          Sortir del grup
+                        </button>
+                      )}
+                      <hr className="my-1" />
+                      <button className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
+                        <Flag className="w-4 h-4" />
+                        Reportar
+                      </button>
+                    </div>
+                  </>
                 )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-                {/* Dropdown de més opcions */}
-                <div style={{ position: 'relative' }}>
-                  <button
-                    onClick={() => setShowMoreOptions(!showMoreOptions)}
-                    style={{
-                      padding: '10px 12px',
-                      backgroundColor: 'transparent',
-                      color: '#6c757d',
-                      border: '2px solid #e9ecef',
-                      borderRadius: '8px',
-                      fontSize: '16px',
-                      cursor: 'pointer'
-                    }}
+      {/* Tabs */}
+      <div className="border-b border-gray-200 mt-6 px-4 sm:px-6">
+        <nav className="flex gap-1 overflow-x-auto">
+          {availableTabs.map(tab => {
+            const Icon = tab.icon
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                  activeTab === tab.id
+                    ? 'border-indigo-600 text-indigo-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                {tab.label}
+              </button>
+            )
+          })}
+        </nav>
+      </div>
+
+      {/* Content with sidebar */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6 px-4 sm:px-6">
+        {/* Main content */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* About Tab */}
+          {activeTab === 'about' && (
+            <>
+              <Card>
+                <CardHeader>
+                  <CardTitle icon={<Info className="w-5 h-5 text-gray-500" />}>
+                    Sobre el grup
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-700 leading-relaxed">
+                    {group.description || 'Aquest grup no té descripció.'}
+                  </p>
+
+                  <div className="mt-6 grid grid-cols-2 gap-4">
+                    <div className="p-4 bg-gray-50 rounded-lg">
+                      <div className="text-2xl font-bold text-gray-900">{group.membersCount}</div>
+                      <div className="text-sm text-gray-500">Membres</div>
+                    </div>
+                    <div className="p-4 bg-gray-50 rounded-lg">
+                      <div className="text-2xl font-bold text-gray-900">{group.offersCount}</div>
+                      <div className="text-sm text-gray-500">Ofertes</div>
+                    </div>
+                  </div>
+
+                  {group.hasSensitiveCategory && group.sensitiveJobCategory && (
+                    <div className="mt-6 p-4 rounded-lg border-2 border-amber-200 bg-amber-50">
+                      <div className="flex items-start gap-3">
+                        <Shield className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <h4 className="font-medium text-amber-800">Grup amb protecció especial</h4>
+                          <p className="text-sm text-amber-700 mt-1">
+                            Aquest grup està vinculat a la categoria "{group.sensitiveJobCategory.name}".
+                            En unir-te, s'aplicaran automàticament restriccions de privacitat per protegir la teva identitat.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Recent members preview */}
+              <Card>
+                <CardHeader>
+                  <CardTitle
+                    icon={<Users className="w-5 h-5 text-gray-500" />}
+                    action={
+                      <button
+                        onClick={() => setActiveTab('members')}
+                        className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+                      >
+                        Veure tots
+                      </button>
+                    }
                   >
-                    ⋯
-                  </button>
+                    Membres recents
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    {group.recentMembers.map(member => (
+                      <Link
+                        key={member.id}
+                        href={`/dashboard/membres/${member.nick}`}
+                        className="flex flex-col items-center p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        <MemberAvatar member={member} size="lg" />
+                        <span className="mt-2 text-sm font-medium text-gray-900 text-center line-clamp-1">
+                          {member.name}
+                        </span>
+                        <RoleBadge role={member.role} />
+                      </Link>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
 
-                  {showMoreOptions && (
-                    <div style={{
-                      position: 'absolute',
-                      top: '100%',
-                      right: 0,
-                      backgroundColor: '#fff',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                      border: '1px solid #e9ecef',
-                      padding: '8px 0',
-                      minWidth: '180px',
-                      zIndex: 1000
-                    }}>
+          {/* Members Tab */}
+          {activeTab === 'members' && (
+            <Card>
+              <CardHeader>
+                <CardTitle icon={<Users className="w-5 h-5 text-gray-500" />}>
+                  Membres ({group.membersCount})
+                </CardTitle>
+              </CardHeader>
+              <CardContent padding="none">
+                {/* Filters */}
+                <div className="px-5 py-3 border-b border-gray-100 flex flex-wrap gap-3">
+                  <div className="flex gap-2">
+                    {(['all', 'admins', 'moderators'] as const).map(filter => (
                       <button
-                        onClick={() => {
-                          showNotification('info', 'Grup silenciat');
-                          setShowMoreOptions(false);
-                        }}
-                        style={{
-                          width: '100%',
-                          padding: '8px 16px',
-                          backgroundColor: 'transparent',
-                          border: 'none',
-                          textAlign: 'left',
-                          fontSize: '14px',
-                          cursor: 'pointer'
-                        }}
+                        key={filter}
+                        onClick={() => setMemberFilter(filter)}
+                        className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                          memberFilter === filter
+                            ? 'bg-indigo-100 text-indigo-700'
+                            : 'text-gray-600 hover:bg-gray-100'
+                        }`}
                       >
-                        🔕 Silenciar notificacions
+                        {filter === 'all' ? 'Tots' : filter === 'admins' ? 'Admins' : 'Moderadors'}
                       </button>
-                      <button
-                        onClick={() => {
-                          showNotification('warning', 'Grup reportat');
-                          setShowMoreOptions(false);
-                        }}
-                        style={{
-                          width: '100%',
-                          padding: '8px 16px',
-                          backgroundColor: 'transparent',
-                          border: 'none',
-                          textAlign: 'left',
-                          fontSize: '14px',
-                          cursor: 'pointer',
-                          color: '#ef4444'
-                        }}
+                    ))}
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Cercar membre..."
+                    value={memberSearch}
+                    onChange={(e) => setMemberSearch(e.target.value)}
+                    className="flex-1 min-w-[200px] px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
+                </div>
+
+                {/* Members list */}
+                <div className="divide-y divide-gray-100">
+                  {filteredMembers.length > 0 ? (
+                    filteredMembers.map(member => (
+                      <Link
+                        key={member.id}
+                        href={`/dashboard/membres/${member.nick}`}
+                        className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors"
                       >
-                        🚨 Reportar grup
-                      </button>
+                        <MemberAvatar member={member} size="md" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-gray-900">{member.name}</span>
+                            <RoleBadge role={member.role} />
+                          </div>
+                          <div className="text-sm text-gray-500 truncate">
+                            {member.position || member.department || `@${member.nick}`}
+                          </div>
+                        </div>
+                        <div className="text-right text-xs text-gray-400">
+                          <div>Unit el {formatDate(member.joinedAt)}</div>
+                          {member.isOnline ? (
+                            <span className="text-emerald-500">En línia</span>
+                          ) : (
+                            <span>{formatRelativeTime(member.lastSeenAt)}</span>
+                          )}
+                        </div>
+                      </Link>
+                    ))
+                  ) : (
+                    <div className="px-5 py-12 text-center">
+                      <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                      <p className="text-gray-500">No s'han trobat membres</p>
                     </div>
                   )}
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
+          )}
 
-            {/* Estadístiques ràpides */}
-            <div style={{
-              display: 'flex',
-              gap: '24px',
-              fontSize: '14px',
-              color: '#8e8e93'
-            }}>
-              <span>👥 {group.membersCount} membres</span>
-              <span>📝 {group.postsCount} publicacions</span>
-              <span>🎯 {group.offers.length} ofertes</span>
-              <span>📅 Creat {formatDate(group.createdDate)}</span>
-              <span>⚡ Actiu {group.lastActivity}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* 2. NAVEGACIÓ PER PESTANYES */}
-        <div style={{
-          backgroundColor: '#fff',
-          borderRadius: '12px',
-          padding: '0',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-          marginBottom: '32px',
-          border: '1px solid #f0f0f0',
-          overflow: 'hidden'
-        }}>
-          <div style={{
-            display: 'flex',
-            borderBottom: '1px solid #f0f0f0'
-          }}>
-            {[
-              { key: 'feed', label: '📱 Feed', icon: '📱' },
-              { key: 'members', label: '👥 Membres', icon: '👥' },
-              { key: 'offers', label: '📢 Ofertes', icon: '📢' },
-              { key: 'documents', label: '📁 Documents', icon: '📁' },
-              { key: 'photos', label: '📸 Fotos', icon: '📸' },
-              { key: 'events', label: '📅 Esdeveniments', icon: '📅' },
-              ...(group.isAdmin || group.isModerator ? [{ key: 'settings', label: '⚙️ Configuració', icon: '⚙️' }] : [])
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key as any)}
-                style={{
-                  padding: '16px 24px',
-                  backgroundColor: activeTab === tab.key ? '#f0f7ff' : 'transparent',
-                  color: activeTab === tab.key ? '#3b82f6' : '#6c757d',
-                  border: 'none',
-                  borderBottom: activeTab === tab.key ? '3px solid #3b82f6' : '3px solid transparent',
-                  fontSize: '15px',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* 3. CONTINGUT DE LES PESTANYES */}
-        <div>
-
-          {/* PESTANYA: FEED/TIMELINE */}
-          {activeTab === 'feed' && (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 330px',
-              gap: '24px'
-            }}>
-              {/* Columna principal */}
-              <div>
-                {/* Crear nova publicació */}
-                {group.isMember && (
-                  <div style={{
-                    backgroundColor: '#fff',
-                    borderRadius: '12px',
-                    padding: '24px',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                    marginBottom: '24px',
-                    border: '1px solid #f0f0f0'
-                  }}>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: '12px',
-                      marginBottom: '12px'
-                    }}>
-                      <div style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '50%',
-                        backgroundColor: '#3b82f6',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}>
-                        <span style={{
-                          fontSize: '14px',
-                          fontWeight: 'bold',
-                          color: 'white'
-                        }}>
-                          {getAvatarInitials('Usuari Actual')}
-                        </span>
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <textarea
-                          value={newPost}
-                          onChange={(e) => setNewPost(e.target.value)}
-                          placeholder="Comparteix quelcom interessant amb el grup..."
-                          style={{
-                            width: '100%',
-                            minHeight: '80px',
-                            padding: '12px',
-                            border: '2px solid #e9ecef',
-                            borderRadius: '8px',
-                            fontSize: '14px',
-                            fontFamily: 'inherit',
-                            resize: 'vertical'
-                          }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Opcions de publicació */}
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center'
-                    }}>
-                      <div style={{
-                        display: 'flex',
-                        gap: '16px',
-                        alignItems: 'center'
-                      }}>
-                        <button
-                          onClick={() => showNotification('info', 'Funcionalitat en desenvolupament')}
-                          style={{
-                            padding: '6px 12px',
-                            backgroundColor: 'transparent',
-                            color: '#6c757d',
-                            border: '1px solid #e9ecef',
-                            borderRadius: '6px',
-                            fontSize: '12px',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          📷 Imatge
-                        </button>
-                        <button
-                          onClick={() => showNotification('info', 'Funcionalitat en desenvolupament')}
-                          style={{
-                            padding: '6px 12px',
-                            backgroundColor: 'transparent',
-                            color: '#6c757d',
-                            border: '1px solid #e9ecef',
-                            borderRadius: '6px',
-                            fontSize: '12px',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          📎 Document
-                        </button>
-                        <button
-                          onClick={() => showNotification('info', 'Funcionalitat en desenvolupament')}
-                          style={{
-                            padding: '6px 12px',
-                            backgroundColor: 'transparent',
-                            color: '#6c757d',
-                            border: '1px solid #e9ecef',
-                            borderRadius: '6px',
-                            fontSize: '12px',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          📊 Enquesta
-                        </button>
-
-                        {/* Selector de visibilitat */}
-                        <select
-                          value={postVisibility}
-                          onChange={(e) => setPostVisibility(e.target.value as any)}
-                          style={{
-                            padding: '6px 8px',
-                            border: '1px solid #e9ecef',
-                            borderRadius: '6px',
-                            fontSize: '12px',
-                            backgroundColor: '#fff'
-                          }}
-                        >
-                          <option value="members">👥 Només membres</option>
-                          <option value="all">🌐 Tots</option>
-                        </select>
-                      </div>
-
-                      <button
-                        onClick={handleCreatePost}
-                        disabled={isLoading || !newPost.trim()}
-                        style={{
-                          padding: '8px 16px',
-                          backgroundColor: isLoading || !newPost.trim() ? '#9ca3af' : '#3b82f6',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '6px',
-                          fontSize: '14px',
-                          fontWeight: '500',
-                          cursor: isLoading || !newPost.trim() ? 'not-allowed' : 'pointer'
-                        }}
-                      >
-                        {isLoading ? 'Publicant...' : 'Publicar'}
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Controls d'ordenació */}
-                <div style={{
-                  backgroundColor: '#fff',
-                  borderRadius: '8px',
-                  padding: '12px 16px',
-                  boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
-                  marginBottom: '16px',
-                  border: '1px solid #f0f0f0',
-                  display: 'flex',
-                  gap: '12px',
-                  alignItems: 'center'
-                }}>
-                  <span style={{ fontSize: '14px', fontWeight: '500', color: '#2c3e50' }}>
-                    Ordenar per:
-                  </span>
-                  {[
-                    { key: 'recent', label: '🕒 Més recents' },
-                    { key: 'popular', label: '🔥 Més populars' },
-                    { key: 'pinned', label: '📌 Fixades' }
-                  ].map((sort) => (
-                    <button
-                      key={sort.key}
-                      onClick={() => setSortBy(sort.key as any)}
-                      style={{
-                        padding: '4px 8px',
-                        backgroundColor: feedSortBy === sort.key ? '#3b82f6' : 'transparent',
-                        color: feedSortBy === sort.key ? 'white' : '#6c757d',
-                        border: `1px solid ${feedSortBy === sort.key ? '#3b82f6' : '#e9ecef'}`,
-                        borderRadius: '4px',
-                        fontSize: '12px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      {sort.label}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Feed de publicacions */}
-                {filteredPosts.length > 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    {filteredPosts.map((post) => (
+          {/* Offers Tab */}
+          {activeTab === 'offers' && (
+            <Card>
+              <CardHeader>
+                <CardTitle icon={<Tag className="w-5 h-5 text-gray-500" />}>
+                  Ofertes exclusives ({group.offersCount})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {group.offers.length > 0 ? (
+                  <div className="grid gap-4">
+                    {group.offers.map(offer => (
                       <div
-                        key={post.id}
-                        style={{
-                          backgroundColor: '#fff',
-                          borderRadius: '12px',
-                          padding: '24px',
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                          border: post.isPinned ? '2px solid #f59e0b' : '1px solid #f0f0f0',
-                          marginBottom: '24px'
-                        }}
+                        key={offer.id}
+                        className="flex gap-4 p-4 border border-gray-200 rounded-xl hover:shadow-md transition-shadow"
                       >
-                        {/* Header del post */}
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          marginBottom: '12px'
-                        }}>
-                          <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '12px'
-                          }}>
-                            <div style={{
-                              width: '40px',
-                              height: '40px',
-                              borderRadius: '50%',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              overflow: 'hidden'
-                            }}>
-                              {post.authorAvatar ? (
-                                <img
-                                  src={post.authorAvatar}
-                                  alt={post.authorName}
-                                  style={{
-                                    width: '100%',
-                                    height: '100%',
-                                    objectFit: 'cover'
-                                  }}
-                                />
-                              ) : (
-                                <div style={{
-                                  width: '100%',
-                                  height: '100%',
-                                  backgroundColor: '#3b82f6',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center'
-                                }}>
-                                  <span style={{
-                                    fontSize: '14px',
-                                    fontWeight: 'bold',
-                                    color: 'white'
-                                  }}>
-                                    {getAvatarInitials(post.authorName)}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                            <div>
-                              <div style={{
-                                fontSize: '14px',
-                                fontWeight: '600',
-                                color: '#2c3e50'
-                              }}>
-                                {post.authorName}
-                                {post.isPinned && (
-                                  <span style={{
-                                    marginLeft: '8px',
-                                    backgroundColor: '#f59e0b',
-                                    color: 'white',
-                                    padding: '2px 6px',
-                                    borderRadius: '4px',
-                                    fontSize: '10px'
-                                  }}>
-                                    📌 FIXAT
-                                  </span>
-                                )}
-                              </div>
-                              <div style={{
-                                fontSize: '12px',
-                                color: '#8e8e93'
-                              }}>
-                                {formatDate(post.createdAt)} • {post.visibility === 'members' ? '👥 Només membres' : '🌐 Públic'}
-                              </div>
-                            </div>
-                          </div>
-
-                          <button
-                            onClick={() => showNotification('info', 'Funcionalitat en desenvolupament')}
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              fontSize: '16px',
-                              cursor: 'pointer',
-                              color: '#6c757d'
-                            }}
-                          >
-                            ⋯
-                          </button>
-                        </div>
-
-                        {/* Contingut del post */}
-                        <div style={{
-                          fontSize: '14px',
-                          color: '#2c3e50',
-                          lineHeight: '1.6',
-                          margin: '0 0 16px 0',
-                          whiteSpace: 'pre-line'
-                        }}>
-                          {post.content}
-                        </div>
-
-                        {/* Imatges del post */}
-                        {post.images && post.images.length > 0 && (
-                          <div style={{
-                            marginBottom: '16px',
-                            borderRadius: '8px',
-                            overflow: 'hidden'
-                          }}>
-                            <img
-                              src={post.images[0]}
-                              alt="Post image"
-                              style={{
-                                width: '100%',
-                                maxHeight: '400px',
-                                objectFit: 'cover'
-                              }}
+                        {offer.image && (
+                          <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0">
+                            <Image
+                              src={offer.image}
+                              alt={offer.title}
+                              width={96}
+                              height={96}
+                              className="w-full h-full object-cover"
                             />
                           </div>
                         )}
-
-                        {/* Reaccions i comentaris */}
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '16px',
-                          paddingTop: '12px',
-                          borderTop: '1px solid #f0f0f0'
-                        }}>
-                          <button
-                            onClick={() => handleReaction(post.id, 'like')}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '6px',
-                              padding: '6px 12px',
-                              backgroundColor: post.isLiked ? '#fee2e2' : 'transparent',
-                              color: post.isLiked ? '#ef4444' : '#6c757d',
-                              border: 'none',
-                              borderRadius: '6px',
-                              fontSize: '13px',
-                              fontWeight: '500',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s'
-                            }}
-                          >
-                            {post.isLiked ? '❤️' : '🤍'} {post.likes}
-                          </button>
-                          <button
-                            onClick={() => handleReaction(post.id, 'love')}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '6px',
-                              padding: '6px 12px',
-                              backgroundColor: post.isLoved ? '#fef3c7' : 'transparent',
-                              color: post.isLoved ? '#d97706' : '#6c757d',
-                              border: 'none',
-                              borderRadius: '6px',
-                              fontSize: '13px',
-                              fontWeight: '500',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s'
-                            }}
-                          >
-                            {post.isLoved ? '😍' : '😊'} {post.loves}
-                          </button>
-                          <button
-                            onClick={() => handleReaction(post.id, 'useful')}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '6px',
-                              padding: '6px 12px',
-                              backgroundColor: post.isUseful ? '#dcfce7' : 'transparent',
-                              color: post.isUseful ? '#16a34a' : '#6c757d',
-                              border: 'none',
-                              borderRadius: '6px',
-                              fontSize: '13px',
-                              fontWeight: '500',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s'
-                            }}
-                          >
-                            {post.isUseful ? '💡' : '🔸'} {post.useful}
-                          </button>
-                          <button
-                            onClick={() => showNotification('info', 'Funcionalitat en desenvolupament')}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '6px',
-                              padding: '6px 12px',
-                              backgroundColor: 'transparent',
-                              color: '#6c757d',
-                              border: 'none',
-                              borderRadius: '6px',
-                              fontSize: '13px',
-                              fontWeight: '500',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s'
-                            }}
-                          >
-                            💬 {post.comments}
-                          </button>
-                          <button
-                            onClick={() => showNotification('info', 'Funcionalitat en desenvolupament')}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '6px',
-                              padding: '6px 12px',
-                              backgroundColor: 'transparent',
-                              color: '#6c757d',
-                              border: 'none',
-                              borderRadius: '6px',
-                              fontSize: '13px',
-                              fontWeight: '500',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s'
-                            }}
-                          >
-                            📤 Compartir
-                          </button>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <h4 className="font-semibold text-gray-900">{offer.title}</h4>
+                            {offer.discount && (
+                              <span className="px-2 py-1 bg-red-100 text-red-700 text-xs font-bold rounded">
+                                {offer.discount}
+                              </span>
+                            )}
+                          </div>
+                          {offer.description && (
+                            <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                              {offer.description}
+                            </p>
+                          )}
+                          <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                            {offer.company && (
+                              <span className="flex items-center gap-1">
+                                {offer.company.logo && (
+                                  <Image
+                                    src={offer.company.logo}
+                                    alt={offer.company.name}
+                                    width={16}
+                                    height={16}
+                                    className="rounded"
+                                  />
+                                )}
+                                {offer.company.name}
+                              </span>
+                            )}
+                            {offer.validUntil && (
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                Vàlida fins {formatDate(offer.validUntil)}
+                              </span>
+                            )}
+                          </div>
                         </div>
+                        <button className="self-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors">
+                          Veure
+                        </button>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div style={{
-                    backgroundColor: '#fff',
-                    borderRadius: '12px',
-                    padding: '40px 24px',
-                    textAlign: 'center',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                    border: '2px dashed #e9ecef'
-                  }}>
-                    <div style={{ fontSize: '48px', marginBottom: '16px' }}>📝</div>
-                    <h3 style={{
-                      fontSize: '18px',
-                      fontWeight: '600',
-                      color: '#6c757d',
-                      marginBottom: '8px'
-                    }}>
-                      {feedSortBy === 'pinned' ? 'No hi ha publicacions fixades' : 'No hi ha publicacions encara'}
-                    </h3>
-                    <p style={{
-                      fontSize: '14px',
-                      color: '#8e8e93',
-                      margin: 0
-                    }}>
-                      {feedSortBy === 'pinned'
-                        ? 'Els administradors poden fixar publicacions importants'
-                        : 'Sigues el primer en compartir quelcom interessant!'
-                      }
-                    </p>
+                  <div className="py-12 text-center">
+                    <Tag className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                    <p className="text-gray-500">No hi ha ofertes disponibles</p>
                   </div>
                 )}
-              </div>
-
-              {/* Sidebar */}
-              <div>
-                <div style={{
-                  backgroundColor: '#fff',
-                  borderRadius: '12px',
-                  padding: '24px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                  border: '1px solid #f0f0f0',
-                  position: 'sticky',
-                  top: '24px'
-                }}>
-                  <h4 style={{
-                    fontSize: '16px',
-                    fontWeight: '600',
-                    color: '#2c3e50',
-                    margin: '0 0 16px 0'
-                  }}>
-                    Activitat recent
-                  </h4>
-
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '12px'
-                  }}>
-                    <div style={{
-                      fontSize: '14px',
-                      color: '#6c757d'
-                    }}>
-                      📊 {group.postsCount} publicacions totals
-                    </div>
-                    <div style={{
-                      fontSize: '14px',
-                      color: '#6c757d'
-                    }}>
-                      👥 {group.membersCount} membres actius
-                    </div>
-                    <div style={{
-                      fontSize: '14px',
-                      color: '#6c757d'
-                    }}>
-                      📈 Última activitat {group.lastActivity}
-                    </div>
-                  </div>
-
-                  <div style={{
-                    marginTop: '20px',
-                    paddingTop: '16px',
-                    borderTop: '1px solid #f0f0f0'
-                  }}>
-                    <h5 style={{
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      color: '#2c3e50',
-                      margin: '0 0 12px 0'
-                    }}>
-                      Membres destacats
-                    </h5>
-                    {group.members.slice(0, 3).map((member) => (
-                      <div key={member.id} style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        marginBottom: '8px'
-                      }}>
-                        <div style={{
-                          width: '24px',
-                          height: '24px',
-                          borderRadius: '50%',
-                          backgroundColor: member.avatar ? 'transparent' : '#3b82f6',
-                          overflow: 'hidden',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}>
-                          {member.avatar ? (
-                            <img
-                              src={member.avatar}
-                              alt={member.name}
-                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                            />
-                          ) : (
-                            <span style={{
-                              fontSize: '10px',
-                              fontWeight: 'bold',
-                              color: 'white'
-                            }}>
-                              {getAvatarInitials(member.name)}
-                            </span>
-                          )}
-                        </div>
-                        <div>
-                          <div style={{
-                            fontSize: '12px',
-                            fontWeight: '500',
-                            color: '#2c3e50'
-                          }}>
-                            {member.name}
-                          </div>
-                          <div style={{
-                            fontSize: '10px',
-                            color: '#8e8e93'
-                          }}>
-                            {member.role === 'admin' ? '👑 Admin' : member.role === 'moderator' ? '🛡️ Mod' : '👤 Membre'}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           )}
 
-          {/* PESTANYA: OFERTES */}
-          {activeTab === 'offers' && (
-            <div>
-              {/* Filtres d'ofertes */}
-              <div style={{
-                backgroundColor: '#fff',
-                borderRadius: '12px',
-                padding: '24px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                marginBottom: '32px',
-                border: '1px solid #f0f0f0'
-              }}>
-                <div style={{
-                  display: 'flex',
-                  gap: '16px',
-                  alignItems: 'center',
-                  flexWrap: 'wrap'
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    gap: '8px',
-                    alignItems: 'center'
-                  }}>
-                    <span style={{
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      color: '#2c3e50'
-                    }}>
-                      Estat:
-                    </span>
-                    {[
-                      { key: 'active', label: '✅ Actives' },
-                      { key: 'expiring', label: '⏰ Expiren aviat' },
-                      { key: 'all', label: '📋 Totes' }
-                    ].map((filter) => (
-                      <button
-                        key={filter.key}
-                        onClick={() => setOfferFilter(filter.key as any)}
-                        style={{
-                          padding: '6px 12px',
-                          backgroundColor: offerFilter === filter.key ? '#3b82f6' : 'transparent',
-                          color: offerFilter === filter.key ? 'white' : '#6c757d',
-                          border: `1px solid ${offerFilter === filter.key ? '#3b82f6' : '#e9ecef'}`,
-                          borderRadius: '6px',
-                          fontSize: '12px',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        {filter.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div style={{
-                    display: 'flex',
-                    gap: '8px',
-                    alignItems: 'center'
-                  }}>
-                    <span style={{
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      color: '#2c3e50'
-                    }}>
-                      Categoria:
-                    </span>
-                    <select
-                      value={offerCategory}
-                      onChange={(e) => setOfferCategory(e.target.value)}
-                      style={{
-                        padding: '6px 8px',
-                        border: '1px solid #e9ecef',
-                        borderRadius: '6px',
-                        fontSize: '12px',
-                        backgroundColor: '#fff'
-                      }}
-                    >
-                      <option value="">Totes les categories</option>
-                      <option value="Formació">Formació</option>
-                      <option value="Eines">Eines</option>
-                      <option value="Serveis">Serveis</option>
-                      <option value="Productes">Productes</option>
-                    </select>
-                  </div>
-
-                  {(group.isAdmin || group.isModerator) && (
-                    <button
-                      onClick={() => showNotification('info', 'Funcionalitat en desenvolupament')}
-                      style={{
-                        padding: '8px 16px',
-                        backgroundColor: '#10b981',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '6px',
-                        fontSize: '13px',
-                        fontWeight: '500',
-                        cursor: 'pointer',
-                        marginLeft: 'auto'
-                      }}
-                    >
-                      ➕ Nova oferta
+          {/* Files Tab */}
+          {activeTab === 'files' && (
+            <Card>
+              <CardHeader>
+                <CardTitle icon={<FileText className="w-5 h-5 text-gray-500" />}>
+                  Fitxers
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="py-12 text-center">
+                  <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500">No hi ha fitxers encara</p>
+                  {group.isMember && (
+                    <button className="mt-4 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors">
+                      Pujar fitxer
                     </button>
                   )}
                 </div>
-              </div>
-
-              {/* Grid d'ofertes */}
-              {filteredOffers.length > 0 ? (
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
-                  gap: '20px'
-                }}>
-                  {filteredOffers.map((offer) => {
-                    const daysUntilExpiry = Math.ceil((new Date(offer.validUntil).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-                    const isExpiring = daysUntilExpiry <= 7;
-
-                    return (
-                      <div
-                        key={offer.id}
-                        style={{
-                          backgroundColor: '#fff',
-                          borderRadius: '12px',
-                          overflow: 'hidden',
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                          border: isExpiring ? '2px solid #f59e0b' : '1px solid #f0f0f0',
-                          transition: 'transform 0.2s',
-                          cursor: 'pointer'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateY(-4px)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'translateY(0)';
-                        }}
-                      >
-                        {/* Imatge de l'oferta */}
-                        <div style={{
-                          height: '160px',
-                          backgroundImage: `url(${offer.image})`,
-                          backgroundSize: 'cover',
-                          backgroundPosition: 'center',
-                          position: 'relative'
-                        }}>
-                          {/* Badge de descompte */}
-                          <div style={{
-                            position: 'absolute',
-                            top: '12px',
-                            right: '12px',
-                            backgroundColor: '#ef4444',
-                            color: 'white',
-                            padding: '4px 8px',
-                            borderRadius: '6px',
-                            fontSize: '12px',
-                            fontWeight: '600'
-                          }}>
-                            {offer.discount}
-                          </div>
-
-                          {/* Badge exclusiva */}
-                          {offer.isExclusive && (
-                            <div style={{
-                              position: 'absolute',
-                              top: '12px',
-                              left: '12px',
-                              backgroundColor: '#8b5cf6',
-                              color: 'white',
-                              padding: '4px 8px',
-                              borderRadius: '6px',
-                              fontSize: '10px',
-                              fontWeight: '600'
-                            }}>
-                              🎯 EXCLUSIVA GRUP
-                            </div>
-                          )}
-
-                          {/* Badge expira aviat */}
-                          {isExpiring && (
-                            <div style={{
-                              position: 'absolute',
-                              bottom: '12px',
-                              left: '12px',
-                              backgroundColor: '#f59e0b',
-                              color: 'white',
-                              padding: '4px 8px',
-                              borderRadius: '6px',
-                              fontSize: '10px',
-                              fontWeight: '600'
-                            }}>
-                              ⏰ EXPIRA EN {daysUntilExpiry} {daysUntilExpiry === 1 ? 'DIA' : 'DIES'}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Contingut de l'oferta */}
-                        <div style={{ padding: '16px' }}>
-                          {/* Header amb empresa */}
-                          <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            marginBottom: '8px'
-                          }}>
-                            <img
-                              src={offer.companyLogo}
-                              alt={offer.companyName}
-                              style={{
-                                width: '24px',
-                                height: '24px',
-                                borderRadius: '4px',
-                                objectFit: 'cover'
-                              }}
-                            />
-                            <span style={{
-                              fontSize: '12px',
-                              fontWeight: '500',
-                              color: '#6c757d'
-                            }}>
-                              {offer.companyName}
-                            </span>
-                            <span style={{
-                              fontSize: '10px',
-                              backgroundColor: '#f0f7ff',
-                              color: '#3b82f6',
-                              padding: '2px 6px',
-                              borderRadius: '4px'
-                            }}>
-                              {offer.category}
-                            </span>
-                          </div>
-
-                          {/* Títol */}
-                          <h3 style={{
-                            fontSize: '16px',
-                            fontWeight: '600',
-                            color: '#2c3e50',
-                            margin: '0 0 8px 0',
-                            lineHeight: '1.3'
-                          }}>
-                            {offer.title}
-                          </h3>
-
-                          {/* Descripció */}
-                          <p style={{
-                            fontSize: '13px',
-                            color: '#6c757d',
-                            lineHeight: '1.4',
-                            margin: '0 0 12px 0',
-                            overflow: 'hidden',
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical'
-                          }}>
-                            {offer.description}
-                          </p>
-
-                          {/* Vigència */}
-                          <div style={{
-                            fontSize: '12px',
-                            color: '#8e8e93',
-                            marginBottom: '12px'
-                          }}>
-                            📅 Vàlida fins {new Date(offer.validUntil).toLocaleDateString('ca-ES')}
-                          </div>
-
-                          {/* Estadístiques */}
-                          <div style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            marginBottom: '12px',
-                            fontSize: '11px',
-                            color: '#8e8e93'
-                          }}>
-                            <span>⭐ {offer.rating}/5</span>
-                            {offer.maxUses && (
-                              <span>{offer.currentUses}/{offer.maxUses} usos</span>
-                            )}
-                          </div>
-
-                          {/* Botó d'acció */}
-                          <button
-                            onClick={() => handleUseOffer(offer)}
-                            style={{
-                              width: '100%',
-                              padding: '10px',
-                              backgroundColor: '#3b82f6',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '6px',
-                              fontSize: '13px',
-                              fontWeight: '500',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s'
-                            }}
-                          >
-                            {offer.promoCode ? `🎫 Copiar codi: ${offer.promoCode}` : '🔗 Veure oferta'}
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div style={{
-                  backgroundColor: '#fff',
-                  borderRadius: '12px',
-                  padding: '40px 24px',
-                  textAlign: 'center',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                  border: '2px dashed #e9ecef'
-                }}>
-                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎁</div>
-                  <h3 style={{
-                    fontSize: '18px',
-                    fontWeight: '600',
-                    color: '#6c757d',
-                    marginBottom: '8px'
-                  }}>
-                    No hi ha ofertes disponibles
-                  </h3>
-                  <p style={{
-                    fontSize: '14px',
-                    color: '#8e8e93',
-                    margin: 0
-                  }}>
-                    Les ofertes per aquest grup apareixeran aquí
-                  </p>
-                </div>
-              )}
-            </div>
+              </CardContent>
+            </Card>
           )}
 
-          {/* PESTANYA: MEMBRES */}
-          {activeTab === 'members' && (
-            <div>
-              {/* Filtres de membres */}
-              <div style={{
-                backgroundColor: '#fff',
-                borderRadius: '12px',
-                padding: '24px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                marginBottom: '32px',
-                border: '1px solid #f0f0f0'
-              }}>
-                <div style={{
-                  display: 'flex',
-                  gap: '16px',
-                  alignItems: 'center',
-                  flexWrap: 'wrap'
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    gap: '8px',
-                    alignItems: 'center'
-                  }}>
-                    <span style={{
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      color: '#2c3e50'
-                    }}>
-                      Filtrar per rol:
-                    </span>
-                    {[
-                      { key: 'all', label: '👥 Tots' },
-                      { key: 'admins', label: '👑 Admins' },
-                      { key: 'moderators', label: '🛡️ Moderadors' },
-                      { key: 'members', label: '👤 Membres' }
-                    ].map((filter) => (
-                      <button
-                        key={filter.key}
-                        onClick={() => setMemberFilter(filter.key as any)}
-                        style={{
-                          padding: '6px 12px',
-                          backgroundColor: memberFilter === filter.key ? '#3b82f6' : 'transparent',
-                          color: memberFilter === filter.key ? 'white' : '#6c757d',
-                          border: `1px solid ${memberFilter === filter.key ? '#3b82f6' : '#e9ecef'}`,
-                          borderRadius: '6px',
-                          fontSize: '12px',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        {filter.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  <input
-                    type="text"
-                    value={memberSearch}
-                    onChange={(e) => setMemberSearch(e.target.value)}
-                    placeholder="Cerca per nom..."
-                    style={{
-                      padding: '6px 12px',
-                      border: '1px solid #e9ecef',
-                      borderRadius: '6px',
-                      fontSize: '12px',
-                      width: '200px'
-                    }}
-                  />
-
-                  {(group.isAdmin || group.isModerator) && (
-                    <button
-                      onClick={() => showNotification('info', 'Funcionalitat en desenvolupament')}
-                      style={{
-                        padding: '8px 16px',
-                        backgroundColor: '#10b981',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '6px',
-                        fontSize: '13px',
-                        fontWeight: '500',
-                        cursor: 'pointer',
-                        marginLeft: 'auto'
-                      }}
-                    >
-                      ✉️ Convidar membres
+          {/* Gallery Tab */}
+          {activeTab === 'gallery' && (
+            <Card>
+              <CardHeader>
+                <CardTitle icon={<ImageIcon className="w-5 h-5 text-gray-500" />}>
+                  Galeria
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="py-12 text-center">
+                  <ImageIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500">No hi ha imatges encara</p>
+                  {group.isMember && (
+                    <button className="mt-4 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors">
+                      Pujar imatge
                     </button>
                   )}
                 </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Sidebar */}
+        <div className="space-y-6">
+          {/* Group info card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Informació</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-500">Tipus</span>
+                <TypeBadge type={group.type} />
               </div>
-
-              {/* Stats de membres */}
-              <div style={{
-                backgroundColor: '#fff',
-                borderRadius: '12px',
-                padding: '20px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                marginBottom: '32px',
-                border: '1px solid #f0f0f0'
-              }}>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-                  gap: '16px',
-                  textAlign: 'center'
-                }}>
-                  <div>
-                    <div style={{
-                      fontSize: '24px',
-                      fontWeight: '700',
-                      color: '#2c3e50'
-                    }}>
-                      {filteredMembers.length}
-                    </div>
-                    <div style={{
-                      fontSize: '12px',
-                      color: '#6c757d'
-                    }}>
-                      Membres trobats
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{
-                      fontSize: '24px',
-                      fontWeight: '700',
-                      color: '#10b981'
-                    }}>
-                      {group.members.filter(m => m.role === 'admin').length}
-                    </div>
-                    <div style={{
-                      fontSize: '12px',
-                      color: '#6c757d'
-                    }}>
-                      Administradors
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{
-                      fontSize: '24px',
-                      fontWeight: '700',
-                      color: '#f59e0b'
-                    }}>
-                      {group.members.filter(m => m.role === 'moderator').length}
-                    </div>
-                    <div style={{
-                      fontSize: '12px',
-                      color: '#6c757d'
-                    }}>
-                      Moderadors
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{
-                      fontSize: '24px',
-                      fontWeight: '700',
-                      color: '#3b82f6'
-                    }}>
-                      {group.members.filter(m => m.lastActive.includes('hora') || m.lastActive.includes('min')).length}
-                    </div>
-                    <div style={{
-                      fontSize: '12px',
-                      color: '#6c757d'
-                    }}>
-                      Actius avui
-                    </div>
-                  </div>
-                </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-500">Política d'accés</span>
+                <span className="font-medium text-gray-900">
+                  {group.joinPolicy === 'OPEN' ? 'Obert' : group.joinPolicy === 'REQUEST' ? 'Amb sol·licitud' : 'Per invitació'}
+                </span>
               </div>
-
-              {/* Grid de membres */}
-              {filteredMembers.length > 0 ? (
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-                  gap: '16px'
-                }}>
-                  {filteredMembers.map((member) => {
-                    const getRoleInfo = (role: string) => {
-                      switch (role) {
-                        case 'admin':
-                          return { icon: '👑', label: 'Administrador', color: '#ef4444' };
-                        case 'moderator':
-                          return { icon: '🛡️', label: 'Moderador', color: '#f59e0b' };
-                        default:
-                          return { icon: '👤', label: 'Membre', color: '#6c757d' };
-                      }
-                    };
-
-                    const roleInfo = getRoleInfo(member.role);
-
-                    return (
-                      <div
-                        key={member.id}
-                        style={{
-                          backgroundColor: '#fff',
-                          borderRadius: '12px',
-                          padding: '20px',
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                          border: '1px solid #f0f0f0',
-                          transition: 'all 0.2s'
-                        }}
-                      >
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '12px',
-                          marginBottom: '12px'
-                        }}>
-                          <div style={{
-                            width: '48px',
-                            height: '48px',
-                            borderRadius: '50%',
-                            overflow: 'hidden',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}>
-                            {member.avatar ? (
-                              <img
-                                src={member.avatar}
-                                alt={member.name}
-                                style={{
-                                  width: '100%',
-                                  height: '100%',
-                                  objectFit: 'cover'
-                                }}
-                              />
-                            ) : (
-                              <div style={{
-                                width: '100%',
-                                height: '100%',
-                                backgroundColor: '#3b82f6',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                              }}>
-                                <span style={{
-                                  fontSize: '16px',
-                                  fontWeight: 'bold',
-                                  color: 'white'
-                                }}>
-                                  {getAvatarInitials(member.name)}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-
-                          <div style={{ flex: 1 }}>
-                            <div style={{
-                              fontSize: '16px',
-                              fontWeight: '600',
-                              color: '#2c3e50',
-                              marginBottom: '2px'
-                            }}>
-                              {member.name}
-                            </div>
-                            <div style={{
-                              fontSize: '12px',
-                              color: '#8e8e93',
-                              marginBottom: '4px'
-                            }}>
-                              @{member.username}
-                            </div>
-                            <div style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '4px'
-                            }}>
-                              <span style={{
-                                fontSize: '10px',
-                                backgroundColor: roleInfo.color,
-                                color: 'white',
-                                padding: '2px 6px',
-                                borderRadius: '4px',
-                                fontWeight: '500'
-                              }}>
-                                {roleInfo.icon} {roleInfo.label}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div style={{
-                          fontSize: '12px',
-                          color: '#6c757d',
-                          marginBottom: '8px'
-                        }}>
-                          {member.department}
-                        </div>
-
-                        <div style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          fontSize: '11px',
-                          color: '#8e8e93',
-                          marginBottom: '12px'
-                        }}>
-                          <span>📅 Unit {formatDate(member.joinDate)}</span>
-                          <span>⚡ Actiu {member.lastActive}</span>
-                        </div>
-
-                        <button
-                          onClick={() => router.push(`/dashboard/membres/${member.username}`)}
-                          style={{
-                            width: '100%',
-                            padding: '8px',
-                            backgroundColor: 'transparent',
-                            color: '#3b82f6',
-                            border: '1px solid #3b82f6',
-                            borderRadius: '6px',
-                            fontSize: '12px',
-                            fontWeight: '500',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = '#3b82f6';
-                            e.currentTarget.style.color = 'white';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = 'transparent';
-                            e.currentTarget.style.color = '#3b82f6';
-                          }}
-                        >
-                          👁️ Veure perfil
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div style={{
-                  backgroundColor: '#fff',
-                  borderRadius: '12px',
-                  padding: '40px 24px',
-                  textAlign: 'center',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                  border: '2px dashed #e9ecef'
-                }}>
-                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>👥</div>
-                  <h3 style={{
-                    fontSize: '18px',
-                    fontWeight: '600',
-                    color: '#6c757d',
-                    marginBottom: '8px'
-                  }}>
-                    No s'han trobat membres
-                  </h3>
-                  <p style={{
-                    fontSize: '14px',
-                    color: '#8e8e93',
-                    margin: 0
-                  }}>
-                    Prova a ajustar els filtres de cerca
-                  </p>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-500">Contingut</span>
+                <span className="font-medium text-gray-900">
+                  {group.contentVisibility === 'PUBLIC' ? 'Públic' : 'Només membres'}
+                </span>
+              </div>
+              {group.createdBy && (
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-500">Creat per</span>
+                  <Link
+                    href={`/dashboard/membres/${group.createdBy.nick}`}
+                    className="font-medium text-indigo-600 hover:text-indigo-700"
+                  >
+                    {group.createdBy.name}
+                  </Link>
                 </div>
               )}
-            </div>
+            </CardContent>
+          </Card>
+
+          {/* Admins card */}
+          {group.admins.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Administradors</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {group.admins.map(admin => (
+                  <Link
+                    key={admin.id}
+                    href={`/dashboard/membres/${admin.nick}`}
+                    className="flex items-center gap-3 p-2 -mx-2 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <MemberAvatar member={admin} size="sm" />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-gray-900 text-sm">{admin.name}</div>
+                      <div className="text-xs text-gray-500">{admin.position || `@${admin.nick}`}</div>
+                    </div>
+                    <Crown className="w-4 h-4 text-amber-500" />
+                  </Link>
+                ))}
+              </CardContent>
+            </Card>
           )}
 
-          {/* PESTANYES PENDENTS D'IMPLEMENTAR */}
-          {['documents', 'photos', 'events', 'settings'].includes(activeTab) && (
-            <div style={{
-              backgroundColor: '#fff',
-              borderRadius: '12px',
-              padding: '40px 24px',
-              textAlign: 'center',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-              border: '2px dashed #e9ecef'
-            }}>
-              <div style={{ fontSize: '48px', marginBottom: '16px' }}>🚧</div>
-              <h3 style={{
-                fontSize: '18px',
-                fontWeight: '600',
-                color: '#6c757d',
-                marginBottom: '8px'
-              }}>
-                Funcionalitat en desenvolupament
-              </h3>
-              <p style={{
-                fontSize: '14px',
-                color: '#8e8e93',
-                margin: 0
-              }}>
-                Aquesta pestanya està sent desenvolupada i estarà disponible aviat
-              </p>
-            </div>
+          {/* Moderators card */}
+          {group.moderators.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Moderadors</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {group.moderators.map(mod => (
+                  <Link
+                    key={mod.id}
+                    href={`/dashboard/membres/${mod.nick}`}
+                    className="flex items-center gap-3 p-2 -mx-2 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <MemberAvatar member={mod} size="sm" />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-gray-900 text-sm">{mod.name}</div>
+                      <div className="text-xs text-gray-500">{mod.position || `@${mod.nick}`}</div>
+                    </div>
+                    <Shield className="w-4 h-4 text-blue-500" />
+                  </Link>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* User membership status */}
+          {group.isMember && group.userRole && (
+            <Card variant="highlighted">
+              <CardContent className="text-center py-6">
+                <CheckCircle className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
+                <div className="font-semibold text-gray-900 mb-1">Ets membre!</div>
+                <RoleBadge role={group.userRole} />
+              </CardContent>
+            </Card>
           )}
         </div>
       </div>
-    </PageTemplate>
-  );
+    </div>
+  )
 }
