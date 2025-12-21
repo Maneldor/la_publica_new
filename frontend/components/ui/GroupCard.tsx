@@ -2,6 +2,19 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import {
+  Users,
+  MessageSquare,
+  Clock,
+  Lock,
+  Globe,
+  Eye,
+  LogIn,
+  LogOut,
+  UserPlus,
+  X,
+  Loader2
+} from 'lucide-react';
 
 interface Group {
   id: number;
@@ -26,109 +39,36 @@ interface GroupCardProps {
   viewMode: 'grid' | 'list';
 }
 
+const privacyConfig = {
+  public: {
+    label: 'Públic',
+    color: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+    icon: Globe
+  },
+  private: {
+    label: 'Privat',
+    color: 'bg-amber-100 text-amber-700 border-amber-200',
+    icon: Lock
+  },
+  secret: {
+    label: 'Secret',
+    color: 'bg-red-100 text-red-700 border-red-200',
+    icon: Eye
+  }
+};
+
 export function GroupCard({ group, viewMode }: GroupCardProps) {
   const router = useRouter();
   const [isHovered, setIsHovered] = useState(false);
   const [currentGroup, setCurrentGroup] = useState(group);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Función para mostrar notificaciones
-  const showNotification = (type: 'success' | 'error' | 'info' | 'warning', message: string) => {
-    console.log(`🔔 ${type.toUpperCase()}: ${message}`);
-    // Aquí se podría integrar con un sistema de notificaciones real
-  };
+  const privacy = privacyConfig[currentGroup.privacy];
+  const PrivacyIcon = privacy.icon;
 
-  const handleJoinGroup = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsLoading(true);
-
-    try {
-      // Simular llamada API
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      if (currentGroup.privacy === 'public') {
-        // Unirse directamente a grupos públicos
-        setCurrentGroup(prev => ({
-          ...prev,
-          isMember: true,
-          membersCount: prev.membersCount + 1,
-          membershipStatus: 'approved'
-        }));
-        showNotification('success', `T'has unit al grup "${currentGroup.name}"`);
-      } else if (currentGroup.privacy === 'private') {
-        // Enviar solicitud para grupos privados
-        setCurrentGroup(prev => ({
-          ...prev,
-          membershipStatus: 'pending',
-          joinRequestDate: new Date().toISOString()
-        }));
-        showNotification('info', `Sol·licitud enviada per unir-te al grup "${currentGroup.name}". L'administrador revisarà la teva petició.`);
-        showNotification('success', `📧 Notificació enviada a ${currentGroup.adminName}: Nova sol·licitud de ${currentGroup.name}`);
-      } else {
-        // Grupos secretos - no deberían aparecer en la lista
-        showNotification('error', 'Aquest grup no accepta noves sol·licituds');
-      }
-
-    } catch (error) {
-      showNotification('error', 'Error al processar la sol·licitud');
-      console.error('Error al unir-se al grup:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleLeaveGroup = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsLoading(true);
-
-    try {
-      // Simular llamada API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      setCurrentGroup(prev => ({
-        ...prev,
-        isMember: false,
-        membersCount: Math.max(0, prev.membersCount - 1),
-        membershipStatus: 'none'
-      }));
-
-      showNotification('info', `Has abandonat el grup "${currentGroup.name}"`);
-
-    } catch (error) {
-      showNotification('error', 'Error al abandonar el grup');
-      console.error('Error al abandonar grup:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleCancelRequest = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsLoading(true);
-
-    try {
-      // Simular llamada API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      setCurrentGroup(prev => ({
-        ...prev,
-        membershipStatus: 'none',
-        joinRequestDate: undefined
-      }));
-
-      showNotification('info', `Sol·licitud cancel·lada per al grup "${currentGroup.name}"`);
-
-    } catch (error) {
-      showNotification('error', 'Error al cancel·lar la sol·licitud');
-      console.error('Error al cancel·lar sol·licitud:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleViewGroup = () => {
-    // Convertir el nombre a slug
-    const slug = group.name
+  // Generar slug per navegació
+  const getSlug = () => {
+    return group.name
       .toLowerCase()
       .replace(/[àáäâ]/g, 'a')
       .replace(/[èéëê]/g, 'e')
@@ -140,397 +80,260 @@ export function GroupCard({ group, viewMode }: GroupCardProps) {
       .replace(/[^a-z0-9]/g, '-')
       .replace(/-+/g, '-')
       .replace(/^-|-$/g, '');
-
-    router.push(`/dashboard/grups/${slug}`);
   };
 
-  const getPrivacyInfo = () => {
-    switch (group.privacy) {
-      case 'public':
-        return { icon: '', label: 'Públic', color: '#10b981' };
-      case 'private':
-        return { icon: '', label: 'Privat', color: '#f59e0b' };
-      case 'secret':
-        return { icon: '', label: 'Secret', color: '#ef4444' };
-      default:
-        return { icon: '', label: 'Públic', color: '#10b981' };
+  const handleViewGroup = () => {
+    router.push(`/dashboard/grups/${getSlug()}`);
+  };
+
+  const handleJoinGroup = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsLoading(true);
+
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      if (currentGroup.privacy === 'public') {
+        setCurrentGroup(prev => ({
+          ...prev,
+          isMember: true,
+          membersCount: prev.membersCount + 1,
+          membershipStatus: 'approved'
+        }));
+      } else if (currentGroup.privacy === 'private') {
+        setCurrentGroup(prev => ({
+          ...prev,
+          membershipStatus: 'pending',
+          joinRequestDate: new Date().toISOString()
+        }));
+      }
+    } catch (error) {
+      console.error('Error al unir-se al grup:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const privacy = getPrivacyInfo();
+  const handleLeaveGroup = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsLoading(true);
 
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setCurrentGroup(prev => ({
+        ...prev,
+        isMember: false,
+        membersCount: Math.max(0, prev.membersCount - 1),
+        membershipStatus: 'none'
+      }));
+    } catch (error) {
+      console.error('Error al abandonar grup:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCancelRequest = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsLoading(true);
+
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setCurrentGroup(prev => ({
+        ...prev,
+        membershipStatus: 'none',
+        joinRequestDate: undefined
+      }));
+    } catch (error) {
+      console.error('Error al cancel·lar sol·licitud:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ==================== VISTA LIST ====================
   if (viewMode === 'list') {
     return (
       <div
         onClick={handleViewGroup}
-        style={{
-          backgroundColor: '#fff',
-          borderRadius: '12px',
-          padding: '16px',
-          border: isHovered ? '2px solid #3b82f6' : '2px solid #e5e7eb',
-          boxShadow: isHovered ? '0 10px 15px -3px rgba(59, 130, 246, 0.2), 0 4px 6px -2px rgba(59, 130, 246, 0.1)' : '0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06)',
-          cursor: 'pointer',
-          transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
-          transition: 'all 0.2s ease-in-out',
-          marginBottom: '12px'
-        }}
+        className={`bg-white rounded-xl p-4 border-2 transition-all duration-200 cursor-pointer ${
+          isHovered
+            ? 'border-indigo-400 shadow-md bg-gray-50 ring-2 ring-indigo-500 ring-offset-1'
+            : 'border-gray-200 shadow-sm'
+        }`}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '16px'
-        }}>
-          {/* Cover image pequeña */}
-          <div style={{
-            width: '80px',
-            height: '60px',
-            borderRadius: '8px',
-            backgroundImage: `url(${group.coverImage})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            position: 'relative',
-            flexShrink: 0
-          }}>
-            {/* Overlay con icono de privacidad */}
-            <div style={{
-              position: 'absolute',
-              top: '4px',
-              right: '4px',
-              backgroundColor: privacy.color,
-              color: 'white',
-              borderRadius: '4px',
-              padding: '2px 4px',
-              fontSize: '8px',
-              fontWeight: '600'
-            }}>
-              {privacy.icon}
+        <div className="flex items-center gap-4">
+          {/* Imatge del grup */}
+          <div className="w-20 h-16 rounded-lg overflow-hidden flex-shrink-0 relative">
+            {currentGroup.coverImage ? (
+              <img
+                src={currentGroup.coverImage}
+                alt={currentGroup.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center">
+                <Users className="w-6 h-6 text-white" />
+              </div>
+            )}
+            {/* Badge privacitat */}
+            <div className="absolute top-1 right-1">
+              <PrivacyIcon className="w-3 h-3 text-white drop-shadow-md" />
             </div>
           </div>
 
-          {/* Información del grupo */}
-          <div style={{ flex: 1 }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'flex-start',
-              justifyContent: 'space-between',
-              marginBottom: '8px'
-            }}>
-              <div>
-                <h3 style={{
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  color: '#2c3e50',
-                  margin: '0 0 4px 0',
-                  lineHeight: '1.2'
-                }}>
-                  {group.name}
-                </h3>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  marginBottom: '6px'
-                }}>
-                  <span style={{
-                    fontSize: '12px',
-                    color: privacy.color,
-                    fontWeight: '500'
-                  }}>
-                    {privacy.icon} {privacy.label}
-                  </span>
-                  <span style={{
-                    fontSize: '12px',
-                    color: '#8e8e93'
-                  }}>
-                    {group.category}
-                  </span>
-                </div>
-              </div>
-
-              {/* Botones de acción */}
-              <div style={{ display: 'flex', gap: '8px' }}>
-                {currentGroup.isMember ? (
-                  <>
-                    <button
-                      onClick={handleLeaveGroup}
-                      disabled={isLoading}
-                      style={{
-                        padding: '6px 12px',
-                        backgroundColor: isLoading ? '#e5e7eb' : 'transparent',
-                        color: isLoading ? '#9ca3af' : '#ef4444',
-                        border: `1px solid ${isLoading ? '#e5e7eb' : '#ef4444'}`,
-                        borderRadius: '6px',
-                        fontSize: '12px',
-                        fontWeight: '500',
-                        cursor: isLoading ? 'not-allowed' : 'pointer',
-                        transition: 'all 0.2s'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!isLoading) {
-                          e.currentTarget.style.backgroundColor = '#ef4444';
-                          e.currentTarget.style.color = 'white';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!isLoading) {
-                          e.currentTarget.style.backgroundColor = 'transparent';
-                          e.currentTarget.style.color = '#ef4444';
-                        }
-                      }}
-                    >
-                      {isLoading ? 'Abandonant...' : 'Abandonar'}
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleViewGroup();
-                      }}
-                      style={{
-                        padding: '6px 12px',
-                        backgroundColor: '#10b981',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '6px',
-                        fontSize: '12px',
-                        fontWeight: '500',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
-                      }}
-                    >
-                      Entrar
-                    </button>
-                  </>
-                ) : currentGroup.membershipStatus === 'pending' ? (
-                  <>
-                    <button
-                      onClick={handleCancelRequest}
-                      disabled={isLoading}
-                      style={{
-                        padding: '6px 12px',
-                        backgroundColor: isLoading ? '#9ca3af' : '#f59e0b',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '6px',
-                        fontSize: '12px',
-                        fontWeight: '500',
-                        cursor: isLoading ? 'not-allowed' : 'pointer',
-                        transition: 'all 0.2s'
-                      }}
-                    >
-                      {isLoading ? 'Cancel·lant...' : 'Sol·licitud pendent'}
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleViewGroup();
-                      }}
-                      style={{
-                        padding: '6px 12px',
-                        backgroundColor: 'transparent',
-                        color: '#6c757d',
-                        border: '1px solid #e9ecef',
-                        borderRadius: '6px',
-                        fontSize: '12px',
-                        fontWeight: '500',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
-                      }}
-                    >
-                      Veure
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    onClick={handleJoinGroup}
-                    disabled={isLoading}
-                    style={{
-                      padding: '6px 12px',
-                      backgroundColor: isLoading ? '#9ca3af' : '#3b82f6',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '6px',
-                      fontSize: '12px',
-                      fontWeight: '500',
-                      cursor: isLoading ? 'not-allowed' : 'pointer',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    {isLoading ? 'Processant...' : (currentGroup.privacy === 'private' ? 'Sol·licitar' : 'Unir-se')}
-                  </button>
-                )}
-              </div>
+          {/* Info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap mb-1">
+              <h3 className="font-semibold text-gray-900">{currentGroup.name}</h3>
+              {currentGroup.isMember && (
+                <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-xs font-medium rounded-full">
+                  Membre
+                </span>
+              )}
+              <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full border ${privacy.color}`}>
+                <PrivacyIcon className="w-3 h-3" />
+                {privacy.label}
+              </span>
             </div>
-
-            <p style={{
-              fontSize: '13px',
-              color: '#6c757d',
-              margin: '0 0 8px 0',
-              lineHeight: '1.4',
-              overflow: 'hidden',
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical'
-            }}>
-              {group.description}
-            </p>
-
-            {/* Stats */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '16px',
-              fontSize: '11px',
-              color: '#8e8e93'
-            }}>
-              <span>{group.membersCount} membres</span>
-              <span>{group.postsCount} posts</span>
-              <span>{group.lastActivity}</span>
-              <span>Admin: {group.adminName}</span>
+            <p className="text-sm text-gray-500">{currentGroup.category}</p>
+            <p className="text-sm text-gray-600 line-clamp-1 mt-1">{currentGroup.description}</p>
+            <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+              <span className="flex items-center gap-1">
+                <Users className="w-3 h-3" />
+                {currentGroup.membersCount} membres
+              </span>
+              <span className="flex items-center gap-1">
+                <MessageSquare className="w-3 h-3" />
+                {currentGroup.postsCount} posts
+              </span>
+              <span className="flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                {currentGroup.lastActivity}
+              </span>
             </div>
+          </div>
+
+          {/* Accions */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {currentGroup.isMember ? (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleViewGroup();
+                  }}
+                  className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-1.5"
+                >
+                  <LogIn className="w-4 h-4" />
+                  Entrar
+                </button>
+                <button
+                  onClick={handleLeaveGroup}
+                  disabled={isLoading}
+                  className="px-4 py-2 bg-red-50 text-red-600 text-sm font-medium rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
+                  {isLoading ? '...' : 'Abandonar'}
+                </button>
+              </>
+            ) : currentGroup.membershipStatus === 'pending' ? (
+              <>
+                <button
+                  onClick={handleCancelRequest}
+                  disabled={isLoading}
+                  className="px-4 py-2 bg-amber-100 text-amber-700 text-sm font-medium rounded-lg hover:bg-amber-200 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Clock className="w-4 h-4" />}
+                  {isLoading ? '...' : 'Pendent'}
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleViewGroup();
+                  }}
+                  className="px-4 py-2 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Veure
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={handleJoinGroup}
+                disabled={isLoading}
+                className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+              >
+                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+                {isLoading ? 'Processant...' : currentGroup.privacy === 'private' ? 'Sol·licitar' : 'Unir-se'}
+              </button>
+            )}
           </div>
         </div>
       </div>
     );
   }
 
-  // Vista Grid (por defecto)
+  // ==================== VISTA GRID ====================
   return (
     <div
       onClick={handleViewGroup}
-      style={{
-        backgroundColor: '#fff',
-        borderRadius: '16px',
-        overflow: 'hidden',
-        border: isHovered ? '2px solid #3b82f6' : '2px solid #e5e7eb',
-        boxShadow: isHovered ? '0 10px 15px -3px rgba(59, 130, 246, 0.2), 0 4px 6px -2px rgba(59, 130, 246, 0.1)' : '0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06)',
-        cursor: 'pointer',
-        transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
-        transition: 'all 0.2s ease-in-out',
-        height: '380px',
-        display: 'flex',
-        flexDirection: 'column'
-      }}
+      className={`bg-white rounded-2xl overflow-hidden border-2 transition-all duration-300 cursor-pointer h-full flex flex-col group ${
+        isHovered
+          ? 'border-indigo-400 shadow-xl -translate-y-1 ring-2 ring-indigo-500 ring-offset-2'
+          : 'border-gray-200 shadow-sm'
+      }`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Cover Image */}
-      <div style={{
-        height: '140px',
-        backgroundImage: `url(${group.coverImage})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        position: 'relative'
-      }}>
-        {/* Overlay */}
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.4) 100%)'
-        }} />
+      <div className="h-32 relative flex-shrink-0">
+        {currentGroup.coverImage ? (
+          <img
+            src={currentGroup.coverImage}
+            alt={currentGroup.name}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-indigo-400 to-purple-500" />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
 
-        {/* Badge de privacidad */}
-        <div style={{
-          position: 'absolute',
-          top: '12px',
-          right: '12px',
-          backgroundColor: privacy.color,
-          color: 'white',
-          borderRadius: '6px',
-          padding: '4px 8px',
-          fontSize: '11px',
-          fontWeight: '600',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px'
-        }}>
-          {privacy.icon} {privacy.label}
-        </div>
-
-        {/* Información de miembro */}
-        {group.isMember && (
-          <div style={{
-            position: 'absolute',
-            top: '12px',
-            left: '12px',
-            backgroundColor: 'rgba(16, 185, 129, 0.9)',
-            color: 'white',
-            borderRadius: '6px',
-            padding: '4px 8px',
-            fontSize: '11px',
-            fontWeight: '600'
-          }}>
-            Membre
+        {/* Badge Membre */}
+        {currentGroup.isMember && (
+          <div className="absolute top-3 left-3">
+            <span className="px-2 py-1 bg-indigo-600 text-white text-xs font-medium rounded-md">
+              Membre
+            </span>
           </div>
         )}
+
+        {/* Badge Privacitat */}
+        <div className="absolute top-3 right-3">
+          <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md border ${privacy.color}`}>
+            <PrivacyIcon className="w-3 h-3" />
+            {privacy.label}
+          </span>
+        </div>
       </div>
 
-      {/* Contenido del grupo */}
-      <div style={{
-        padding: '16px',
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column'
-      }}>
-        {/* Nombre y categoría */}
-        <div style={{ marginBottom: '12px' }}>
-          <h3 style={{
-            fontSize: '16px',
-            fontWeight: '600',
-            color: '#2c3e50',
-            margin: '0 0 4px 0',
-            lineHeight: '1.2'
-          }}>
-            {group.name}
-          </h3>
-          <p style={{
-            fontSize: '12px',
-            color: '#8e8e93',
-            margin: 0,
-            fontWeight: '500'
-          }}>
-            {group.category}
-          </p>
-        </div>
+      {/* Contingut */}
+      <div className="flex-1 flex flex-col p-4">
+        {/* Nom i categoria */}
+        <h3 className="font-semibold text-gray-900 text-base line-clamp-1">{currentGroup.name}</h3>
+        <p className="text-xs text-gray-500 font-medium mt-0.5">{currentGroup.category}</p>
 
-        {/* Descripción */}
-        <p style={{
-          fontSize: '13px',
-          color: '#6c757d',
-          lineHeight: '1.4',
-          margin: '0 0 12px 0',
-          flex: 1,
-          overflow: 'hidden',
-          display: '-webkit-box',
-          WebkitLineClamp: 3,
-          WebkitBoxOrient: 'vertical'
-        }}>
-          {group.description}
-        </p>
+        {/* Descripció */}
+        <p className="text-sm text-gray-600 line-clamp-2 mt-2 flex-1">{currentGroup.description}</p>
 
         {/* Tags */}
-        {group.tags.length > 0 && (
-          <div style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '4px',
-            marginBottom: '12px'
-          }}>
-            {group.tags.slice(0, 3).map((tag, index) => (
+        {currentGroup.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-3">
+            {currentGroup.tags.slice(0, 3).map((tag, index) => (
               <span
                 key={index}
-                style={{
-                  backgroundColor: '#f0f7ff',
-                  color: '#3b82f6',
-                  padding: '2px 6px',
-                  borderRadius: '4px',
-                  fontSize: '10px',
-                  fontWeight: '500'
-                }}
+                className="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-xs font-medium rounded"
               >
                 {tag}
               </span>
@@ -539,84 +342,41 @@ export function GroupCard({ group, viewMode }: GroupCardProps) {
         )}
 
         {/* Stats */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '12px',
-          fontSize: '11px',
-          color: '#8e8e93'
-        }}>
-          <span>{group.membersCount}</span>
-          <span>{group.postsCount}</span>
-          <span>{group.lastActivity}</span>
+        <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 text-xs text-gray-500">
+          <span className="flex items-center gap-1">
+            <Users className="w-3.5 h-3.5" />
+            {currentGroup.membersCount}
+          </span>
+          <span className="flex items-center gap-1">
+            <MessageSquare className="w-3.5 h-3.5" />
+            {currentGroup.postsCount}
+          </span>
+          <span className="flex items-center gap-1">
+            <Clock className="w-3.5 h-3.5" />
+            {currentGroup.lastActivity}
+          </span>
         </div>
 
-        {/* Admin info */}
-        <div style={{
-          fontSize: '11px',
-          color: '#8e8e93',
-          marginBottom: '12px',
-          textAlign: 'center'
-        }}>
-          Admin: {group.adminName}
-        </div>
-
-        {/* Botones de acción */}
-        <div style={{
-          display: 'flex',
-          gap: '8px'
-        }}>
+        {/* Botons d'acció */}
+        <div className="flex gap-2 mt-4">
           {currentGroup.isMember ? (
             <>
               <button
                 onClick={handleLeaveGroup}
                 disabled={isLoading}
-                style={{
-                  flex: 1,
-                  padding: '8px 12px',
-                  backgroundColor: isLoading ? '#e5e7eb' : 'transparent',
-                  color: isLoading ? '#9ca3af' : '#ef4444',
-                  border: `2px solid ${isLoading ? '#e5e7eb' : '#ef4444'}`,
-                  borderRadius: '8px',
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  cursor: isLoading ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => {
-                  if (!isLoading) {
-                    e.currentTarget.style.backgroundColor = '#ef4444';
-                    e.currentTarget.style.color = 'white';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isLoading) {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                    e.currentTarget.style.color = '#ef4444';
-                  }
-                }}
+                className="flex-1 py-2 px-3 bg-red-50 text-red-600 text-sm font-medium rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
               >
-                {isLoading ? 'Abandonant...' : 'Abandonar'}
+                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
+                {isLoading ? '...' : 'Abandonar'}
               </button>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   handleViewGroup();
                 }}
-                style={{
-                  flex: 2,
-                  padding: '8px 12px',
-                  backgroundColor: '#10b981',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
+                className="flex-[2] py-2 px-3 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center gap-1.5"
               >
+                <LogIn className="w-4 h-4" />
                 Entrar al grup
               </button>
             </>
@@ -625,19 +385,9 @@ export function GroupCard({ group, viewMode }: GroupCardProps) {
               <button
                 onClick={handleCancelRequest}
                 disabled={isLoading}
-                style={{
-                  flex: 2,
-                  padding: '8px 12px',
-                  backgroundColor: isLoading ? '#9ca3af' : '#f59e0b',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  cursor: isLoading ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.2s'
-                }}
+                className="flex-[2] py-2 px-3 bg-amber-100 text-amber-700 text-sm font-medium rounded-lg hover:bg-amber-200 transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
               >
+                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Clock className="w-4 h-4" />}
                 {isLoading ? 'Cancel·lant...' : 'Sol·licitud pendent'}
               </button>
               <button
@@ -645,18 +395,7 @@ export function GroupCard({ group, viewMode }: GroupCardProps) {
                   e.stopPropagation();
                   handleViewGroup();
                 }}
-                style={{
-                  flex: 1,
-                  padding: '8px 12px',
-                  backgroundColor: 'transparent',
-                  color: '#6c757d',
-                  border: '2px solid #e9ecef',
-                  borderRadius: '8px',
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
+                className="flex-1 py-2 px-3 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center"
               >
                 Veure
               </button>
@@ -665,30 +404,10 @@ export function GroupCard({ group, viewMode }: GroupCardProps) {
             <button
               onClick={handleJoinGroup}
               disabled={isLoading}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                backgroundColor: isLoading ? '#9ca3af' : '#3b82f6',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '12px',
-                fontWeight: '600',
-                cursor: isLoading ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={(e) => {
-                if (!isLoading) {
-                  e.currentTarget.style.opacity = '0.9';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isLoading) {
-                  e.currentTarget.style.opacity = '1';
-                }
-              }}
+              className="w-full py-2 px-3 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
             >
-              {isLoading ? 'Processant...' : (currentGroup.privacy === 'private' ? 'Sol·licitar unir-se' : 'Unir-se al grup')}
+              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+              {isLoading ? 'Processant...' : currentGroup.privacy === 'private' ? 'Sol·licitar unir-se' : 'Unir-se al grup'}
             </button>
           )}
         </div>

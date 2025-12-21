@@ -1,7 +1,30 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { FileText, Calendar, MapPin, Briefcase, Globe } from 'lucide-react';
+import SensitiveCategoryAlert from './SensitiveCategoryAlert';
+
+interface SensitiveCategory {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  icon: string | null
+  color: string | null
+  forceHidePosition: boolean
+  forceHideDepartment: boolean
+  forceHideBio: boolean
+  forceHideLocation: boolean
+  forceHidePhone: boolean
+  forceHideEmail: boolean
+  forceHideGroups: boolean
+}
+
+interface DetectionResult {
+  category: SensitiveCategory | null
+  matchedOn?: 'position' | 'department'
+  matchedPattern?: string
+}
 
 interface Step2Props {
   data: {
@@ -18,6 +41,7 @@ interface Step2Props {
       yearsInPublicSector?: number;
       website?: string;
     };
+    hasSystemRestrictions?: boolean;
   };
   updateProfile: (updates: Record<string, any>) => Promise<boolean>;
   isSaving: boolean;
@@ -37,7 +61,13 @@ export const Step2Personal = ({ data, updateProfile, isSaving }: Step2Props) => 
     yearsInPublicSector: 0,
     website: ''
   });
-  
+
+  // Estat per a la detecció de categoria sensible
+  const [detectedCategory, setDetectedCategory] = useState<DetectionResult | null>(null);
+  const [isAssigning, setIsAssigning] = useState(false);
+  const [categoryDismissed, setCategoryDismissed] = useState(false);
+  const [hasExistingRestrictions, setHasExistingRestrictions] = useState(false);
+
   // Cargar datos existentes
   useEffect(() => {
     if (data.profile) {
@@ -55,7 +85,71 @@ export const Step2Personal = ({ data, updateProfile, isSaving }: Step2Props) => 
         website: data.profile.website || ''
       });
     }
-  }, [data.profile]);
+    // Si l'usuari ja té restriccions, no mostrar l'alerta
+    if (data.hasSystemRestrictions) {
+      setHasExistingRestrictions(true);
+    }
+  }, [data.profile, data.hasSystemRestrictions]);
+
+  // Funció per detectar categoria sensible
+  const detectSensitiveCategory = useCallback(async (position: string, department: string) => {
+    // No detectar si ja té restriccions o ja ha descartat l'alerta
+    if (hasExistingRestrictions || categoryDismissed) return;
+
+    // Només detectar si hi ha algun valor
+    if (!position && !department) {
+      setDetectedCategory(null);
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/user/privacy/detect-category', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ position, department }),
+      });
+
+      if (response.ok) {
+        const result: DetectionResult = await response.json();
+        if (result.category) {
+          setDetectedCategory(result);
+        } else {
+          setDetectedCategory(null);
+        }
+      }
+    } catch (error) {
+      console.error('Error detecting sensitive category:', error);
+    }
+  }, [hasExistingRestrictions, categoryDismissed]);
+
+  // Funció per acceptar la categoria
+  const handleAcceptCategory = async () => {
+    if (!detectedCategory?.category) return;
+
+    setIsAssigning(true);
+    try {
+      const response = await fetch('/api/user/privacy/assign-category', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ categoryId: detectedCategory.category.id }),
+      });
+
+      if (response.ok) {
+        setHasExistingRestrictions(true);
+        setDetectedCategory(null);
+      }
+    } catch (error) {
+      console.error('Error assigning category:', error);
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+
+  // Funció per declinar la categoria
+  const handleDeclineCategory = () => {
+    setCategoryDismissed(true);
+    setDetectedCategory(null);
+  };
 
   const handleChange = (field: string, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -63,6 +157,14 @@ export const Step2Personal = ({ data, updateProfile, isSaving }: Step2Props) => 
 
   const handleBlur = async (field: string) => {
     await updateProfile({ [field]: formData[field as keyof typeof formData] });
+
+    // Detectar categoria sensible quan es modifica posició o departament
+    if (field === 'position' || field === 'department') {
+      detectSensitiveCategory(
+        field === 'position' ? formData.position : formData.position,
+        field === 'department' ? formData.department : formData.department
+      );
+    }
   };
 
   return (
@@ -215,6 +317,18 @@ export const Step2Personal = ({ data, updateProfile, isSaving }: Step2Props) => 
           />
         </div>
       </div>
+
+      {/* Sensitive Category Alert */}
+      {detectedCategory?.category && detectedCategory.matchedOn && detectedCategory.matchedPattern && (
+        <SensitiveCategoryAlert
+          category={detectedCategory.category}
+          matchedOn={detectedCategory.matchedOn}
+          matchedPattern={detectedCategory.matchedPattern}
+          onAccept={handleAcceptCategory}
+          onDecline={handleDeclineCategory}
+          isLoading={isAssigning}
+        />
+      )}
 
       {/* Personal Website + Headline */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

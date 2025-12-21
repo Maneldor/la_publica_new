@@ -13,5 +13,6 @@ export {
   BREADCRUMB,
   ICON_SIZES,
   BUTTONS,
+  INPUTS,
   COLORS,
 } from './spacing'

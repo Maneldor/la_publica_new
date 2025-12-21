@@ -1,6 +1,8 @@
+'use client';
+
 import { MemberCard } from '../../../../components/ui/MemberCard';
 import { Member } from '../page';
-import { MessageCircle } from 'lucide-react';
+import { Users } from 'lucide-react';
 
 interface ConnectionActions {
   onConnect: (memberId: string) => Promise<void>;
@@ -19,41 +21,30 @@ interface MembersGridProps {
 export function MembersGrid({ members, viewMode, connectionActions }: MembersGridProps) {
   if (members.length === 0) {
     return (
-      <div style={{
-        textAlign: 'center',
-        padding: '60px 20px',
-        backgroundColor: '#f8f9fa',
-        borderRadius: '12px',
-        border: '2px dashed #e9ecef'
-      }}>
-        <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'center' }}>
-          <MessageCircle className="w-12 h-12 text-gray-300" />
+      <div className="text-center py-16 px-6 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+        <div className="flex justify-center mb-4">
+          <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
+            <Users className="w-8 h-8 text-gray-400" />
+          </div>
         </div>
-        <h3 style={{
-          fontSize: '18px',
-          fontWeight: '600',
-          color: '#6c757d',
-          marginBottom: '8px'
-        }}>
+        <h3 className="text-lg font-semibold text-gray-700 mb-2">
           No s'han trobat membres
         </h3>
-        <p style={{
-          fontSize: '14px',
-          color: '#8e8e93',
-          margin: 0
-        }}>
-          Prova a ajustar els filtres o el terme de cerca
+        <p className="text-sm text-gray-500 max-w-md mx-auto">
+          Prova a ajustar els filtres o el terme de cerca per trobar el que busques
         </p>
       </div>
     );
   }
 
   return (
-    <div style={{
-      display: viewMode === 'grid' ? 'grid' : 'block',
-      gridTemplateColumns: viewMode === 'grid' ? 'repeat(auto-fill, minmax(280px, 1fr))' : 'none',
-      gap: viewMode === 'grid' ? '20px' : '0'
-    }}>
+    <div
+      className={
+        viewMode === 'grid'
+          ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 items-stretch'
+          : 'space-y-0'
+      }
+    >
       {members.map((member) => (
         <MemberCard
           key={member.id}

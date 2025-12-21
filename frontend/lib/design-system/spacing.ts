@@ -156,6 +156,21 @@ export const BUTTONS = {
 // COLORES SEMÁNTICOS
 // ============================================
 
+// ============================================
+// INPUTS Y FORMULARIOS
+// ============================================
+
+export const INPUTS = {
+  // Input base
+  base: 'w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-900 placeholder:text-gray-400 placeholder:font-normal focus:ring-2 focus:ring-indigo-500 focus:border-transparent',
+
+  // Textarea
+  textarea: 'w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-900 placeholder:text-gray-400 placeholder:font-normal focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none',
+
+  // Select
+  select: 'w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-transparent',
+} as const
+
 export const COLORS = {
   // Estados
   success: {

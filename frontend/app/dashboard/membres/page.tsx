@@ -1,12 +1,24 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { PageTemplate } from '../../../components/ui/PageTemplate';
-import { MembersSearchFilters } from '../../../components/ui/MembersSearchFilters';
-import { MembersTabs } from '../../../components/ui/MembersTabs';
-import { ViewToggle } from '../../../components/ui/ViewToggle';
+import { PageLayout } from '@/components/layout/PageLayout';
+import { StatsGrid } from '@/components/ui/StatsGrid';
+import { TYPOGRAPHY } from '@/lib/design-system';
 import { MembersGrid } from './components/MembersGrid';
-import { Loader2 } from 'lucide-react';
+import {
+  Users,
+  Search,
+  SlidersHorizontal,
+  Grid,
+  List,
+  Loader2,
+  UserPlus,
+  Activity,
+  Clock,
+  ChevronLeft,
+  ChevronRight,
+  X
+} from 'lucide-react';
 
 export interface Member {
   id: string;
@@ -32,12 +44,6 @@ export interface Member {
   bio: string;
 }
 
-interface Stats {
-  label: string;
-  value: string;
-  trend: string;
-}
-
 interface Filters {
   department: string;
   location: string;
@@ -48,15 +54,16 @@ interface Filters {
 export default function MembresPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [members, setMembers] = useState<Member[]>([]);
-  const [stats, setStats] = useState<Stats[]>([
-    { label: 'Total Membres', value: '-', trend: '' },
-    { label: 'Nous Avui', value: '-', trend: '' },
-    { label: 'Actius Aquest Mes', value: '-', trend: '' },
-    { label: 'En Línia Ara', value: '-', trend: '' }
+  const [stats, setStats] = useState([
+    { label: 'Total Membres', value: '-', trend: '', icon: <Users className="w-5 h-5" />, color: 'indigo' as const },
+    { label: 'Nous Avui', value: '-', trend: '', icon: <UserPlus className="w-5 h-5" />, color: 'green' as const },
+    { label: 'Actius Aquest Mes', value: '-', trend: '', icon: <Activity className="w-5 h-5" />, color: 'blue' as const },
+    { label: 'En Linia Ara', value: '-', trend: '', icon: <Clock className="w-5 h-5" />, color: 'amber' as const }
   ]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<Filters>({
     department: '',
     location: '',
@@ -76,15 +83,19 @@ export default function MembresPage() {
     friends: 0
   });
 
-  // Carregar estadístiques
+  // Carregar estadistiques
   useEffect(() => {
     const loadStats = async () => {
       try {
         const res = await fetch('/api/members/stats');
         if (res.ok) {
           const data = await res.json();
-          setStats(data.stats);
-          // Actualitzar comptadors dels tabs amb les dades reals
+          setStats([
+            { label: 'Total Membres', value: data.stats[0]?.value || '0', trend: data.stats[0]?.trend || '', icon: <Users className="w-5 h-5" />, color: 'indigo' as const },
+            { label: 'Nous Avui', value: data.stats[1]?.value || '0', trend: data.stats[1]?.trend || '', icon: <UserPlus className="w-5 h-5" />, color: 'green' as const },
+            { label: 'Actius Aquest Mes', value: data.stats[2]?.value || '0', trend: data.stats[2]?.trend || '', icon: <Activity className="w-5 h-5" />, color: 'blue' as const },
+            { label: 'En Linia Ara', value: data.stats[3]?.value || '0', trend: data.stats[3]?.trend || '', icon: <Clock className="w-5 h-5" />, color: 'amber' as const }
+          ]);
           if (data.myStats) {
             setTabCounts(prev => ({
               ...prev,
@@ -93,7 +104,7 @@ export default function MembresPage() {
           }
         }
       } catch (error) {
-        console.error('Error carregant estadístiques:', error);
+        console.error('Error carregant estadistiques:', error);
       }
     };
     loadStats();
@@ -122,7 +133,6 @@ export default function MembresPage() {
           totalPages: data.pagination.totalPages,
           hasMore: data.pagination.hasMore
         }));
-        // Actualitzar comptadors
         setTabCounts(prev => ({
           ...prev,
           all: activeTab === 'all' ? data.pagination.total : prev.all,
@@ -141,7 +151,7 @@ export default function MembresPage() {
     loadMembers();
   }, [loadMembers]);
 
-  // Accions de connexió
+  // Accions de connexio
   const handleConnect = async (memberId: string) => {
     try {
       const res = await fetch('/api/connections', {
@@ -153,7 +163,6 @@ export default function MembresPage() {
       const data = await res.json();
 
       if (res.ok) {
-        // Actualitzar l'estat del membre localment
         setMembers(prev => prev.map(m =>
           m.id === memberId
             ? {
@@ -169,8 +178,8 @@ export default function MembresPage() {
         alert(data.error);
       }
     } catch (error) {
-      console.error('Error enviant sol·licitud:', error);
-      alert('Error enviant sol·licitud de connexió');
+      console.error('Error enviant sollicitud:', error);
+      alert('Error enviant sollicitud de connexio');
     }
   };
 
@@ -190,8 +199,8 @@ export default function MembresPage() {
         ));
       }
     } catch (error) {
-      console.error('Error acceptant connexió:', error);
-      alert('Error acceptant connexió');
+      console.error('Error acceptant connexio:', error);
+      alert('Error acceptant connexio');
     }
   };
 
@@ -211,8 +220,8 @@ export default function MembresPage() {
         ));
       }
     } catch (error) {
-      console.error('Error rebutjant connexió:', error);
-      alert('Error rebutjant connexió');
+      console.error('Error rebutjant connexio:', error);
+      alert('Error rebutjant connexio');
     }
   };
 
@@ -249,12 +258,11 @@ export default function MembresPage() {
         ));
       }
     } catch (error) {
-      console.error('Error cancel·lant sol·licitud:', error);
-      alert('Error cancel·lant sol·licitud');
+      console.error('Error cancellant sollicitud:', error);
+      alert('Error cancellant sollicitud');
     }
   };
 
-  // Callbacks per als components
   const connectionActions = {
     onConnect: handleConnect,
     onAccept: handleAccept,
@@ -263,126 +271,268 @@ export default function MembresPage() {
     onCancel: handleCancel
   };
 
+  const handleFilterChange = (key: string, value: string) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+    setPagination(prev => ({ ...prev, page: 1 }));
+  };
+
+  const clearFilters = () => {
+    setFilters({ department: '', location: '', role: '', status: '' });
+    setPagination(prev => ({ ...prev, page: 1 }));
+  };
+
+  const tabs = [
+    { id: 'all', label: 'Tots', count: tabCounts.all, description: 'Tots els membres de la plataforma' },
+    { id: 'active', label: 'Actius', count: tabCounts.active, description: 'Membres actius recentment' },
+    { id: 'new', label: 'Nous', count: tabCounts.new, description: 'Membres nous aquesta setmana' },
+    { id: 'friends', label: 'Connexions', count: tabCounts.friends, description: 'Les teves connexions' }
+  ];
+
   return (
-    <PageTemplate
+    <PageLayout
       title="Membres"
-      subtitle="Connecta amb altres professionals del sector públic"
-      statsData={stats}
+      subtitle="Connecta amb altres professionals del sector public"
+      icon={<Users className="w-6 h-6" />}
     >
-      <div style={{ padding: '0 24px 24px 24px', maxWidth: '1400px', margin: '0 auto' }}>
+      {/* Stats Grid */}
+      <StatsGrid stats={stats} columns={4} />
 
-        {/* Búsqueda y filtros */}
-        <MembersSearchFilters
-          onSearch={setSearchTerm}
-          onFilterChange={setFilters}
-          totalResults={pagination.total}
-        />
+      {/* Barra de cerca i filtres */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+        <div className="flex items-center gap-4">
+          {/* Cercador */}
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Buscar membres per nom, carrec o departament..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setPagination(prev => ({ ...prev, page: 1 }));
+              }}
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-gray-900 bg-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            />
+          </div>
 
-        {/* Tabs de navegación */}
-        <MembersTabs
-          activeTab={activeTab}
-          onTabChange={(tab) => {
-            setActiveTab(tab);
-            setPagination(prev => ({ ...prev, page: 1 }));
-          }}
-          counts={tabCounts}
-        />
+          {/* Boto Filtres */}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`inline-flex items-center gap-2 px-4 py-2.5 border rounded-lg text-sm font-medium transition-colors ${
+              showFilters
+                ? 'bg-indigo-600 text-white border-indigo-600'
+                : 'border-gray-200 text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+            Filtres
+          </button>
 
-        {/* Header con toggle de vista */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '20px'
-        }}>
-          <h2 style={{
-            fontSize: '18px',
-            fontWeight: '600',
-            color: '#2c3e50',
-            margin: 0
-          }}>
-            {isLoading ? (
-              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Carregant...
-              </span>
-            ) : (
-              `${pagination.total} membre${pagination.total !== 1 ? 's' : ''} trobat${pagination.total !== 1 ? 's' : ''}`
-            )}
-          </h2>
-
-          <ViewToggle
-            viewMode={viewMode}
-            onViewChange={setViewMode}
-          />
+          {/* Comptador */}
+          <span className="text-sm text-gray-500 whitespace-nowrap">
+            {pagination.total} membres
+          </span>
         </div>
 
-        {/* Grid/Lista de miembros */}
-        {isLoading && members.length === 0 ? (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '60px 20px'
-          }}>
-            <div style={{ textAlign: 'center' }}>
-              <Loader2 className="w-8 h-8 animate-spin text-blue-500 mx-auto mb-4" />
-              <p style={{ color: '#6c757d' }}>Carregant membres...</p>
-            </div>
-          </div>
-        ) : (
-          <MembersGrid
-            members={members}
-            viewMode={viewMode}
-            connectionActions={connectionActions}
-          />
-        )}
+        {/* Panel de filtres expandible */}
+        {showFilters && (
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+              {/* Filtre per departament */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Departament</label>
+                <select
+                  value={filters.department}
+                  onChange={(e) => handleFilterChange('department', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="">Tots els departaments</option>
+                  <option value="tecnologia">Tecnologia</option>
+                  <option value="recursos_humans">Recursos Humans</option>
+                  <option value="finances">Finances</option>
+                  <option value="operacions">Operacions</option>
+                  <option value="legal">Legal</option>
+                </select>
+              </div>
 
-        {/* Paginació */}
-        {pagination.totalPages > 1 && (
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '8px',
-            marginTop: '24px'
-          }}>
+              {/* Filtre per ubicacio */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Ubicacio</label>
+                <select
+                  value={filters.location}
+                  onChange={(e) => handleFilterChange('location', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="">Totes les ubicacions</option>
+                  <option value="barcelona">Barcelona</option>
+                  <option value="girona">Girona</option>
+                  <option value="lleida">Lleida</option>
+                  <option value="tarragona">Tarragona</option>
+                  <option value="remot">Remot</option>
+                </select>
+              </div>
+
+              {/* Filtre per rol */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Rol</label>
+                <select
+                  value={filters.role}
+                  onChange={(e) => handleFilterChange('role', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="">Tots els rols</option>
+                  <option value="manager">Manager</option>
+                  <option value="senior">Senior</option>
+                  <option value="junior">Junior</option>
+                  <option value="intern">Intern</option>
+                </select>
+              </div>
+
+              {/* Filtre per estat */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Estat</label>
+                <select
+                  value={filters.status}
+                  onChange={(e) => handleFilterChange('status', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="">Tots els estats</option>
+                  <option value="online">En linia</option>
+                  <option value="active">Actiu</option>
+                  <option value="inactive">Inactiu</option>
+                </select>
+              </div>
+            </div>
+
             <button
-              onClick={() => setPagination(prev => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
-              disabled={pagination.page === 1}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: pagination.page === 1 ? '#e5e7eb' : '#3b82f6',
-                color: pagination.page === 1 ? '#9ca3af' : 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: pagination.page === 1 ? 'not-allowed' : 'pointer'
-              }}
+              onClick={clearFilters}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              Anterior
-            </button>
-            <span style={{
-              padding: '8px 16px',
-              color: '#6c757d'
-            }}>
-              Pàgina {pagination.page} de {pagination.totalPages}
-            </span>
-            <button
-              onClick={() => setPagination(prev => ({ ...prev, page: Math.min(prev.totalPages, prev.page + 1) }))}
-              disabled={pagination.page >= pagination.totalPages}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: pagination.page >= pagination.totalPages ? '#e5e7eb' : '#3b82f6',
-                color: pagination.page >= pagination.totalPages ? '#9ca3af' : 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: pagination.page >= pagination.totalPages ? 'not-allowed' : 'pointer'
-              }}
-            >
-              Següent
+              <X className="w-4 h-4" />
+              Netejar filtres
             </button>
           </div>
         )}
       </div>
-    </PageTemplate>
+
+      {/* Tabs */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="flex border-b border-gray-200">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => {
+                setActiveTab(tab.id);
+                setPagination(prev => ({ ...prev, page: 1 }));
+              }}
+              className={`flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                activeTab === tab.id
+                  ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50'
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              {tab.label}
+              <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                activeTab === tab.id
+                  ? 'bg-indigo-100 text-indigo-600'
+                  : 'bg-gray-100 text-gray-500'
+              }`}>
+                {tab.count}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* Descripcio del tab */}
+        <div className="px-4 py-2 bg-gray-50 border-b border-gray-100">
+          <p className={TYPOGRAPHY.small}>
+            {tabs.find(t => t.id === activeTab)?.description}
+          </p>
+        </div>
+      </div>
+
+      {/* Header amb toggle de vista */}
+      <div className="flex items-center justify-between">
+        <h2 className={TYPOGRAPHY.sectionTitle}>
+          {isLoading ? (
+            <span className="flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Carregant...
+            </span>
+          ) : (
+            `${pagination.total} membre${pagination.total !== 1 ? 's' : ''} trobat${pagination.total !== 1 ? 's' : ''}`
+          )}
+        </h2>
+
+        {/* Toggle vista */}
+        <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+          <button
+            onClick={() => setViewMode('grid')}
+            className={`p-2 rounded-md transition-colors ${
+              viewMode === 'grid' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <Grid className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setViewMode('list')}
+            className={`p-2 rounded-md transition-colors ${
+              viewMode === 'list' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <List className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Grid/Lista de membres */}
+      {isLoading && members.length === 0 ? (
+        <div className="flex items-center justify-center py-16">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin text-indigo-500 mx-auto mb-4" />
+            <p className="text-gray-500">Carregant membres...</p>
+          </div>
+        </div>
+      ) : (
+        <MembersGrid
+          members={members}
+          viewMode={viewMode}
+          connectionActions={connectionActions}
+        />
+      )}
+
+      {/* Paginacio */}
+      {pagination.totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2">
+          <button
+            onClick={() => setPagination(prev => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
+            disabled={pagination.page === 1}
+            className={`inline-flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              pagination.page === 1
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-indigo-600 text-white hover:bg-indigo-700'
+            }`}
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Anterior
+          </button>
+          <span className="px-4 py-2 text-sm text-gray-600">
+            Pagina {pagination.page} de {pagination.totalPages}
+          </span>
+          <button
+            onClick={() => setPagination(prev => ({ ...prev, page: Math.min(prev.totalPages, prev.page + 1) }))}
+            disabled={pagination.page >= pagination.totalPages}
+            className={`inline-flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              pagination.page >= pagination.totalPages
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-indigo-600 text-white hover:bg-indigo-700'
+            }`}
+          >
+            Seguent
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+    </PageLayout>
   );
 }

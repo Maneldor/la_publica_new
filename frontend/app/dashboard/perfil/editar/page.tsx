@@ -6,6 +6,7 @@ import {
   User,
   Info,
   Share2,
+  Shield,
   GraduationCap,
   Briefcase,
   Lightbulb,
@@ -25,12 +26,13 @@ import { Step5Experience } from '../components/wizard/Step5Experience'
 import { Step6Skills } from '../components/wizard/Step6Skills'
 import { Step7Languages } from '../components/wizard/Step7Languages'
 import { Step8Review } from '../components/wizard/Step8Review'
+import { StepPrivacitat } from '../components/wizard/StepPrivacitat'
 
 export default function EditarPerfilPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const initialStep = parseInt(searchParams.get('step') || '1', 10)
-  const [currentStep, setCurrentStep] = useState(initialStep >= 1 && initialStep <= 8 ? initialStep : 1)
+  const [currentStep, setCurrentStep] = useState(initialStep >= 1 && initialStep <= 9 ? initialStep : 1)
   const [isSaving, setIsSaving] = useState(false)
   const initializedRef = useRef(false)
 
@@ -129,7 +131,7 @@ export default function EditarPerfilPage() {
   }, [handleSave, router])
 
   const handleNext = useCallback(() => {
-    if (currentStep < 8) {
+    if (currentStep < 9) {
       setCurrentStep(prev => prev + 1)
     } else {
       // Last step - submit and redirect
@@ -193,6 +195,7 @@ export default function EditarPerfilPage() {
     { label: 'Bàsic', description: 'Imatges i informació bàsica', icon: User },
     { label: 'Personal', description: 'Bio i ubicació', icon: Info },
     { label: 'Xarxes', description: 'Xarxes socials', icon: Share2 },
+    { label: 'Privacitat', description: 'Control de visibilitat', icon: Shield },
     { label: 'Formació', description: 'Estudis i certificacions', icon: GraduationCap },
     { label: 'Experiència', description: 'Trajectòria professional', icon: Briefcase },
     { label: 'Habilitats', description: 'Competències i interessos', icon: Lightbulb },
@@ -210,14 +213,16 @@ export default function EditarPerfilPage() {
       case 3:
         return <Step3Social {...step3Props} />
       case 4:
-        return <Step4Education {...wizardProps} />
+        return <StepPrivacitat data={apiData.data} />
       case 5:
-        return <Step5Experience {...wizardProps} />
+        return <Step4Education {...wizardProps} />
       case 6:
-        return <Step6Skills {...wizardProps} />
+        return <Step5Experience {...wizardProps} />
       case 7:
-        return <Step7Languages {...wizardProps} />
+        return <Step6Skills {...wizardProps} />
       case 8:
+        return <Step7Languages {...wizardProps} />
+      case 9:
         return <Step8Review formData={wizard.formData} errors={wizard.errors} onSave={handleSave} isSaving={isSaving} />
       default:
         return null

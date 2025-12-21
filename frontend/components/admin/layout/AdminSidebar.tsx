@@ -13,6 +13,7 @@ import {
     Settings,
     BarChart3,
     Shield,
+    ShieldCheck,
     Bell,
     FileText,
     CreditCard,
@@ -30,7 +31,9 @@ import {
     Newspaper,
     ScrollText,
     Activity,
-    Wrench
+    Wrench,
+    AlertTriangle,
+    UsersRound
 } from 'lucide-react'
 
 // Using native React state for collapsible sections since @radix-ui/react-collapsible is not available
@@ -103,6 +106,8 @@ const ADMIN_SIDEBAR_SECTIONS = [
         items: [
             { label: 'Usuaris', href: '/admin/usuaris', icon: Users },
             { label: 'Rols i Permisos', href: '/admin/rols', icon: Shield },
+            { label: 'Privacitat', href: '/admin/usuaris/privacitat', icon: ShieldCheck },
+            { label: 'Grups', href: '/admin/grups', icon: UsersRound },
         ]
     },
     {
@@ -116,6 +121,7 @@ const ADMIN_SIDEBAR_SECTIONS = [
         title: 'SISTEMA',
         defaultOpen: false,
         items: [
+            { label: 'Alertes', href: '/admin/alertes', icon: AlertTriangle },
             { label: 'Salut del Sistema', href: '/admin/sistema/salut', icon: Activity },
             { label: 'Manteniment', href: '/admin/sistema/manteniment', icon: Wrench },
             { label: 'Estadístiques', href: '/admin/estadistiques', icon: BarChart3 },

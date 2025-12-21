@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client'
 import { seedRolesAndPermissions } from './seeds/roles-permissions'
 import { seedSystemComponents } from '../src/prisma/seeds/system-components'
 import { migrateOfferCategories } from '../src/prisma/seeds/migrate-categories'
+import { seedPrivacy } from './seeds/privacy-seed'
 
 const prisma = new PrismaClient()
 
@@ -22,6 +23,10 @@ async function main() {
   } catch (error) {
     console.log('  ℹ️ No hi ha categories a migrar o ja estan migrades')
   }
+
+  // 4. Sistema de privacitat
+  console.log('')
+  await seedPrivacy()
 
   console.log('\n✅ Tots els seeds completats!')
 }

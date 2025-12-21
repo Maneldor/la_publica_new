@@ -1,1122 +1,921 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { PageTemplate } from '../../../../components/ui/PageTemplate';
+import { useState, useEffect } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
+import Link from 'next/link'
+import Image from 'next/image'
 import {
-  Camera, User, UserPlus, MessageSquare, Heart, Activity, Info, Users,
-  FileText, Image, Calendar, MapPin, Briefcase, Globe, GraduationCap,
-  ArrowLeft, ChevronRight
-} from 'lucide-react';
+  Camera,
+  User,
+  UserPlus,
+  MessageSquare,
+  Heart,
+  Activity,
+  Info,
+  Users,
+  FileText,
+  Image as ImageIcon,
+  Calendar,
+  MapPin,
+  Briefcase,
+  Building2,
+  Globe,
+  GraduationCap,
+  ArrowLeft,
+  ChevronRight,
+  Clock,
+  Mail,
+  Phone,
+  Lock,
+  Shield,
+  EyeOff,
+  Check,
+  X,
+  Linkedin,
+  Twitter
+} from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
 
-type AdministrationType = 'LOCAL' | 'AUTONOMICA' | 'CENTRAL';
+type AdministrationType = 'LOCAL' | 'AUTONOMICA' | 'CENTRAL'
+
+interface PrivacySettings {
+  showRealName: boolean
+  showPosition: boolean
+  showDepartment: boolean
+  showBio: boolean
+  showLocation: boolean
+  showPhone: boolean
+  showEmail: boolean
+  showSocialLinks: boolean
+  showJoinedDate: boolean
+  showLastActive: boolean
+  showConnections: boolean
+  showGroups: boolean
+}
+
+interface Experience {
+  id: string
+  title: string
+  company: string
+  startDate: string
+  endDate?: string | null
+  current?: boolean
+  description?: string | null
+}
+
+interface Education {
+  id: string
+  degree: string
+  field?: string | null
+  institution: string
+  startDate?: string | null
+  endDate?: string | null
+}
+
+interface Skill {
+  id: string
+  name: string
+}
+
+interface Language {
+  id: string
+  name: string
+  level?: string | null
+}
+
+interface Group {
+  id: string
+  name: string
+  slug: string
+  image?: string | null
+  membersCount: number
+  role: string
+}
 
 interface UserProfile {
-  id: string;
-  username: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  administration: AdministrationType;
-  createdAt: string;
-  avatar?: string;
-  coverImage?: string;
+  id: string
+  nick: string
+  name?: string | null
+  firstName?: string | null
+  lastName?: string | null
+  email?: string | null
+  image?: string | null
+  coverImage?: string | null
+  coverColor?: string | null
+  position?: string | null
+  department?: string | null
+  headline?: string | null
+  bio?: string | null
+  location?: string | null
+  organization?: string | null
+  phone?: string | null
+  socialLinks?: {
+    linkedin?: string | null
+    twitter?: string | null
+    website?: string | null
+  } | null
+  administration?: AdministrationType | null
+  isOnline?: boolean
+  lastActive?: string | null
+  createdAt?: string | null
+  connectionsCount?: number | null
+  groups?: Group[] | null
+  experiences?: Experience[]
+  educations?: Education[]
+  skills?: Skill[]
+  languages?: Language[]
+  isOwnProfile: boolean
+  privacyApplied: boolean
+  privacySettings?: PrivacySettings
+  hasSystemRestrictions?: boolean
+  connectionStatus?: string
+  connectionId?: string | null
+  isIncoming?: boolean
 }
 
-interface PublicUserData {
-  profile: UserProfile;
-  aboutData: {
-    bio: string;
-    birthDate: string;
-    location: string;
-    workplace: string;
-    position: string;
-    website: string;
-    socialNetworks: {
-      twitter: string;
-      linkedin: string;
-      instagram: string;
-    };
-  };
-  education: Array<{
-    id: string;
-    title: string;
-    institution: string;
-    startYear: string;
-    endYear: string;
-    description: string;
-  }>;
-  experience: Array<{
-    id: string;
-    position: string;
-    company: string;
-    startDate: string;
-    endDate: string;
-    description: string;
-  }>;
-  skills: string[];
-  interests: string[];
-  languages: Array<{
-    name: string;
-    level: string;
-  }>;
-  activities: Array<{
-    id: string;
-    type: 'post' | 'group' | 'comment' | 'like' | 'share';
-    content: string;
-    timestamp: string;
-    icon: any;
-  }>;
-  friends: Array<{
-    id: string;
-    name: string;
-    nick: string;
-    avatar: string;
-    administration: AdministrationType;
-  }>;
-  groups: Array<{
-    id: string;
-    name: string;
-    avatar: string;
-    members: number;
-    lastActivity: string;
-    role: 'admin' | 'moderator' | 'member';
-  }>;
-  stats: {
-    posts: number;
-    connections: number;
-    likes: number;
-    profileCompletion: number;
-  };
+type TabType = 'about' | 'experience' | 'connections' | 'groups'
+
+const adminLabels = {
+  LOCAL: { label: 'Administracio Local', color: 'bg-blue-100 text-blue-700 border-blue-200' },
+  AUTONOMICA: { label: 'Administracio Autonomica', color: 'bg-purple-100 text-purple-700 border-purple-200' },
+  CENTRAL: { label: 'Administracio Central', color: 'bg-amber-100 text-amber-700 border-amber-200' },
 }
 
-type TabType = 'timeline' | 'about' | 'friends' | 'groups' | 'posts' | 'photos';
-
-// Helper function para comprobar si es el propio perfil
-const isOwnProfile = (currentUsername: string, profileUsername: string): boolean => {
-  return currentUsername === profileUsername;
-};
-
-// Helper function para obtener badge de administración
-const getAdministrationBadge = (type: AdministrationType) => {
-  const badges = {
-    LOCAL: { label: 'Local', color: '#10b981' },
-    AUTONOMICA: { label: 'Autonòmica', color: '#8b5cf6' },
-    CENTRAL: { label: 'Central', color: '#3b82f6' }
-  };
-  return badges[type];
-};
-
-// Helper function para obtener iniciales
-const getAvatarInitials = (firstName: string, lastName: string) => {
-  return `${firstName[0]}${lastName[0]}`.toUpperCase();
-};
-
-// Sample data para el perfil
-const getSampleUserData = (username: string): PublicUserData | null => {
-  // Simular que "jordi_funcionari" es el usuario actual
-  const currentUser = 'jordi_funcionari';
-
-  if (username === 'jordi_funcionari') {
-    return {
-      profile: {
-        id: '1',
-        username: 'jordi_funcionari',
-        firstName: 'Jordi',
-        lastName: 'García Martínez',
-        email: 'jordi.garcia@lapublica.cat',
-        administration: 'LOCAL',
-        createdAt: '2024-01-15',
-        avatar: '',
-        coverImage: ''
-      },
-      aboutData: {
-        bio: "Funcionari públic apassionat per la innovació tecnològica i la modernització de l'administració. M'especialitzo en transformació digital i processos administratius eficients.",
-        birthDate: '1985-03-15',
-        location: 'Barcelona, Catalunya',
-        workplace: 'Ajuntament de Barcelona',
-        position: 'Tècnic en Transformació Digital',
-        website: 'https://jordi-garcia.dev',
-        socialNetworks: {
-          twitter: '@jordi_garcia',
-          linkedin: 'jordi-garcia-martinez',
-          instagram: '@jordigarcia_public'
-        }
-      },
-      education: [
-        {
-          id: '1',
-          title: 'Màster en Administració i Direcció d\'Empreses (MBA)',
-          institution: 'ESADE Business School',
-          startYear: '2010',
-          endYear: '2012',
-          description: 'Especialització en Gestió Pública i Transformació Digital'
-        }
-      ],
-      experience: [
-        {
-          id: '1',
-          position: 'Tècnic en Transformació Digital',
-          company: 'Ajuntament de Barcelona',
-          startDate: '2015-09',
-          endDate: 'Present',
-          description: 'Lidero projectes de digitalització de serveis ciutadans.'
-        }
-      ],
-      skills: [
-        'Transformació Digital', 'Gestió de Projectes', 'Administració Electrònica',
-        'React', 'Node.js', 'TypeScript'
-      ],
-      interests: [
-        'Innovació Pública', 'Smart Cities', 'Sostenibilitat', 'Ciclisme'
-      ],
-      languages: [
-        { name: 'Català', level: 'Natiu' },
-        { name: 'Castellà', level: 'Natiu' },
-        { name: 'Anglès', level: 'Avançat (C1)' }
-      ],
-      activities: [
-        {
-          id: '1',
-          type: 'post',
-          content: 'Ha publicat: "Nou sistema de cita prèvia digital implementat amb èxit"',
-          timestamp: 'fa 2 hores',
-          icon: FileText
-        }
-      ],
-      friends: [
-        { id: '1', name: 'Maria González', nick: 'maria_dev', avatar: '', administration: 'LOCAL' },
-        { id: '2', name: 'Anna Soler', nick: 'anna_ux', avatar: '', administration: 'LOCAL' }
-      ],
-      groups: [
-        { id: '1', name: 'Innovació en Administració', avatar: '', members: 247, lastActivity: 'fa 2 hores', role: 'admin' }
-      ],
-      stats: {
-        posts: 23,
-        connections: 142,
-        likes: 367,
-        profileCompletion: 85
-      }
-    };
-  }
-
-  // Para otros usuarios, mostrar datos públicos limitados
-  if (username === 'maria_dev') {
-    return {
-      profile: {
-        id: '2',
-        username: 'maria_dev',
-        firstName: 'Maria',
-        lastName: 'González',
-        email: '', // No mostrar email en perfiles públicos
-        administration: 'LOCAL',
-        createdAt: '2023-12-10',
-        avatar: '',
-        coverImage: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=400&h=150&fit=crop'
-      },
-      aboutData: {
-        bio: 'Especialista en React i TypeScript amb 8 anys d\'experiència. M\'agrada crear interfícies d\'usuari intuïtives.',
-        birthDate: '', // No mostrar fecha nacimiento completa
-        location: 'Barcelona', // Solo ciudad, no dirección completa
-        workplace: 'Ajuntament de Barcelona', // Genérico
-        position: 'Desenvolupadora Senior Frontend',
-        website: '',
-        socialNetworks: {
-          twitter: '@maria_dev',
-          linkedin: 'maria-gonzalez-dev',
-          instagram: ''
-        }
-      },
-      education: [], // Información privada
-      experience: [
-        {
-          id: '1',
-          position: 'Desenvolupadora Senior Frontend',
-          company: 'Ajuntament de Barcelona',
-          startDate: '2020-01',
-          endDate: 'Present',
-          description: 'Desenvolupament d\'aplicacions web modernes.'
-        }
-      ],
-      skills: ['React', 'TypeScript', 'JavaScript', 'CSS', 'HTML'],
-      interests: ['Tecnologia', 'Disseny', 'Ciclisme'],
-      languages: [
-        { name: 'Català', level: 'Natiu' },
-        { name: 'Anglès', level: 'Avançat' }
-      ],
-      activities: [
-        {
-          id: '1',
-          type: 'post',
-          content: 'Ha publicat sobre desenvolupament frontend',
-          timestamp: 'fa 1 dia',
-          icon: FileText
-        }
-      ],
-      friends: [
-        { id: '1', name: 'Anna S.', nick: 'anna_ux', avatar: '', administration: 'LOCAL' }
-      ],
-      groups: [
-        { id: '1', name: 'Desenvolupadors Frontend', avatar: '', members: 189, lastActivity: 'fa 1 dia', role: 'member' }
-      ],
-      stats: {
-        posts: 15,
-        connections: 89,
-        likes: 234,
-        profileCompletion: 75
-      }
-    };
-  }
-
-  return null;
-};
+const coverGradients = [
+  'from-rose-400 via-fuchsia-500 to-indigo-500',
+  'from-blue-400 via-cyan-500 to-teal-500',
+  'from-amber-400 via-orange-500 to-red-500',
+  'from-emerald-400 via-teal-500 to-cyan-500',
+  'from-violet-400 via-purple-500 to-fuchsia-500',
+  'from-pink-400 via-rose-500 to-red-500',
+  'from-indigo-400 via-blue-500 to-cyan-500',
+  'from-green-400 via-emerald-500 to-teal-500',
+]
 
 export default function PublicProfilePage() {
-  const params = useParams();
-  const router = useRouter();
-  const username = params.username as string;
+  const params = useParams()
+  const router = useRouter()
+  const { data: session } = useSession()
+  const username = params.username as string
 
-  const [userData, setUserData] = useState<PublicUserData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<TabType>('timeline');
-  const [isFollowing, setIsFollowing] = useState(false);
-
-  // Simular usuario actual
-  const currentUsername = 'jordi_funcionari';
+  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<TabType>('about')
+  const [isConnecting, setIsConnecting] = useState(false)
 
   useEffect(() => {
-    // Simular carga de datos
-    const loadUserData = async () => {
-      setLoading(true);
+    loadProfile()
+  }, [username])
 
-      // Redirección inteligente: si es el propio usuario, redirigir al perfil privado
-      if (username === currentUsername) {
-        router.push('/dashboard/perfil');
-        return;
+  const loadProfile = async () => {
+    try {
+      setIsLoading(true)
+      setError(null)
+
+      const res = await fetch(`/api/users/${username}`)
+
+      if (!res.ok) {
+        if (res.status === 404) {
+          setError('Usuari no trobat')
+        } else {
+          throw new Error('Error carregant perfil')
+        }
+        return
       }
 
-      const data = getSampleUserData(username);
-      if (data) {
-        setUserData(data);
+      const data = await res.json()
+
+      // Si és el propi perfil, redirigir a la pàgina d'edició
+      if (data.isOwnProfile) {
+        router.push('/dashboard/perfil')
+        return
       }
-      setLoading(false);
-    };
 
-    loadUserData();
-  }, [username, router]);
-
-  if (loading) {
-    return (
-      <PageTemplate
-        title="Carregant perfil..."
-        subtitle=""
-        statsData={[
-          { label: 'Carregant...', value: '---', trend: '' }
-        ]}
-      >
-        <div style={{ padding: '40px', textAlign: 'center' }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>⏳</div>
-          <p>Carregant perfil d'usuari...</p>
-        </div>
-      </PageTemplate>
-    );
-  }
-
-  if (!userData) {
-    return (
-      <PageTemplate
-        title="Usuari no trobat"
-        subtitle=""
-        statsData={[
-          { label: 'Error', value: '404', trend: '' }
-        ]}
-      >
-        <div style={{ padding: '40px', textAlign: 'center' }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>😔</div>
-          <h2>Usuari no trobat</h2>
-          <p>L'usuari @{username} no existeix o no està disponible.</p>
-          <Link
-            href="/dashboard/membres"
-            style={{
-              display: 'inline-block',
-              marginTop: '20px',
-              padding: '10px 20px',
-              backgroundColor: '#3b82f6',
-              color: 'white',
-              borderRadius: '6px',
-              textDecoration: 'none'
-            }}
-          >
-            Tornar a Membres
-          </Link>
-        </div>
-      </PageTemplate>
-    );
-  }
-
-  const isOwn = isOwnProfile(currentUsername, username);
-  const statsData = [
-    {
-      label: 'Publicacions',
-      value: userData.stats.posts.toString(),
-      trend: '+3',
-      icon: FileText,
-      color: '#8b5cf6'
-    },
-    {
-      label: 'Connexions',
-      value: userData.stats.connections.toString(),
-      trend: '+12',
-      icon: Users,
-      color: '#3b82f6'
-    },
-    {
-      label: 'Likes Rebuts',
-      value: userData.stats.likes.toString(),
-      trend: '+45',
-      icon: Heart,
-      color: '#ef4444'
-    },
-    {
-      label: 'Perfil Completat',
-      value: `${userData.stats.profileCompletion}%`,
-      trend: '+5%',
-      icon: User,
-      color: '#10b981'
+      setProfile(data)
+    } catch (err) {
+      setError('Error carregant el perfil')
+    } finally {
+      setIsLoading(false)
     }
-  ];
+  }
+
+  const handleConnect = async () => {
+    if (!profile || isConnecting) return
+
+    setIsConnecting(true)
+    try {
+      const res = await fetch('/api/connections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ receiverId: profile.id })
+      })
+
+      if (res.ok) {
+        loadProfile()
+      }
+    } catch (err) {
+      console.error('Error connecting:', err)
+    } finally {
+      setIsConnecting(false)
+    }
+  }
+
+  const handleAccept = async () => {
+    if (!profile?.connectionId || isConnecting) return
+
+    setIsConnecting(true)
+    try {
+      const res = await fetch(`/api/connections/${profile.connectionId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'accept' })
+      })
+
+      if (res.ok) {
+        loadProfile()
+      }
+    } catch (err) {
+      console.error('Error accepting:', err)
+    } finally {
+      setIsConnecting(false)
+    }
+  }
+
+  const handleReject = async () => {
+    if (!profile?.connectionId || isConnecting) return
+
+    setIsConnecting(true)
+    try {
+      const res = await fetch(`/api/connections/${profile.connectionId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reject' })
+      })
+
+      if (res.ok) {
+        loadProfile()
+      }
+    } catch (err) {
+      console.error('Error rejecting:', err)
+    } finally {
+      setIsConnecting(false)
+    }
+  }
+
+  const handleMessage = () => {
+    router.push(`/dashboard/missatges?user=${username}`)
+  }
+
+  const formatDate = (date?: string | null) => {
+    if (!date) return null
+    return new Date(date).toLocaleDateString('ca-ES', {
+      month: 'long',
+      year: 'numeric'
+    })
+  }
+
+  const formatDateRange = (start?: string | null, end?: string | null, current?: boolean) => {
+    const startDate = start ? new Date(start).getFullYear() : null
+    const endDate = current ? 'Actualitat' : (end ? new Date(end).getFullYear() : null)
+    if (!startDate) return null
+    return endDate ? `${startDate} - ${endDate}` : `${startDate}`
+  }
+
+  const formatLastActive = (date?: string | null) => {
+    if (!date) return null
+    const now = new Date()
+    const lastActive = new Date(date)
+    const diffMs = now.getTime() - lastActive.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMins / 60)
+    const diffDays = Math.floor(diffHours / 24)
+
+    if (diffMins < 5) return 'Ara mateix'
+    if (diffMins < 60) return `Fa ${diffMins} minuts`
+    if (diffHours < 24) return `Fa ${diffHours} hores`
+    if (diffDays < 7) return `Fa ${diffDays} dies`
+    return formatDate(date)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-500">Carregant perfil...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !profile) {
+    return (
+      <div className="max-w-2xl mx-auto text-center py-16">
+        <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <User className="w-10 h-10 text-gray-400" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">{error || 'Perfil no trobat'}</h2>
+        <p className="text-gray-500 mb-6">L'usuari @{username} no existeix o no esta disponible.</p>
+        <Link
+          href="/dashboard/membres"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Tornar a Membres
+        </Link>
+      </div>
+    )
+  }
+
+  const displayName = profile.name || `@${profile.nick}`
+  const gradientIndex = profile.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % coverGradients.length
+  const gradient = coverGradients[gradientIndex]
+  const adminInfo = profile.administration ? adminLabels[profile.administration] : null
+  const privacy = profile.privacySettings
+
+  const initials = displayName
+    .replace('@', '')
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .substring(0, 2)
+    .toUpperCase()
 
   const tabs = [
-    { id: 'timeline', label: 'Timeline', icon: Activity },
-    { id: 'about', label: 'Sobre ell/ella', icon: Info },
-    { id: 'friends', label: 'Amistats', icon: UserPlus },
-    { id: 'groups', label: 'Grups', icon: Users },
-    { id: 'posts', label: 'Publicacions', icon: FileText },
-    { id: 'photos', label: 'Fotos', icon: Image }
-  ];
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('ca-ES', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
+    { id: 'about', label: 'Sobre', icon: Info },
+    { id: 'experience', label: 'Experiencia', icon: Briefcase },
+    { id: 'connections', label: 'Connexions', icon: Users, hidden: privacy?.showConnections === false },
+    { id: 'groups', label: 'Grups', icon: Users, hidden: privacy?.showGroups === false },
+  ].filter(tab => !tab.hidden)
 
   return (
-    <PageTemplate
-      title={`Perfil de ${userData.profile.firstName}`}
-      subtitle="Perfil públic de membre de la comunitat"
-      statsData={statsData}
-    >
-      <div style={{ padding: '0 24px 24px 24px', maxWidth: '1400px', margin: '0 auto' }}>
+    <div className="max-w-5xl mx-auto space-y-6 pb-12">
+      {/* Breadcrumb */}
+      <nav className="flex items-center gap-2 text-sm text-gray-500 px-1">
+        <Link href="/dashboard/membres" className="flex items-center gap-1 text-indigo-600 hover:text-indigo-700">
+          <ArrowLeft className="w-4 h-4" />
+          Membres
+        </Link>
+        <ChevronRight className="w-4 h-4" />
+        <span>Perfil de {profile.name ? profile.firstName || profile.name.split(' ')[0] : profile.nick}</span>
+      </nav>
 
-        {/* Breadcrumb Navigation */}
-        <nav style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          marginBottom: '20px',
-          fontSize: '14px',
-          color: '#6b7280'
-        }}>
-          <Link
-            href="/dashboard/membres"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              color: '#3b82f6',
-              textDecoration: 'none'
-            }}
-          >
-            <ArrowLeft style={{ width: '16px', height: '16px' }} />
-            Membres
-          </Link>
-          <ChevronRight style={{ width: '16px', height: '16px' }} />
-          <span>Perfil de {userData.profile.firstName}</span>
-        </nav>
+      {/* Header Card */}
+      <Card className="overflow-hidden">
+        {/* Cover */}
+        <div className={`h-48 md:h-56 relative bg-gradient-to-br ${gradient}`}>
+          {profile.coverImage && (
+            <Image
+              src={profile.coverImage}
+              alt="Cover"
+              fill
+              className="object-cover"
+            />
+          )}
 
-        {/* Cover Image Section */}
-        <div style={{ position: 'relative', marginBottom: '20px' }}>
-          {/* Portada */}
-          <div
-            style={{
-              position: 'relative',
-              zIndex: 10,
-              height: '310px',
-              borderRadius: '12px',
-              overflow: 'hidden',
-              background: userData.profile.coverImage ?
-                `url(${userData.profile.coverImage}) center/cover` :
-                'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)'
-            }}
-          />
+          {/* Badge de restriccions */}
+          {profile.hasSystemRestrictions && (
+            <div className="absolute top-4 right-4 flex items-center gap-2 px-3 py-1.5 bg-black/30 backdrop-blur-sm rounded-full text-white text-sm">
+              <Shield className="w-4 h-4" />
+              Perfil amb privacitat restringida
+            </div>
+          )}
+        </div>
 
-          {/* Avatar - SENSE elements interactius (perfil públic) */}
-          <div
-            style={{
-              position: 'relative',
-              zIndex: 50,
-              marginTop: '-64px',
-              paddingLeft: '24px',
-              marginBottom: '16px'
-            }}
-          >
-            <div
-              style={{
-                position: 'relative',
-                width: '128px',
-                height: '128px'
-              }}
-            >
-              <div
-                style={{
-                  position: 'relative',
-                  width: '100%',
-                  height: '100%',
-                  borderRadius: '50%',
-                  border: '4px solid white',
-                  backgroundColor: 'white',
-                  overflow: 'hidden',
-                  boxShadow: '0 8px 24px rgba(0,0,0,0.15)'
-                }}
-              >
-                {userData.profile.avatar ? (
-                  <img
-                    src={userData.profile.avatar}
-                    alt="Avatar"
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover'
-                    }}
-                  />
-                ) : (
-                  <div style={{
-                    width: '100%',
-                    height: '100%',
-                    backgroundColor: '#3b82f6',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    <span style={{
-                      fontSize: '32px',
-                      fontWeight: 'bold',
-                      color: 'white'
-                    }}>
-                      {getAvatarInitials(userData.profile.firstName, userData.profile.lastName)}
-                    </span>
-                  </div>
+        <CardContent className="relative pt-0">
+          {/* Avatar i info basica */}
+          <div className="flex flex-col md:flex-row md:items-end gap-4 -mt-16 md:-mt-12">
+            {/* Avatar */}
+            <div className="w-32 h-32 md:w-36 md:h-36 rounded-full border-4 border-white shadow-xl overflow-hidden bg-white flex-shrink-0">
+              {profile.image ? (
+                <Image
+                  src={profile.image}
+                  alt={displayName}
+                  width={144}
+                  height={144}
+                  className="object-cover w-full h-full"
+                />
+              ) : (
+                <div className={`w-full h-full bg-gradient-to-br ${gradient} flex items-center justify-center text-white font-bold text-4xl`}>
+                  {initials}
+                </div>
+              )}
+            </div>
+
+            {/* Info */}
+            <div className="flex-1 pb-4">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{displayName}</h1>
+                {profile.name && (
+                  <span className="text-gray-500 text-lg">@{profile.nick}</span>
+                )}
+                {profile.isOnline && (
+                  <span className="flex items-center gap-1 text-green-600 text-sm">
+                    <span className="w-2 h-2 bg-green-500 rounded-full" />
+                    En linia
+                  </span>
+                )}
+                {profile.hasSystemRestrictions && (
+                  <span title="Perfil amb restriccions de privacitat">
+                    <Lock className="w-4 h-4 text-gray-400" />
+                  </span>
+                )}
+              </div>
+
+              {/* Headline */}
+              {profile.headline && (
+                <p className="text-gray-600 mt-1">{profile.headline}</p>
+              )}
+
+              {/* Posicio i departament - amb privacitat */}
+              <div className="flex items-center gap-4 mt-2 text-gray-600 flex-wrap">
+                {profile.position && (
+                  <span className="flex items-center gap-1">
+                    <Briefcase className="w-4 h-4 text-gray-400" />
+                    {profile.position}
+                  </span>
+                )}
+                {profile.department && (
+                  <span className="flex items-center gap-1">
+                    <Building2 className="w-4 h-4 text-gray-400" />
+                    {profile.department}
+                  </span>
+                )}
+                {profile.location && (
+                  <span className="flex items-center gap-1">
+                    <MapPin className="w-4 h-4 text-gray-400" />
+                    {profile.location}
+                  </span>
+                )}
+                {/* Indicador de camps ocults */}
+                {profile.privacyApplied && !profile.position && !profile.department && (
+                  <span className="flex items-center gap-1 text-gray-400 text-sm">
+                    <EyeOff className="w-3.5 h-3.5" />
+                    Alguna informacio es privada
+                  </span>
+                )}
+              </div>
+
+              {/* Badges */}
+              <div className="flex items-center gap-2 mt-3 flex-wrap">
+                {adminInfo && (
+                  <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium border ${adminInfo.color}`}>
+                    <Building2 className="w-3.5 h-3.5" />
+                    {adminInfo.label}
+                  </span>
+                )}
+                {profile.organization && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
+                    {profile.organization}
+                  </span>
                 )}
               </div>
             </div>
-          </div>
 
-          {/* User info below avatar */}
-          <div style={{ marginTop: '16px', padding: '0 24px 24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div>
-                <h2 style={{
-                  fontSize: '30px',
-                  fontWeight: 'bold',
-                  color: '#1f2937',
-                  margin: 0
-                }}>
-                  {userData.profile.firstName} {isOwn ? userData.profile.lastName : `${userData.profile.lastName[0]}.`}
-                </h2>
-                <p style={{
-                  fontSize: '20px',
-                  color: '#6b7280',
-                  margin: '4px 0 0 0'
-                }}>
-                  @{userData.profile.username}
-                </p>
-
-                <div style={{
-                  marginTop: '16px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '8px'
-                }}>
-                  <span style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    padding: '4px 12px',
-                    borderRadius: '20px',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    backgroundColor: getAdministrationBadge(userData.profile.administration).color + '20',
-                    color: getAdministrationBadge(userData.profile.administration).color
-                  }}>
-                    {getAdministrationBadge(userData.profile.administration).label}
-                  </span>
-                  <span style={{
-                    fontSize: '14px',
-                    color: '#6b7280'
-                  }}>
-                    Registrat el {formatDate(userData.profile.createdAt)}
-                  </span>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div style={{ display: 'flex', gap: '12px' }}>
-                {isOwn ? (
-                  <Link
-                    href="/dashboard/perfil"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '10px 20px',
-                      backgroundColor: '#3b82f6',
-                      color: 'white',
-                      borderRadius: '8px',
-                      textDecoration: 'none',
-                      fontSize: '14px',
-                      fontWeight: '500'
-                    }}
+            {/* Accions */}
+            <div className="flex items-center gap-2 pb-4">
+              {profile.connectionStatus === 'accepted' ? (
+                <>
+                  <button
+                    onClick={handleMessage}
+                    className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2"
                   >
-                    <User style={{ width: '18px', height: '18px' }} />
-                    Editar perfil
-                  </Link>
-                ) : (
-                  <>
-                    <button
-                      onClick={() => setIsFollowing(!isFollowing)}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '10px 20px',
-                        backgroundColor: isFollowing ? '#10b981' : '#3b82f6',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        fontSize: '14px',
-                        fontWeight: '500',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <UserPlus style={{ width: '18px', height: '18px' }} />
-                      {isFollowing ? 'Connectat' : 'Connectar'}
-                    </button>
-                    <button
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '10px 20px',
-                        backgroundColor: 'transparent',
-                        color: '#6b7280',
-                        border: '1px solid #d1d5db',
-                        borderRadius: '8px',
-                        fontSize: '14px',
-                        fontWeight: '500',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <MessageSquare style={{ width: '18px', height: '18px' }} />
-                      Enviar missatge
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Navigation Tabs */}
-        <div style={{
-          backgroundColor: '#fff',
-          borderRadius: '12px',
-          padding: '0',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-          marginBottom: '20px',
-          border: '1px solid #f0f0f0',
-          position: 'sticky',
-          top: '80px',
-          zIndex: 10
-        }}>
-          <div style={{
-            display: 'flex',
-            overflowX: 'auto',
-            borderBottom: '1px solid #f0f0f0'
-          }}>
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as TabType)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '16px 24px',
-                    border: 'none',
-                    background: 'none',
-                    color: isActive ? '#3b82f6' : '#6b7280',
-                    fontSize: '14px',
-                    fontWeight: isActive ? '600' : '500',
-                    cursor: 'pointer',
-                    borderBottom: isActive ? '3px solid #3b82f6' : '3px solid transparent',
-                    transition: 'all 0.2s',
-                    whiteSpace: 'nowrap',
-                    minWidth: 'fit-content'
-                  }}
-                >
-                  <Icon style={{ width: '18px', height: '18px' }} />
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Tab Content */}
-        {activeTab === 'timeline' && (
-          <div style={{
-            backgroundColor: '#fff',
-            borderRadius: '12px',
-            padding: '20px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-            marginBottom: '20px',
-            border: '1px solid #f0f0f0'
-          }}>
-            <h3 style={{
-              fontSize: '18px',
-              fontWeight: '600',
-              color: '#1f2937',
-              margin: '0 0 20px 0',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}>
-              <Activity style={{ width: '20px', height: '20px' }} />
-              Activitat Recent
-            </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {userData.activities.map((activity) => {
-                const Icon = activity.icon;
-                return (
-                  <div key={activity.id} style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '12px',
-                    padding: '12px',
-                    backgroundColor: '#f8f9fa',
-                    borderRadius: '8px',
-                    border: '1px solid #e9ecef'
-                  }}>
-                    <div style={{
-                      width: '40px',
-                      height: '40px',
-                      backgroundColor: '#3b82f6',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0
-                    }}>
-                      <Icon style={{ width: '20px', height: '20px', color: 'white' }} />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <p style={{
-                        fontSize: '14px',
-                        color: '#374151',
-                        margin: '0 0 4px 0',
-                        lineHeight: '1.4'
-                      }}>
-                        {activity.content}
-                      </p>
-                      <span style={{
-                        fontSize: '12px',
-                        color: '#6b7280'
-                      }}>
-                        {activity.timestamp}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'about' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            {/* Bio */}
-            <div style={{
-              backgroundColor: '#fff',
-              borderRadius: '12px',
-              padding: '20px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-              border: '1px solid #f0f0f0'
-            }}>
-              <h3 style={{
-                fontSize: '18px',
-                fontWeight: '600',
-                color: '#1f2937',
-                margin: '0 0 16px 0'
-              }}>
-                Sobre {userData.profile.firstName}
-              </h3>
-              <p style={{
-                fontSize: '14px',
-                color: '#374151',
-                lineHeight: '1.6',
-                margin: 0
-              }}>
-                {userData.aboutData.bio}
-              </p>
-            </div>
-
-            {/* Informació Professional */}
-            {userData.aboutData.position && (
-              <div style={{
-                backgroundColor: '#fff',
-                borderRadius: '12px',
-                padding: '20px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                border: '1px solid #f0f0f0'
-              }}>
-                <h3 style={{
-                  fontSize: '18px',
-                  fontWeight: '600',
-                  color: '#1f2937',
-                  margin: '0 0 16px 0'
-                }}>
-                  Informació Professional
-                </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                  <div>
-                    <label style={{
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      color: '#6b7280',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.5px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px'
-                    }}>
-                      <Briefcase style={{ width: '12px', height: '12px' }} />
-                      Càrrec
-                    </label>
-                    <p style={{ fontSize: '14px', color: '#374151', margin: '4px 0 0 0' }}>
-                      {userData.aboutData.position}
-                    </p>
-                  </div>
-                  <div>
-                    <label style={{
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      color: '#6b7280',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.5px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px'
-                    }}>
-                      <MapPin style={{ width: '12px', height: '12px' }} />
-                      Ubicació
-                    </label>
-                    <p style={{ fontSize: '14px', color: '#374151', margin: '4px 0 0 0' }}>
-                      {userData.aboutData.location}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Habilitats i Interessos - només si l'usuari els ha fet públics */}
-            {(userData.skills.length > 0 || userData.interests.length > 0) && (
-              <div style={{
-                backgroundColor: '#fff',
-                borderRadius: '12px',
-                padding: '20px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                border: '1px solid #f0f0f0'
-              }}>
-                <h3 style={{
-                  fontSize: '18px',
-                  fontWeight: '600',
-                  color: '#1f2937',
-                  margin: '0 0 20px 0'
-                }}>
-                  Habilitats i Interessos
-                </h3>
-
-                {userData.skills.length > 0 && (
-                  <div style={{ marginBottom: '20px' }}>
-                    <h4 style={{
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      color: '#374151',
-                      margin: '0 0 12px 0'
-                    }}>
-                      Habilitats
-                    </h4>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                      {userData.skills.map((skill, index) => (
-                        <span key={index} style={{
-                          padding: '4px 12px',
-                          backgroundColor: '#dbeafe',
-                          color: '#1d4ed8',
-                          borderRadius: '20px',
-                          fontSize: '12px',
-                          fontWeight: '500'
-                        }}>
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {userData.interests.length > 0 && (
-                  <div>
-                    <h4 style={{
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      color: '#374151',
-                      margin: '0 0 12px 0'
-                    }}>
-                      Interessos
-                    </h4>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                      {userData.interests.map((interest, index) => (
-                        <span key={index} style={{
-                          padding: '4px 12px',
-                          backgroundColor: '#dcfce7',
-                          color: '#166534',
-                          borderRadius: '20px',
-                          fontSize: '12px',
-                          fontWeight: '500'
-                        }}>
-                          {interest}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'friends' && (
-          <div style={{
-            backgroundColor: '#fff',
-            borderRadius: '12px',
-            padding: '20px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-            marginBottom: '20px',
-            border: '1px solid #f0f0f0'
-          }}>
-            <h3 style={{
-              fontSize: '18px',
-              fontWeight: '600',
-              color: '#1f2937',
-              margin: '0 0 20px 0',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}>
-              <UserPlus style={{ width: '20px', height: '20px' }} />
-              Connexions ({userData.friends.length})
-            </h3>
-
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-              gap: '16px'
-            }}>
-              {userData.friends.map((friend) => (
-                <div key={friend.id} style={{
-                  padding: '16px',
-                  backgroundColor: '#f8f9fa',
-                  borderRadius: '8px',
-                  border: '1px solid #e9ecef',
-                  textAlign: 'center'
-                }}>
-                  <div style={{
-                    width: '60px',
-                    height: '60px',
-                    backgroundColor: '#3b82f6',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'white',
-                    fontSize: '18px',
-                    fontWeight: 'bold',
-                    margin: '0 auto 12px'
-                  }}>
-                    {friend.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                  </div>
-                  <h4 style={{
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#1f2937',
-                    margin: '0 0 4px 0'
-                  }}>
-                    {friend.name}
-                  </h4>
-                  <p style={{
-                    fontSize: '12px',
-                    color: '#6b7280',
-                    margin: '0 0 8px 0'
-                  }}>
-                    @{friend.nick}
-                  </p>
-                  <span style={{
-                    fontSize: '10px',
-                    padding: '2px 8px',
-                    backgroundColor: getAdministrationBadge(friend.administration).color + '20',
-                    color: getAdministrationBadge(friend.administration).color,
-                    borderRadius: '10px',
-                    fontWeight: '500'
-                  }}>
-                    {getAdministrationBadge(friend.administration).label}
+                    <MessageSquare className="w-4 h-4" />
+                    Missatge
+                  </button>
+                  <span className="px-4 py-2 bg-green-100 text-green-700 text-sm font-medium rounded-lg flex items-center gap-2">
+                    <Check className="w-4 h-4" />
+                    Connectats
                   </span>
-                </div>
-              ))}
+                </>
+              ) : profile.connectionStatus === 'pending' && profile.isIncoming ? (
+                <>
+                  <button
+                    onClick={handleAccept}
+                    disabled={isConnecting}
+                    className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                  >
+                    <Check className="w-4 h-4" />
+                    Acceptar
+                  </button>
+                  <button
+                    onClick={handleReject}
+                    disabled={isConnecting}
+                    className="px-4 py-2 bg-red-100 text-red-600 text-sm font-medium rounded-lg hover:bg-red-200 transition-colors disabled:opacity-50 flex items-center gap-2"
+                  >
+                    <X className="w-4 h-4" />
+                    Rebutjar
+                  </button>
+                </>
+              ) : profile.connectionStatus === 'pending' ? (
+                <span className="px-4 py-2 bg-amber-100 text-amber-700 text-sm font-medium rounded-lg flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  Sol-licitud enviada
+                </span>
+              ) : (
+                <>
+                  <button
+                    onClick={handleConnect}
+                    disabled={isConnecting}
+                    className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    {isConnecting ? 'Enviant...' : 'Connectar'}
+                  </button>
+                  <button
+                    onClick={handleMessage}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    Missatge
+                  </button>
+                </>
+              )}
             </div>
           </div>
-        )}
+        </CardContent>
+      </Card>
 
-        {activeTab === 'groups' && (
-          <div style={{
-            backgroundColor: '#fff',
-            borderRadius: '12px',
-            padding: '20px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-            marginBottom: '20px',
-            border: '1px solid #f0f0f0'
-          }}>
-            <h3 style={{
-              fontSize: '18px',
-              fontWeight: '600',
-              color: '#1f2937',
-              margin: '0 0 20px 0',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}>
-              <Users style={{ width: '20px', height: '20px' }} />
-              Grups Públics ({userData.groups.length})
-            </h3>
+      {/* Tabs */}
+      <Card>
+        <div className="flex overflow-x-auto border-b border-gray-100">
+          {tabs.map((tab) => {
+            const Icon = tab.icon
+            const isActive = activeTab === tab.id
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as TabType)}
+                className={`flex items-center gap-2 px-6 py-4 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                  isActive
+                    ? 'border-indigo-600 text-indigo-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                {tab.label}
+              </button>
+            )
+          })}
+        </div>
+      </Card>
 
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-              gap: '16px'
-            }}>
-              {userData.groups.map((group) => (
-                <div key={group.id} style={{
-                  padding: '16px',
-                  backgroundColor: '#f8f9fa',
-                  borderRadius: '8px',
-                  border: '1px solid #e9ecef'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                    <div style={{
-                      width: '50px',
-                      height: '50px',
-                      backgroundColor: '#8b5cf6',
-                      borderRadius: '8px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'white',
-                      fontSize: '16px',
-                      fontWeight: 'bold',
-                      flexShrink: 0
-                    }}>
-                      {group.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <h4 style={{
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        color: '#1f2937',
-                        margin: '0 0 4px 0'
-                      }}>
-                        {group.name}
-                      </h4>
-                      <p style={{
-                        fontSize: '12px',
-                        color: '#6b7280',
-                        margin: '0 0 8px 0'
-                      }}>
-                        {group.members.toLocaleString()} membres
-                      </p>
-                      <p style={{
-                        fontSize: '11px',
-                        color: '#9ca3af',
-                        margin: 0
-                      }}>
-                        Última activitat: {group.lastActivity}
-                      </p>
-                    </div>
+      {/* Tab Content */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Sidebar esquerra */}
+        <div className="space-y-6">
+          {/* Informacio de contacte */}
+          <Card>
+            <CardContent className="p-5">
+              <h3 className="font-semibold text-gray-900 mb-4">Informacio</h3>
+              <div className="space-y-3">
+                {profile.email && (
+                  <div className="flex items-center gap-3 text-sm text-gray-600">
+                    <Mail className="w-4 h-4 text-gray-400" />
+                    {profile.email}
                   </div>
+                )}
+                {profile.phone && (
+                  <div className="flex items-center gap-3 text-sm text-gray-600">
+                    <Phone className="w-4 h-4 text-gray-400" />
+                    {profile.phone}
+                  </div>
+                )}
+                {profile.location && (
+                  <div className="flex items-center gap-3 text-sm text-gray-600">
+                    <MapPin className="w-4 h-4 text-gray-400" />
+                    {profile.location}
+                  </div>
+                )}
+                {profile.createdAt && (
+                  <div className="flex items-center gap-3 text-sm text-gray-600">
+                    <Calendar className="w-4 h-4 text-gray-400" />
+                    Membre des de {formatDate(profile.createdAt)}
+                  </div>
+                )}
+                {profile.lastActive && !profile.isOnline && (
+                  <div className="flex items-center gap-3 text-sm text-gray-600">
+                    <Clock className="w-4 h-4 text-gray-400" />
+                    Actiu {formatLastActive(profile.lastActive)}
+                  </div>
+                )}
+                {profile.connectionsCount !== null && (
+                  <div className="flex items-center gap-3 text-sm text-gray-600">
+                    <Users className="w-4 h-4 text-gray-400" />
+                    {profile.connectionsCount} connexions
+                  </div>
+                )}
+
+                {/* Indicador si tot esta ocult */}
+                {profile.privacyApplied &&
+                 !profile.email &&
+                 !profile.phone &&
+                 !profile.location &&
+                 !profile.createdAt &&
+                 profile.connectionsCount === null && (
+                  <div className="flex items-center gap-2 text-gray-400 text-sm py-2">
+                    <Lock className="w-4 h-4" />
+                    Informacio de contacte privada
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Xarxes socials */}
+          {profile.socialLinks && (profile.socialLinks.linkedin || profile.socialLinks.twitter || profile.socialLinks.website) && (
+            <Card>
+              <CardContent className="p-5">
+                <h3 className="font-semibold text-gray-900 mb-4">Xarxes socials</h3>
+                <div className="space-y-3">
+                  {profile.socialLinks.linkedin && (
+                    <a
+                      href={profile.socialLinks.linkedin.startsWith('http') ? profile.socialLinks.linkedin : `https://linkedin.com/in/${profile.socialLinks.linkedin}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 text-sm text-gray-600 hover:text-indigo-600 transition-colors"
+                    >
+                      <Linkedin className="w-4 h-4" />
+                      LinkedIn
+                    </a>
+                  )}
+                  {profile.socialLinks.twitter && (
+                    <a
+                      href={profile.socialLinks.twitter.startsWith('http') ? profile.socialLinks.twitter : `https://twitter.com/${profile.socialLinks.twitter.replace('@', '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 text-sm text-gray-600 hover:text-indigo-600 transition-colors"
+                    >
+                      <Twitter className="w-4 h-4" />
+                      Twitter
+                    </a>
+                  )}
+                  {profile.socialLinks.website && (
+                    <a
+                      href={profile.socialLinks.website.startsWith('http') ? profile.socialLinks.website : `https://${profile.socialLinks.website}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 text-sm text-gray-600 hover:text-indigo-600 transition-colors"
+                    >
+                      <Globe className="w-4 h-4" />
+                      Web personal
+                    </a>
+                  )}
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
+              </CardContent>
+            </Card>
+          )}
 
-        {(activeTab === 'posts' || activeTab === 'photos') && (
-          <div style={{
-            backgroundColor: '#fff',
-            borderRadius: '12px',
-            padding: '20px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-            marginBottom: '20px',
-            border: '1px solid #f0f0f0'
-          }}>
-            <h3 style={{
-              fontSize: '18px',
-              fontWeight: '600',
-              color: '#1f2937',
-              margin: '0 0 20px 0',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}>
-              {activeTab === 'posts' ? <FileText style={{ width: '20px', height: '20px' }} /> : <Image style={{ width: '20px', height: '20px' }} />}
-              {activeTab === 'posts' ? 'Publicacions Públiques' : 'Fotos Públiques'}
-            </h3>
+          {/* Habilitats */}
+          {profile.skills && profile.skills.length > 0 && (
+            <Card>
+              <CardContent className="p-5">
+                <h3 className="font-semibold text-gray-900 mb-4">Habilitats</h3>
+                <div className="flex flex-wrap gap-2">
+                  {profile.skills.map((skill) => (
+                    <span
+                      key={skill.id}
+                      className="px-3 py-1 bg-indigo-50 text-indigo-700 text-sm rounded-full"
+                    >
+                      {skill.name}
+                    </span>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-            <div style={{
-              textAlign: 'center',
-              padding: '40px 20px',
-              color: '#6b7280'
-            }}>
-              {activeTab === 'posts' ? <FileText style={{ width: '48px', height: '48px', margin: '0 auto 16px', opacity: 0.5 }} /> : <Image style={{ width: '48px', height: '48px', margin: '0 auto 16px', opacity: 0.5 }} />}
-              <p style={{
-                fontSize: '16px',
-                fontWeight: '500',
-                margin: '0 0 8px 0'
-              }}>
-                {activeTab === 'posts' ? 'Publicacions privades' : 'Fotos privades'}
-              </p>
-              <p style={{
-                fontSize: '14px',
-                margin: 0
-              }}>
-                {userData.profile.firstName} mantén aquesta secció privada
-              </p>
-            </div>
-          </div>
-        )}
+          {/* Idiomes */}
+          {profile.languages && profile.languages.length > 0 && (
+            <Card>
+              <CardContent className="p-5">
+                <h3 className="font-semibold text-gray-900 mb-4">Idiomes</h3>
+                <div className="space-y-2">
+                  {profile.languages.map((lang) => (
+                    <div key={lang.id} className="flex justify-between text-sm">
+                      <span className="text-gray-700">{lang.name}</span>
+                      {lang.level && (
+                        <span className="text-gray-500">{lang.level}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Contingut principal */}
+        <div className="md:col-span-2 space-y-6">
+          {/* Tab: Sobre */}
+          {activeTab === 'about' && (
+            <>
+              {/* Bio */}
+              {profile.bio ? (
+                <Card>
+                  <CardContent className="p-5">
+                    <h3 className="font-semibold text-gray-900 mb-3">Sobre mi</h3>
+                    <p className="text-gray-600 whitespace-pre-line">{profile.bio}</p>
+                  </CardContent>
+                </Card>
+              ) : profile.privacyApplied && privacy?.showBio === false ? (
+                <Card>
+                  <CardContent className="py-8 text-center">
+                    <Lock className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                    <p className="text-gray-500">La biografia d'aquest usuari es privada</p>
+                  </CardContent>
+                </Card>
+              ) : null}
+
+              {/* Experiencia recent */}
+              {profile.experiences && profile.experiences.length > 0 && (
+                <Card>
+                  <CardContent className="p-5">
+                    <h3 className="font-semibold text-gray-900 mb-4">Experiencia recent</h3>
+                    <div className="space-y-4">
+                      {profile.experiences.slice(0, 3).map((exp) => (
+                        <div key={exp.id} className="flex gap-4">
+                          <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <Briefcase className="w-6 h-6 text-indigo-600" />
+                          </div>
+                          <div>
+                            <h4 className="font-medium text-gray-900">{exp.title}</h4>
+                            <p className="text-sm text-gray-600">{exp.company}</p>
+                            <p className="text-xs text-gray-400">{formatDateRange(exp.startDate, exp.endDate, exp.current)}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Educacio recent */}
+              {profile.educations && profile.educations.length > 0 && (
+                <Card>
+                  <CardContent className="p-5">
+                    <h3 className="font-semibold text-gray-900 mb-4">Formacio</h3>
+                    <div className="space-y-4">
+                      {profile.educations.slice(0, 3).map((edu) => (
+                        <div key={edu.id} className="flex gap-4">
+                          <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <GraduationCap className="w-6 h-6 text-green-600" />
+                          </div>
+                          <div>
+                            <h4 className="font-medium text-gray-900">{edu.degree}</h4>
+                            <p className="text-sm text-gray-600">{edu.institution}</p>
+                            {edu.field && <p className="text-sm text-gray-500">{edu.field}</p>}
+                            <p className="text-xs text-gray-400">{formatDateRange(edu.startDate, edu.endDate)}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          )}
+
+          {/* Tab: Experiencia */}
+          {activeTab === 'experience' && (
+            <>
+              {profile.experiences && profile.experiences.length > 0 ? (
+                <Card>
+                  <CardContent className="p-5">
+                    <h3 className="font-semibold text-gray-900 mb-4">Experiencia professional</h3>
+                    <div className="space-y-6">
+                      {profile.experiences.map((exp) => (
+                        <div key={exp.id} className="flex gap-4 pb-6 border-b border-gray-100 last:border-0 last:pb-0">
+                          <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <Briefcase className="w-6 h-6 text-indigo-600" />
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-medium text-gray-900">{exp.title}</h4>
+                            <p className="text-sm text-gray-600">{exp.company}</p>
+                            <p className="text-xs text-gray-400 mb-2">{formatDateRange(exp.startDate, exp.endDate, exp.current)}</p>
+                            {exp.description && (
+                              <p className="text-sm text-gray-600">{exp.description}</p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <Briefcase className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                    <p className="text-gray-500">Encara no ha afegit experiencia professional</p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {profile.educations && profile.educations.length > 0 && (
+                <Card>
+                  <CardContent className="p-5">
+                    <h3 className="font-semibold text-gray-900 mb-4">Formacio academica</h3>
+                    <div className="space-y-6">
+                      {profile.educations.map((edu) => (
+                        <div key={edu.id} className="flex gap-4 pb-6 border-b border-gray-100 last:border-0 last:pb-0">
+                          <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <GraduationCap className="w-6 h-6 text-green-600" />
+                          </div>
+                          <div>
+                            <h4 className="font-medium text-gray-900">{edu.degree}</h4>
+                            <p className="text-sm text-gray-600">{edu.institution}</p>
+                            {edu.field && <p className="text-sm text-gray-500">{edu.field}</p>}
+                            <p className="text-xs text-gray-400">{formatDateRange(edu.startDate, edu.endDate)}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          )}
+
+          {/* Tab: Connexions */}
+          {activeTab === 'connections' && (
+            profile.connectionsCount !== null ? (
+              <Card>
+                <CardContent className="p-5">
+                  <h3 className="font-semibold text-gray-900 mb-4">
+                    Connexions ({profile.connectionsCount})
+                  </h3>
+                  <p className="text-gray-500 text-sm">
+                    Properament podras veure les connexions d'aquest usuari.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Lock className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500">Les connexions d'aquest usuari son privades</p>
+                </CardContent>
+              </Card>
+            )
+          )}
+
+          {/* Tab: Grups */}
+          {activeTab === 'groups' && (
+            profile.groups && profile.groups.length > 0 ? (
+              <Card>
+                <CardContent className="p-5">
+                  <h3 className="font-semibold text-gray-900 mb-4">
+                    Grups ({profile.groups.length})
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {profile.groups.map((group) => (
+                      <Link
+                        key={group.id}
+                        href={`/dashboard/grups/${group.slug}`}
+                        className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                      >
+                        <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                          {group.image ? (
+                            <Image
+                              src={group.image}
+                              alt={group.name}
+                              width={48}
+                              height={48}
+                              className="rounded-lg object-cover"
+                            />
+                          ) : (
+                            <Users className="w-6 h-6 text-purple-600" />
+                          )}
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-gray-900 text-sm">{group.name}</h4>
+                          <p className="text-xs text-gray-500">{group.membersCount} membres</p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ) : profile.groups === null ? (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Lock className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500">Els grups d'aquest usuari son privats</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500">No pertany a cap grup public</p>
+                </CardContent>
+              </Card>
+            )
+          )}
+        </div>
       </div>
-    </PageTemplate>
-  );
+    </div>
+  )
 }

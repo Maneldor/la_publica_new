@@ -12,6 +12,7 @@ import { Step5Experience } from './Step5Experience';
 import { Step6Skills } from './Step6Skills';
 import { Step7Languages } from './Step7Languages';
 import { Step8Review } from './Step8Review';
+import { StepPrivacitat } from './StepPrivacitat';
 
 interface ProfileWizardProps {
   onClose: () => void;
@@ -44,11 +45,12 @@ export const ProfileWizard = ({ onClose, onSave, initialData }: ProfileWizardPro
     { id: 1, title: 'Imatges i Bàsic', description: 'Fotos i informació principal' },
     { id: 2, title: 'Informació Personal', description: 'Bio, ubicació i detalls personals' },
     { id: 3, title: 'Xarxes Socials', description: 'Perfils de Twitter, LinkedIn i Instagram' },
-    { id: 4, title: 'Formació', description: 'Estudis i certificacions acadèmiques' },
-    { id: 5, title: 'Experiència', description: 'Trajectòria professional' },
-    { id: 6, title: 'Habilitats', description: 'Competències i interessos' },
-    { id: 7, title: 'Idiomes', description: 'Llengües i nivells de competència' },
-    { id: 8, title: 'Revisió', description: 'Revisió final i guardar' }
+    { id: 4, title: 'Privacitat', description: 'Control de visibilitat del perfil' },
+    { id: 5, title: 'Formació', description: 'Estudis i certificacions acadèmiques' },
+    { id: 6, title: 'Experiència', description: 'Trajectòria professional' },
+    { id: 7, title: 'Habilitats', description: 'Competències i interessos' },
+    { id: 8, title: 'Idiomes', description: 'Llengües i nivells de competència' },
+    { id: 9, title: 'Revisió', description: 'Revisió final i guardar' }
   ];
 
   const handleNext = () => {
@@ -66,7 +68,7 @@ export const ProfileWizard = ({ onClose, onSave, initialData }: ProfileWizardPro
   };
 
   const handleSave = async () => {
-    if (!validateStep(8)) {
+    if (!validateStep(9)) {
       return;
     }
 
@@ -97,6 +99,8 @@ export const ProfileWizard = ({ onClose, onSave, initialData }: ProfileWizardPro
       case 3:
         return <Step3Social {...commonProps} />;
       case 4:
+        return <StepPrivacitat />;
+      case 5:
         return (
           <Step4Education
             {...commonProps}
@@ -105,7 +109,7 @@ export const ProfileWizard = ({ onClose, onSave, initialData }: ProfileWizardPro
             removeEducation={removeEducation}
           />
         );
-      case 5:
+      case 6:
         return (
           <Step5Experience
             {...commonProps}
@@ -114,9 +118,9 @@ export const ProfileWizard = ({ onClose, onSave, initialData }: ProfileWizardPro
             removeExperience={removeExperience}
           />
         );
-      case 6:
-        return <Step6Skills {...commonProps} />;
       case 7:
+        return <Step6Skills {...commonProps} />;
+      case 8:
         return (
           <Step7Languages
             {...commonProps}
@@ -125,7 +129,7 @@ export const ProfileWizard = ({ onClose, onSave, initialData }: ProfileWizardPro
             removeLanguage={removeLanguage}
           />
         );
-      case 8:
+      case 9:
         return (
           <Step8Review
             formData={formData}

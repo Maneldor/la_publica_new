@@ -1,143 +1,307 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prismaClient } from '@/lib/prisma';
+import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { prismaClient } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 
-/**
- * GET /api/admin/groups
- * Obtiene lista de grupos/comunidades (solo admin)
- */
+// GET - Llistar grups (amb filtre per restringits)
 export async function GET(request: NextRequest) {
+  const session = await getServerSession(authOptions)
+
+  if (!session?.user?.role || !['ADMIN', 'SUPER_ADMIN'].includes(session.user.role)) {
+    return NextResponse.json({ error: 'No autoritzat' }, { status: 403 })
+  }
+
   try {
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-      return NextResponse.json(
-        { error: 'No autorizado. Inicia sesión requerida.' },
-        { status: 401 }
-      );
+    const { searchParams } = new URL(request.url)
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '20')
+    const type = searchParams.get('type')
+    const search = searchParams.get('search')
+    const restricted = searchParams.get('restricted') === 'true'
+    const statsOnly = searchParams.get('stats') === 'true'
+
+    // Si nomes volem stats
+    if (statsOnly) {
+      const [professional, privateCount, secret] = await Promise.all([
+        prismaClient.group.count({ where: { type: 'PROFESSIONAL' } }),
+        prismaClient.group.count({ where: { type: 'PRIVATE' } }),
+        prismaClient.group.count({ where: { type: 'SECRET' } }),
+      ])
+
+      return NextResponse.json({
+        stats: {
+          professional,
+          private: privateCount,
+          secret,
+          total: professional + privateCount + secret
+        }
+      })
     }
 
-    // Verificar rol de admin
-    const user = await prismaClient.user.findUnique({
-      where: { email: session.user.email! },
-      select: { role: true, userType: true }
-    });
+    const where: Prisma.GroupWhereInput = {}
 
-    if (!user || (user.role !== 'ADMIN' && user.userType !== 'ADMIN')) {
-      return NextResponse.json(
-        { error: 'No autorizado. Solo administradores.' },
-        { status: 403 }
-      );
+    // Filtrar per tipus restringits
+    if (restricted) {
+      where.type = { in: ['PROFESSIONAL', 'PRIVATE', 'SECRET'] }
     }
 
-    // Obtener comunidades/grupos
-    const comunidades = await prismaClient.comunidad.findMany({
-      select: {
-        id: true,
-        nombre: true,
-        descripcion: true,
-        activa: true,
-        createdAt: true,
-        updatedAt: true,
-        _count: {
-          select: {
-            anuncios: true,
+    // Filtrar per tipus especific
+    if (type && type !== 'all') {
+      where.type = type as Prisma.EnumGroupTypeFilter['equals']
+    }
+
+    // Cercar per nom o slug
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { slug: { contains: search, mode: 'insensitive' } },
+      ]
+    }
+
+    const [groups, total] = await Promise.all([
+      prismaClient.group.findMany({
+        where,
+        orderBy: [
+          { type: 'asc' },
+          { name: 'asc' }
+        ],
+        skip: (page - 1) * limit,
+        take: limit,
+        include: {
+          _count: {
+            select: { members: true }
+          },
+          members: {
+            where: {
+              role: { in: ['ADMIN', 'MODERATOR'] }
+            },
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  nick: true,
+                  email: true,
+                  image: true,
+                }
+              }
+            }
+          },
+          sectorOffers: {
+            include: {
+              offer: {
+                select: {
+                  id: true,
+                  title: true,
+                  images: true,
+                  company: {
+                    select: { name: true }
+                  },
+                  category: {
+                    select: { name: true }
+                  }
+                }
+              }
+            }
           }
         }
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
-    });
+      }),
+      prismaClient.group.count({ where })
+    ])
 
-    // Formatear respuesta para compatibilidad con el frontend
-    const formattedGroups = comunidades.map(comunidad => ({
-      id: parseInt(comunidad.id), // Convertir string a number si es necesario
-      name: comunidad.nombre,
-      description: comunidad.descripcion || 'Comunidad sin descripción',
-      category: 'General', // Campo fijo por ahora
-      visibility: comunidad.activa ? 'PUBLIC' : 'PRIVATE', // Usar campo activa como visibilidad
-      imageUrl: undefined, // No disponible en el esquema actual
-      memberCount: comunidad._count?.anuncios || 0, // Usamos count de anuncios como proxy de miembros
-      createdAt: comunidad.createdAt.toISOString(),
-    }));
+    // Formatejar ofertes
+    const formattedGroups = groups.map(group => ({
+      ...group,
+      sectorOffers: group.sectorOffers.map(so => ({
+        offerId: so.offerId,
+        offer: so.offer ? {
+          id: so.offer.id,
+          title: so.offer.title,
+          image: so.offer.images?.[0] || null,
+          company: so.offer.company?.name || null,
+          category: so.offer.category?.name || null,
+        } : null
+      }))
+    }))
 
     return NextResponse.json({
-      success: true,
-      data: formattedGroups
-    });
+      groups: formattedGroups,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    })
 
   } catch (error) {
-    console.error('Error al obtener grupos:', error);
-    return NextResponse.json(
-      { error: 'Error al obtener grupos', details: error instanceof Error ? error.message : 'Error desconocido' },
-      { status: 500 }
-    );
+    console.error('Error fetching groups:', error)
+    return NextResponse.json({ error: 'Error del servidor' }, { status: 500 })
   }
 }
 
-/**
- * POST /api/admin/groups
- * Crea un nuevo grupo/comunidad (solo admin)
- */
+// POST - Crear nou grup amb admin, moderadors i ofertes
 export async function POST(request: NextRequest) {
+  const session = await getServerSession(authOptions)
+
+  if (!session?.user?.role || !['ADMIN', 'SUPER_ADMIN'].includes(session.user.role)) {
+    return NextResponse.json({ error: 'No autoritzat' }, { status: 403 })
+  }
+
   try {
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
+    const body = await request.json()
+    const {
+      name,
+      slug,
+      description,
+      type,
+      image,
+      coverImage,
+      joinPolicy,
+      contentVisibility,
+      memberListVisibility,
+      postPermission,
+      enableForum,
+      enableGallery,
+      enableDocuments,
+      enableGroupChat,
+      isActive,
+      adminId,
+      moderatorIds,
+      sectorOfferIds,
+    } = body
+
+    // Validacions
+    if (!name || !slug) {
       return NextResponse.json(
-        { error: 'No autorizado. Inicia sesión requerida.' },
-        { status: 401 }
-      );
+        { error: 'El nom i el slug son obligatoris' },
+        { status: 400 }
+      )
     }
 
-    // Verificar rol de admin
-    const user = await prismaClient.user.findUnique({
-      where: { email: session.user.email! },
-      select: { role: true, userType: true, id: true }
-    });
-
-    if (!user || (user.role !== 'ADMIN' && user.userType !== 'ADMIN')) {
+    // Validar tipus restringit
+    if (!['PROFESSIONAL', 'PRIVATE', 'SECRET'].includes(type)) {
       return NextResponse.json(
-        { error: 'No autorizado. Solo administradores.' },
-        { status: 403 }
-      );
+        { error: 'El tipus ha de ser PROFESSIONAL, PRIVATE o SECRET' },
+        { status: 400 }
+      )
     }
 
-    const body = await request.json();
-    const { name, description, category, visibility, imageUrl } = body;
+    // Comprovar si ja existeix un grup amb aquest slug
+    const existingGroup = await prismaClient.group.findUnique({
+      where: { slug: slug.toLowerCase().replace(/\s+/g, '-') }
+    })
 
-    // Crear comunidad
-    const nuevaComunidad = await prismaClient.comunidad.create({
-      data: {
-        nombre: name,
-        descripcion: description,
-        activa: visibility === 'PUBLIC',
+    if (existingGroup) {
+      return NextResponse.json(
+        { error: 'Ja existeix un grup amb aquest slug' },
+        { status: 400 }
+      )
+    }
+
+    // Crear grup amb transaccio
+    const group = await prismaClient.$transaction(async (tx) => {
+      // Crear el grup
+      const newGroup = await tx.group.create({
+        data: {
+          name,
+          slug: slug.toLowerCase().replace(/\s+/g, '-'),
+          description: description || null,
+          type,
+          image: image || null,
+          coverImage: coverImage || null,
+          joinPolicy: joinPolicy || 'REQUEST',
+          contentVisibility: contentVisibility || 'MEMBERS_ONLY',
+          memberListVisibility: memberListVisibility || 'MEMBERS_ONLY',
+          postPermission: postPermission || 'ALL_MEMBERS',
+          enableForum: enableForum ?? true,
+          enableGallery: enableGallery ?? false,
+          enableDocuments: enableDocuments ?? false,
+          enableGroupChat: enableGroupChat ?? false,
+          isActive: isActive ?? true,
+          createdById: session.user.id,
+        }
+      })
+
+      // Assignar admin
+      if (adminId) {
+        await tx.groupMember.create({
+          data: {
+            groupId: newGroup.id,
+            userId: adminId,
+            role: 'ADMIN',
+          }
+        })
       }
-    });
 
-    // Formatear respuesta
-    const formattedGroup = {
-      id: parseInt(nuevaComunidad.id),
-      name: nuevaComunidad.nombre,
-      description: nuevaComunidad.descripcion || '',
-      category: 'General',
-      visibility: nuevaComunidad.activa ? 'PUBLIC' : 'PRIVATE',
-      imageUrl: undefined,
-      memberCount: 0,
-      createdAt: nuevaComunidad.createdAt.toISOString(),
-    };
+      // Assignar moderadors
+      if (moderatorIds && moderatorIds.length > 0) {
+        await tx.groupMember.createMany({
+          data: moderatorIds.map((userId: string) => ({
+            groupId: newGroup.id,
+            userId,
+            role: 'MODERATOR',
+          }))
+        })
+      }
 
-    return NextResponse.json({
-      success: true,
-      data: formattedGroup,
-      message: 'Grupo creado correctamente'
-    });
+      // Vincular ofertes sectorials
+      if (sectorOfferIds && sectorOfferIds.length > 0) {
+        await tx.groupSectorOffer.createMany({
+          data: sectorOfferIds.map((offerId: string) => ({
+            groupId: newGroup.id,
+            offerId,
+          }))
+        })
+      }
+
+      // Actualitzar comptador de membres
+      const membersCount = (adminId ? 1 : 0) + (moderatorIds?.length || 0)
+      if (membersCount > 0) {
+        await tx.group.update({
+          where: { id: newGroup.id },
+          data: { membersCount }
+        })
+      }
+
+      return newGroup
+    })
+
+    // Obtenir el grup complet
+    const fullGroup = await prismaClient.group.findUnique({
+      where: { id: group.id },
+      include: {
+        _count: { select: { members: true } },
+        members: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                nick: true,
+                email: true,
+                image: true,
+              }
+            }
+          }
+        },
+        sectorOffers: {
+          include: {
+            offer: {
+              select: {
+                id: true,
+                title: true,
+                images: true,
+              }
+            }
+          }
+        }
+      }
+    })
+
+    return NextResponse.json(fullGroup, { status: 201 })
 
   } catch (error) {
-    console.error('Error al crear grupo:', error);
-    return NextResponse.json(
-      { error: 'Error al crear grupo', details: error instanceof Error ? error.message : 'Error desconocido' },
-      { status: 500 }
-    );
+    console.error('Error creating group:', error)
+    return NextResponse.json({ error: 'Error del servidor' }, { status: 500 })
   }
 }

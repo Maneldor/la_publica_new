@@ -151,6 +151,27 @@ model User {
   postComments      PostComment[]  @relation("PostCommentAuthor")
   postShares        PostShare[]
 
+  // =====================================
+  // CONFIGURACIÓ DE PRIVACITAT
+  // =====================================
+
+  // Categoria de treball sensible (si aplica)
+  sensitiveJobCategoryId  String?
+  sensitiveJobCategory    SensitiveJobCategory? @relation("UserSensitiveCategory", fields: [sensitiveJobCategoryId], references: [id], onDelete: SetNull)
+
+  // Indica si el sistema força restriccions (basat en la categoria)
+  hasSystemRestrictions   Boolean   @default(false)
+
+  // Configuració individual de privacitat
+  privacySettings         UserPrivacySettings?
+
+  // Relacions Grups Professionals
+  groupMemberships        GroupMember[]    @relation("UserGroupMembers")
+
+  // Relacions Alertes Admin
+  alerts                  AdminAlert[]     @relation("UserAlerts")
+  resolvedAlerts          AdminAlert[]     @relation("ResolvedAlerts")
+
   @@index([email])
   @@index([nick])
   @@index([role])
@@ -163,6 +184,7 @@ model User {
   @@index([supervisorId])
   @@index([isOnline])
   @@index([lastSeenAt])
+  @@index([sensitiveJobCategoryId])
 
   employee                 Employee?
   publicAdministration     PublicAdministration?
@@ -838,6 +860,7 @@ model Offer {
   redemptions        Redemption[]        @relation("OfferRedemptions")
   favorites          UserFavorite[]      @relation("OfferFavorites")
   walletTransactions WalletTransaction[]
+  sectorGroups       GroupSectorOffer[]
 
   @@index([companyId, status])
   @@index([categoryId, status])
@@ -4252,5 +4275,312 @@ model PostShare {
   @@index([originalPostId])
   @@index([userId])
   @@map("post_shares")
+}
+
+// =====================================
+// SISTEMA DE PRIVACITAT
+// =====================================
+
+// Configuració de privacitat individual d'usuari
+model UserPrivacySettings {
+  id        String   @id @default(cuid())
+
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Camps que l'usuari pot fer públics o privats
+  // true = públic, false = privat
+  showRealName      Boolean   @default(true)
+  showPosition      Boolean   @default(true)
+  showDepartment    Boolean   @default(true)
+  showBio           Boolean   @default(true)
+  showLocation      Boolean   @default(true)
+  showPhone         Boolean   @default(false)  // Privat per defecte
+  showEmail         Boolean   @default(false)  // Privat per defecte
+  showSocialLinks   Boolean   @default(true)
+  showJoinedDate    Boolean   @default(true)
+  showLastActive    Boolean   @default(true)
+  showConnections   Boolean   @default(true)
+  showGroups        Boolean   @default(true)   // Grups públics
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("user_privacy_settings")
+}
+
+// Categories de treballs sensibles (Policia, Presons, etc.)
+model SensitiveJobCategory {
+  id          String    @id @default(cuid())
+
+  // Identificació
+  name        String    // "Policia Local", "Centres Penitenciaris"
+  slug        String    @unique  // "policia-local", "centres-penitenciaris"
+  description String?   // Descripció de la categoria
+
+  // Icona i color per a la UI
+  icon        String?   // Nom de la icona (lucide)
+  color       String?   // Color hex o classe tailwind
+
+  // Patrons per detectar automàticament (opcional)
+  departmentPatterns  String[]  @default([])
+  positionPatterns    String[]  @default([])
+
+  // Configuració de restriccions forçades
+  // Aquests camps SEMPRE seran privats per als usuaris d'aquesta categoria
+  forceHidePosition     Boolean   @default(true)
+  forceHideDepartment   Boolean   @default(false)
+  forceHideBio          Boolean   @default(true)
+  forceHideLocation     Boolean   @default(true)
+  forceHidePhone        Boolean   @default(true)
+  forceHideEmail        Boolean   @default(true)
+  forceHideGroups       Boolean   @default(true)
+
+  // Estat
+  isActive    Boolean   @default(true)
+
+  // Relacions
+  users       User[]    @relation("UserSensitiveCategory")
+  groups      Group[]   @relation("GroupSensitiveCategory")
+
+  // Timestamps
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Creat per (admin)
+  createdById String?
+
+  @@index([slug])
+  @@index([isActive])
+  @@map("sensitive_job_categories")
+}
+
+// Configuració global de privacitat (per defecte del sistema)
+model PrivacyConfig {
+  id          String    @id @default(cuid())
+
+  // Configuració per defecte per a nous usuaris
+  defaultShowRealName     Boolean   @default(true)
+  defaultShowPosition     Boolean   @default(true)
+  defaultShowDepartment   Boolean   @default(true)
+  defaultShowBio          Boolean   @default(true)
+  defaultShowLocation     Boolean   @default(true)
+  defaultShowPhone        Boolean   @default(false)
+  defaultShowEmail        Boolean   @default(false)
+  defaultShowSocialLinks  Boolean   @default(true)
+  defaultShowJoinedDate   Boolean   @default(true)
+  defaultShowLastActive   Boolean   @default(true)
+  defaultShowConnections  Boolean   @default(true)
+  defaultShowGroups       Boolean   @default(true)
+
+  // Altres configuracions globals
+  allowUsersToChangePrivacy   Boolean   @default(true)
+  requireEmailVerification    Boolean   @default(false)
+
+  // Timestamps
+  updatedAt   DateTime  @updatedAt
+  updatedById String?
+
+  @@map("privacy_config")
+}
+
+// Log de canvis de privacitat (Auditoria)
+model PrivacyAuditLog {
+  id          String    @id @default(cuid())
+
+  // Usuari afectat
+  userId      String
+
+  // Qui ha fet el canvi (usuari o admin)
+  changedById String
+  changedByRole String  // 'USER' | 'ADMIN' | 'SYSTEM'
+
+  // Detalls del canvi
+  fieldChanged  String    // 'showPosition', 'sensitiveJobCategory', etc.
+  oldValue      String?
+  newValue      String?
+  reason        String?   // Motiu del canvi (opcional)
+
+  // Timestamp
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("privacy_audit_logs")
+}
+
+// =====================================
+// SISTEMA DE GRUPS PROFESSIONALS
+// =====================================
+
+enum GroupType {
+  PUBLIC
+  PRIVATE
+  SECRET
+  PROFESSIONAL  // Nomes 1 per usuari normal
+}
+
+enum GroupMemberRole {
+  MEMBER
+  MODERATOR
+  ADMIN
+}
+
+enum JoinPolicy {
+  OPEN          // Qualsevol pot unir-se
+  REQUEST       // Cal sol·licitar i ser aprovat
+  INVITE_ONLY   // Només per invitació
+}
+
+enum ContentVisibility {
+  PUBLIC        // Visible per tothom
+  MEMBERS_ONLY  // Només membres
+}
+
+enum PostPermission {
+  ALL_MEMBERS       // Tots els membres
+  MODS_AND_ADMINS   // Moderadors i admins
+  ADMINS_ONLY       // Només admins
+}
+
+model Group {
+  id            String      @id @default(cuid())
+  name          String
+  slug          String      @unique
+  description   String?
+  image         String?
+  coverImage    String?
+  type          GroupType   @default(PUBLIC)
+
+  // Comptadors
+  membersCount  Int         @default(0)
+  postsCount    Int         @default(0)
+
+  // Configuracio bàsica
+  isActive      Boolean     @default(true)
+  requiresApproval Boolean  @default(false)
+
+  // Polítiques de privacitat
+  joinPolicy           JoinPolicy        @default(REQUEST)
+  contentVisibility    ContentVisibility @default(MEMBERS_ONLY)
+  memberListVisibility ContentVisibility @default(MEMBERS_ONLY)
+  postPermission       PostPermission    @default(ALL_MEMBERS)
+
+  // Funcionalitats
+  enableForum      Boolean   @default(true)
+  enableGallery    Boolean   @default(false)
+  enableDocuments  Boolean   @default(false)
+  enableGroupChat  Boolean   @default(false)
+
+  // Relacions
+  members       GroupMember[]
+  sectorOffers  GroupSectorOffer[]
+
+  // Categoria sensible associada (per grups professionals)
+  sensitiveJobCategoryId  String?
+  sensitiveJobCategory    SensitiveJobCategory? @relation("GroupSensitiveCategory", fields: [sensitiveJobCategoryId], references: [id])
+
+  // Creador
+  createdById   String?
+
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([type])
+  @@index([isActive])
+  @@index([slug])
+  @@index([sensitiveJobCategoryId])
+}
+
+// Taula pivot per ofertes sectorials del grup
+model GroupSectorOffer {
+  id        String   @id @default(cuid())
+  groupId   String
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  offerId   String
+  offer     Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([groupId, offerId])
+  @@index([groupId])
+  @@index([offerId])
+}
+
+model GroupMember {
+  id        String          @id @default(cuid())
+  groupId   String
+  group     Group           @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User            @relation("UserGroupMembers", fields: [userId], references: [id], onDelete: Cascade)
+  role      GroupMemberRole @default(MEMBER)
+  joinedAt  DateTime        @default(now())
+
+  @@unique([groupId, userId])
+  @@index([userId])
+  @@index([groupId])
+  @@index([role])
+}
+
+// =====================================
+// SISTEMA D'ALERTES ADMIN
+// =====================================
+
+enum AlertType {
+  MULTIPLE_PROFESSIONAL_GROUP_ATTEMPT  // Intent d'unir-se a 2n grup professional
+  PROFESSIONAL_GROUP_CHANGE_REQUEST    // Sol-licitud de canvi de grup
+  SUSPICIOUS_ACTIVITY
+  PRIVACY_VIOLATION
+  CONTENT_REPORT
+  OTHER
+}
+
+enum AlertSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AlertStatus {
+  PENDING
+  IN_PROGRESS
+  RESOLVED
+  DISMISSED
+}
+
+model AdminAlert {
+  id          String        @id @default(cuid())
+  type        AlertType
+  severity    AlertSeverity @default(MEDIUM)
+
+  // Usuari que ha generat l'alerta
+  userId      String
+  user        User          @relation("UserAlerts", fields: [userId], references: [id], onDelete: Cascade)
+
+  // Detalls
+  title       String
+  message     String
+  metadata    Json?
+
+  // Estat
+  status      AlertStatus   @default(PENDING)
+  isRead      Boolean       @default(false)
+
+  // Resolucio
+  resolvedAt    DateTime?
+  resolvedById  String?
+  resolvedBy    User?       @relation("ResolvedAlerts", fields: [resolvedById], references: [id])
+  resolution    String?
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+  @@index([severity])
+  @@index([isRead])
+  @@index([createdAt])
 }
 

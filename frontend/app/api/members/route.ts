@@ -125,6 +125,29 @@ export async function GET(request: NextRequest) {
               organization: true,
             }
           },
+          // Configuració de privacitat
+          privacySettings: {
+            select: {
+              showRealName: true,
+              showPosition: true,
+              showDepartment: true,
+              showBio: true,
+              showLocation: true,
+              showJoinedDate: true,
+              showLastActive: true,
+              showConnections: true,
+            }
+          },
+          // Categoria sensible (policia, presons, etc.)
+          sensitiveJobCategory: {
+            select: {
+              id: true,
+              name: true,
+              forceHidePosition: true,
+              forceHideDepartment: true,
+              forceHideBio: true,
+            }
+          },
           // Obtenir estat de connexió amb l'usuari actual
           connectionsSent: {
             where: { receiverId: session.user.id },
@@ -208,7 +231,7 @@ export async function GET(request: NextRequest) {
 
     const mutualMap = new Map(mutualConnectionsCounts.map(m => [m.memberId, m.mutualCount]))
 
-    // Formatejar resposta amb estat de connexió
+    // Formatejar resposta amb estat de connexió i privacitat
     const formattedMembers = members.map(member => {
       // Determinar estat de connexió amb l'usuari actual
       let connectionStatus = 'none'
@@ -258,32 +281,64 @@ export async function GET(request: NextRequest) {
 
       const fullName = [member.firstName, member.lastName].filter(Boolean).join(' ') || member.name || member.nick || 'Usuari'
 
+      // Aplicar configuració de privacitat
+      const privacy = member.privacySettings
+      const category = member.sensitiveJobCategory
+
+      // Calcular privacitat efectiva (combinant preferències usuari + restriccions forçades)
+      const effectivePrivacy = {
+        showRealName: privacy?.showRealName ?? true,
+        showPosition: (privacy?.showPosition ?? true) && !category?.forceHidePosition,
+        showDepartment: (privacy?.showDepartment ?? true) && !category?.forceHideDepartment,
+        showBio: (privacy?.showBio ?? true) && !category?.forceHideBio,
+        showLocation: privacy?.showLocation ?? true,
+        showJoinedDate: privacy?.showJoinedDate ?? true,
+        showLastActive: privacy?.showLastActive ?? true,
+        showConnections: privacy?.showConnections ?? true,
+      }
+
+      // Aplicar privacitat als camps
+      const totalConnections = member._count.connectionsSent + member._count.connectionsReceived
+
       return {
         id: member.id,
         username: member.nick || member.id,
-        name: fullName,
-        firstName: member.firstName,
-        lastName: member.lastName,
+        // Nom: si no es públic, retornem null (el component mostrarà el nick)
+        name: effectivePrivacy.showRealName ? fullName : null,
+        firstName: effectivePrivacy.showRealName ? member.firstName : null,
+        lastName: effectivePrivacy.showRealName ? member.lastName : null,
         avatar: member.image || '',
         coverImage: '',
         coverColor: member.coverColor,
-        role: member.profile?.position || member.cargo || '',
-        department: member.profile?.department || '',
+        // Càrrec/posició: respectar privacitat
+        role: effectivePrivacy.showPosition ? (member.profile?.position || member.cargo || '') : null,
+        // Departament: respectar privacitat
+        department: effectivePrivacy.showDepartment ? (member.profile?.department || '') : null,
         headline: member.profile?.headline || '',
-        bio: member.profile?.bio || '',
-        location: member.profile?.city || '',
+        // Bio: respectar privacitat
+        bio: effectivePrivacy.showBio ? (member.profile?.bio || '') : null,
+        // Ubicació: respectar privacitat
+        location: effectivePrivacy.showLocation ? (member.profile?.city || '') : null,
         organization: member.profile?.organization || '',
         administration: member.administration || 'LOCAL',
         isOnline: member.isOnline,
-        lastActive,
-        createdAt: member.createdAt,
+        // Última activitat: respectar privacitat
+        lastActive: effectivePrivacy.showLastActive ? lastActive : null,
+        // Data registre: respectar privacitat
+        createdAt: effectivePrivacy.showJoinedDate ? member.createdAt : null,
         mutualConnections: mutualMap.get(member.id) || 0,
-        totalConnections: member._count.connectionsSent + member._count.connectionsReceived,
+        // Connexions: respectar privacitat
+        totalConnections: effectivePrivacy.showConnections ? totalConnections : null,
+        connectionsCount: effectivePrivacy.showConnections ? totalConnections : null,
         connectionStatus,
         connectionId,
         isIncoming,
         expiresAt,
         isConnected: connectionStatus === 'accepted',
+        // Enviar configuració de privacitat al frontend per mostrar indicadors
+        privacySettings: effectivePrivacy,
+        // Indicar si té restriccions de sistema (categoria sensible)
+        hasSystemRestrictions: !!category,
       }
     })
 
