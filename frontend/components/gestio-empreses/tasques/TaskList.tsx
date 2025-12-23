@@ -1,3 +1,5 @@
+'use client'
+
 // components/gestio-empreses/tasques/TaskList.tsx
 import {
   Calendar,

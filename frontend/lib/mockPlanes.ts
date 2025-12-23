@@ -22,7 +22,7 @@ interface PlanConfig {
   updatedAt: string;
 }
 
-export let mockPlanes: PlanConfig[] = [
+export const mockPlanes: PlanConfig[] = [
   {
     id: 'plan_1',
     planType: 'STARTER',

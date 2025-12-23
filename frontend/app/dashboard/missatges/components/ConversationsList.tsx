@@ -1,7 +1,8 @@
 'use client';
 
+import Image from 'next/image';
 import { Conversation, CurrentUser } from '../types/chatTypes';
-import { Pin, BellOff, Camera, Paperclip, Mic, MessageCircle, User as UserIcon } from 'lucide-react';
+import { Pin, BellOff, Camera, Paperclip, Mic, MessageCircle, User as UserIcon, Tag, Package } from 'lucide-react';
 
 interface ConversationsListProps {
   isMobile: boolean;
@@ -48,14 +49,22 @@ export function ConversationsList({
       <div className="flex-1 overflow-y-auto">
         {filteredConversations.length > 0 ? (
           filteredConversations.map((conv) => {
+            // Obtenir l'altre participant (excloent l'usuari actual)
+            const otherParticipant = conv.participants?.find(p => p.id !== currentUser.id);
+
             // Obtenir nom i avatar de la conversa
-            const convName = conv.name || conv.title || 'Conversa';
-            const convAvatar = conv.avatar ||
-              conv.participants?.[0]?.image ||
-              conv.participants?.[0]?.avatar ||
-              null;
-            const firstParticipant = conv.participants?.[0];
+            const convName = conv.name || conv.title ||
+              (otherParticipant ?
+                (otherParticipant.firstName && otherParticipant.lastName
+                  ? `${otherParticipant.firstName} ${otherParticipant.lastName}`
+                  : otherParticipant.name || otherParticipant.nick || 'Usuari')
+                : 'Conversa');
+
+            const convAvatar = conv.avatar || otherParticipant?.image || otherParticipant?.avatar || null;
             const isActive = activeConversation?.id === conv.id;
+
+            // Determinar si és una conversa sobre un anunci
+            const isAnuncioConversation = !!conv.anuncio;
 
             return (
               <div
@@ -68,20 +77,25 @@ export function ConversationsList({
                 }`}
               >
                 <div className="flex gap-3">
-                  {/* Avatar */}
+                  {/* Avatar real del participant */}
                   <div className="relative flex-shrink-0">
                     <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
                       {convAvatar ? (
-                        <img
+                        <Image
                           src={convAvatar}
                           alt={convName}
+                          width={48}
+                          height={48}
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <UserIcon className="w-6 h-6 text-gray-400" />
+                        <div className="w-full h-full flex items-center justify-center bg-indigo-100 text-indigo-600 font-bold text-lg">
+                          {convName.charAt(0).toUpperCase()}
+                        </div>
                       )}
                     </div>
-                    {conv.type === 'individual' && firstParticipant?.isOnline && (
+                    {/* Indicador online */}
+                    {conv.type === 'individual' && otherParticipant?.isOnline && (
                       <div className="absolute bottom-0.5 right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
                     )}
                   </div>
@@ -100,6 +114,16 @@ export function ConversationsList({
                         {conv.lastMessage && formatTime(conv.lastMessage.timestamp)}
                       </span>
                     </div>
+
+                    {/* Subject de l'anunci si existeix */}
+                    {isAnuncioConversation && (
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <Tag className="w-3 h-3 text-indigo-500 flex-shrink-0" />
+                        <span className="text-xs text-indigo-600 font-medium truncate">
+                          Re: {conv.anuncio?.title}
+                        </span>
+                      </div>
+                    )}
 
                     <div className="flex justify-between items-center">
                       <div className="text-sm text-gray-500 truncate flex-1 mr-2">

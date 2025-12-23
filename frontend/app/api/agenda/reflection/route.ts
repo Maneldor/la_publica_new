@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     const date = new Date(dateStr)
     date.setHours(0, 0, 0, 0)
 
-    let reflection = await prisma.agendaReflection.findUnique({
+    const reflection = await prisma.agendaReflection.findUnique({
       where: {
         userId_date: {
           userId: session.user.id,
@@ -38,17 +38,9 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Parsear content JSON o devolver formato esperado
-    let parsedContent
-    try {
-      parsedContent = reflection.content ? JSON.parse(reflection.content) : { mood: null, text: '' }
-    } catch (e) {
-      parsedContent = { mood: null, text: reflection.content || '' }
-    }
-
     return NextResponse.json({
-      mood: parsedContent.mood || null,
-      text: parsedContent.text || ''
+      mood: reflection.mood || null,
+      text: reflection.text || ''
     })
   } catch (error) {
     console.error('Error obteniendo reflexión:', error)
@@ -70,9 +62,6 @@ export async function POST(request: NextRequest) {
     const reflectionDate = new Date(date)
     reflectionDate.setHours(0, 0, 0, 0)
 
-    // Guardar mood y text como JSON en el campo content
-    const contentToSave = JSON.stringify({ mood, text })
-
     const reflection = await prisma.agendaReflection.upsert({
       where: {
         userId_date: {
@@ -80,11 +69,12 @@ export async function POST(request: NextRequest) {
           date: reflectionDate
         }
       },
-      update: { content: contentToSave },
+      update: { mood, text },
       create: {
         userId: session.user.id,
         date: reflectionDate,
-        content: contentToSave
+        mood,
+        text
       }
     })
 

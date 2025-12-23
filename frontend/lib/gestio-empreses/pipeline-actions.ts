@@ -277,7 +277,7 @@ export async function getPipelineStats() {
     },
   })
 
-  let totalLeads = leads.length
+  const totalLeads = leads.length
   let totalValue = 0
   let wonValue = 0
   let wonCount = 0

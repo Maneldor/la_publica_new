@@ -36,6 +36,8 @@ import {
   GitBranch,
   Brain,
   Network,
+  AlertTriangle,
+  ShieldAlert,
   type LucideIcon,
 } from 'lucide-react'
 import { ROLE_GROUPS } from './permissions'
@@ -332,22 +334,23 @@ export const SIDEBAR_CONFIG: SidebarSection[] = [
   },
 
   // ============================================
-  // CONTINGUT - XARXA SOCIAL (CRM Contingut)
+  // GESTIÓ CONTINGUT (ADMIN_GESTIO + CRM Contingut)
   // ============================================
   {
-    id: 'xarxa-social',
-    label: 'Xarxa Social',
-    icon: MessagesSquare,
-    roles: ['SUPER_ADMIN', 'ADMIN', 'CRM_CONTINGUT'] as UserRole[],
+    id: 'gestio-contingut',
+    label: 'Gestió Contingut',
+    icon: FileText,
+    roles: ['ADMIN_GESTIO', 'CRM_CONTINGUT'] as UserRole[],
     collapsible: true,
     defaultOpen: false,
     items: [
+      // --- Xarxa Social ---
       {
         id: 'feed',
         label: 'Feed / Posts',
         href: '/gestio/contingut/feed',
-        icon: FileText,
-        roles: ['SUPER_ADMIN', 'ADMIN', 'CRM_CONTINGUT'] as UserRole[],
+        icon: MessagesSquare,
+        roles: ['ADMIN_GESTIO', 'CRM_CONTINGUT'] as UserRole[],
         disabled: true,
       },
       {
@@ -355,7 +358,7 @@ export const SIDEBAR_CONFIG: SidebarSection[] = [
         label: 'Blogs',
         href: '/gestio/contingut/blogs',
         icon: FileText,
-        roles: ['SUPER_ADMIN', 'ADMIN', 'CRM_CONTINGUT'] as UserRole[],
+        roles: ['ADMIN_GESTIO', 'CRM_CONTINGUT'] as UserRole[],
         disabled: true,
       },
       {
@@ -363,7 +366,7 @@ export const SIDEBAR_CONFIG: SidebarSection[] = [
         label: 'Fòrums',
         href: '/gestio/contingut/forums',
         icon: MessageSquare,
-        roles: ['SUPER_ADMIN', 'ADMIN', 'CRM_CONTINGUT'] as UserRole[],
+        roles: ['ADMIN_GESTIO', 'CRM_CONTINGUT'] as UserRole[],
         disabled: true,
       },
       {
@@ -371,15 +374,7 @@ export const SIDEBAR_CONFIG: SidebarSection[] = [
         label: 'Grups',
         href: '/gestio/contingut/grups',
         icon: Users2,
-        roles: ['SUPER_ADMIN', 'ADMIN', 'CRM_CONTINGUT'] as UserRole[],
-        disabled: true,
-      },
-      {
-        id: 'anuncis',
-        label: 'Anuncis',
-        href: '/gestio/contingut/anuncis',
-        icon: Megaphone,
-        roles: ['SUPER_ADMIN', 'ADMIN', 'CRM_CONTINGUT'] as UserRole[],
+        roles: ['ADMIN_GESTIO', 'CRM_CONTINGUT'] as UserRole[],
         disabled: true,
       },
       {
@@ -387,7 +382,7 @@ export const SIDEBAR_CONFIG: SidebarSection[] = [
         label: 'Formació',
         href: '/gestio/contingut/formacio',
         icon: GraduationCap,
-        roles: ['SUPER_ADMIN', 'ADMIN', 'CRM_CONTINGUT'] as UserRole[],
+        roles: ['ADMIN_GESTIO', 'CRM_CONTINGUT'] as UserRole[],
         disabled: true,
       },
       {
@@ -395,54 +390,78 @@ export const SIDEBAR_CONFIG: SidebarSection[] = [
         label: "Enllaços d'Interès",
         href: '/gestio/contingut/enllacos',
         icon: Link,
-        roles: ['SUPER_ADMIN', 'ADMIN', 'CRM_CONTINGUT'] as UserRole[],
+        roles: ['ADMIN_GESTIO', 'CRM_CONTINGUT'] as UserRole[],
         disabled: true,
       },
-      {
-        id: 'moderacio',
-        label: 'Moderació',
-        href: '/gestio/contingut/moderacio',
-        icon: Shield,
-        roles: ['SUPER_ADMIN', 'ADMIN', 'CRM_CONTINGUT'] as UserRole[],
-        disabled: true,
-      },
-    ],
-  },
-
-  // ============================================
-  // CONTINGUT - SERVEIS VISIBILITAT (CRM Contingut)
-  // ============================================
-  {
-    id: 'serveis-visibilitat',
-    label: 'Serveis (Visibilitat)',
-    icon: Eye,
-    roles: ['SUPER_ADMIN', 'ADMIN', 'CRM_CONTINGUT'] as UserRole[],
-    collapsible: true,
-    defaultOpen: false,
-    items: [
+      // --- Serveis (Visibilitat) ---
       {
         id: 'vis-empreses',
-        label: 'Empreses',
+        label: 'Visibilitat Empreses',
         href: '/gestio/contingut/empreses',
         icon: Building2,
-        roles: ['SUPER_ADMIN', 'ADMIN', 'CRM_CONTINGUT'] as UserRole[],
+        roles: ['ADMIN_GESTIO', 'CRM_CONTINGUT'] as UserRole[],
         disabled: true,
       },
       {
         id: 'vis-ofertes',
-        label: 'Ofertes',
+        label: 'Visibilitat Ofertes',
         href: '/gestio/contingut/ofertes',
         icon: Gift,
-        roles: ['SUPER_ADMIN', 'ADMIN', 'CRM_CONTINGUT'] as UserRole[],
+        roles: ['ADMIN_GESTIO', 'CRM_CONTINGUT'] as UserRole[],
         disabled: true,
       },
       {
         id: 'vis-assessoraments',
-        label: 'Assessoraments',
+        label: 'Visibilitat Assessoraments',
         href: '/gestio/contingut/assessoraments',
         icon: HelpCircle,
-        roles: ['SUPER_ADMIN', 'ADMIN', 'CRM_CONTINGUT'] as UserRole[],
+        roles: ['ADMIN_GESTIO', 'CRM_CONTINGUT'] as UserRole[],
         disabled: true,
+      },
+      // --- Alertes i Moderació ---
+      {
+        id: 'alertes-anuncis',
+        label: 'Alertes Anuncis',
+        href: '/gestio/contingut/alertes',
+        icon: ShieldAlert,
+        roles: ['ADMIN_GESTIO', 'CRM_CONTINGUT'] as UserRole[],
+      },
+      {
+        id: 'moderacio-anuncis',
+        label: 'Moderació Anuncis',
+        href: '/gestio/contingut/anuncis',
+        icon: Megaphone,
+        roles: ['ADMIN_GESTIO', 'CRM_CONTINGUT'] as UserRole[],
+      },
+      {
+        id: 'moderacio-general',
+        label: 'Moderació General',
+        href: '/gestio/contingut/moderacio',
+        icon: Shield,
+        roles: ['ADMIN_GESTIO', 'CRM_CONTINGUT'] as UserRole[],
+        disabled: true,
+      },
+      // --- Anuncis Destacats ---
+      {
+        id: 'anuncis-destacats-list',
+        label: 'Anuncis Destacats',
+        href: '/gestio/anuncis-destacats',
+        icon: Sparkles,
+        roles: ['ADMIN_GESTIO', 'CRM_CONTINGUT'] as UserRole[],
+      },
+      {
+        id: 'anuncis-destacats-crear',
+        label: 'Crear Destacat',
+        href: '/gestio/anuncis-destacats/crear',
+        icon: Star,
+        roles: ['ADMIN_GESTIO', 'CRM_CONTINGUT'] as UserRole[],
+      },
+      {
+        id: 'anuncis-destacats-preus',
+        label: 'Preus Destacats',
+        href: '/gestio/anuncis-destacats/preus',
+        icon: Euro,
+        roles: ['ADMIN_GESTIO'] as UserRole[],
       },
     ],
   },

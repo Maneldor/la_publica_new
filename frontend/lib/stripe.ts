@@ -1,13 +1,22 @@
 import Stripe from 'stripe';
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('STRIPE_SECRET_KEY no está definida en variables de entorno');
-}
+// No lanzar error en build time - solo en runtime cuando se use
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY || '';
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2025-10-29.clover',
-  typescript: true,
-});
+export const stripe = stripeSecretKey
+  ? new Stripe(stripeSecretKey, {
+      apiVersion: '2025-10-29.clover',
+      typescript: true,
+    })
+  : null;
+
+// Helper para verificar que Stripe está configurado antes de usar
+export function getStripe(): Stripe {
+  if (!stripe) {
+    throw new Error('STRIPE_SECRET_KEY no está definida en variables de entorno');
+  }
+  return stripe;
+}
 
 // Helper para formatear precios a centavos (Stripe usa centavos)
 export function formatAmountForStripe(amount: number): number {

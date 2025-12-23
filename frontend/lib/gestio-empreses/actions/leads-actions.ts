@@ -38,7 +38,7 @@ export async function getLeads(filters: LeadFilters & { page?: number; limit?: n
   const offset = (page - 1) * limit
 
   // Construir where clause base
-  let whereClause: any = {}
+  const whereClause: any = {}
 
   // Aplicar filtros de acceso según rol
   if (session.dataAccess === 'own') {
@@ -343,7 +343,7 @@ export async function getLeadStats() {
     throw new Error('Usuario no autenticado')
   }
 
-  let whereClause: any = {}
+  const whereClause: any = {}
 
   // Aplicar filtros de acceso según rol
   if (session.dataAccess === 'own') {

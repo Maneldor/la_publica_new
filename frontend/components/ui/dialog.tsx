@@ -86,3 +86,16 @@ export function DialogFooter({ children, className = '' }: DialogFooterProps) {
     </div>
   );
 }
+
+interface DialogDescriptionProps {
+  children: ReactNode;
+  className?: string;
+}
+
+export function DialogDescription({ children, className = '' }: DialogDescriptionProps) {
+  return (
+    <p className={`text-sm text-gray-500 ${className}`}>
+      {children}
+    </p>
+  );
+}

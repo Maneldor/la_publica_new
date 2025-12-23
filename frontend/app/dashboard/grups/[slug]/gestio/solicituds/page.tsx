@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -74,12 +74,9 @@ interface GroupData {
   type: string
 }
 
-export default function GestioSolicitudsPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>
-}) {
-  const { slug } = use(params)
+export default function GestioSolicitudsPage() {
+  const params = useParams()
+  const slug = params.slug as string
   const router = useRouter()
   const { toast } = useToast()
 

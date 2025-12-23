@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
 
     // Generar nombre único
     const ext = file.name.split('.').pop() || 'jpg'
-    const prefix = type === 'cover' ? 'cover' : type === 'profile' ? 'profile' : 'img'
+    const prefix = type === 'cover' ? 'cover' : type === 'profile' ? 'profile' : type === 'anunci' ? 'anunci' : 'img'
     const filename = `${prefix}-${randomUUID()}.${ext}`
     const filepath = path.join(userUploadDir, filename)
 

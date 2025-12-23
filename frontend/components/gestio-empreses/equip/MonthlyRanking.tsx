@@ -1,3 +1,5 @@
+'use client'
+
 import { Trophy, Medal, Award, TrendingUp, Target } from 'lucide-react'
 import { cn } from '@/lib/utils'
 

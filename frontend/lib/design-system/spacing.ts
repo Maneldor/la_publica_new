@@ -162,13 +162,13 @@ export const BUTTONS = {
 
 export const INPUTS = {
   // Input base
-  base: 'w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-900 placeholder:text-gray-400 placeholder:font-normal focus:ring-2 focus:ring-indigo-500 focus:border-transparent',
+  base: 'w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm',
 
   // Textarea
-  textarea: 'w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-900 placeholder:text-gray-400 placeholder:font-normal focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none',
+  textarea: 'w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none text-sm',
 
   // Select
-  select: 'w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-transparent',
+  select: 'w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm',
 } as const
 
 export const COLORS = {

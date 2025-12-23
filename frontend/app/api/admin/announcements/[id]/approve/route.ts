@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prismaClient } from '@/lib/prisma';
+import { calculateExpirationDate } from '@/lib/services/adExpirationService';
 
 /**
  * PATCH /api/admin/announcements/[id]/approve
@@ -53,14 +54,17 @@ export async function PATCH(
     }
 
     // Aprobar anuncio
+    const now = new Date();
     const updatedAnuncio = await prismaClient.anuncio.update({
       where: {
         id: params.id
       },
       data: {
         status: 'PUBLISHED',
-        publishAt: new Date(),
-        updatedAt: new Date()
+        publishAt: now,
+        publishedAt: now,
+        expiresAt: calculateExpirationDate(now),
+        updatedAt: now
       },
       include: {
         author: {

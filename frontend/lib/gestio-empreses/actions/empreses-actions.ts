@@ -38,7 +38,7 @@ export async function getEmpreses(filters: CompanyFilters & { page?: number; lim
   const offset = (page - 1) * limit
 
   // Construir where clause base
-  let whereClause: any = {
+  const whereClause: any = {
     isActive: isActive
   }
 
@@ -369,7 +369,7 @@ export async function getEmpresaStats() {
     throw new Error('Usuario no autenticado')
   }
 
-  let whereClause: any = { isActive: true }
+  const whereClause: any = { isActive: true }
 
   // Aplicar filtros de acceso según rol
   if (session.dataAccess === 'own') {

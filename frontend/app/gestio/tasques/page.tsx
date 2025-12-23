@@ -62,18 +62,18 @@ export default function TasquesPage() {
       // 1. Cargar datos básicos de lista y stats (siempre necesarios al inicio o refresh)
       // Kanban se carga bajo demanda o en background si estamos en esa vista
       const [tasksResult, statsData] = await Promise.all([
-        // @ts-ignore
+        // @ts-expect-error - Types mismatch with legacy API
         getUserTasks(currentUserId, filters, targetPage, LIMIT),
         getAdvancedTaskStats(currentUserId)
       ])
 
-      // @ts-ignore
+      // @ts-expect-error - Types mismatch with legacy API
       setTasks(tasksResult.tasks || [])
-      // @ts-ignore
+      // @ts-expect-error - Types mismatch with legacy API
       if (tasksResult.metadata) {
-        // @ts-ignore
+        // @ts-expect-error - Types mismatch with legacy API
         setTotalPages(tasksResult.metadata.totalPages)
-        // @ts-ignore
+        // @ts-expect-error - Types mismatch with legacy API
         setPage(tasksResult.metadata.page)
       }
 

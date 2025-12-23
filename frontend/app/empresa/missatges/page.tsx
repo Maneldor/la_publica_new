@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { User, Message, Conversation } from '../../gestor-empreses/missatges/types/chatTypes';
-import { sampleConversations, sampleMessages } from '../../gestor-empreses/missatges/data/chatData';
-import { ChatWindow } from '../../gestor-empreses/missatges/components/ChatWindowSimple';
-import { ConversationsList } from '../../gestor-empreses/missatges/components/ConversationsList';
-import { ChatSidebar } from '../../gestor-empreses/missatges/components/ChatSidebar';
+import { User, Message, Conversation } from '../../dashboard/missatges/types/chatTypes';
+import { sampleConversations, sampleMessages } from '../../dashboard/missatges/data/chatData';
+import { ChatWindow } from '../../dashboard/missatges/components/ChatWindow';
+import { ConversationsList } from '../../dashboard/missatges/components/ConversationsList';
+import { ChatSidebar } from '../../dashboard/missatges/components/ChatSidebar';
 import { empresaConversationsApi, Conversation as ApiConversation, Message as ApiMessage } from '../../../services/empresaConversationsApi';
 
 // Usuario actual para empresas (usando el mismo pattern que gestor)

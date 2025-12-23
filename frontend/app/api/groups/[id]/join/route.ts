@@ -26,6 +26,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         name: true,
         type: true,
         isActive: true,
+        joinPolicy: true,
         requiresApproval: true,
         sensitiveJobCategoryId: true,
         sensitiveJobCategory: true,
@@ -37,7 +38,16 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     if (!targetGroup.isActive) {
-      return NextResponse.json({ error: 'Aquest grup no esta actiu' }, { status: 400 })
+      return NextResponse.json({ error: 'Aquest grup no està actiu' }, { status: 400 })
+    }
+
+    // Validar que el grup permeti unió directa
+    // Només grups PUBLIC amb joinPolicy OPEN permeten unió directa
+    if (targetGroup.type !== 'PUBLIC' && targetGroup.joinPolicy !== 'OPEN') {
+      return NextResponse.json({
+        error: 'Aquest grup requereix sol·licitud d\'accés',
+        requiresRequest: true,
+      }, { status: 403 })
     }
 
     // Comprovar si ja es membre

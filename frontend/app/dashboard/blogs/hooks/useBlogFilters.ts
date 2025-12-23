@@ -20,7 +20,7 @@ export function useBlogFilters(blogs: BlogPost[], authors: Author[], categories:
       .filter(blog => {
         // Filtro por tab activo
         if (activeTab === 'mine') return blog.author.id === 1; // Usuario actual
-        if (activeTab === 'following') return [1, 2].includes(blog.author.id); // Autores seguidos
+        if (activeTab === 'following') return blog.isSaved === true; // Articles guardats
         if (activeTab === 'popular') return blog.featured || blog.views > 1000;
 
         return true;
@@ -99,7 +99,7 @@ export function useBlogFilters(blogs: BlogPost[], authors: Author[], categories:
   const tabCounts = useMemo(() => ({
     all: blogs.length,
     mine: blogs.filter(b => b.author.id === 1).length,
-    following: blogs.filter(b => [1, 2].includes(b.author.id)).length,
+    following: blogs.filter(b => b.isSaved === true).length,
     popular: blogs.filter(b => b.featured || b.views > 1000).length
   }), [blogs]);
 

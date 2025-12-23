@@ -41,7 +41,7 @@ export async function getEmpresesList(
   oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
 
   // Filtro base según rol
-  let whereBase: any = {}
+  const whereBase: any = {}
 
   if (role.includes('GESTOR')) {
     // Gestores solo ven sus empresas asignadas

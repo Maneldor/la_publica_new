@@ -57,6 +57,16 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
               }
             }
           }
+        },
+        sensitiveJobCategory: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            description: true,
+            icon: true,
+            color: true,
+          }
         }
       }
     })
@@ -118,6 +128,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       adminId,
       moderatorIds,
       sectorOfferIds,
+      sensitiveJobCategoryId,
     } = body
 
     // Verificar que el grup existeix
@@ -176,6 +187,10 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
           ...(enableDocuments !== undefined && { enableDocuments }),
           ...(enableGroupChat !== undefined && { enableGroupChat }),
           ...(isActive !== undefined && { isActive }),
+          // Solo actualizar sensitiveJobCategoryId para grupos PROFESSIONAL
+          ...(sensitiveJobCategoryId !== undefined && (type === 'PROFESSIONAL' || existingGroup.type === 'PROFESSIONAL') && {
+            sensitiveJobCategoryId: sensitiveJobCategoryId || null
+          }),
         }
       })
 

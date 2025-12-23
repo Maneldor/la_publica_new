@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prismaClient } from '@/lib/prisma';
-import { stripe, formatAmountForStripe } from '@/lib/stripe';
-import { Prisma } from '@prisma/client';
+import { getStripe, formatAmountForStripe } from '@/lib/stripe';
 
 export async function POST(request: NextRequest) {
   try {
@@ -52,6 +51,9 @@ export async function POST(request: NextRequest) {
 
     // Calculate amount to charge (considering proration)
     const amountToCharge = prorationAmount ?? newPlan.precioMensual;
+
+    // Get Stripe instance (throws if not configured)
+    const stripe = getStripe();
 
     // Create Stripe Checkout Session
     const checkoutSession = await stripe.checkout.sessions.create({

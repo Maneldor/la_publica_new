@@ -75,12 +75,12 @@ export default function MissatgesPage() {
       setIsLoading(true)
       try {
         const [conversationsResult, statsData] = await Promise.all([
-          // @ts-ignore
+          // @ts-expect-error - Types mismatch with legacy API
           getUserConversations(1, 20),
           getMessageStats()
         ])
 
-        // @ts-ignore
+        // @ts-expect-error - Types mismatch with legacy API
         setConversations(conversationsResult.conversations || [])
         setStats(statsData)
       } catch (error) {
@@ -118,9 +118,9 @@ export default function MissatgesPage() {
   const handleSearch = async (query: string) => {
     setSearchQuery(query)
     if (!query.trim()) {
-      // @ts-ignore
+      // @ts-expect-error - Types mismatch with legacy API
       const result = await getUserConversations(1, 20)
-      // @ts-ignore
+      // @ts-expect-error - Types mismatch with legacy API
       setConversations(result.conversations || [])
       return
     }
@@ -136,11 +136,11 @@ export default function MissatgesPage() {
   const handleRefreshConversations = async () => {
     try {
       const [conversationsResult, statsData] = await Promise.all([
-        // @ts-ignore
+        // @ts-expect-error - Types mismatch with legacy API
         getUserConversations(1, 20),
         getMessageStats()
       ])
-      // @ts-ignore
+      // @ts-expect-error - Types mismatch with legacy API
       setConversations(conversationsResult.conversations || [])
       setStats(statsData)
     } catch (error) {

@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
 import { User, Message, Conversation, CurrentUser } from '../types/chatTypes';
 import { EmojiPicker } from './EmojiPicker';
 import {
@@ -27,8 +29,62 @@ import {
   Bell,
   Archive,
   UserPlus,
-  LogOut
+  LogOut,
+  Package,
+  ChevronRight,
+  ExternalLink,
 } from 'lucide-react';
+
+// Componente para mostrar el contexto del anuncio
+function AnuncioContext({ anuncio }: { anuncio: any }) {
+  if (!anuncio) return null;
+
+  const formatPrice = () => {
+    if (anuncio.priceType === 'free' || !anuncio.price || anuncio.price === 0) return 'Gratuït';
+    return `${anuncio.price.toLocaleString('ca-ES')} €`;
+  };
+
+  return (
+    <div className="mx-4 mb-4 p-3 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100 rounded-xl">
+      <p className="text-xs text-indigo-600 font-medium mb-2 flex items-center gap-1">
+        <Package className="w-3 h-3" />
+        Conversa sobre aquest anunci:
+      </p>
+      <Link
+        href={`/dashboard/anuncis/${anuncio.slug || anuncio.id}`}
+        className="flex items-center gap-3 group"
+      >
+        <div className="w-14 h-14 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0 border border-gray-200">
+          {anuncio.imageUrl ? (
+            <Image
+              src={anuncio.imageUrl}
+              alt={anuncio.title}
+              width={56}
+              height={56}
+              className="object-cover w-full h-full"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <Package className="w-6 h-6 text-gray-300" />
+            </div>
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors line-clamp-1 text-sm">
+            {anuncio.title}
+          </p>
+          <p className="text-base font-bold text-indigo-600">
+            {formatPrice()}
+          </p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            {anuncio.status === 'SOLD' ? '🏷️ Venut' : '✅ Disponible'}
+          </p>
+        </div>
+        <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-indigo-600 transition-colors flex-shrink-0" />
+      </Link>
+    </div>
+  );
+}
 
 interface ChatWindowProps {
   activeConversation: Conversation;
@@ -127,13 +183,21 @@ export function ChatWindow({
     }
   }, [showOptionsMenu]);
 
+  // Obtenir l'altre participant (excloent l'usuari actual)
+  const otherParticipant = activeConversation.participants?.find(p => p.id !== currentUser.id);
+
   // Obtenir nom i avatar de la conversa
-  const conversationName = activeConversation.name || activeConversation.title || 'Conversa';
+  const conversationName = activeConversation.name || activeConversation.title ||
+    (otherParticipant ?
+      (otherParticipant.firstName && otherParticipant.lastName
+        ? `${otherParticipant.firstName} ${otherParticipant.lastName}`
+        : otherParticipant.name || otherParticipant.nick || 'Usuari')
+      : 'Conversa');
+
   const conversationAvatar = activeConversation.avatar ||
-    activeConversation.participants?.[0]?.image ||
-    activeConversation.participants?.[0]?.avatar ||
-    '/default-avatar.png';
-  const firstParticipant = activeConversation.participants?.[0];
+    otherParticipant?.image ||
+    otherParticipant?.avatar ||
+    null;
 
   return (
     <div className="flex-1 flex flex-col bg-gray-50">
@@ -149,22 +213,33 @@ export function ChatWindow({
             </button>
           )}
           <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
-            {conversationAvatar && conversationAvatar !== '/default-avatar.png' ? (
-              <img
+            {conversationAvatar ? (
+              <Image
                 src={conversationAvatar}
                 alt={conversationName}
+                width={40}
+                height={40}
                 className="w-full h-full object-cover"
               />
             ) : (
-              <UserIcon className="w-5 h-5 text-gray-400" />
+              <div className="w-full h-full flex items-center justify-center bg-indigo-100 text-indigo-600 font-bold">
+                {conversationName.charAt(0).toUpperCase()}
+              </div>
             )}
           </div>
           <div>
             <div className="font-semibold text-gray-900">
               {conversationName}
             </div>
-            <div className={`text-xs ${firstParticipant?.isOnline ? 'text-green-500' : 'text-gray-500'}`}>
-              {firstParticipant?.isOnline ? 'En línia' : firstParticipant?.lastSeen || ''}
+            <div className={`text-xs flex items-center gap-1 ${otherParticipant?.isOnline ? 'text-green-500' : 'text-gray-500'}`}>
+              {otherParticipant?.isOnline ? (
+                <>
+                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                  En línia
+                </>
+              ) : (
+                otherParticipant?.nick ? `@${otherParticipant.nick}` : ''
+              )}
             </div>
           </div>
         </div>
@@ -457,6 +532,11 @@ export function ChatWindow({
         </div>
       )}
 
+      {/* Card del anuncio si existe */}
+      {activeConversation.anuncio && (
+        <AnuncioContext anuncio={activeConversation.anuncio} />
+      )}
+
       {/* Área de mensajes */}
       <div style={{
         flex: 1,
@@ -511,13 +591,20 @@ export function ChatWindow({
             </div>
 
             {/* Mensajes */}
-            {messages.map((message) => {
+            {messages.map((message, index) => {
               const isOwn = message.senderId === currentUser.id;
               const sender = isOwn
                 ? currentUser
                 : message.sender || activeConversation.participants?.find(p => p.id === message.senderId);
-              const senderName = sender?.name || sender?.nick || 'Usuari';
+              const senderName = sender?.name ||
+                ((sender as User)?.firstName && (sender as User)?.lastName
+                  ? `${(sender as User)?.firstName} ${(sender as User)?.lastName}`
+                  : sender?.nick || 'Usuari');
               const senderAvatar = (sender as User)?.image || (sender as User)?.avatar;
+
+              // Determinar si mostrar avatar (primer mensaje de una secuencia o mensaje único)
+              const prevMessage = index > 0 ? messages[index - 1] : null;
+              const showAvatar = !isOwn && (!prevMessage || prevMessage.senderId !== message.senderId);
 
               return (
                 <div
@@ -538,26 +625,52 @@ export function ChatWindow({
                     alignItems: 'flex-end',
                     position: 'relative'
                   }}>
-                    {!isOwn && activeConversation.type === 'group' && senderAvatar && (
-                      <img
-                        src={senderAvatar}
-                        alt={senderName}
-                        style={{
-                          width: '28px',
-                          height: '28px',
-                          borderRadius: '50%',
-                          objectFit: 'cover'
-                        }}
-                      />
+                    {/* Avatar del remitente (siempre para mensajes no propios) */}
+                    {!isOwn && (
+                      <div style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '50%',
+                        overflow: 'hidden',
+                        backgroundColor: '#e5e7eb',
+                        flexShrink: 0,
+                        visibility: showAvatar ? 'visible' : 'hidden'
+                      }}>
+                        {senderAvatar ? (
+                          <Image
+                            src={senderAvatar}
+                            alt={senderName}
+                            width={32}
+                            height={32}
+                            style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+                          />
+                        ) : (
+                          <div style={{
+                            width: '100%',
+                            height: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: '#c7d2fe',
+                            color: '#4f46e5',
+                            fontWeight: 'bold',
+                            fontSize: '12px'
+                          }}>
+                            {senderName.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
                     )}
 
                     <div>
-                      {!isOwn && activeConversation.type === 'group' && (
+                      {/* Nombre del remitente (solo si es el primer mensaje de una secuencia) */}
+                      {!isOwn && showAvatar && (
                         <div style={{
                           fontSize: '12px',
-                          color: '#6c757d',
+                          color: '#6b7280',
                           marginBottom: '2px',
-                          marginLeft: '12px'
+                          marginLeft: '4px',
+                          fontWeight: 500
                         }}>
                           {senderName}
                         </div>

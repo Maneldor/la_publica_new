@@ -79,7 +79,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         sectorOffers: {
           where: {
             offer: {
-              isActive: true,
+              status: 'PUBLISHED',
             }
           },
           include: {
@@ -87,11 +87,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
               select: {
                 id: true,
                 title: true,
+                slug: true,
+                shortDescription: true,
                 description: true,
-                discount: true,
-                image: true,
-                validFrom: true,
-                validUntil: true,
+                images: true,
+                price: true,
+                originalPrice: true,
+                expiresAt: true,
                 company: {
                   select: {
                     id: true,
@@ -194,11 +196,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const offers = group.sectorOffers.map(so => ({
       id: so.offer.id,
       title: so.offer.title,
+      slug: so.offer.slug,
+      shortDescription: so.offer.shortDescription,
       description: so.offer.description,
-      discount: so.offer.discount,
-      image: so.offer.image,
-      validFrom: so.offer.validFrom,
-      validUntil: so.offer.validUntil,
+      images: so.offer.images,
+      price: so.offer.price,
+      originalPrice: so.offer.originalPrice,
+      expiresAt: so.offer.expiresAt,
       company: so.offer.company,
     }))
 
@@ -220,6 +224,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       contentVisibility: group.contentVisibility,
       memberListVisibility: group.memberListVisibility,
       postPermission: group.postPermission,
+      enableFeed: group.enableFeed,
       enableForum: group.enableForum,
       enableGallery: group.enableGallery,
       enableDocuments: group.enableDocuments,

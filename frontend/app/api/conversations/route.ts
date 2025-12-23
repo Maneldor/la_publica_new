@@ -50,6 +50,7 @@ export async function GET(request: NextRequest) {
                 id: true,
                 name: true,
                 nick: true,
+                image: true,
               }
             }
           }
@@ -57,6 +58,32 @@ export async function GET(request: NextRequest) {
       },
       orderBy: { updatedAt: 'desc' }
     })
+
+    // Obtenir informació dels anuncis relacionats
+    const conversationIds = conversations.map(c => c.id)
+    const anunciosMap: Record<string, any> = {}
+
+    // Buscar anuncis relacionats amb les converses
+    const conversationsWithAnuncio = conversations.filter(c => c.anuncioId)
+    if (conversationsWithAnuncio.length > 0) {
+      const anuncioIds = conversationsWithAnuncio.map(c => c.anuncioId).filter(Boolean) as string[]
+      const anuncios = await prismaClient.anuncio.findMany({
+        where: {
+          id: { in: anuncioIds }
+        },
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          status: true,
+          imageUrl: true,
+          metadata: true,
+        }
+      })
+      anuncios.forEach(a => {
+        anunciosMap[a.id] = a
+      })
+    }
 
     // Comptar missatges no llegits per cada conversa
     const conversationsWithUnread = await Promise.all(
@@ -97,19 +124,39 @@ export async function GET(request: NextRequest) {
           }
         }
 
+        // Obtenir info de l'anunci si existeix
+        const anuncio = conv.anuncioId ? anunciosMap[conv.anuncioId] : null
+        let anuncioInfo = null
+        if (anuncio) {
+          const metadata = anuncio.metadata as any
+          anuncioInfo = {
+            id: anuncio.id,
+            title: anuncio.title,
+            slug: anuncio.slug,
+            status: anuncio.status,
+            imageUrl: anuncio.imageUrl || metadata?.coverImage || metadata?.images?.[0],
+            price: metadata?.price || 0,
+            priceType: metadata?.priceType || 'fixed',
+          }
+        }
+
         return {
           id: conv.id,
           title: conversationName || 'Conversa',
           avatar: conversationAvatar,
           type: isGroup ? 'group' : 'individual',
           participants: participants,
-          lastMessage: conv.messages[0] || null,
+          lastMessage: conv.messages[0] ? {
+            ...conv.messages[0],
+            timestamp: conv.messages[0].createdAt,
+          } : null,
           unreadCount,
           updatedAt: conv.updatedAt,
           createdAt: conv.createdAt,
           isPinned: false, // TODO: afegir camp a la BD
           isMuted: false,  // TODO: afegir camp a la BD
           isArchived: false, // TODO: afegir camp a la BD
+          anuncio: anuncioInfo, // Info de l'anunci relacionat
         }
       })
     )

@@ -578,7 +578,7 @@ export const validatePostForPublishing = (post: any): boolean => {
 
 // Generar slug automático
 export const generatePostSlug = (title: string, existingSlugs: string[] = []): string => {
-  let baseSlug = title
+  const baseSlug = title
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '') // Quitar acentos

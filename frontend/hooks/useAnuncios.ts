@@ -143,7 +143,8 @@ const fetchAnuncios = async (filters?: AnnouncementFilters & { page?: number; li
 
 const fetchAnuncio = async (id: string): Promise<Anuncio> => {
   try {
-    const response = await fetch(`/api/admin/announcements/${id}`);
+    // Usar API pública per obtenir anuncis
+    const response = await fetch(`/api/announcements/${id}`);
 
     if (!response.ok) {
       throw new Error(`Error ${response.status}: ${response.statusText}`);
@@ -167,7 +168,8 @@ const createAnuncio = async (data: CreateAnnouncementInput): Promise<Anuncio> =>
 
   try {
     console.log('🔄 Iniciando llamada a Next.js API...');
-    const response = await fetch('/api/admin/announcements', {
+    // Usar /api/announcements - usuarios normales crean con PENDING, CRM Contingut aprueba
+    const response = await fetch('/api/announcements', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

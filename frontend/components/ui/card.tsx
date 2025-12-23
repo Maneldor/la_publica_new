@@ -153,3 +153,22 @@ export function CardFooter({
     </div>
   );
 }
+
+interface CardDescriptionProps extends HTMLAttributes<HTMLParagraphElement> {
+  children: ReactNode;
+}
+
+export function CardDescription({
+  children,
+  className = '',
+  ...props
+}: CardDescriptionProps) {
+  return (
+    <p
+      className={cn('text-sm text-gray-500', className)}
+      {...props}
+    >
+      {children}
+    </p>
+  );
+}

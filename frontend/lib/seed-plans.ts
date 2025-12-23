@@ -1,5 +1,4 @@
-// @ts-nocheck
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { prismaClient } from './prisma';
 
 const PLAN_DATA = [

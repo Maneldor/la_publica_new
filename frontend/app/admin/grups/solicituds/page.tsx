@@ -489,51 +489,55 @@ export default function SolicitudsAdminPage() {
 
       {/* Modal d'acció */}
       <Dialog open={!!actionRequest} onOpenChange={() => closeActionModal()}>
-        <DialogContent>
-          <DialogHeader>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader className="pb-4">
             <DialogTitle>
               {actionType === 'approve' ? 'Aprovar sol·licitud' : 'Rebutjar sol·licitud'}
             </DialogTitle>
           </DialogHeader>
-          <div className="text-sm text-gray-600 mb-4">
-            {actionType === 'approve' ? (
-              <>
-                Estàs a punt d&apos;aprovar la sol·licitud de{' '}
-                <strong>{actionRequest?.user.name}</strong> per unir-se al grup{' '}
-                <strong>{actionRequest?.group.name}</strong>.
-                {actionRequest?.group.sensitiveJobCategory && (
-                  <span className="block mt-2 text-purple-600">
-                    ⚠️ Aquest grup té categoria sensible ({actionRequest.group.sensitiveJobCategory.name}).
-                    L&apos;usuari rebrà restriccions de visibilitat.
-                  </span>
-                )}
-              </>
-            ) : (
-              <>
-                Estàs a punt de rebutjar la sol·licitud de{' '}
-                <strong>{actionRequest?.user.name}</strong> per unir-se al grup{' '}
-                <strong>{actionRequest?.group.name}</strong>.
-              </>
-            )}
+
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              {actionType === 'approve' ? (
+                <>
+                  Estàs a punt d&apos;aprovar la sol·licitud de{' '}
+                  <span className="font-semibold text-gray-900">{actionRequest?.user.name}</span> per unir-se al grup{' '}
+                  <span className="font-semibold text-gray-900">{actionRequest?.group.name}</span>.
+                  {actionRequest?.group.sensitiveJobCategory && (
+                    <span className="block mt-2 p-2 bg-purple-50 text-purple-700 rounded-lg text-xs">
+                      ⚠️ Aquest grup té categoria sensible ({actionRequest.group.sensitiveJobCategory.name}).
+                      L&apos;usuari rebrà restriccions de visibilitat.
+                    </span>
+                  )}
+                </>
+              ) : (
+                <>
+                  Estàs a punt de rebutjar la sol·licitud de{' '}
+                  <span className="font-semibold text-gray-900">{actionRequest?.user.name}</span> per unir-se al grup{' '}
+                  <span className="font-semibold text-gray-900">{actionRequest?.group.name}</span>.
+                </>
+              )}
+            </p>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Missatge {actionType === 'reject' ? '(recomanat)' : '(opcional)'}
+              </label>
+              <Textarea
+                value={responseMessage}
+                onChange={(e) => setResponseMessage(e.target.value)}
+                placeholder={
+                  actionType === 'approve'
+                    ? 'Benvingut/da al grup!'
+                    : "Explica el motiu del rebuig..."
+                }
+                rows={3}
+                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+              />
+            </div>
           </div>
 
-          <div className="py-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Missatge {actionType === 'reject' ? '(recomanat)' : '(opcional)'}
-            </label>
-            <Textarea
-              value={responseMessage}
-              onChange={(e) => setResponseMessage(e.target.value)}
-              placeholder={
-                actionType === 'approve'
-                  ? 'Benvingut/da al grup!'
-                  : "Explica el motiu del rebuig..."
-              }
-              rows={3}
-            />
-          </div>
-
-          <DialogFooter>
+          <DialogFooter className="pt-4 mt-2 border-t border-gray-100">
             <Button variant="outline" onClick={closeActionModal} disabled={isProcessing}>
               Cancel·lar
             </Button>

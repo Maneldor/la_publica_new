@@ -75,12 +75,9 @@ export async function ensureUniqueCredentials(
   baseUsername: string,
   companyEmail: string
 ): Promise<{ username: string; email: string }> {
-  let username = baseUsername;
-  let counter = 1;
-
   // El username es solo para mostrar, no hay campo username en DB
   // Por simplicidad, mantenemos el username generado
-  username = baseUsername;
+  const username = baseUsername;
 
   // Verificar email único
   const existingEmail = await prisma.user.findFirst({ where: { email: companyEmail } });

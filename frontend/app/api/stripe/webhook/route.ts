@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
-import { stripe } from '@/lib/stripe';
+import { getStripe } from '@/lib/stripe';
 import { prismaClient } from '@/lib/prisma';
 import Stripe from 'stripe';
 import { PaymentMethod } from '@prisma/client';
@@ -21,6 +21,9 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+
+  // Get Stripe instance (throws if not configured)
+  const stripe = getStripe();
 
   let event: Stripe.Event;
 

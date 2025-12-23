@@ -506,7 +506,7 @@ export function GroupModal({ isOpen, onClose, group, onSubmit }: GroupModalProps
                     Slug (URL) <span className="text-red-500">*</span>
                   </label>
                   <div className="flex items-center">
-                    <span className="px-3 py-2.5 bg-gray-100 border border-r-0 border-gray-200 rounded-l-lg text-sm text-gray-500">
+                    <span className="px-3 py-2.5 bg-gray-100 border border-r-0 border-gray-300 rounded-l-lg text-sm text-gray-500">
                       /grups/
                     </span>
                     <input
@@ -514,7 +514,7 @@ export function GroupModal({ isOpen, onClose, group, onSubmit }: GroupModalProps
                       value={formData.slug}
                       onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value }))}
                       placeholder="mossos-d-esquadra"
-                      className="flex-1 px-4 py-2.5 border border-gray-200 rounded-r-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className="flex-1 px-3 py-2.5 border border-gray-300 rounded-r-lg bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
                     />
                   </div>
                 </div>
@@ -535,41 +535,81 @@ export function GroupModal({ isOpen, onClose, group, onSubmit }: GroupModalProps
                     Tipus de grup <span className="text-red-500">*</span>
                   </label>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {(['PUBLIC', 'PRIVATE', 'PROFESSIONAL', 'SECRET'] as const).map((type) => {
-                      const icons = { PUBLIC: Globe, PROFESSIONAL: Briefcase, PRIVATE: Lock, SECRET: EyeOff }
-                      const colors = { PUBLIC: 'green', PROFESSIONAL: 'indigo', PRIVATE: 'amber', SECRET: 'red' }
-                      const titles = { PUBLIC: 'Públic', PROFESSIONAL: 'Professional', PRIVATE: 'Privat', SECRET: 'Secret' }
-                      const descs = {
-                        PUBLIC: 'Qualsevol pot veure i unir-se',
-                        PROFESSIONAL: 'Nomes 1 per usuari, pot ser sensible',
-                        PRIVATE: 'Visible pero cal sol·licitar accés',
-                        SECRET: 'No visible, nomes per invitació'
-                      }
-                      const Icon = icons[type]
-                      const color = colors[type]
-                      const isSelected = formData.type === type
+                    {/* PUBLIC */}
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, type: 'PUBLIC' }))}
+                      className={`p-4 rounded-xl border-2 text-left transition-all ${
+                        formData.type === 'PUBLIC'
+                          ? 'border-green-500 bg-green-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 ${
+                        formData.type === 'PUBLIC' ? 'bg-green-100' : 'bg-gray-100'
+                      }`}>
+                        <Globe className={`w-5 h-5 ${formData.type === 'PUBLIC' ? 'text-green-600' : 'text-gray-500'}`} />
+                      </div>
+                      <p className="font-medium text-gray-900">Públic</p>
+                      <p className="text-xs text-gray-500 mt-1">Qualsevol pot veure i unir-se</p>
+                    </button>
 
-                      return (
-                        <button
-                          key={type}
-                          type="button"
-                          onClick={() => setFormData(prev => ({ ...prev, type }))}
-                          className={`p-4 rounded-xl border-2 text-left transition-all ${
-                            isSelected
-                              ? `border-${color}-500 bg-${color}-50`
-                              : 'border-gray-200 hover:border-gray-300'
-                          }`}
-                        >
-                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 ${
-                            isSelected ? `bg-${color}-100` : 'bg-gray-100'
-                          }`}>
-                            <Icon className={`w-5 h-5 ${isSelected ? `text-${color}-600` : 'text-gray-500'}`} />
-                          </div>
-                          <p className="font-medium text-gray-900">{titles[type]}</p>
-                          <p className="text-xs text-gray-500 mt-1">{descs[type]}</p>
-                        </button>
-                      )
-                    })}
+                    {/* PRIVATE */}
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, type: 'PRIVATE' }))}
+                      className={`p-4 rounded-xl border-2 text-left transition-all ${
+                        formData.type === 'PRIVATE'
+                          ? 'border-amber-500 bg-amber-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 ${
+                        formData.type === 'PRIVATE' ? 'bg-amber-100' : 'bg-gray-100'
+                      }`}>
+                        <Lock className={`w-5 h-5 ${formData.type === 'PRIVATE' ? 'text-amber-600' : 'text-gray-500'}`} />
+                      </div>
+                      <p className="font-medium text-gray-900">Privat</p>
+                      <p className="text-xs text-gray-500 mt-1">Visible pero cal sol·licitar accés</p>
+                    </button>
+
+                    {/* PROFESSIONAL */}
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, type: 'PROFESSIONAL' }))}
+                      className={`p-4 rounded-xl border-2 text-left transition-all ${
+                        formData.type === 'PROFESSIONAL'
+                          ? 'border-indigo-500 bg-indigo-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 ${
+                        formData.type === 'PROFESSIONAL' ? 'bg-indigo-100' : 'bg-gray-100'
+                      }`}>
+                        <Briefcase className={`w-5 h-5 ${formData.type === 'PROFESSIONAL' ? 'text-indigo-600' : 'text-gray-500'}`} />
+                      </div>
+                      <p className="font-medium text-gray-900">Professional</p>
+                      <p className="text-xs text-gray-500 mt-1">Nomes 1 per usuari, pot ser sensible</p>
+                    </button>
+
+                    {/* SECRET */}
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, type: 'SECRET' }))}
+                      className={`p-4 rounded-xl border-2 text-left transition-all ${
+                        formData.type === 'SECRET'
+                          ? 'border-red-500 bg-red-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 ${
+                        formData.type === 'SECRET' ? 'bg-red-100' : 'bg-gray-100'
+                      }`}>
+                        <EyeOff className={`w-5 h-5 ${formData.type === 'SECRET' ? 'text-red-600' : 'text-gray-500'}`} />
+                      </div>
+                      <p className="font-medium text-gray-900">Secret</p>
+                      <p className="text-xs text-gray-500 mt-1">No visible, nomes per invitació</p>
+                    </button>
                   </div>
                 </div>
 

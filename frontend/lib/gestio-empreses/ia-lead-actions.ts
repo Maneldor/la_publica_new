@@ -51,7 +51,7 @@ interface Generation {
 }
 
 // Historial local (per compatibilitat)
-let mockGenerations: Generation[] = []
+const mockGenerations: Generation[] = []
 
 // Rols permesos per generar leads amb IA
 const ALLOWED_ROLES = [

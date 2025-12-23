@@ -1,57 +1,77 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-import { PageTemplate } from '../../../../components/ui/PageTemplate';
+import { useState, useEffect, useMemo } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
+import Image from 'next/image'
+import {
+  FileText,
+  Calendar,
+  Tag,
+  Clock,
+  Heart,
+  MessageCircle,
+  Eye,
+  Bookmark,
+  Share2,
+  MoreHorizontal,
+  ArrowLeft,
+  Loader2,
+  User,
+  ThumbsUp,
+  Flag,
+  Bell,
+} from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 // Interfaces
 interface Author {
-  id: number;
-  name: string;
-  username: string;
-  avatar: string;
-  bio: string;
-  blogCount: number;
-  followers: number;
-  following: number;
-  isFollowing: boolean;
+  id: number
+  name: string
+  username: string
+  avatar: string
+  bio: string
+  blogCount: number
+  followers: number
+  following: number
+  isFollowing: boolean
   socialLinks: {
-    twitter?: string;
-    linkedin?: string;
-    website?: string;
-  };
+    twitter?: string
+    linkedin?: string
+    website?: string
+  }
 }
 
 interface BlogPost {
-  id: number;
-  slug: string;
-  title: string;
-  subtitle: string;
-  content: string;
-  coverImage: string;
-  category: string;
-  categoryColor: string;
-  tags: string[];
-  authorId: number;
-  publishedAt: Date;
-  updatedAt: Date;
-  readTime: number;
-  views: number;
-  comments: number;
-  likes: number;
-  isLiked: boolean;
-  isSaved: boolean;
-  featured: boolean;
+  id: number
+  slug: string
+  title: string
+  subtitle: string
+  content: string
+  coverImage: string
+  category: string
+  categoryColor: string
+  tags: string[]
+  authorId: number
+  publishedAt: Date
+  updatedAt: Date
+  readTime: number
+  views: number
+  comments: number
+  likes: number
+  isLiked: boolean
+  isSaved: boolean
+  featured: boolean
 }
 
 interface Comment {
-  id: number;
-  authorId: number;
-  content: string;
-  publishedAt: Date;
-  likes: number;
-  isLiked: boolean;
-  replies?: Comment[];
+  id: number
+  authorId: number
+  content: string
+  publishedAt: Date
+  likes: number
+  isLiked: boolean
+  replies?: Comment[]
 }
 
 // Sample data - Authors
@@ -87,7 +107,7 @@ const sampleAuthors: Author[] = [
       linkedin: 'https://linkedin.com/in/maria-gonzalez'
     }
   }
-];
+]
 
 // Sample data - Blog posts
 const sampleBlogs: BlogPost[] = [
@@ -97,9 +117,32 @@ const sampleBlogs: BlogPost[] = [
     title: 'Protocols de teletreball per a funcionaris públics en l\'era post-pandèmia',
     subtitle: 'Una reflexió sobre com adaptar-nos als nous models de treball i mantenir l\'eficiència en el sector públic',
     content: `
-      <p>La pandèmia de COVID-19 ha marcat un abans i un després en la manera com treballem...</p>
+      <p>La pandèmia de COVID-19 ha marcat un abans i un després en la manera com treballem. Per al sector públic, aquesta transformació ha suposat un repte sense precedents que ens ha obligat a repensar els nostres models organitzatius.</p>
+
       <h2>Els reptes del teletreball en l'administració pública</h2>
-      <p>Implementar el teletreball en el sector públic presenta desafiaments únics...</p>
+      <p>Implementar el teletreball en el sector públic presenta desafiaments únics que cal abordar amb una estratègia clara i ben definida. Entre els principals reptes trobem:</p>
+      <ul>
+        <li>La necessitat de garantir la seguretat de les dades dels ciutadans</li>
+        <li>L'adaptació dels sistemes informàtics a l'accés remot</li>
+        <li>La gestió d'equips distribuïts geogràficament</li>
+        <li>El manteniment de la qualitat del servei públic</li>
+      </ul>
+
+      <h2>Protocols recomanats</h2>
+      <p>Per assegurar una implementació exitosa del teletreball, és fonamental establir protocols clars que incloguin:</p>
+      <ol>
+        <li>Definició clara d'horaris i disponibilitat</li>
+        <li>Eines de comunicació i col·laboració estandarditzades</li>
+        <li>Mecanismes de seguiment i avaluació del rendiment</li>
+        <li>Formació contínua en competències digitals</li>
+      </ol>
+
+      <blockquote>
+        "El teletreball no és només una solució d'emergència, sinó una oportunitat per modernitzar l'administració pública i millorar la qualitat de vida dels treballadors."
+      </blockquote>
+
+      <h2>Conclusions</h2>
+      <p>La transformació cap al teletreball en l'administració pública és un procés que requereix temps, recursos i, sobretot, un canvi cultural profund. Les organitzacions que aconsegueixin adaptar-se amb èxit estaran millor preparades per afrontar els reptes del futur.</p>
     `,
     coverImage: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=1200&h=600&fit=crop',
     category: 'Gestió Pública',
@@ -121,13 +164,7 @@ const sampleBlogs: BlogPost[] = [
     slug: 'digitalitzacio-serveis-municipals',
     title: 'La digitalització dels serveis municipals: reptes i oportunitats',
     subtitle: 'Anàlisi dels processos de transformació digital en administracions locals catalanes',
-    content: `
-      <p>La transformació digital dels serveis municipals és un dels reptes més importants que afronten les administracions locals...</p>
-      <h2>Els beneficis de la digitalització</h2>
-      <p>La digitalització permet millorar l'eficiència, reduir costos i oferir millors serveis als ciutadans...</p>
-      <h2>Reptes a superar</h2>
-      <p>Malgrat els beneficis, hi ha diversos reptes que cal afrontar...</p>
-    `,
+    content: `<p>La transformació digital dels serveis municipals és un dels reptes més importants...</p>`,
     coverImage: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&h=400&fit=crop',
     category: 'Tecnologia',
     categoryColor: '#6366f1',
@@ -148,11 +185,7 @@ const sampleBlogs: BlogPost[] = [
     slug: 'transparencia-participacio-ciutadana',
     title: 'Transparència i participació ciutadana: eines per a una democràcia més forta',
     subtitle: 'Explorant les noves plataformes digitals que permeten una major participació dels ciutadans',
-    content: `
-      <p>La transparència i la participació ciutadana són pilars fonamentals de la democràcia moderna...</p>
-      <h2>Plataformes de participació</h2>
-      <p>Les noves tecnologies ofereixen oportunitats sense precedents per involucrar els ciutadans...</p>
-    `,
+    content: `<p>La transparència i la participació ciutadana són pilars fonamentals...</p>`,
     coverImage: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&h=400&fit=crop',
     category: 'Política',
     categoryColor: '#3b82f6',
@@ -167,83 +200,8 @@ const sampleBlogs: BlogPost[] = [
     isLiked: false,
     isSaved: true,
     featured: true
-  },
-  {
-    id: 4,
-    slug: 'sostenibilitat-urbana-smart-cities',
-    title: 'Sostenibilitat urbana i smart cities: el futur de les nostres ciutats',
-    subtitle: 'Com les tecnologies intel·ligents poden ajudar a crear ciutats més verdes i eficients',
-    content: `
-      <p>Les smart cities representen el futur de la vida urbana, combinant tecnologia i sostenibilitat...</p>
-      <h2>Tecnologies per a ciutats intel·ligents</h2>
-      <p>Des de sensors IoT fins a sistemes de gestió intel·ligent del trànsit...</p>
-    `,
-    coverImage: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1f?w=800&h=400&fit=crop',
-    category: 'Tecnologia',
-    categoryColor: '#6366f1',
-    tags: ['sostenibilitat', 'smart-cities', 'medi-ambient', 'innovació'],
-    authorId: 2,
-    publishedAt: new Date('2024-10-12T16:45:00'),
-    updatedAt: new Date('2024-10-12T16:45:00'),
-    readTime: 7,
-    views: 756,
-    comments: 28,
-    likes: 156,
-    isLiked: false,
-    isSaved: false,
-    featured: false
-  },
-  {
-    id: 5,
-    slug: 'cultura-digital-administracio',
-    title: 'Cultura digital en l\'administració: canvi de mentalitat vs. canvi tecnològic',
-    subtitle: 'Per què la transformació digital requereix primer un canvi cultural profund',
-    content: `
-      <p>La transformació digital no és només una qüestió de tecnologia, sinó sobretot de cultura organitzacional...</p>
-      <h2>El factor humà en la transformació digital</h2>
-      <p>Les persones són el centre de qualsevol procés de canvi exitós...</p>
-    `,
-    coverImage: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&h=400&fit=crop',
-    category: 'Cultura',
-    categoryColor: '#f59e0b',
-    tags: ['cultura-digital', 'transformació', 'mentalitat', 'administració'],
-    authorId: 1,
-    publishedAt: new Date('2024-10-11T09:30:00'),
-    updatedAt: new Date('2024-10-11T09:30:00'),
-    readTime: 5,
-    views: 623,
-    comments: 19,
-    likes: 78,
-    isLiked: false,
-    isSaved: false,
-    featured: false
-  },
-  {
-    id: 6,
-    slug: 'gestio-recursos-humans-sector-public',
-    title: 'Gestió de recursos humans en el sector públic: noves estratègies per al talent',
-    subtitle: 'Estratègies innovadores per atreure i retenir talent en l\'administració pública',
-    content: `
-      <p>La gestió del talent en el sector públic afronta reptes únics que requereixen solucions innovadores...</p>
-      <h2>Atreure nou talent</h2>
-      <p>Com competir amb el sector privat per atreure els millors professionals...</p>
-    `,
-    coverImage: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=800&h=400&fit=crop',
-    category: 'Gestió Pública',
-    categoryColor: '#10b981',
-    tags: ['recursos-humans', 'talent', 'estratègies', 'administració'],
-    authorId: 2,
-    publishedAt: new Date('2024-10-10T11:20:00'),
-    updatedAt: new Date('2024-10-10T11:20:00'),
-    readTime: 9,
-    views: 892,
-    comments: 35,
-    likes: 145,
-    isLiked: true,
-    isSaved: true,
-    featured: false
   }
-];
+]
 
 // Sample comments
 const sampleComments: Comment[] = [
@@ -264,547 +222,589 @@ const sampleComments: Comment[] = [
         isLiked: false
       }
     ]
+  },
+  {
+    id: 3,
+    authorId: 1,
+    content: 'Molt interessant la perspectiva sobre el canvi cultural. Crec que aquest és el punt més important de tot l\'article.',
+    publishedAt: new Date('2024-10-16T09:00:00'),
+    likes: 5,
+    isLiked: true
   }
-];
+]
 
 // Related blogs
 const relatedBlogs = [
   {
     id: 2,
     slug: 'digitalitzacio-serveis-municipals',
-    title: 'La digitalització dels serveis municipals: reptes i oportunitats',
-    excerpt: 'Anàlisi dels processos de transformació digital en administracions locals catalanes...',
+    title: 'La digitalització dels serveis municipals',
     coverImage: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=200&fit=crop',
     readTime: 6,
     publishedAt: new Date('2024-10-14T14:30:00')
+  },
+  {
+    id: 3,
+    slug: 'transparencia-participacio-ciutadana',
+    title: 'Transparència i participació ciutadana',
+    coverImage: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=400&h=200&fit=crop',
+    readTime: 10,
+    publishedAt: new Date('2024-10-13T10:15:00')
   }
-];
+]
+
+// Popular tags
+const popularTags = [
+  { name: 'transparència', count: 45 },
+  { name: 'innovació', count: 32 },
+  { name: 'digitalització', count: 28 },
+  { name: 'gestió', count: 24 },
+  { name: 'participació', count: 21 },
+]
 
 export default function BlogSinglePage() {
-  const router = useRouter();
-  const params = useParams();
-  const slug = params.slug as string;
+  const router = useRouter()
+  const params = useParams()
+  const slug = params.slug as string
 
-  const [blog, setBlog] = useState<BlogPost | null>(null);
-  const [author, setAuthor] = useState<Author | null>(null);
-  const [comments, setComments] = useState<Comment[]>(sampleComments);
-  const [newComment, setNewComment] = useState('');
-  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
-  const [showShareModal, setShowShareModal] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-
-  // Handle responsive design
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  const [blog, setBlog] = useState<BlogPost | null>(null)
+  const [author, setAuthor] = useState<Author | null>(null)
+  const [comments, setComments] = useState<Comment[]>(sampleComments)
+  const [newComment, setNewComment] = useState('')
+  const [isLoading, setIsLoading] = useState(true)
+  const [showMoreMenu, setShowMoreMenu] = useState(false)
 
   // Initialize blog data
   useEffect(() => {
-    const foundBlog = sampleBlogs.find(b => b.slug === slug);
+    setIsLoading(true)
+    const foundBlog = sampleBlogs.find(b => b.slug === slug)
     if (foundBlog) {
-      setBlog(foundBlog);
-      const foundAuthor = sampleAuthors.find(a => a.id === foundBlog.authorId);
-      setAuthor(foundAuthor || null);
-
-      // Increment views (simulated)
-      foundBlog.views += 1;
+      setBlog(foundBlog)
+      const foundAuthor = sampleAuthors.find(a => a.id === foundBlog.authorId)
+      setAuthor(foundAuthor || null)
     }
-  }, [slug]);
+    setIsLoading(false)
+  }, [slug])
 
-  const formatTime = (date: Date) => {
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('ca-ES', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    })
+  }
 
-    if (hours < 24) {
-      return `fa ${hours} hora${hours > 1 ? 's' : ''}`;
-    } else if (days < 7) {
-      return `fa ${days} dia${days > 1 ? 's' : ''}`;
-    } else {
-      return date.toLocaleDateString('ca-ES', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric'
-      });
-    }
-  };
+  const formatShortDate = (date: Date) => {
+    return date.toLocaleDateString('ca-ES', {
+      day: 'numeric',
+      month: 'short'
+    })
+  }
+
+  const formatCommentDate = (date: Date) => {
+    const now = new Date()
+    const diff = now.getTime() - date.getTime()
+    const hours = Math.floor(diff / (1000 * 60 * 60))
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+
+    if (hours < 24) return `fa ${hours}h`
+    if (days < 7) return `fa ${days} dies`
+    return formatShortDate(date)
+  }
 
   const handleLike = () => {
-    if (!blog) return;
+    if (!blog) return
     setBlog(prev => prev ? {
       ...prev,
       isLiked: !prev.isLiked,
       likes: prev.isLiked ? prev.likes - 1 : prev.likes + 1
-    } : null);
-  };
+    } : null)
+  }
 
   const handleSave = () => {
-    if (!blog) return;
+    if (!blog) return
     setBlog(prev => prev ? {
       ...prev,
       isSaved: !prev.isSaved
-    } : null);
-  };
+    } : null)
+  }
 
   const handleFollow = () => {
-    if (!author) return;
+    if (!author) return
     setAuthor(prev => prev ? {
       ...prev,
       isFollowing: !prev.isFollowing,
       followers: prev.isFollowing ? prev.followers - 1 : prev.followers + 1
-    } : null);
-  };
+    } : null)
+  }
 
-  // Stats data for PageTemplate
-  const statsData = [
-    { label: 'Visualitzacions', value: blog?.views.toString() || '0', trend: '+12%' },
-    { label: 'Temps lectura', value: blog ? `${blog.readTime} min` : '0 min', trend: '' },
-    { label: 'Comentaris', value: blog?.comments.toString() || '0', trend: `+${comments.length}` },
-    { label: 'Likes', value: blog?.likes.toString() || '0', trend: blog?.isLiked ? '+1' : '' }
-  ];
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mx-auto mb-4" />
+          <p className="text-gray-600">Carregant article...</p>
+        </div>
+      </div>
+    )
+  }
 
+  // Not found state
   if (!blog || !author) {
     return (
-      <PageTemplate
-        title="Blog"
-        subtitle="Carregant article..."
-        statsData={[]}
-      >
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: '50vh',
-          fontSize: '18px',
-          color: '#6c757d'
-        }}>
-          Carregant...
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Article no trobat</h2>
+          <p className="text-gray-600 mb-6">L'article que busques no existeix o ha estat eliminat.</p>
+          <button
+            onClick={() => router.push('/dashboard/blogs')}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Tornar als blogs
+          </button>
         </div>
-      </PageTemplate>
-    );
+      </div>
+    )
   }
 
   return (
-    <PageTemplate
-      title="Blog"
-      subtitle="Article i discussió"
-      statsData={statsData}
-    >
-      <div style={{
-        padding: '0 24px 24px 24px',
-        maxWidth: '1400px',
-        margin: '0 auto'
-      }}>
-        {/* Breadcrumb */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          marginBottom: '24px',
-          fontSize: '14px',
-          color: '#6c757d'
-        }}>
-          <button
-            onClick={() => router.push('/dashboard/blogs')}
-            style={{
-              backgroundColor: 'transparent',
-              border: 'none',
-              color: '#3b82f6',
-              cursor: 'pointer',
-              textDecoration: 'underline'
-            }}
+    <div className="px-6 py-6 space-y-6">
+      {/* Header with cover */}
+      <div className="relative h-72 md:h-96 rounded-2xl overflow-hidden">
+        {/* Cover image */}
+        {blog.coverImage ? (
+          <Image
+            src={blog.coverImage}
+            alt=""
+            fill
+            className="object-cover"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-indigo-400 to-purple-500" />
+        )}
+
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+
+        {/* Category badge - top left */}
+        <div className="absolute top-4 left-4">
+          <span
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-full text-white"
+            style={{ backgroundColor: blog.categoryColor }}
           >
-            Blogs
-          </button>
-          <span>›</span>
-          <button
-            onClick={() => router.push(`/dashboard/blogs?category=${encodeURIComponent(blog.category)}`)}
-            style={{
-              backgroundColor: 'transparent',
-              border: 'none',
-              color: '#3b82f6',
-              cursor: 'pointer',
-              textDecoration: 'underline'
-            }}
-          >
+            <Tag className="w-4 h-4" />
             {blog.category}
-          </button>
-          <span>›</span>
-          <span style={{ fontWeight: '500', color: '#2c3e50' }}>
-            {blog.title.length > 50 ? blog.title.substring(0, 50) + '...' : blog.title}
           </span>
         </div>
 
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : '1fr 300px',
-          gap: '24px'
-        }}>
-          {/* Contenido principal */}
-          <div>
-            {/* Header del blog */}
-            <div style={{
-              backgroundColor: 'white',
-              borderRadius: '12px',
-              padding: '24px',
-              marginBottom: '24px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-              border: '1px solid #f0f0f0'
-            }}>
-              <h1 style={{
-                fontSize: '32px',
-                fontWeight: '700',
-                color: '#2c3e50',
-                marginBottom: '16px',
-                lineHeight: '1.3'
-              }}>
-                {blog.title}
-              </h1>
+        {/* Actions - top right */}
+        <div className="absolute top-4 right-4 flex items-center gap-2">
+          <button
+            onClick={handleSave}
+            className={`p-2 rounded-full backdrop-blur-sm transition-colors ${
+              blog.isSaved
+                ? 'bg-amber-500 text-white'
+                : 'bg-white/20 text-white hover:bg-white/40'
+            }`}
+          >
+            <Bookmark className={`w-5 h-5 ${blog.isSaved ? 'fill-current' : ''}`} />
+          </button>
+          <button className="p-2 bg-white/20 backdrop-blur-sm text-white rounded-full hover:bg-white/30 transition-colors">
+            <Share2 className="w-5 h-5" />
+          </button>
+          <div className="relative">
+            <button
+              onClick={() => setShowMoreMenu(!showMoreMenu)}
+              className="p-2 bg-white/20 backdrop-blur-sm text-white rounded-full hover:bg-white/30 transition-colors"
+            >
+              <MoreHorizontal className="w-5 h-5" />
+            </button>
 
-              <p style={{
-                fontSize: '18px',
-                color: '#6c757d',
-                marginBottom: '20px',
-                lineHeight: '1.5'
-              }}>
-                {blog.subtitle}
-              </p>
-
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                marginBottom: '20px'
-              }}>
-                <img
-                  src={author.avatar}
-                  alt={author.name}
-                  style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '50%',
-                    objectFit: 'cover'
-                  }}
-                />
-                <div>
-                  <span style={{
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    color: '#2c3e50'
-                  }}>
-                    {author.name}
-                  </span>
-                  <span style={{
-                    fontSize: '14px',
-                    color: '#6c757d',
-                    marginLeft: '8px'
-                  }}>
-                    • {formatTime(blog.publishedAt)} • {blog.readTime} min lectura
-                  </span>
-                </div>
-              </div>
-
-              <img
-                src={blog.coverImage}
-                alt={blog.title}
-                style={{
-                  width: '100%',
-                  height: '300px',
-                  objectFit: 'cover',
-                  borderRadius: '8px'
-                }}
-              />
-            </div>
-
-            {/* Article Content */}
-            <div style={{
-              backgroundColor: 'white',
-              borderRadius: '12px',
-              padding: '32px',
-              marginBottom: '24px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-              border: '1px solid #f0f0f0'
-            }}>
-              <div
-                style={{
-                  fontSize: '18px',
-                  lineHeight: '1.8',
-                  color: '#2c3e50'
-                }}
-                dangerouslySetInnerHTML={{ __html: blog.content }}
-              />
-            </div>
-
-            {/* Comments Section */}
-            <div style={{
-              backgroundColor: 'white',
-              borderRadius: '12px',
-              padding: '24px',
-              marginBottom: '24px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-              border: '1px solid #f0f0f0'
-            }}>
-              <h3 style={{
-                fontSize: '20px',
-                fontWeight: '600',
-                color: '#2c3e50',
-                marginBottom: '20px'
-              }}>
-                💬 Comentaris ({comments.length})
-              </h3>
-
-              {comments.map(comment => {
-                const commentAuthor = sampleAuthors.find(a => a.id === comment.authorId);
-                return (
-                  <div key={comment.id} style={{
-                    borderBottom: '1px solid #f0f0f0',
-                    paddingBottom: '20px',
-                    marginBottom: '20px'
-                  }}>
-                    <div style={{
-                      display: 'flex',
-                      gap: '12px'
-                    }}>
-                      <img
-                        src={commentAuthor?.avatar}
-                        alt={commentAuthor?.name}
-                        style={{
-                          width: '40px',
-                          height: '40px',
-                          borderRadius: '50%',
-                          objectFit: 'cover'
-                        }}
-                      />
-                      <div style={{ flex: 1 }}>
-                        <div style={{
-                          fontWeight: '500',
-                          color: '#2c3e50',
-                          marginBottom: '4px'
-                        }}>
-                          {commentAuthor?.name}
-                        </div>
-                        <p style={{
-                          fontSize: '14px',
-                          color: '#2c3e50',
-                          lineHeight: '1.6',
-                          marginBottom: '8px'
-                        }}>
-                          {comment.content}
-                        </p>
-                        <div style={{
-                          fontSize: '12px',
-                          color: '#6c757d'
-                        }}>
-                          {formatTime(comment.publishedAt)} • ❤️ {comment.likes} likes
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Sidebar */}
-          {!isMobile && (
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '24px'
-            }}>
-              {/* Author sidebar */}
-              <div style={{
-                backgroundColor: 'white',
-                borderRadius: '12px',
-                padding: '20px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                border: '1px solid #f0f0f0'
-              }}>
-                <h4 style={{
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  color: '#2c3e50',
-                  marginBottom: '16px'
-                }}>
-                  ✍️ Sobre l'autor
-                </h4>
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  textAlign: 'center'
-                }}>
-                  <img
-                    src={author.avatar}
-                    alt={author.name}
-                    style={{
-                      width: '60px',
-                      height: '60px',
-                      borderRadius: '50%',
-                      objectFit: 'cover',
-                      marginBottom: '12px'
-                    }}
-                  />
-                  <h5 style={{
-                    fontSize: '16px',
-                    fontWeight: '600',
-                    color: '#2c3e50',
-                    marginBottom: '8px'
-                  }}>
-                    {author.name}
-                  </h5>
-                  <p style={{
-                    fontSize: '13px',
-                    color: '#6c757d',
-                    lineHeight: '1.4',
-                    marginBottom: '16px'
-                  }}>
-                    {author.bio}
-                  </p>
-                  <button
-                    onClick={handleFollow}
-                    style={{
-                      backgroundColor: author.isFollowing ? '#e5e7eb' : '#3b82f6',
-                      color: author.isFollowing ? '#6c757d' : 'white',
-                      border: 'none',
-                      borderRadius: '6px',
-                      padding: '8px 16px',
-                      fontSize: '12px',
-                      fontWeight: '500',
-                      cursor: 'pointer',
-                      width: '100%'
-                    }}
-                  >
-                    {author.isFollowing ? 'Deixar de seguir' : 'Seguir'}
+            {showMoreMenu && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowMoreMenu(false)} />
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                  <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                    <Share2 className="w-4 h-4" />
+                    Compartir
+                  </button>
+                  <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                    <Bookmark className="w-4 h-4" />
+                    Desar
+                  </button>
+                  <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                    <Bell className="w-4 h-4" />
+                    Notificacions
+                  </button>
+                  <hr className="my-1" />
+                  <button className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
+                    <Flag className="w-4 h-4" />
+                    Reportar
                   </button>
                 </div>
-              </div>
-
-              {/* Tags */}
-              <div style={{
-                backgroundColor: 'white',
-                borderRadius: '12px',
-                padding: '20px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                border: '1px solid #f0f0f0'
-              }}>
-                <h4 style={{
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  color: '#2c3e50',
-                  marginBottom: '16px'
-                }}>
-                  🏷️ Etiquetes
-                </h4>
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '8px'
-                }}>
-                  {blog.tags.map((tag, index) => (
-                    <button
-                      key={index}
-                      style={{
-                        backgroundColor: '#f0f7ff',
-                        color: '#3b82f6',
-                        border: 'none',
-                        borderRadius: '6px',
-                        padding: '6px 12px',
-                        fontSize: '12px',
-                        fontWeight: '500',
-                        cursor: 'pointer',
-                        textAlign: 'left'
-                      }}
-                    >
-                      #{tag}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
+              </>
+            )}
+          </div>
         </div>
 
-        {/* Related Articles */}
-        <div style={{
-          backgroundColor: 'white',
-          borderRadius: '12px',
-          padding: '32px',
-          marginTop: '24px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-          border: '1px solid #f0f0f0'
-        }}>
-          <h3 style={{
-            fontSize: '24px',
-            fontWeight: '600',
-            color: '#2c3e50',
-            marginBottom: '24px'
-          }}>
-            📚 Articles relacionats
-          </h3>
+        {/* Content - bottom */}
+        <div className="absolute bottom-0 left-0 right-0 p-6">
+          <div className="max-w-4xl">
+            <h1 className="text-3xl md:text-4xl font-bold text-white drop-shadow-lg">
+              {blog.title}
+            </h1>
 
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: '20px'
-          }}>
-            {relatedBlogs.map(relatedBlog => (
-              <div
-                key={relatedBlog.id}
-                onClick={() => router.push(`/dashboard/blogs/${relatedBlog.slug}`)}
-                style={{
-                  cursor: 'pointer',
-                  borderRadius: '8px',
-                  overflow: 'hidden',
-                  border: '1px solid #f0f0f0',
-                  transition: 'all 0.2s'
-                }}
-              >
-                <img
-                  src={relatedBlog.coverImage}
-                  alt={relatedBlog.title}
-                  style={{
-                    width: '100%',
-                    height: '120px',
-                    objectFit: 'cover'
-                  }}
-                />
-                <div style={{ padding: '16px' }}>
-                  <h4 style={{
-                    fontSize: '16px',
-                    fontWeight: '600',
-                    color: '#2c3e50',
-                    marginBottom: '8px'
-                  }}>
-                    {relatedBlog.title}
-                  </h4>
-                  <p style={{
-                    fontSize: '13px',
-                    color: '#6c757d',
-                    marginBottom: '8px'
-                  }}>
-                    {relatedBlog.excerpt}
-                  </p>
-                  <div style={{
-                    fontSize: '12px',
-                    color: '#6c757d'
-                  }}>
-                    {formatTime(relatedBlog.publishedAt)} • {relatedBlog.readTime} min
-                  </div>
+            {/* Meta info */}
+            <div className="flex items-center gap-4 mt-4 flex-wrap">
+              {/* Author */}
+              <Link href={`/dashboard/membres/${author.username}`} className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white/50">
+                  {author.avatar ? (
+                    <Image
+                      src={author.avatar}
+                      alt=""
+                      width={40}
+                      height={40}
+                      className="object-cover w-full h-full"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-indigo-100 text-indigo-600 font-bold">
+                      {author.name?.charAt(0)}
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+                <div>
+                  <p className="text-white font-medium drop-shadow">{author.name}</p>
+                  <p className="text-white/70 text-sm">@{author.username}</p>
+                </div>
+              </Link>
+
+              <span className="text-white/50 hidden sm:inline">·</span>
+
+              <span className="text-white/80 text-sm flex items-center gap-1.5">
+                <Calendar className="w-4 h-4" />
+                {formatDate(blog.publishedAt)}
+              </span>
+
+              <span className="text-white/50 hidden sm:inline">·</span>
+
+              <span className="text-white/80 text-sm flex items-center gap-1.5">
+                <Clock className="w-4 h-4" />
+                {blog.readTime} min lectura
+              </span>
+            </div>
           </div>
         </div>
       </div>
-    </PageTemplate>
-  );
+
+      {/* Content with grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main content - 2 columns */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Article */}
+          <Card>
+            <CardContent className="p-6 md:p-8">
+              {/* Subtitle */}
+              {blog.subtitle && (
+                <p className="text-lg text-gray-600 mb-6 pb-6 border-b border-gray-100 italic">
+                  {blog.subtitle}
+                </p>
+              )}
+
+              {/* Content */}
+              <article
+                className="prose prose-lg max-w-none prose-headings:text-gray-900 prose-headings:font-bold prose-p:text-gray-800 prose-li:text-gray-800 prose-strong:text-gray-900 prose-a:text-indigo-600 prose-blockquote:border-l-4 prose-blockquote:border-indigo-500 prose-blockquote:bg-indigo-50 prose-blockquote:py-2 prose-blockquote:px-4 prose-blockquote:rounded-r-lg prose-blockquote:text-gray-700 prose-blockquote:not-italic"
+                dangerouslySetInnerHTML={{ __html: blog.content }}
+              />
+
+              {/* Tags */}
+              {blog.tags && blog.tags.length > 0 && (
+                <div className="mt-8 pt-6 border-t border-gray-100">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Tag className="w-4 h-4 text-gray-400" />
+                    {blog.tags.map((tag) => (
+                      <Link
+                        key={tag}
+                        href={`/dashboard/blogs?tag=${tag}`}
+                        className="px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full hover:bg-indigo-100 hover:text-indigo-600 transition-colors"
+                      >
+                        #{tag}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="mt-8 pt-6 border-t border-gray-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={handleLike}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                        blog.isLiked
+                          ? 'bg-red-100 text-red-600'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      <Heart className={`w-5 h-5 ${blog.isLiked ? 'fill-current' : ''}`} />
+                      {blog.likes}
+                    </button>
+                    <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors">
+                      <MessageCircle className="w-5 h-5" />
+                      {blog.comments}
+                    </button>
+                    <span className="flex items-center gap-2 text-gray-500 text-sm">
+                      <Eye className="w-4 h-4" />
+                      {blog.views} visualitzacions
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleSave}
+                      className={`p-2 rounded-lg transition-colors ${
+                        blog.isSaved
+                          ? 'bg-amber-100 text-amber-600'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      <Bookmark className={`w-5 h-5 ${blog.isSaved ? 'fill-current' : ''}`} />
+                    </button>
+                    <button className="p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors">
+                      <Share2 className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Comments */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageCircle className="w-5 h-5" />
+                Comentaris ({comments.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* New comment form */}
+              <div className="flex gap-3">
+                <div className="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden">
+                  <div className="w-full h-full flex items-center justify-center bg-indigo-100 text-indigo-600 font-bold">
+                    U
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <textarea
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    placeholder="Escriu un comentari..."
+                    rows={3}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none text-gray-900 placeholder:text-gray-400"
+                  />
+                  <div className="flex justify-end mt-2">
+                    <button
+                      disabled={!newComment.trim()}
+                      className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Publicar
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Comments list */}
+              <div className="space-y-4 pt-4 border-t border-gray-100">
+                {comments.map((comment) => {
+                  const commentAuthor = sampleAuthors.find(a => a.id === comment.authorId)
+                  return (
+                    <div key={comment.id} className="flex gap-3">
+                      <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
+                        {commentAuthor?.avatar ? (
+                          <Image
+                            src={commentAuthor.avatar}
+                            alt=""
+                            width={40}
+                            height={40}
+                            className="object-cover w-full h-full"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-indigo-100 text-indigo-600 font-bold">
+                            {commentAuthor?.name?.charAt(0) || 'U'}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-gray-900">{commentAuthor?.name || 'Usuari'}</span>
+                          <span className="text-sm text-gray-400">{formatCommentDate(comment.publishedAt)}</span>
+                        </div>
+                        <p className="text-gray-600 mt-1">{comment.content}</p>
+                        <div className="flex items-center gap-4 mt-2">
+                          <button className="text-sm text-gray-500 hover:text-indigo-600 transition-colors">
+                            Respondre
+                          </button>
+                          <button className={`text-sm transition-colors flex items-center gap-1 ${
+                            comment.isLiked ? 'text-red-500' : 'text-gray-500 hover:text-red-600'
+                          }`}>
+                            <Heart className={`w-3 h-3 ${comment.isLiked ? 'fill-current' : ''}`} />
+                            {comment.likes}
+                          </button>
+                        </div>
+
+                        {/* Replies */}
+                        {comment.replies && comment.replies.length > 0 && (
+                          <div className="mt-4 pl-4 border-l-2 border-gray-100 space-y-3">
+                            {comment.replies.map((reply) => {
+                              const replyAuthor = sampleAuthors.find(a => a.id === reply.authorId)
+                              return (
+                                <div key={reply.id} className="flex gap-3">
+                                  <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
+                                    {replyAuthor?.avatar ? (
+                                      <Image
+                                        src={replyAuthor.avatar}
+                                        alt=""
+                                        width={32}
+                                        height={32}
+                                        className="object-cover w-full h-full"
+                                      />
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center bg-indigo-100 text-indigo-600 text-xs font-bold">
+                                        {replyAuthor?.name?.charAt(0) || 'U'}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-medium text-gray-900 text-sm">{replyAuthor?.name || 'Usuari'}</span>
+                                      <span className="text-xs text-gray-400">{formatCommentDate(reply.publishedAt)}</span>
+                                    </div>
+                                    <p className="text-gray-600 text-sm mt-0.5">{reply.content}</p>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Sidebar - 1 column */}
+        <div className="space-y-6">
+          {/* Author card */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Sobre l'autor</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col items-center text-center">
+                <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-200">
+                  {author.avatar ? (
+                    <Image
+                      src={author.avatar}
+                      alt=""
+                      width={80}
+                      height={80}
+                      className="object-cover w-full h-full"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-indigo-100 text-indigo-600 text-2xl font-bold">
+                      {author.name?.charAt(0)}
+                    </div>
+                  )}
+                </div>
+                <h3 className="font-semibold text-gray-900 mt-3">{author.name}</h3>
+                <p className="text-sm text-gray-500">@{author.username}</p>
+                {author.bio && (
+                  <p className="text-sm text-gray-600 mt-2">{author.bio}</p>
+                )}
+                <div className="flex items-center gap-4 mt-3 text-sm text-gray-500">
+                  <span><strong className="text-gray-900">{author.blogCount}</strong> articles</span>
+                  <span><strong className="text-gray-900">{author.followers}</strong> seguidors</span>
+                </div>
+                <button
+                  onClick={handleFollow}
+                  className={`mt-4 w-full py-2 text-sm font-medium rounded-lg transition-colors ${
+                    author.isFollowing
+                      ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                  }`}
+                >
+                  {author.isFollowing ? 'Seguint' : 'Seguir'}
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Related articles card */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Articles relacionats</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {relatedBlogs.map((related) => (
+                <Link
+                  key={related.id}
+                  href={`/dashboard/blogs/${related.slug}`}
+                  className="flex gap-3 group"
+                >
+                  <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-indigo-400 to-purple-500 overflow-hidden flex-shrink-0">
+                    {related.coverImage && (
+                      <Image
+                        src={related.coverImage}
+                        alt=""
+                        width={64}
+                        height={64}
+                        className="object-cover w-full h-full"
+                      />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-medium text-gray-900 group-hover:text-indigo-600 transition-colors line-clamp-2">
+                      {related.title}
+                    </h4>
+                    <p className="text-xs text-gray-500 mt-1 flex items-center gap-2">
+                      <Clock className="w-3 h-3" />
+                      {related.readTime} min
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* Popular tags card */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Tags populars</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                {popularTags.map((tag) => (
+                  <Link
+                    key={tag.name}
+                    href={`/dashboard/blogs?tag=${tag.name}`}
+                    className="px-3 py-1.5 bg-gray-100 text-gray-600 text-sm rounded-full hover:bg-indigo-100 hover:text-indigo-600 transition-colors"
+                  >
+                    {tag.name}
+                    <span className="ml-1 text-gray-400">({tag.count})</span>
+                  </Link>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  )
 }

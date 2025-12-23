@@ -224,6 +224,7 @@ export async function POST(request: NextRequest) {
       adminId,
       moderatorIds,
       sectorOfferIds,
+      sensitiveJobCategoryId,
     } = body
 
     // Validacions
@@ -275,6 +276,10 @@ export async function POST(request: NextRequest) {
           enableGroupChat: enableGroupChat ?? false,
           isActive: isActive ?? true,
           createdById: session.user.id,
+          // Solo asignar sensitiveJobCategoryId para grupos PROFESSIONAL
+          ...(type === 'PROFESSIONAL' && sensitiveJobCategoryId && {
+            sensitiveJobCategoryId
+          }),
         }
       })
 

@@ -32,6 +32,7 @@ model User {
   primaryRole              UserRole?
   isEmailVerified          Boolean                    @default(false)
   lastLogin                DateTime?
+  deletedAt                DateTime?                  // Soft delete
 
   // Preferències de visualització i aparença
   displayPreference        String                     @default("NICK") // NICK, NOM, NOM_COGNOM
@@ -80,6 +81,7 @@ model User {
   tasksAssigned            Task[]                     @relation("TasksAssigned")
   tasksCreated             Task[]                     @relation("TasksCreated")
   favorites                UserFavorite[]             @relation("UserFavorites")
+  anuncioFavorites         AnuncioFavorite[]          @relation("UserAnuncioFavorites")  // Anuncis preferits
   wallet                   UserWallet?
 
   // Relacions Eines
@@ -176,6 +178,17 @@ model User {
   // Relacions Alertes Admin
   alerts                  AdminAlert[]     @relation("UserAlerts")
   resolvedAlerts          AdminAlert[]     @relation("ResolvedAlerts")
+
+  // Sistema de detecció de frau en anuncis
+  adWarningCount          Int              @default(0)    // Comptador d'avisos
+  adBlockedUntil          DateTime?                       // Fins quan està bloquejat
+  adBlockReason           String?                         // Motiu del bloqueig
+  isAdBanned              Boolean          @default(false) // Bloqueig permanent
+  adAlerts                AdAlert[]        @relation("UserAdAlerts")
+  resolvedAdAlerts        AdAlert[]        @relation("ResolvedAdAlerts")
+
+  // Sistema d'anuncis destacats
+  createdFeaturedAds      FeaturedAd[]     @relation("FeaturedAdCreatedBy")
 
   @@index([email])
   @@index([nick])
@@ -298,15 +311,35 @@ model Anuncio {
   reactions            Int                   @default(0)
   commentsCount        Int                   @default(0)
   sharesCount          Int                   @default(0)
+  contactsCount        Int                   @default(0)  // Contador de contactos recibidos
   communityId          String?
   authorId             String
+  contactPhone         String?               // Telèfon de contacte (opcional)
+  contactEmail         String?               // Email de contacte (opcional)
+  metadata             Json?                 // Dades addicionals del marketplace
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
   deletedAt            DateTime?
+
+  // Camps d'expiració i renovació
+  publishedAt          DateTime?             // Quan es va publicar
+  expiredAt            DateTime?             // Quan va passar a estat "expired"
+  deletionScheduledAt  DateTime?             // Quan s'eliminarà definitivament (+7 dies de gràcia)
+  renewalCount         Int                   @default(0)  // Vegades que s'ha renovat
+  lastRenewalAt        DateTime?             // Última renovació
+  autoRenew            Boolean               @default(false) // Auto-renovació activada
+
+  // Flags de notificacions enviades (per no duplicar)
+  expirationWarning7d  Boolean               @default(false) // Avís 7 dies enviat
+  expirationWarning24h Boolean               @default(false) // Avís 24h enviat
+  deletionWarning      Boolean               @default(false) // Avís eliminació enviat
+
   author               User                  @relation("AnunciosCreados", fields: [authorId], references: [id])
   community            Comunidad?            @relation(fields: [communityId], references: [id], onDelete: Cascade)
   comments             AnuncioComment[]
   metrics              AnuncioMetrics?
+  adAlerts             AdAlert[]             @relation("AnuncioAlerts")  // Alertes de frau
+  favorites            AnuncioFavorite[]     @relation("AnuncioFavorites")  // Favorits dels usuaris
 
   @@index([communityId, status, publishAt])
   @@index([type, audience])
@@ -314,6 +347,8 @@ model Anuncio {
   @@index([deletedAt])
   @@index([slug])
   @@index([publishAt, expiresAt])
+  @@index([status, expiresAt])           // Per processar expiracions
+  @@index([status, deletionScheduledAt]) // Per processar eliminacions
 }
 
 model AnuncioComment {
@@ -368,6 +403,9 @@ model Company {
   name             String
   cif              String?                @unique
   email            String
+  contactEmail     String?                // Email de contacte alternatiu
+  contactPhone     String?                // Telèfon de contacte alternatiu
+  contactPerson    String?                // Persona de contacte
   phone            String?
   address          String?
   logo             String?
@@ -430,6 +468,9 @@ model Company {
   redemptions      Redemption[]           @relation("CompanyRedemptions")
   subscriptions    Subscription[]
   tasks            Task[]
+
+  // Anuncis destacats contractats
+  featuredAds      FeaturedAd[]
 
   @@index([cif])
   @@index([currentPlanId])
@@ -891,6 +932,23 @@ model UserFavorite {
   @@index([offerId], map: "idx_favorite_offer")
   @@index([createdAt], map: "idx_favorite_created")
   @@map("user_favorites")
+}
+
+// Favorits d'anuncis (marketplace)
+model AnuncioFavorite {
+  id        String   @id @default(cuid())
+  userId    String
+  anuncioId String
+  createdAt DateTime @default(now())
+
+  user      User     @relation("UserAnuncioFavorites", fields: [userId], references: [id], onDelete: Cascade)
+  anuncio   Anuncio  @relation("AnuncioFavorites", fields: [anuncioId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, anuncioId], name: "unique_user_anuncio_favorite")
+  @@index([userId], map: "idx_anuncio_favorite_user")
+  @@index([anuncioId], map: "idx_anuncio_favorite_anuncio")
+  @@index([createdAt], map: "idx_anuncio_favorite_created")
+  @@map("anuncio_favorites")
 }
 
 model Coupon {
@@ -1559,12 +1617,14 @@ model TaskActivity {
 model Conversation {
   id                       String                     @id @default(dbgenerated("(gen_random_uuid())::text"))
   title                    String
+  anuncioId                String?                    // Referencia al anuncio (si la conversación es sobre un anuncio)
   createdAt                DateTime                   @default(now()) @db.Timestamptz(6)
   updatedAt                DateTime                   @default(now()) @updatedAt @db.Timestamptz(6)
   ConversationParticipants ConversationParticipants[]
   messages                 Message[]
 
   @@index([updatedAt], map: "idx_conversations_updated_at")
+  @@index([anuncioId], map: "idx_conversations_anuncio_id")
   @@map("conversations")
 }
 
@@ -2392,6 +2452,8 @@ enum AnuncioStatus {
   DRAFT
   PENDING
   PUBLISHED
+  SOLD
+  REJECTED
   ARCHIVED
   EXPIRED
 }
@@ -2441,6 +2503,7 @@ enum SubscriptionStatus {
 
 enum InvoiceStatus {
   DRAFT
+  PENDING
   SENT
   PAID
   OVERDUE
@@ -2576,11 +2639,23 @@ enum NotificationType {
   GROUP_INVITATION
   GROUP_INVITATION_ACCEPTED
   GROUP_INVITATION_REJECTED
+  GROUP_INVITATION_CANCELLED
+
+  // Anuncis
+  AD_CONTACT
+  AD_EXPIRING_SOON
+  AD_EXPIRED
+  AD_RENEWED
+  AD_AUTO_RENEWED
+  AD_EXPIRING_TOMORROW
+  AD_DELETION_IMMINENT
+  AD_DELETED
 
   // Generals
   GENERAL
   SYSTEM
   WEEKLY_SUMMARY
+  ALERT
   INFO
   WARNING
   SUCCESS
@@ -2707,6 +2782,8 @@ enum AuditAction {
   USER_DELETED
   USER_SUSPENDED
   USER_REACTIVATED
+  USER_ACTIVATED
+  USER_DEACTIVATED
   USER_ROLE_CHANGED
   COUPON_CANCELLED
   COUPON_BULK_EXPORT
@@ -2759,6 +2836,7 @@ enum PaymentStage {
 
 enum LeadStatus {
   NEW
+  ACTIVE
   PROSPECTING
   CONTACTED
   QUALIFIED
@@ -3546,44 +3624,47 @@ enum AuditLevel {
 model AuditLog {
   id          String     @id @default(cuid())
   timestamp   DateTime   @default(now())
-  
+  createdAt   DateTime   @default(now())  // Àlies per compatibilitat
+
   // Qui
   userId      String?
   user        User?      @relation("UserAuditLogs", fields: [userId], references: [id], onDelete: SetNull)
   userName    String?    // Nom de l'usuari en el moment de l'acció
   userEmail   String?    // Guardem email per si s'elimina l'usuari
   userRole    String?    // Rol en el moment de l'acció
-  
+
   // Què
   action      String     // LOGIN, LOGOUT, CREATE, UPDATE, DELETE, VIEW, EXPORT, etc.
   category    String     // AUTH, USER, COMPANY, OFFER, CAMPAIGN, SYSTEM, etc.
-  
+
   // On
   entity      String?    // Nom del model: User, Company, Offer, etc.
   entityId    String?    // ID de l'entitat afectada
   entityName  String?    // Nom/títol de l'entitat (per referència)
-  
+
   // Detalls
   description String?    // Descripció llegible
   changes     Json?      // { before: {...}, after: {...} } per UPDATE
   metadata    Json?      // Dades addicionals
-  
+
   // Context
   ipAddress   String?
   userAgent   String?
   requestPath String?    // /api/admin/users/xxx
   requestMethod String?  // GET, POST, PUT, DELETE
-  
+
   // Resultat
   level       AuditLevel @default(INFO)
+  severity    String?    // Àlies per compatibilitat (INFO, WARNING, ERROR, CRITICAL)
   success     Boolean    @default(true)
   errorMessage String?
-  
+
   @@index([userId])
   @@index([action])
   @@index([category])
   @@index([entity, entityId])
   @@index([timestamp])
+  @@index([createdAt])
   @@index([level])
   @@map("audit_logs")
 }
@@ -3681,14 +3762,23 @@ model NoticeDismissal {
 
 // Configuración del sistema - Persistencia de settings
 model SystemSettings {
-  id          String   @id @default(cuid())
-  key         String   @unique
-  value       String   @db.Text
-  type        String   @default("string") // string, boolean, number, json
-  description String?
-  updatedAt   DateTime @updatedAt
-  updatedBy   String?
-  
+  id                  String   @id @default(cuid())
+  key                 String   @unique
+  value               String   @db.Text
+  type                String   @default("string") // string, boolean, number, json
+  description         String?
+  category            String?  @default("general")
+
+  // Camps específics de manteniment (per compatibilitat)
+  maintenanceMode     Boolean  @default(false)
+  maintenanceMessage  String?  @db.Text
+  settings            Json?    // Configuracions complexes
+
+  isPublic            Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  updatedBy           String?
+
   @@map("system_settings")
 }
 
@@ -3727,14 +3817,18 @@ model AgendaGoal {
 
 model AgendaTask {
   id        String     @id @default(cuid())
+  userId    String?    // Per queries directes per usuari
   goalId    String
   goal      AgendaGoal @relation(fields: [goalId], references: [id], onDelete: Cascade)
   text      String
   completed Boolean    @default(false)
   position  Int        @default(0)
+  dueDate   DateTime?
+  priority  Int        @default(0)
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
+  @@index([userId])
   @@index([goalId])
   @@map("agenda_tasks")
 }
@@ -4157,6 +4251,7 @@ model Post {
 
   // Grup (opcional - si és un post dins d'un grup)
   groupId       String?
+  group         Group?    @relation("GroupPosts", fields: [groupId], references: [id], onDelete: Cascade)
 
   // Estadístiques (denormalitzades per rendiment)
   likesCount    Int       @default(0)
@@ -4480,6 +4575,7 @@ model Group {
   postPermission       PostPermission    @default(ALL_MEMBERS)
 
   // Funcionalitats
+  enableFeed       Boolean   @default(true)
   enableForum      Boolean   @default(true)
   enableGallery    Boolean   @default(false)
   enableDocuments  Boolean   @default(false)
@@ -4487,6 +4583,7 @@ model Group {
 
   // Relacions
   members       GroupMember[]
+  posts         Post[]            @relation("GroupPosts")
   sectorOffers  GroupSectorOffer[]
   joinRequests  GroupJoinRequest[]
   invitations   GroupInvitation[]
@@ -4679,3 +4776,183 @@ model AdminAlert {
   @@index([createdAt])
 }
 
+// =====================================
+// SISTEMA DE DETECCIÓ DE FRAU EN ANUNCIS
+// =====================================
+
+enum AdAlertType {
+  DUPLICATE_CONTENT          // Contingut duplicat d'altres anuncis
+  HIGH_VOLUME                // Massa anuncis en poc temps
+  REPEATED_CONTACT           // Demana contacte extern repetidament
+  SUSPICIOUS_PRICE           // Preu sospitós (massa baix o alt)
+  KEYWORD_SPAM               // Excés de paraules clau comercials
+  EXTERNAL_REDIRECT          // Intenta redirigir a webs externes
+  COMMERCIAL_PATTERN         // Patró d'ús comercial detectat
+  USER_REPORT                // Reportat per altres usuaris
+  SIMILAR_IMAGES             // Imatges repetides o de stock
+  MULTIPLE_ACCOUNTS          // Possible múltiples comptes
+}
+
+model AdAlert {
+  id              String         @id @default(cuid())
+
+  // Usuari afectat
+  userId          String
+  user            User           @relation("UserAdAlerts", fields: [userId], references: [id], onDelete: Cascade)
+
+  // Anunci relacionat (opcional, pot ser patró general)
+  anuncioId       String?
+  anuncio         Anuncio?       @relation("AnuncioAlerts", fields: [anuncioId], references: [id], onDelete: SetNull)
+
+  // Tipus i severitat
+  type            AdAlertType
+  severity        AlertSeverity  @default(MEDIUM)
+
+  // Detalls
+  description     String
+  metadata        Json?          // Dades addicionals (URLs detectades, paraules clau, etc.)
+
+  // Estat
+  isResolved      Boolean        @default(false)
+  resolvedAt      DateTime?
+  resolvedById    String?
+  resolvedBy      User?          @relation("ResolvedAdAlerts", fields: [resolvedById], references: [id])
+  resolution      String?        // Acció presa: WARNING, BLOCK_TEMP, BLOCK_PERM, DISMISSED
+
+  // Acció automàtica presa
+  actionTaken     String?        // AUTO_WARNING, AUTO_BLOCK, MANUAL_REVIEW
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([userId])
+  @@index([anuncioId])
+  @@index([type])
+  @@index([severity])
+  @@index([isResolved])
+  @@index([createdAt])
+}
+
+// =====================================
+// SISTEMA D'ANUNCIS DESTACATS
+// =====================================
+
+enum FeaturedAdLevel {
+  PREMIUM   // Slider hero gran
+  STANDARD  // Sidebar destacat
+  BASIC     // Badge + millor posició
+}
+
+enum FeaturedAdSource {
+  LA_PUBLICA  // Anuncis propis de la plataforma
+  PARTNER     // Partners oficials
+  COMPANY     // Empreses que paguen
+}
+
+model FeaturedAd {
+  id                String   @id @default(cuid())
+
+  // Informació bàsica
+  title             String
+  slug              String   @unique
+  description       String   @db.Text
+  shortDescription  String?  @db.VarChar(200)  // Per al slider
+
+  // Imatges (múltiples per al slider)
+  images            String[]
+
+  // Nivell de destacat
+  level             FeaturedAdLevel  @default(BASIC)
+
+  // Enllaços
+  ctaText           String?  @default("Veure oferta")
+  ctaUrl            String?  // URL externa o interna
+  targetBlank       Boolean  @default(false)
+
+  // Qui el publica
+  source            FeaturedAdSource  @default(COMPANY)
+  companyId         String?
+  company           Company?  @relation(fields: [companyId], references: [id])
+
+  // Per anuncis de La Pública sense empresa
+  publisherName     String?  // "La Pública" o nom partner
+  publisherLogo     String?
+
+  // Període de campanya bàsic
+  startsAt          DateTime
+  endsAt            DateTime
+
+  // Programació avançada (JSON)
+  scheduling        Json?    // AdvancedScheduling object
+
+  // Configuració visualització
+  position          Int      @default(0)  // Ordre dins del seu nivell
+  isActive          Boolean  @default(true)
+  priority          Int      @default(5)  // 1-10, per rotació
+
+  // Mètriques
+  impressions       Int      @default(0)
+  clicks            Int      @default(0)
+  maxImpressions    Int?     // Límit opcional
+  maxClicks         Int?     // Límit opcional
+
+  // Vinculació amb facturació (opcional)
+  budgetId          String?
+  invoiceId         String?
+
+  // Audit
+  createdById       String
+  createdBy         User     @relation("FeaturedAdCreatedBy", fields: [createdById], references: [id])
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Historial de visualitzacions detallat
+  analytics         FeaturedAdAnalytics[]
+
+  @@index([level, isActive, startsAt, endsAt])
+  @@index([companyId])
+  @@index([source])
+  @@map("featured_ads")
+}
+
+// Analytics detallat per dia
+model FeaturedAdAnalytics {
+  id              String   @id @default(cuid())
+  featuredAdId    String
+  featuredAd      FeaturedAd @relation(fields: [featuredAdId], references: [id], onDelete: Cascade)
+
+  date            DateTime @db.Date
+  impressions     Int      @default(0)
+  clicks          Int      @default(0)
+  uniqueViews     Int      @default(0)
+
+  @@unique([featuredAdId, date])
+  @@index([featuredAdId, date])
+  @@map("featured_ad_analytics")
+}
+
+// Configuració de preus (per l'admin)
+model FeaturedAdPricing {
+  id              String   @id @default(cuid())
+
+  level           FeaturedAdLevel @unique
+
+  // Preus per període (en cèntims per evitar decimals)
+  priceWeekly     Int      // Preu per setmana
+  priceMonthly    Int      // Preu per mes
+  priceQuarterly  Int      // Preu per trimestre
+  priceBiannual   Int      // Preu per semestre
+  priceAnnual     Int      // Preu anual
+
+  // Descripció per mostrar
+  name            String
+  description     String?
+  features        String[] // Llista de característiques
+
+  isActive        Boolean  @default(true)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("featured_ad_pricing")
+}

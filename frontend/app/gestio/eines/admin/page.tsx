@@ -88,7 +88,7 @@ export default function EinesAdminPage() {
   const loadResources = async (targetPage = page) => {
     setLoading(true)
     try {
-      // @ts-ignore - Ignore type error for now until interface update
+      // @ts-expect-error - Ignore type error for now until interface update
       const result = await getResources(filters, session?.user?.id, userRole, targetPage, LIMIT)
       if (result.success && result.data) {
         setResources(result.data)

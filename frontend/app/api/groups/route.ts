@@ -102,6 +102,7 @@ export async function GET(request: NextRequest) {
     // Info adicional per l'usuari
     let userProfessionalGroup = null
     let userHasProfessionalGroup = false
+    let userPendingRequests: { groupId: string; status: string }[] = []
 
     if (currentUserId) {
       const professionalMembership = await getUserProfessionalGroup(currentUserId)
@@ -109,11 +110,25 @@ export async function GET(request: NextRequest) {
         userHasProfessionalGroup = true
         userProfessionalGroup = professionalMembership.group
       }
+
+      // Obtenir sol·licituds pendents de l'usuari
+      const pendingRequests = await prismaClient.groupJoinRequest.findMany({
+        where: {
+          userId: currentUserId,
+          status: 'PENDING',
+        },
+        select: {
+          groupId: true,
+          status: true,
+        }
+      })
+      userPendingRequests = pendingRequests
     }
 
     // Processar grups per afegir info de membership
     const processedGroups = groups.map(group => {
       const membership = currentUserId && 'members' in group ? (group.members as Array<{ id: string; role: string; joinedAt: Date }>)[0] : null
+      const pendingRequest = userPendingRequests.find(r => r.groupId === group.id)
 
       return {
         id: group.id,
@@ -133,6 +148,8 @@ export async function GET(request: NextRequest) {
         isMember: !!membership,
         userRole: membership?.role || null,
         userJoinedAt: membership?.joinedAt || null,
+        // Info de sol·licitud pendent
+        requestStatus: pendingRequest?.status || null,
       }
     })
 

@@ -46,6 +46,17 @@ export interface Message {
   isForwarded?: boolean;
 }
 
+// Info del anuncio relacionado con una conversación
+export interface AnuncioInfo {
+  id: string;
+  title: string;
+  slug?: string;
+  status: string;
+  imageUrl?: string;
+  price?: number;
+  priceType?: 'fixed' | 'negotiable' | 'free';
+}
+
 export interface Conversation {
   id: string;
   type: 'individual' | 'group' | 'company';
@@ -65,6 +76,7 @@ export interface Conversation {
     admins: string[];
     createdAt: Date;
   };
+  anuncio?: AnuncioInfo | null; // Info del anuncio relacionado
 }
 
 // Tipus per a l'usuari actual de la sessió
