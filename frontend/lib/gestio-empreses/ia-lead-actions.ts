@@ -236,11 +236,12 @@ export async function generateLeadsWithAI(
   // Obtenir API Key de DeepSeek
   const apiKey = process.env.DEEPSEEK_API_KEY
 
-  console.log('🔑 DeepSeek API Key:', {
+  console.log('🔑 DeepSeek API Key DEBUG:', {
     exists: !!apiKey,
     length: apiKey?.length || 0,
-    prefix: apiKey?.substring(0, 10) || 'none',
-    isPlaceholder: apiKey === 'sk-your-deepseek-api-key-here'
+    prefix: apiKey?.substring(0, 15) || 'UNDEFINED',
+    isPlaceholder: apiKey === 'sk-your-deepseek-api-key-here',
+    envKeys: Object.keys(process.env).filter(k => k.includes('DEEP') || k.includes('API')).join(', ')
   })
 
   // Si no hi ha API key vàlida, usar mock

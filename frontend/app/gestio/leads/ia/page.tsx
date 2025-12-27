@@ -44,14 +44,14 @@ export default async function AILeadsPage() {
     getLeadsAIConfig()
   ])
 
-  // Si no hi ha configuració de LEADS, mostrar avís
+  // Si no hi ha configuració de LEADS, mostrar avís amb error específic
   if (!leadsConfigResult.success || !leadsConfigResult.data) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
         <AlertCircle className="h-12 w-12 text-amber-500 mb-4" />
         <h2 className="text-xl font-semibold mb-2">Configuració d'IA pendent</h2>
-        <p className="text-gray-600 mb-4">
-          No hi ha configuració de model d'IA per a generació de leads. Contacta amb l'administrador.
+        <p className="text-gray-600 mb-4 text-center max-w-md">
+          {leadsConfigResult.error || "No hi ha configuració de model d'IA per a generació de leads."}
         </p>
         <Link
           href="/gestio/admin/configuracio-ia"

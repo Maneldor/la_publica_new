@@ -13,6 +13,7 @@ import {
   Edit3,
   Settings,
   Package,
+  Users,
 } from 'lucide-react'
 import {
   CalendarDaysIcon,
@@ -49,6 +50,7 @@ import {
   CapsulaModule,
   VisualitzacionsModule,
   DiariPrivatModule,
+  ContactsModule,
 } from './modules'
 
 interface AgendaViewProps {
@@ -478,7 +480,10 @@ export function AgendaView({ userId, userName }: AgendaViewProps) {
                 </CardContent>
               </Card>
 
-              {/* MÓDULO 2: Objectius */}
+              {/* MÓDULO 2: Contactes (Fix) */}
+              <ContactsModule />
+
+              {/* MÓDULO 3: Objectius */}
               <Card>
                 <CardHeader noDivider>
                   <CardTitle

@@ -170,31 +170,60 @@ Focus: Empreses que puguin necessitar serveis per als seus empleats (beneficis, 
 
   try {
     // Parsejar JSON de la resposta
-    const content = result.content || ''
+    let content = result.content || ''
 
-    // Buscar l'objecte JSON a la resposta
-    let jsonMatch = content.match(/\{[\s\S]*\}/)
+    console.log('📝 [DEEPSEEK] Raw response length:', content.length)
+    console.log('📝 [DEEPSEEK] First 500 chars:', content.substring(0, 500))
 
-    if (!jsonMatch) {
-      // Intentar trobar només l'array de leads
-      jsonMatch = content.match(/\[[\s\S]*\]/)
-      if (jsonMatch) {
-        const leads = JSON.parse(jsonMatch[0])
+    // Netejar la resposta - eliminar markdown code blocks
+    content = content.replace(/```json\s*/gi, '')
+    content = content.replace(/```\s*/g, '')
+    content = content.trim()
+
+    // Intentar trobar l'array JSON directament
+    const arrayMatch = content.match(/\[\s*\{[\s\S]*?\}\s*\]/)
+
+    if (arrayMatch) {
+      try {
+        const leads = JSON.parse(arrayMatch[0])
+        console.log('✅ [DEEPSEEK] Parsed', leads.length, 'leads from array')
         return {
           success: true,
           leads,
           usage: result.usage
         }
-      } else {
-        return {
-          success: false,
-          error: 'No s\'ha pogut parsejar la resposta JSON de DeepSeek'
-        }
+      } catch (e) {
+        console.log('⚠️ [DEEPSEEK] Array parse failed, trying object...')
       }
     }
 
-    const parsedData = JSON.parse(jsonMatch[0])
-    const leads = parsedData.leads || parsedData
+    // Buscar l'objecte JSON a la resposta
+    const objectMatch = content.match(/\{[\s\S]*\}/)
+
+    if (!objectMatch) {
+      console.log('❌ [DEEPSEEK] No JSON found in response')
+      return {
+        success: false,
+        error: 'No s\'ha pogut trobar JSON a la resposta de DeepSeek'
+      }
+    }
+
+    // Intentar parsejar com a objecte amb "leads" array
+    let parsedData
+    try {
+      parsedData = JSON.parse(objectMatch[0])
+    } catch (e) {
+      // Si falla, intentar trobar només el primer objecte complet
+      const singleObjectMatch = content.match(/\{[^{}]*\}/)
+      if (singleObjectMatch) {
+        console.log('⚠️ [DEEPSEEK] Trying single object parse...')
+        parsedData = { leads: [JSON.parse(singleObjectMatch[0])] }
+      } else {
+        throw e
+      }
+    }
+
+    const leads = Array.isArray(parsedData) ? parsedData : (parsedData.leads || [parsedData])
 
     // Validar que tenim leads vàlids
     if (!Array.isArray(leads) || leads.length === 0) {

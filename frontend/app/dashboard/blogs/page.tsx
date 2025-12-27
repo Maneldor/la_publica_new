@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -19,18 +19,67 @@ import {
   Clock,
   X,
   Loader2,
+  Pin,
+  Star,
+  BarChart3,
 } from 'lucide-react'
 import { PageLayout } from '@/components/layout/PageLayout'
 import { Card, CardContent } from '@/components/ui/card'
-import { BlogPost, Author, BlogCategory } from './types/blogTypes'
-import { sampleAuthors, sampleBlogs, blogCategories } from './data/blogData'
-import { useBlogFilters } from './hooks/useBlogFilters'
+import { formatRelativeDate } from '@/lib/utils/blog'
+
+// Interfaces matching API response
+interface BlogPost {
+  id: string
+  slug: string
+  title: string
+  excerpt: string | null
+  content: string
+  coverImage: string | null
+  readingTime: number
+  views: number
+  isPinned: boolean
+  isFeatured: boolean
+  allowComments: boolean
+  allowReactions: boolean
+  publishedAt: string | null
+  createdAt: string
+  category: {
+    id: string
+    name: string
+    color: string | null
+  } | null
+  tags: { name: string }[]
+  author: {
+    id: string
+    nick: string
+    name: string | null
+    surname: string | null
+    avatar: string | null
+  }
+  _count: {
+    reactions: number
+    comments: number
+  }
+  // Local state for interactions
+  isLiked?: boolean
+  isSaved?: boolean
+  userReaction?: string | null
+  isBookmarked?: boolean
+  poll?: {
+    id: string
+    question: string
+    type: 'SINGLE' | 'MULTIPLE'
+    _count: {
+      votes: number
+    }
+  } | null
+}
 
 // Tabs
 const TABS = [
   { id: 'all', label: 'Tots' },
-  { id: 'mine', label: 'Els Meus' },
-  { id: 'following', label: 'Guardats' },
+  { id: 'featured', label: 'Destacats' },
+  { id: 'saved', label: 'Guardats' },
   { id: 'popular', label: 'Populars' },
 ]
 
@@ -38,22 +87,14 @@ const TABS = [
 function BlogCard({ blog, viewMode, onLike, onSave }: {
   blog: BlogPost
   viewMode: 'grid' | 'list'
-  onLike: (id: number) => void
-  onSave: (id: number) => void
+  onLike: (id: string) => void
+  onSave: (id: string) => void
 }) {
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diff = now.getTime() - date.getTime()
-    const hours = Math.floor(diff / (1000 * 60 * 60))
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+  const authorName = blog.author.name && blog.author.surname
+    ? `${blog.author.name} ${blog.author.surname}`
+    : blog.author.nick
 
-    if (hours < 1) return 'Fa uns minuts'
-    if (hours < 24) return `Fa ${hours}h`
-    if (days < 2) return 'Ahir'
-    if (days < 7) return `Fa ${days} dies`
-    return date.toLocaleDateString('ca-ES', { day: 'numeric', month: 'short' })
-  }
+  const dateStr = blog.publishedAt || blog.createdAt
 
   if (viewMode === 'list') {
     return (
@@ -74,24 +115,30 @@ function BlogCard({ blog, viewMode, onLike, onSave }: {
                   <FileText className="w-8 h-8" />
                 </div>
               )}
-              <div
-                className="absolute bottom-1.5 left-1.5 px-2 py-0.5 rounded text-xs font-medium text-white"
-                style={{ backgroundColor: blog.categoryColor || '#6366f1' }}
-              >
-                {blog.category}
-              </div>
+              {blog.category && (
+                <div
+                  className="absolute bottom-1.5 left-1.5 px-2 py-0.5 rounded text-xs font-medium text-white"
+                  style={{ backgroundColor: blog.category.color || '#6366f1' }}
+                >
+                  {blog.category.name}
+                </div>
+              )}
             </div>
 
             {/* Content */}
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <Link
-                    href={`/dashboard/blogs/${blog.slug}`}
-                    className="font-semibold text-gray-900 hover:text-indigo-600 transition-colors line-clamp-1"
-                  >
-                    {blog.title}
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    {blog.isPinned && <Pin className="w-4 h-4 text-amber-500" />}
+                    {blog.isFeatured && <Star className="w-4 h-4 text-indigo-500 fill-current" />}
+                    <Link
+                      href={`/dashboard/blogs/${blog.slug}`}
+                      className="font-semibold text-gray-900 hover:text-indigo-600 transition-colors line-clamp-1"
+                    >
+                      {blog.title}
+                    </Link>
+                  </div>
                   <p className="text-sm text-gray-500 mt-0.5 line-clamp-2">
                     {blog.excerpt}
                   </p>
@@ -102,22 +149,22 @@ function BlogCard({ blog, viewMode, onLike, onSave }: {
               <div className="flex items-center justify-between mt-3">
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-200">
-                    {blog.author?.avatar ? (
+                    {blog.author.avatar ? (
                       <Image
                         src={blog.author.avatar}
-                        alt={blog.author.name}
+                        alt={authorName}
                         width={24}
                         height={24}
                         className="object-cover w-full h-full"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-indigo-100 text-indigo-600 text-xs font-bold">
-                        {blog.author?.name?.charAt(0) || 'A'}
+                        {authorName.charAt(0).toUpperCase()}
                       </div>
                     )}
                   </div>
-                  <span className="text-sm text-gray-600">{blog.author?.name}</span>
-                  <span className="text-xs text-gray-400">· {formatDate(blog.publishedAt)} · {blog.readTime} min</span>
+                  <span className="text-sm text-gray-600">{authorName}</span>
+                  <span className="text-xs text-gray-400">· {formatRelativeDate(dateStr)} · {blog.readingTime} min</span>
                 </div>
 
                 <div className="flex items-center gap-4 text-sm text-gray-500">
@@ -127,14 +174,14 @@ function BlogCard({ blog, viewMode, onLike, onSave }: {
                   </span>
                   <span className="flex items-center gap-1">
                     <MessageCircle className="w-4 h-4" />
-                    {blog.comments}
+                    {blog._count.comments}
                   </span>
                   <button
                     onClick={(e) => { e.preventDefault(); onLike(blog.id) }}
                     className={`flex items-center gap-1 transition-colors ${blog.isLiked ? 'text-red-500' : 'hover:text-red-500'}`}
                   >
                     <Heart className={`w-4 h-4 ${blog.isLiked ? 'fill-current' : ''}`} />
-                    {blog.likes}
+                    {blog._count.reactions}
                   </button>
                   <button
                     onClick={(e) => { e.preventDefault(); onSave(blog.id) }}
@@ -144,6 +191,14 @@ function BlogCard({ blog, viewMode, onLike, onSave }: {
                   </button>
                 </div>
               </div>
+
+              {/* Poll indicator */}
+              {blog.poll && (
+                <div className="mt-2 flex items-center gap-2 text-xs text-indigo-600">
+                  <BarChart3 className="w-3 h-3" />
+                  <span>Enquesta: {blog.poll.question.substring(0, 40)}...</span>
+                </div>
+              )}
             </div>
           </div>
         </CardContent>
@@ -170,14 +225,32 @@ function BlogCard({ blog, viewMode, onLike, onSave }: {
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
 
         {/* Category badge */}
-        <div className="absolute top-3 left-3">
-          <span
-            className="px-2 py-1 text-xs font-medium rounded-full text-white"
-            style={{ backgroundColor: blog.categoryColor || '#6366f1' }}
-          >
-            {blog.category}
-          </span>
-        </div>
+        {blog.category && (
+          <div className="absolute top-3 left-3">
+            <span
+              className="px-2 py-1 text-xs font-medium rounded-full text-white"
+              style={{ backgroundColor: blog.category.color || '#6366f1' }}
+            >
+              {blog.category.name}
+            </span>
+          </div>
+        )}
+
+        {/* Pinned/Featured indicators */}
+        {(blog.isPinned || blog.isFeatured) && (
+          <div className="absolute top-3 left-3 flex items-center gap-1" style={{ left: blog.category ? 'auto' : '0.75rem', right: blog.category ? '3rem' : 'auto' }}>
+            {blog.isPinned && (
+              <span className="p-1.5 bg-amber-500 text-white rounded-full">
+                <Pin className="w-3 h-3" />
+              </span>
+            )}
+            {blog.isFeatured && (
+              <span className="p-1.5 bg-indigo-500 text-white rounded-full">
+                <Star className="w-3 h-3 fill-current" />
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Action buttons */}
         <div className="absolute top-3 right-3 flex items-center gap-2">
@@ -203,9 +276,19 @@ function BlogCard({ blog, viewMode, onLike, onSave }: {
         <div className="absolute bottom-3 right-3">
           <span className="px-2 py-1 bg-black/50 text-white text-xs rounded-full flex items-center gap-1">
             <Clock className="w-3 h-3" />
-            {blog.readTime} min
+            {blog.readingTime} min
           </span>
         </div>
+
+        {/* Poll indicator */}
+        {blog.poll && (
+          <div className="absolute bottom-3 left-3">
+            <span className="px-2 py-1 bg-indigo-600/90 text-white text-xs rounded-full flex items-center gap-1">
+              <BarChart3 className="w-3 h-3" />
+              Enquesta
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Content */}
@@ -221,22 +304,22 @@ function BlogCard({ blog, viewMode, onLike, onSave }: {
         {/* Author */}
         <div className="flex items-center gap-2 mt-3">
           <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-200">
-            {blog.author?.avatar ? (
+            {blog.author.avatar ? (
               <Image
                 src={blog.author.avatar}
-                alt={blog.author.name}
+                alt={authorName}
                 width={24}
                 height={24}
                 className="object-cover w-full h-full"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-indigo-100 text-indigo-600 text-xs font-bold">
-                {blog.author?.name?.charAt(0) || 'A'}
+                {authorName.charAt(0).toUpperCase()}
               </div>
             )}
           </div>
-          <span className="text-sm text-gray-600">{blog.author?.name}</span>
-          <span className="text-xs text-gray-400">· {formatDate(blog.publishedAt)}</span>
+          <span className="text-sm text-gray-600">{authorName}</span>
+          <span className="text-xs text-gray-400">· {formatRelativeDate(dateStr)}</span>
         </div>
 
         {/* Stats */}
@@ -247,11 +330,11 @@ function BlogCard({ blog, viewMode, onLike, onSave }: {
           </span>
           <span className="flex items-center gap-1">
             <MessageCircle className="w-4 h-4" />
-            {blog.comments}
+            {blog._count.comments}
           </span>
           <span className="flex items-center gap-1">
             <Heart className={`w-4 h-4 ${blog.isLiked ? 'fill-current text-red-500' : ''}`} />
-            {blog.likes}
+            {blog._count.reactions}
           </span>
         </div>
       </div>
@@ -261,57 +344,140 @@ function BlogCard({ blog, viewMode, onLike, onSave }: {
 
 export default function BlogsPage() {
   const router = useRouter()
-  const [blogs, setBlogs] = useState<BlogPost[]>(sampleBlogs)
-  const [authors] = useState<Author[]>(sampleAuthors)
-  const [categories] = useState<BlogCategory[]>(blogCategories)
-  const [isLoading, setIsLoading] = useState(false)
+  const [blogs, setBlogs] = useState<BlogPost[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   // UI states
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [activeTab, setActiveTab] = useState<'all' | 'featured' | 'saved' | 'popular'>('all')
+  const [searchTerm, setSearchTerm] = useState('')
 
-  // Filters hook
-  const {
-    activeTab,
-    setActiveTab,
-    searchTerm,
-    setSearchTerm,
-    filteredBlogs,
-    tabCounts,
-  } = useBlogFilters(blogs, authors, categories)
+  // Fetch blogs on mount
+  useEffect(() => {
+    loadBlogs()
+  }, [])
 
-  // Handlers
-  const handleLikeBlog = (blogId: number) => {
-    setBlogs(prev => prev.map(blog => {
-      if (blog.id === blogId) {
-        return {
-          ...blog,
-          isLiked: !blog.isLiked,
-          likes: blog.isLiked ? blog.likes - 1 : blog.likes + 1
-        }
+  const loadBlogs = async () => {
+    try {
+      setIsLoading(true)
+      const res = await fetch('/api/blog/posts')
+      const data = await res.json()
+
+      if (res.ok) {
+        setBlogs(data.posts || [])
+      } else {
+        setError(data.error || 'Error carregant articles')
       }
-      return blog
-    }))
+    } catch (err) {
+      console.error('Error:', err)
+      setError('Error de connexió')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const handleSaveBlog = (blogId: number) => {
-    setBlogs(prev => prev.map(blog => {
-      if (blog.id === blogId) {
-        return {
-          ...blog,
-          isSaved: !blog.isSaved
+  // Filter blogs based on active tab and search
+  const filteredBlogs = useMemo(() => {
+    return blogs
+      .filter(blog => {
+        // Filter by tab
+        if (activeTab === 'featured') return blog.isFeatured
+        if (activeTab === 'saved') return blog.isSaved || blog.isBookmarked
+        if (activeTab === 'popular') return blog.views > 100 || blog._count.reactions > 10
+        return true
+      })
+      .filter(blog => {
+        // Filter by search
+        if (searchTerm) {
+          const search = searchTerm.toLowerCase()
+          return (
+            blog.title.toLowerCase().includes(search) ||
+            (blog.excerpt?.toLowerCase().includes(search)) ||
+            blog.tags.some(tag => tag.name.toLowerCase().includes(search))
+          )
         }
-      }
-      return blog
-    }))
-  }
+        return true
+      })
+      .sort((a, b) => {
+        // Pinned posts first
+        if (a.isPinned && !b.isPinned) return -1
+        if (!a.isPinned && b.isPinned) return 1
+        // Then by date
+        const dateA = new Date(a.publishedAt || a.createdAt).getTime()
+        const dateB = new Date(b.publishedAt || b.createdAt).getTime()
+        return dateB - dateA
+      })
+  }, [blogs, activeTab, searchTerm])
+
+  // Tab counts
+  const tabCounts = useMemo(() => ({
+    all: blogs.length,
+    featured: blogs.filter(b => b.isFeatured).length,
+    saved: blogs.filter(b => b.isSaved || b.isBookmarked).length,
+    popular: blogs.filter(b => b.views > 100 || b._count.reactions > 10).length,
+  }), [blogs])
 
   // Stats
   const stats = useMemo(() => ({
     total: blogs.length,
-    mine: blogs.filter(b => b.author.id === 1).length,
-    saved: blogs.filter(b => b.isSaved).length,
-    popular: blogs.filter(b => b.featured || b.views > 1000).length,
+    featured: blogs.filter(b => b.isFeatured).length,
+    saved: blogs.filter(b => b.isSaved || b.isBookmarked).length,
+    popular: blogs.filter(b => b.views > 100 || b._count.reactions > 10).length,
   }), [blogs])
+
+  // Handlers
+  const handleLikeBlog = async (blogId: string) => {
+    try {
+      const res = await fetch(`/api/blog/posts/${blogId}/react`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'LIKE' })
+      })
+
+      if (res.ok) {
+        setBlogs(prev => prev.map(blog => {
+          if (blog.id === blogId) {
+            const wasLiked = blog.isLiked
+            return {
+              ...blog,
+              isLiked: !wasLiked,
+              _count: {
+                ...blog._count,
+                reactions: wasLiked ? blog._count.reactions - 1 : blog._count.reactions + 1
+              }
+            }
+          }
+          return blog
+        }))
+      }
+    } catch (err) {
+      console.error('Error reacting:', err)
+    }
+  }
+
+  const handleSaveBlog = async (blogId: string) => {
+    try {
+      const res = await fetch(`/api/blog/posts/${blogId}/bookmark`, {
+        method: 'POST'
+      })
+
+      if (res.ok) {
+        setBlogs(prev => prev.map(blog => {
+          if (blog.id === blogId) {
+            return {
+              ...blog,
+              isSaved: !blog.isSaved,
+              isBookmarked: !blog.isBookmarked
+            }
+          }
+          return blog
+        }))
+      }
+    } catch (err) {
+      console.error('Error bookmarking:', err)
+    }
+  }
 
   return (
     <PageLayout
@@ -344,11 +510,11 @@ export default function BlogsPage() {
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center">
-              <Users className="w-5 h-5 text-indigo-600" />
+              <Star className="w-5 h-5 text-indigo-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-indigo-600">{stats.mine}</p>
-              <p className="text-sm text-gray-500">Els meus</p>
+              <p className="text-2xl font-bold text-indigo-600">{stats.featured}</p>
+              <p className="text-sm text-gray-500">Destacats</p>
             </div>
           </div>
         </div>
@@ -434,7 +600,7 @@ export default function BlogsPage() {
           {TABS.map(tab => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as 'all' | 'mine' | 'following' | 'popular')}
+              onClick={() => setActiveTab(tab.id as 'all' | 'featured' | 'saved' | 'popular')}
               className={`flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
                 activeTab === tab.id
                   ? 'bg-indigo-50 text-indigo-600 border-b-2 border-indigo-600'
@@ -462,6 +628,18 @@ export default function BlogsPage() {
               <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mx-auto mb-4" />
               <p className="text-gray-600">Carregant articles...</p>
             </div>
+          ) : error ? (
+            <div className="py-12 text-center">
+              <FileText className="w-12 h-12 text-red-300 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Error</h3>
+              <p className="text-gray-500 mb-6">{error}</p>
+              <button
+                onClick={loadBlogs}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                Tornar a carregar
+              </button>
+            </div>
           ) : filteredBlogs.length > 0 ? (
             <div className={
               viewMode === 'grid'
@@ -482,21 +660,21 @@ export default function BlogsPage() {
             <div className="py-12 text-center">
               <FileText className="w-12 h-12 text-gray-300 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                No s'han trobat articles
+                No s&apos;han trobat articles
               </h3>
               <p className="text-gray-500 mb-6">
                 {searchTerm
                   ? `No hi ha articles que coincideixin amb "${searchTerm}"`
-                  : activeTab === 'mine'
-                    ? 'Encara no has creat cap article'
-                    : activeTab === 'following'
+                  : activeTab === 'featured'
+                    ? 'No hi ha articles destacats'
+                    : activeTab === 'saved'
                       ? 'No tens cap article guardat'
                       : activeTab === 'popular'
                         ? 'No hi ha articles populars encara'
                         : 'No hi ha articles disponibles'
                 }
               </p>
-              {(activeTab === 'mine' || !searchTerm) && (
+              {!searchTerm && (
                 <button
                   onClick={() => router.push('/dashboard/blogs/crear')}
                   className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"

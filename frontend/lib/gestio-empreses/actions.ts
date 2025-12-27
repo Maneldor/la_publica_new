@@ -83,33 +83,94 @@ export async function fetchManagedCompanies(limit?: number) {
  * Action per crear un nou lead
  */
 export async function createLead(data: {
+  // Empresa
   companyName: string
+  cif?: string
+  sector?: string
+  industry?: string
+  website?: string
+  description?: string
+  companySize?: string
+  employeeCount?: number
+
+  // Ubicació
+  address?: string
+  city?: string
+  zipCode?: string
+  state?: string
+  country?: string
+
+  // Contacte principal
   contactName: string
+  contactRole?: string
   email: string
   phone?: string
-  sector?: string
+
+  // Xarxes socials
+  linkedinProfile?: string
+  facebookProfile?: string
+  twitterProfile?: string
+
+  // Comercial
   source: string
   priority?: string
-  notes?: string
   estimatedRevenue?: number
-  employeeCount?: string
+  score?: number
+  tags?: string[]
+
+  // Seguiment
+  notes?: string
+  internalNotes?: string
+  nextFollowUpDate?: Date
 }) {
   const { session } = await verifyAccess()
 
   const lead = await prismaClient.companyLead.create({
     data: {
+      // Empresa
       companyName: data.companyName,
+      cif: data.cif,
+      sector: data.sector,
+      industry: data.industry,
+      website: data.website,
+      description: data.description,
+      companySize: data.companySize,
+      employeeCount: data.employeeCount,
+
+      // Ubicació
+      address: data.address,
+      city: data.city,
+      zipCode: data.zipCode,
+      state: data.state,
+      country: data.country,
+
+      // Contacte principal
       contactName: data.contactName,
+      contactRole: data.contactRole,
       email: data.email,
       phone: data.phone,
-      sector: data.sector,
+
+      // Xarxes socials
+      linkedinProfile: data.linkedinProfile,
+      facebookProfile: data.facebookProfile,
+      twitterProfile: data.twitterProfile,
+
+      // Comercial
       source: data.source as any,
       priority: (data.priority || 'MEDIUM') as any,
       status: 'NEW',
-      notes: data.notes,
       estimatedRevenue: data.estimatedRevenue,
-      employeeCount: data.employeeCount,
+      score: data.score,
+      tags: data.tags || [],
+
+      // Seguiment
+      notes: data.notes,
+      internalNotes: data.internalNotes,
+      nextFollowUpDate: data.nextFollowUpDate,
+
+      // Assignació
       assignedToId: session.user.id,
+      createdById: session.user.id,
     }
   })
 
@@ -123,8 +184,8 @@ export async function createLead(data: {
     }
   })
 
-  revalidatePath('/gestor-empreses/leads')
-  revalidatePath('/gestor-empreses')
+  revalidatePath('/gestio/leads')
+  revalidatePath('/gestio')
 
   return lead
 }

@@ -104,7 +104,7 @@ export const Step6Skills = ({ formData, errors, updateField }: Step6Props) => {
               onChange={(e) => setSkillInput(e.target.value)}
               onKeyPress={handleSkillKeyPress}
               placeholder="Ex: Transformació Digital, React, Gestió de Projectes..."
-              className="flex-1 px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              className="flex-1 px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
             />
             <button
               onClick={() => addSkill(skillInput)}

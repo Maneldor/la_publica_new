@@ -1008,7 +1008,7 @@ export interface LeadsAIConfig {
 export async function getLeadsAIConfig(): Promise<{ success: boolean; data?: LeadsAIConfig; error?: string }> {
   try {
     // Obtenir configuració per al cas d'ús LEADS
-    const config = await prismaClient.aIConfiguration.findUnique({
+    const config = await prismaClient.aIConfiguration.findFirst({
       where: { useCase: 'LEADS' },
       include: {
         model: {
@@ -1026,8 +1026,20 @@ export async function getLeadsAIConfig(): Promise<{ success: boolean; data?: Lea
       }
     })
 
-    if (!config || !config.isActive) {
-      return { success: false, error: 'No hi ha configuració de LEADS activa' }
+    if (!config) {
+      return { success: false, error: 'No existeix configuració per a LEADS. Executa la inicialització.' }
+    }
+
+    if (!config.isActive) {
+      return { success: false, error: 'La configuració de LEADS està desactivada' }
+    }
+
+    // Verificar que les relacions existeixen (model i provider no han estat eliminats)
+    if (!config.model || !config.provider) {
+      return {
+        success: false,
+        error: 'Configuració incompleta: el model o proveïdor assignat ja no existeix. Reassigna a la configuració.'
+      }
     }
 
     return {
@@ -1043,6 +1055,7 @@ export async function getLeadsAIConfig(): Promise<{ success: boolean; data?: Lea
     }
   } catch (error) {
     console.error('Error getting leads AI config:', error)
-    return { success: false, error: 'Error obtenint configuració de LEADS' }
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    return { success: false, error: `Error obtenint configuració de LEADS: ${errorMessage}` }
   }
 }

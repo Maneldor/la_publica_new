@@ -136,7 +136,7 @@ export const Step3Social = ({ data, addSocialLink, deleteSocialLink, isSaving }:
                 onChange={(e) => handleSocialChange('twitter', e.target.value.replace('@', ''))}
                 onBlur={() => handleSocialSave('twitter')}
                 placeholder="jordi_garcia"
-                className="w-full pl-8 pr-12 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full pl-8 pr-12 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
               />
               {socialInputs.twitter && (
                 <button
@@ -178,7 +178,7 @@ export const Step3Social = ({ data, addSocialLink, deleteSocialLink, isSaving }:
                 onChange={(e) => handleSocialChange('linkedin', e.target.value)}
                 onBlur={() => handleSocialSave('linkedin')}
                 placeholder="jordi-garcia-martinez o https://linkedin.com/in/jordi-garcia-martinez"
-                className="w-full px-4 pr-12 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full px-4 pr-12 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
               />
               {socialInputs.linkedin && (
                 <button
@@ -225,7 +225,7 @@ export const Step3Social = ({ data, addSocialLink, deleteSocialLink, isSaving }:
                 onChange={(e) => handleSocialChange('instagram', e.target.value.replace('@', ''))}
                 onBlur={() => handleSocialSave('instagram')}
                 placeholder="jordigarcia_public"
-                className="w-full pl-8 pr-12 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full pl-8 pr-12 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
               />
               {socialInputs.instagram && (
                 <button

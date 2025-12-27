@@ -99,7 +99,7 @@ export const Step7Languages = ({
                   placeholder="Ex: Anglès"
                   list={`languages-${lang.id}`}
                   className={`
-                    w-full px-4 py-3 rounded-lg border
+                    w-full px-4 py-3 rounded-lg border text-gray-900 placeholder:text-gray-400
                     ${errors[`language_${index}_name`] ? 'border-red-500 bg-red-50' : 'border-gray-300'}
                     focus:ring-2 focus:ring-blue-500 focus:border-transparent
                     transition-all
@@ -124,7 +124,7 @@ export const Step7Languages = ({
                   value={lang.level}
                   onChange={(e) => updateLanguage(lang.id, 'level', e.target.value)}
                   className={`
-                    w-full px-4 py-3 rounded-lg border
+                    w-full px-4 py-3 rounded-lg border text-gray-900 placeholder:text-gray-400
                     ${errors[`language_${index}_level`] ? 'border-red-500 bg-red-50' : 'border-gray-300'}
                     focus:ring-2 focus:ring-blue-500 focus:border-transparent
                     transition-all

@@ -192,7 +192,7 @@ export const Step2Personal = ({ data, updateProfile, isSaving }: Step2Props) => 
           placeholder="Explica'ns sobre tu: la teva passió pel treball públic, experiència, interessos professionals, objectius... Aquesta descripció apareixerà a la secció 'Sobre mi' del teu perfil."
           rows={6}
           maxLength={1000}
-          className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+          className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none text-gray-900 placeholder:text-gray-400"
         />
         <div className="flex justify-between mt-1">
           <div></div>
@@ -215,7 +215,7 @@ export const Step2Personal = ({ data, updateProfile, isSaving }: Step2Props) => 
             onChange={(e) => handleChange('birthDate', e.target.value)}
             onBlur={() => handleBlur('birthDate')}
             max={new Date().toISOString().split('T')[0]}
-            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
           />
           <p className="text-sm text-gray-500 mt-1">
             Opcional - només l'any serà visible públicament
@@ -233,7 +233,7 @@ export const Step2Personal = ({ data, updateProfile, isSaving }: Step2Props) => 
             onChange={(e) => handleChange('city', e.target.value)}
             onBlur={() => handleBlur('city')}
             placeholder="Ex: Barcelona"
-            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
           />
         </div>
 
@@ -248,7 +248,7 @@ export const Step2Personal = ({ data, updateProfile, isSaving }: Step2Props) => 
             onChange={(e) => handleChange('province', e.target.value)}
             onBlur={() => handleBlur('province')}
             placeholder="Ex: Catalunya"
-            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
           />
         </div>
       </div>
@@ -267,7 +267,7 @@ export const Step2Personal = ({ data, updateProfile, isSaving }: Step2Props) => 
             onBlur={() => handleBlur('organization')}
             placeholder="Ex: Ajuntament de Barcelona"
             maxLength={100}
-            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
           />
         </div>
         
@@ -283,7 +283,7 @@ export const Step2Personal = ({ data, updateProfile, isSaving }: Step2Props) => 
             onBlur={() => handleBlur('position')}
             placeholder="Ex: Tècnic en Transformació Digital"
             maxLength={100}
-            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
           />
         </div>
         
@@ -298,7 +298,7 @@ export const Step2Personal = ({ data, updateProfile, isSaving }: Step2Props) => 
             onBlur={() => handleBlur('department')}
             placeholder="Ex: Sistemes d'Informació"
             maxLength={100}
-            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
           />
         </div>
         
@@ -313,7 +313,7 @@ export const Step2Personal = ({ data, updateProfile, isSaving }: Step2Props) => 
             value={formData.yearsInPublicSector}
             onChange={(e) => handleChange('yearsInPublicSector', parseInt(e.target.value) || 0)}
             onBlur={() => handleBlur('yearsInPublicSector')}
-            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
           />
         </div>
       </div>
@@ -343,7 +343,7 @@ export const Step2Personal = ({ data, updateProfile, isSaving }: Step2Props) => 
             onChange={(e) => handleChange('website', e.target.value)}
             onBlur={() => handleBlur('website')}
             placeholder="https://el-meu-web.cat"
-            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
           />
           <p className="text-sm text-gray-500 mt-1">
             Opcional - pot ser el teu blog, portfolio, LinkedIn, etc.
@@ -362,7 +362,7 @@ export const Step2Personal = ({ data, updateProfile, isSaving }: Step2Props) => 
             onBlur={() => handleBlur('headline')}
             placeholder="Ex: Expert en Transformació Digital Pública"
             maxLength={100}
-            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
           />
           <p className="text-sm text-gray-500 mt-1">
             Apareix com a subtítol al teu perfil

@@ -100,7 +100,7 @@ export const Step4Education = ({
                   }}
                   placeholder="Ex: Màster en Administració i Direcció d'Empreses (MBA)"
                   list={`degrees-${edu.id}`}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
                 />
                 <datalist id={`degrees-${edu.id}`}>
                   {commonDegrees.map((degree) => (
@@ -123,7 +123,7 @@ export const Step4Education = ({
                     }
                   }}
                   placeholder="Ex: Universitat Pompeu Fabra"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
                 />
               </div>
 
@@ -141,7 +141,7 @@ export const Step4Education = ({
                     }
                   }}
                   placeholder="Ex: Especialització en Gestió Pública"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
                 />
               </div>
 
@@ -153,7 +153,7 @@ export const Step4Education = ({
                 <select
                   value={edu.startYear}
                   onChange={(e) => updateEducation(edu.id, 'startYear', e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
                 >
                   <option value="">Selecciona l'any</option>
                   {years.map((year) => (
@@ -171,7 +171,7 @@ export const Step4Education = ({
                 <select
                   value={edu.endYear}
                   onChange={(e) => updateEducation(edu.id, 'endYear', e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
                 >
                   <option value="">Selecciona l'any</option>
                   {years.map((year) => (

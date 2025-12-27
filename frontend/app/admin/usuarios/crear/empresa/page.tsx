@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Building2, Mail, CreditCard, CheckCircle2, Key, Info } from 'lucide-react';
+import { Building2, Mail, CreditCard, CheckCircle2, Key, Info, Loader2 } from 'lucide-react';
 import { getLeadById, marcarLeadGuanyat } from '@/lib/admin/actions/empreses-pendents-actions';
 
-export default function CrearEmpresaPage() {
+function CrearEmpresaContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const leadId = searchParams.get('leadId');
@@ -518,5 +518,24 @@ export default function CrearEmpresaPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-4" />
+        <p className="text-gray-600">Carregant...</p>
+      </div>
+    </div>
+  );
+}
+
+export default function CrearEmpresaPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <CrearEmpresaContent />
+    </Suspense>
   );
 }

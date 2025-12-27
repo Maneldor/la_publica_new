@@ -153,6 +153,13 @@ model User {
   postComments      PostComment[]  @relation("PostCommentAuthor")
   postShares        PostShare[]
 
+  // Gestió de Posts
+  pinnedPosts       Post[]           @relation("PostPinnedBy")
+  moderatedPosts    Post[]           @relation("PostModeratedBy")
+  postReports       PostReport[]     @relation("PostReporter")
+  resolvedPostReports PostReport[]   @relation("PostReportResolver")
+  pollVotes         PostPollVote[]
+
   // =====================================
   // CONFIGURACIÓ DE PRIVACITAT
   // =====================================
@@ -189,6 +196,48 @@ model User {
 
   // Sistema d'anuncis destacats
   createdFeaturedAds      FeaturedAd[]     @relation("FeaturedAdCreatedBy")
+
+  // Sistema de Blog
+  blogPosts               BlogPost[]       @relation("BlogPostAuthor")
+  blogReactions           BlogReaction[]   @relation("BlogReactions")
+  blogComments            BlogComment[]    @relation("BlogComments")
+  blogBookmarks           BlogBookmark[]   @relation("BlogBookmarks")
+  blogPollVotes           BlogPollVote[]   @relation("BlogPollVotes")
+
+  // Blog Auto-Schedule
+  blogAutoSchedules       BlogAutoSchedule[] @relation("BlogAutoScheduleCreatedBy")
+  blogAutoDynamicTopics   BlogAutoDynamicTopic[]
+
+  // Relacions Sistema de Fòrums
+  forumsCreated           Forum[]           @relation("ForumCreatedBy")
+  forumsModerating        Forum[]           @relation("ForumModerators")
+  forumTopics             ForumTopic[]      @relation("ForumTopicAuthor")
+  forumPosts              ForumPost[]       @relation("ForumPostAuthor")
+  forumTopicsPinned       ForumTopic[]      @relation("TopicPinnedBy")
+  forumTopicsLocked       ForumTopic[]      @relation("TopicLockedBy")
+  forumTopicLikes         ForumTopicLike[]  @relation("ForumTopicLikes")
+  forumPostLikes          ForumPostLike[]   @relation("ForumPostLikes")
+  forumPollVotes          ForumPollVote[]   @relation("ForumPollVotes")
+  forumBookmarks          ForumBookmark[]   @relation("ForumBookmarks")
+  forumReports            ForumReport[]     @relation("ForumReporter")
+  forumReportsResolved    ForumReport[]     @relation("ForumReportResolver")
+
+  // Relacions Sistema de Formació/Cursos
+  coursesCreated          Course[]            @relation("CourseCreatedBy")
+  coursesInstructing      Course[]            @relation("CourseInstructor")
+  courseEnrollments       CourseEnrollment[]  @relation("CourseEnrollments")
+  courseCertificates      CourseCertificate[] @relation("CourseCertificates")
+  courseReviews           CourseReview[]      @relation("CourseReviews")
+  quizAttempts            QuizAttempt[]       @relation("QuizAttempts")
+
+  // Relacions Enllaços Personals
+  favoriteLinks           UserFavoriteLink[]  @relation("UserFavoriteLinks")
+  customLinks             UserCustomLink[]    @relation("UserCustomLinks")
+  linkFolders             UserLinkFolder[]    @relation("UserLinkFolders")
+
+  // Relacions Agenda de Contactes
+  contacts                UserContact[]         @relation("UserContacts")
+  contactCategories       UserContactCategory[] @relation("UserContactCategories")
 
   @@index([email])
   @@index([nick])
@@ -2479,6 +2528,7 @@ enum CommentStatus {
   APPROVED
   REJECTED
   HIDDEN
+  SPAM        // Per al blog
 }
 
 enum UserType {
@@ -4263,17 +4313,69 @@ model Post {
   updatedAt     DateTime  @updatedAt
   publishedAt   DateTime  @default(now())
 
+  // ============================================
+  // NOUS CAMPS PER GESTIÓ
+  // ============================================
+
+  // Posts oficials de La Pública
+  isOfficial        Boolean   @default(false)
+  officialBadge     String?
+
+  // Fixar/Destacar
+  isPinned          Boolean   @default(false)
+  pinnedAt          DateTime?
+  pinnedUntil       DateTime?
+  pinnedById        String?
+  pinnedBy          User?     @relation("PostPinnedBy", fields: [pinnedById], references: [id])
+
+  isFeatured        Boolean   @default(false)
+  featuredAt        DateTime?
+
+  // Programació
+  status            PostStatus @default(PUBLISHED)
+  scheduledAt       DateTime?
+
+  // Moderació
+  moderationStatus  ModerationStatus @default(APPROVED)
+  moderatedAt       DateTime?
+  moderatedById     String?
+  moderatedBy       User?     @relation("PostModeratedBy", fields: [moderatedById], references: [id])
+  moderationNote    String?
+
+  // Denúncies
+  reportCount       Int       @default(0)
+
   // Relacions
   likes         PostLike[]
   comments      PostComment[]
   attachments   PostAttachment[]
   shares        PostShare[]
+  reports       PostReport[]
+  poll          PostPoll?
 
   @@index([authorId])
   @@index([groupId])
   @@index([createdAt])
   @@index([visibility])
+  @@index([isPinned, publishedAt])
+  @@index([isOfficial])
+  @@index([status, scheduledAt])
+  @@index([moderationStatus])
   @@map("posts_social")
+}
+
+enum PostStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ModerationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  FLAGGED
 }
 
 enum PostType {
@@ -4383,6 +4485,127 @@ model PostShare {
   @@index([originalPostId])
   @@index([userId])
   @@map("post_shares")
+}
+
+// ============================================
+// SISTEMA D'ENQUESTES PER A POSTS
+// ============================================
+
+model PostPoll {
+  id              String          @id @default(cuid())
+
+  postId          String          @unique
+  post            Post            @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  question        String
+  type            PollType        @default(SINGLE)
+
+  // Configuració
+  allowAddOptions Boolean         @default(false)
+  showResults     PostPollResultsShow @default(AFTER_VOTE)
+  endsAt          DateTime?
+  isAnonymous     Boolean         @default(false)
+
+  // Opcions
+  options         PostPollOption[]
+
+  // Estadístiques
+  totalVotes      Int             @default(0)
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@map("post_polls")
+}
+
+// Nota: Utilitzem l'enum PollType existent del Blog
+// enum PollType ja definit a la secció del Blog
+
+enum PostPollResultsShow {
+  ALWAYS
+  AFTER_VOTE
+  AFTER_END
+  NEVER
+}
+
+model PostPollOption {
+  id          String      @id @default(cuid())
+
+  pollId      String
+  poll        PostPoll    @relation(fields: [pollId], references: [id], onDelete: Cascade)
+
+  text        String
+  order       Int         @default(0)
+
+  votes       PostPollVote[]
+  voteCount   Int         @default(0)
+
+  createdAt   DateTime    @default(now())
+
+  @@index([pollId])
+  @@map("post_poll_options")
+}
+
+model PostPollVote {
+  id          String          @id @default(cuid())
+
+  optionId    String
+  option      PostPollOption  @relation(fields: [optionId], references: [id], onDelete: Cascade)
+
+  userId      String
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime        @default(now())
+
+  @@unique([optionId, userId])
+  @@index([userId])
+  @@map("post_poll_votes")
+}
+
+// ============================================
+// SISTEMA DE DENÚNCIES DE POSTS
+// ============================================
+
+model PostReport {
+  id          String       @id @default(cuid())
+
+  postId      String
+  post        Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  reporterId  String
+  reporter    User         @relation("PostReporter", fields: [reporterId], references: [id])
+
+  reason      ReportReason
+  description String?      @db.Text
+
+  status      ReportStatus @default(PENDING)
+  resolvedAt  DateTime?
+  resolvedById String?
+  resolvedBy  User?        @relation("PostReportResolver", fields: [resolvedById], references: [id])
+  resolvedNote String?
+
+  createdAt   DateTime     @default(now())
+
+  @@index([postId])
+  @@index([status])
+  @@map("social_post_reports")
+}
+
+enum ReportReason {
+  SPAM
+  HARASSMENT
+  HATE_SPEECH
+  MISINFORMATION
+  INAPPROPRIATE
+  COPYRIGHT
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  ACTIONED
+  DISMISSED
 }
 
 // =====================================
@@ -4587,6 +4810,8 @@ model Group {
   sectorOffers  GroupSectorOffer[]
   joinRequests  GroupJoinRequest[]
   invitations   GroupInvitation[]
+  blogPosts     BlogPost[]        @relation("BlogPostGroups")
+  forums        Forum[]           @relation("ForumGroups")
 
   // Categoria sensible associada (per grups professionals)
   sensitiveJobCategoryId  String?
@@ -4955,4 +5180,1540 @@ model FeaturedAdPricing {
   updatedAt       DateTime @updatedAt
 
   @@map("featured_ad_pricing")
+}
+
+// ============================================
+// SISTEMA DE BLOG COMPLET
+// ============================================
+
+model BlogPost {
+  id                String          @id @default(cuid())
+
+  // Contingut principal
+  title             String
+  slug              String          @unique
+  excerpt           String?         @db.VarChar(300)  // Resum curt
+  content           String          @db.Text          // HTML de l'editor ric
+  coverImage        String?                           // Imatge destacada
+
+  // Metadata
+  readingTime       Int?                              // Minuts de lectura estimats
+
+  // Categorització
+  categoryId        String?
+  category          BlogCategory?   @relation(fields: [categoryId], references: [id])
+  tags              BlogTag[]       @relation("BlogPostTags")
+
+  // Audiència
+  visibility        BlogVisibility  @default(PUBLIC)
+  targetGroups      Group[]         @relation("BlogPostGroups")  // Si visibility = GROUPS
+
+  // Estat i programació
+  status            BlogPostStatus  @default(DRAFT)
+  publishedAt       DateTime?
+  scheduledAt       DateTime?                         // Per programar
+
+  // Destacar i anclar
+  isPinned          Boolean         @default(false)  // Anclat a dalt
+  isFeatured        Boolean         @default(false)  // Destacat amb badge
+  pinnedAt          DateTime?
+  pinnedUntil       DateTime?                         // Anclar fins data
+
+  // Opcions
+  allowComments     Boolean         @default(true)
+  allowReactions    Boolean         @default(true)
+
+  // Enquesta associada (opcional)
+  poll              BlogPoll?
+
+  // Estadístiques
+  viewCount         Int             @default(0)
+
+  // Interaccions
+  reactions         BlogReaction[]
+  comments          BlogComment[]
+  bookmarks         BlogBookmark[]
+
+  // Autor i audit
+  authorId          String
+  author            User            @relation("BlogPostAuthor", fields: [authorId], references: [id])
+
+  // Generació automàtica
+  isAutoGenerated   Boolean         @default(false)
+  autoLog           BlogAutoLog?
+  dynamicTopicUsed  BlogAutoDynamicTopic?
+
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([status, publishedAt])
+  @@index([categoryId])
+  @@index([authorId])
+  @@index([isPinned, publishedAt])
+  @@index([visibility])
+  @@index([isAutoGenerated])
+  @@map("blog_posts")
+}
+
+enum BlogPostStatus {
+  DRAFT           // Esborrany
+  SCHEDULED       // Programat
+  PUBLISHED       // Publicat
+  ARCHIVED        // Arxivat
+}
+
+enum BlogVisibility {
+  PUBLIC          // Tots els usuaris
+  GROUPS          // Només grups seleccionats
+  PRIVATE         // Només admins (preview)
+}
+
+// ============================================
+// CATEGORIES I TAGS DEL BLOG
+// ============================================
+
+model BlogCategory {
+  id          String      @id @default(cuid())
+  name        String
+  slug        String      @unique
+  description String?
+  color       String?     @default("#6366f1")  // Color per badge
+  icon        String?                          // Emoji o nom d'icona
+  order       Int         @default(0)
+  isActive    Boolean     @default(true)
+
+  posts       BlogPost[]
+
+  // Auto-schedule relations
+  autoSchedules     BlogAutoSchedule[]
+  autoFixedTopics   BlogAutoFixedTopic[]
+  autoDynamicTopics BlogAutoDynamicTopic[]
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@map("blog_categories")
+}
+
+model BlogTag {
+  id          String      @id @default(cuid())
+  name        String      @unique
+  slug        String      @unique
+
+  posts       BlogPost[]  @relation("BlogPostTags")
+
+  createdAt   DateTime    @default(now())
+
+  @@map("blog_tags")
+}
+
+// ============================================
+// ENQUESTES DEL BLOG
+// ============================================
+
+model BlogPoll {
+  id              String          @id @default(cuid())
+
+  postId          String          @unique
+  post            BlogPost        @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  question        String
+  type            PollType        @default(SINGLE)
+
+  // Opcions de l'enquesta
+  options         BlogPollOption[]
+
+  // Configuració
+  showResults     PollResultsVisibility @default(AFTER_VOTE)
+  endsAt          DateTime?                           // Data límit
+  isActive        Boolean         @default(true)
+
+  // Estadístiques
+  totalVotes      Int             @default(0)
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@map("blog_polls")
+}
+
+enum PollType {
+  SINGLE          // Una sola resposta
+  MULTIPLE        // Múltiples respostes
+}
+
+enum PollResultsVisibility {
+  ALWAYS          // Sempre visibles
+  AFTER_VOTE      // Després de votar
+  AFTER_END       // Quan acabi l'enquesta
+  NEVER           // Mai (només admin)
+}
+
+model BlogPollOption {
+  id          String      @id @default(cuid())
+
+  pollId      String
+  poll        BlogPoll    @relation(fields: [pollId], references: [id], onDelete: Cascade)
+
+  text        String
+  order       Int         @default(0)
+
+  votes       BlogPollVote[]
+  voteCount   Int         @default(0)
+
+  createdAt   DateTime    @default(now())
+
+  @@map("blog_poll_options")
+}
+
+model BlogPollVote {
+  id          String          @id @default(cuid())
+
+  optionId    String
+  option      BlogPollOption  @relation(fields: [optionId], references: [id], onDelete: Cascade)
+
+  userId      String
+  user        User            @relation("BlogPollVotes", fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime        @default(now())
+
+  @@unique([optionId, userId])  // Un vot per opció per usuari
+  @@index([userId])
+  @@map("blog_poll_votes")
+}
+
+// ============================================
+// INTERACCIONS DEL BLOG
+// ============================================
+
+model BlogReaction {
+  id          String      @id @default(cuid())
+
+  postId      String
+  post        BlogPost    @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  userId      String
+  user        User        @relation("BlogReactions", fields: [userId], references: [id], onDelete: Cascade)
+
+  type        ReactionType @default(LIKE)
+
+  createdAt   DateTime    @default(now())
+
+  @@unique([postId, userId, type])
+  @@index([postId])
+  @@index([userId])
+  @@map("blog_reactions")
+}
+
+enum ReactionType {
+  LIKE
+  LOVE
+  CELEBRATE
+  INSIGHTFUL
+  CURIOUS
+}
+
+model BlogComment {
+  id          String        @id @default(cuid())
+
+  postId      String
+  post        BlogPost      @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  // Resposta a un altre comentari (threaded)
+  parentId    String?
+  parent      BlogComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies     BlogComment[] @relation("CommentReplies")
+
+  authorId    String
+  author      User          @relation("BlogComments", fields: [authorId], references: [id], onDelete: Cascade)
+
+  content     String        @db.Text
+
+  // Moderació
+  status      CommentStatus @default(PENDING)
+  moderatedById String?
+  moderatedAt DateTime?
+
+  // Edició
+  isEdited    Boolean       @default(false)
+  editedAt    DateTime?
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([postId, status])
+  @@index([authorId])
+  @@index([parentId])
+  @@map("blog_comments")
+}
+
+model BlogBookmark {
+  id          String    @id @default(cuid())
+
+  postId      String
+  post        BlogPost  @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  userId      String
+  user        User      @relation("BlogBookmarks", fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime  @default(now())
+
+  @@unique([postId, userId])
+  @@index([userId])
+  @@map("blog_bookmarks")
+}
+
+// ============================================
+// SISTEMA DE PROGRAMACIÓ AUTOMÀTICA DE BLOG
+// ============================================
+
+model BlogAutoSchedule {
+  id                String    @id @default(cuid())
+
+  // Configuració general
+  name              String    @default("Programació principal")
+  isActive          Boolean   @default(true)
+  isPaused          Boolean   @default(false)
+  pausedAt          DateTime?
+  pausedById        String?
+
+  // Freqüència
+  frequency         ScheduleFrequency @default(DAILY)
+  daysOfWeek        Int[]     @default([1, 2, 3, 4, 5])
+  publishTime       String    @default("08:00")
+  timezone          String    @default("Europe/Madrid")
+
+  // Opcions de publicació
+  autoPublish       Boolean   @default(false)
+  defaultCategoryId String?
+  defaultCategory   BlogCategory? @relation(fields: [defaultCategoryId], references: [id])
+  defaultVisibility BlogVisibility @default(PUBLIC)
+
+  // Notificacions
+  notifyOnGenerate  Boolean   @default(true)
+  notifyUserIds     String[]  @default([])
+
+  // Configuració IA
+  language          String    @default("ca")
+  tone              String    @default("professional")
+  articleLength     ArticleLength @default(MEDIUM)
+
+  // Relacions
+  fixedTopics       BlogAutoFixedTopic[]
+  dynamicTopics     BlogAutoDynamicTopic[]
+  logs              BlogAutoLog[]
+
+  // Estadístiques
+  totalGenerated    Int       @default(0)
+  lastRunAt         DateTime?
+  nextRunAt         DateTime?
+  consecutiveErrors Int       @default(0)
+
+  // Audit
+  createdById       String
+  createdBy         User      @relation("BlogAutoScheduleCreatedBy", fields: [createdById], references: [id])
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@map("blog_auto_schedules")
+}
+
+enum ScheduleFrequency {
+  DAILY
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+}
+
+enum ArticleLength {
+  SHORT
+  MEDIUM
+  LONG
+  EXTRA_LONG
+}
+
+// Temes fixes (rotació setmanal)
+model BlogAutoFixedTopic {
+  id              String    @id @default(cuid())
+
+  scheduleId      String
+  schedule        BlogAutoSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  dayOfWeek       Int
+  topic           String
+  description     String?   @db.Text
+  categoryId      String?
+  category        BlogCategory? @relation(fields: [categoryId], references: [id])
+  keywords        String[]  @default([])
+  suggestedSubtopics String[] @default([])
+  isActive        Boolean   @default(true)
+
+  timesUsed       Int       @default(0)
+  lastUsedAt      DateTime?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([scheduleId, dayOfWeek])
+  @@index([scheduleId])
+  @@map("blog_auto_fixed_topics")
+}
+
+// Temes dinàmics (pool)
+model BlogAutoDynamicTopic {
+  id              String    @id @default(cuid())
+
+  scheduleId      String
+  schedule        BlogAutoSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  topic           String
+  description     String?   @db.Text
+  categoryId      String?
+  category        BlogCategory? @relation(fields: [categoryId], references: [id])
+  keywords        String[]  @default([])
+  status          DynamicTopicStatus @default(PENDING)
+  priority        Int       @default(0)
+  useAfterDate    DateTime?
+  useBeforeDate   DateTime?
+
+  usedAt          DateTime?
+  usedInPostId    String?   @unique
+  usedInPost      BlogPost? @relation(fields: [usedInPostId], references: [id])
+
+  createdById     String
+  createdBy       User      @relation(fields: [createdById], references: [id])
+  createdAt       DateTime  @default(now())
+
+  @@index([scheduleId, status])
+  @@index([priority])
+  @@map("blog_auto_dynamic_topics")
+}
+
+enum DynamicTopicStatus {
+  PENDING
+  USED
+  SKIPPED
+  SCHEDULED
+}
+
+// Historial de generacions
+model BlogAutoLog {
+  id              String    @id @default(cuid())
+
+  scheduleId      String
+  schedule        BlogAutoSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  status          AutoLogStatus @default(PENDING)
+  topicType       TopicType
+  topicId         String?
+  topicText       String
+  subtopic        String?
+
+  postId          String?   @unique
+  post            BlogPost? @relation(fields: [postId], references: [id])
+
+  generationTime  Int?
+  tokensUsed      Int?
+  aiProvider      String?
+  aiModel         String?
+
+  errorMessage    String?   @db.Text
+  errorDetails    Json?
+  retryCount      Int       @default(0)
+
+  scheduledFor    DateTime
+  startedAt       DateTime?
+  completedAt     DateTime?
+
+  createdAt       DateTime  @default(now())
+
+  @@index([scheduleId, status])
+  @@index([scheduledFor])
+  @@map("blog_auto_logs")
+}
+
+enum AutoLogStatus {
+  PENDING
+  RUNNING
+  SUCCESS
+  FAILED
+  SKIPPED
+}
+
+enum TopicType {
+  FIXED
+  DYNAMIC
+}
+
+// ============================================
+// SISTEMA DE FÒRUMS
+// ============================================
+
+model ForumCategory {
+  id              String    @id @default(cuid())
+  
+  name            String
+  slug            String    @unique
+  description     String?   @db.Text
+  icon            String?
+  color           String?   @default("#6366f1")
+  order           Int       @default(0)
+  
+  isActive        Boolean   @default(true)
+  
+  forums          Forum[]
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@map("forum_categories")
+}
+
+model Forum {
+  id              String    @id @default(cuid())
+  
+  name            String
+  slug            String    @unique
+  description     String?   @db.Text
+  icon            String?
+  coverImage      String?
+  
+  categoryId      String?
+  category        ForumCategory? @relation(fields: [categoryId], references: [id])
+  
+  visibility      ForumVisibility @default(PUBLIC)
+  
+  groups          Group[]   @relation("ForumGroups")
+  
+  isActive        Boolean   @default(true)
+  isLocked        Boolean   @default(false)
+  requiresApproval Boolean  @default(false)
+  allowPolls      Boolean   @default(true)
+  allowAttachments Boolean  @default(true)
+  
+  canPostRoles    String[]  @default(["USER"])
+  canReplyRoles   String[]  @default(["USER"])
+  
+  topicsCount     Int       @default(0)
+  postsCount      Int       @default(0)
+  lastActivityAt  DateTime?
+  
+  topics          ForumTopic[]
+  moderators      User[]    @relation("ForumModerators")
+  
+  createdById     String
+  createdBy       User      @relation("ForumCreatedBy", fields: [createdById], references: [id])
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@index([categoryId])
+  @@index([visibility])
+  @@index([isActive])
+  @@map("forum_boards")
+}
+
+enum ForumVisibility {
+  PUBLIC
+  GROUPS
+  PRIVATE
+}
+
+model ForumTopic {
+  id              String    @id @default(cuid())
+  
+  forumId         String
+  forum           Forum     @relation(fields: [forumId], references: [id], onDelete: Cascade)
+  
+  title           String
+  slug            String
+  content         String    @db.Text
+  
+  authorId        String
+  author          User      @relation("ForumTopicAuthor", fields: [authorId], references: [id])
+  
+  status          ForumTopicStatus @default(PUBLISHED)
+  
+  isPinned        Boolean   @default(false)
+  pinnedAt        DateTime?
+  pinnedById      String?
+  pinnedBy        User?     @relation("TopicPinnedBy", fields: [pinnedById], references: [id])
+  
+  isFeatured      Boolean   @default(false)
+  featuredAt      DateTime?
+  
+  isLocked        Boolean   @default(false)
+  lockedAt        DateTime?
+  lockedById      String?
+  lockedBy        User?     @relation("TopicLockedBy", fields: [lockedById], references: [id])
+  lockedReason    String?
+  
+  poll            ForumPoll?
+  
+  tags            String[]  @default([])
+  
+  viewsCount      Int       @default(0)
+  postsCount      Int       @default(0)
+  likesCount      Int       @default(0)
+  lastActivityAt  DateTime  @default(now())
+  lastPostId      String?
+  lastPostAt      DateTime?
+  lastPostById    String?
+  
+  moderationStatus ModerationStatus @default(APPROVED)
+  moderatedAt     DateTime?
+  moderatedById   String?
+  moderationNote  String?
+  reportCount     Int       @default(0)
+  
+  posts           ForumPost[]
+  likes           ForumTopicLike[]
+  reports         ForumReport[]     @relation("TopicReports")
+  bookmarks       ForumBookmark[]
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@unique([forumId, slug])
+  @@index([forumId, isPinned, lastActivityAt])
+  @@index([authorId])
+  @@index([status])
+  @@map("forum_threads")
+}
+
+enum ForumTopicStatus {
+  DRAFT
+  PENDING
+  PUBLISHED
+  ARCHIVED
+}
+
+model ForumPost {
+  id              String    @id @default(cuid())
+  
+  topicId         String
+  topic           ForumTopic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  
+  parentId        String?
+  parent          ForumPost?  @relation("PostReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies         ForumPost[] @relation("PostReplies")
+  
+  content         String    @db.Text
+  
+  authorId        String
+  author          User      @relation("ForumPostAuthor", fields: [authorId], references: [id])
+  
+  isEdited        Boolean   @default(false)
+  editedAt        DateTime?
+  
+  isAcceptedAnswer Boolean  @default(false)
+  acceptedAt      DateTime?
+  acceptedById    String?
+  
+  isBestAnswer    Boolean   @default(false)
+  
+  likesCount      Int       @default(0)
+  
+  status          ForumPostStatus @default(ACTIVE)
+  moderatedAt     DateTime?
+  moderatedById   String?
+  moderationNote  String?
+  reportCount     Int       @default(0)
+  
+  likes           ForumPostLike[]
+  reports         ForumReport[]     @relation("PostReports")
+  attachments     ForumAttachment[]
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@index([topicId, createdAt])
+  @@index([authorId])
+  @@index([parentId])
+  @@map("forum_posts")
+}
+
+enum ForumPostStatus {
+  ACTIVE
+  HIDDEN
+  DELETED
+}
+
+// ============================================
+// ENQUESTES DE FÒRUM
+// ============================================
+
+model ForumPoll {
+  id              String          @id @default(cuid())
+  
+  topicId         String          @unique
+  topic           ForumTopic      @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  
+  question        String
+  type            PollType        @default(SINGLE)
+  
+  showResults     PollResultsVisibility @default(AFTER_VOTE)
+  endsAt          DateTime?
+  isAnonymous     Boolean         @default(false)
+  allowChangeVote Boolean         @default(true)
+  
+  options         ForumPollOption[]
+  
+  totalVotes      Int             @default(0)
+  
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  
+  @@map("forum_polls")
+}
+
+model ForumPollOption {
+  id          String      @id @default(cuid())
+  
+  pollId      String
+  poll        ForumPoll   @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  
+  text        String
+  order       Int         @default(0)
+  
+  votes       ForumPollVote[]
+  voteCount   Int         @default(0)
+  
+  createdAt   DateTime    @default(now())
+  
+  @@index([pollId])
+  @@map("forum_poll_options")
+}
+
+model ForumPollVote {
+  id          String          @id @default(cuid())
+  
+  optionId    String
+  option      ForumPollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  
+  userId      String
+  user        User            @relation("ForumPollVotes", fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime        @default(now())
+  
+  @@unique([optionId, userId])
+  @@index([userId])
+  @@map("forum_poll_votes")
+}
+
+// ============================================
+// INTERACCIONS FÒRUM
+// ============================================
+
+model ForumTopicLike {
+  id          String      @id @default(cuid())
+  
+  topicId     String
+  topic       ForumTopic  @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  
+  userId      String
+  user        User        @relation("ForumTopicLikes", fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime    @default(now())
+  
+  @@unique([topicId, userId])
+  @@index([userId])
+  @@map("forum_topic_likes")
+}
+
+model ForumPostLike {
+  id          String      @id @default(cuid())
+  
+  postId      String
+  post        ForumPost   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  userId      String
+  user        User        @relation("ForumPostLikes", fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime    @default(now())
+  
+  @@unique([postId, userId])
+  @@index([userId])
+  @@map("forum_post_likes")
+}
+
+model ForumBookmark {
+  id          String      @id @default(cuid())
+  
+  topicId     String
+  topic       ForumTopic  @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  
+  userId      String
+  user        User        @relation("ForumBookmarks", fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime    @default(now())
+  
+  @@unique([topicId, userId])
+  @@index([userId])
+  @@map("forum_bookmarks")
+}
+
+// ============================================
+// DENÚNCIES FÒRUM
+// ============================================
+
+model ForumReport {
+  id              String      @id @default(cuid())
+  
+  topicId         String?
+  topic           ForumTopic? @relation("TopicReports", fields: [topicId], references: [id], onDelete: Cascade)
+  
+  postId          String?
+  post            ForumPost?  @relation("PostReports", fields: [postId], references: [id], onDelete: Cascade)
+  
+  reporterId      String
+  reporter        User        @relation("ForumReporter", fields: [reporterId], references: [id])
+  
+  reason          ReportReason
+  description     String?     @db.Text
+  
+  status          ReportStatus @default(PENDING)
+  resolvedAt      DateTime?
+  resolvedById    String?
+  resolvedBy      User?       @relation("ForumReportResolver", fields: [resolvedById], references: [id])
+  resolvedNote    String?
+  
+  createdAt       DateTime    @default(now())
+  
+  @@index([topicId])
+  @@index([postId])
+  @@index([status])
+  @@map("forum_reports")
+}
+
+// ============================================
+// ADJUNTS FÒRUM
+// ============================================
+
+model ForumAttachment {
+  id          String      @id @default(cuid())
+  
+  postId      String
+  post        ForumPost   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  type        AttachmentType
+  url         String
+  filename    String?
+  filesize    Int?
+  mimeType    String?
+  
+  createdAt   DateTime    @default(now())
+  
+  @@index([postId])
+  @@map("forum_attachments")
+}
+
+// ============================================
+// SISTEMA DE FORMACIÓ/CURSOS
+// ============================================
+
+enum CourseType {
+  MICRO           // Cursos curts (1-5 lliçons, màx 60 min)
+  BASIC           // Cursos bàsics (5-20 lliçons, màx 5h)
+  COMPLETE        // Cursos complets (20-100 lliçons, màx 30h)
+  PREMIUM         // Cursos premium (sense límit)
+}
+
+enum CourseLevel {
+  BEGINNER        // Principiant
+  INTERMEDIATE    // Intermedi
+  ADVANCED        // Avançat
+  EXPERT          // Expert
+}
+
+enum LessonType {
+  TEXT            // Contingut de text/article
+  VIDEO           // Vídeo
+  DOCUMENT        // Document PDF/descàrrega
+  QUIZ            // Test/examen
+  EXTERNAL        // Enllaç extern
+  INTERACTIVE     // Contingut interactiu
+}
+
+enum LessonResourceType {
+  LINK            // Enllaç web
+  PDF             // Document PDF
+  VIDEO           // Vídeo addicional
+  AUDIO           // Àudio
+  FILE            // Altres fitxers
+}
+
+enum QuestionType {
+  SINGLE_CHOICE   // Una sola resposta correcta
+  MULTIPLE_CHOICE // Múltiples respostes correctes
+  TRUE_FALSE      // Verdader/Fals
+  SHORT_ANSWER    // Resposta curta (text)
+}
+
+enum EnrollmentStatus {
+  ACTIVE          // Actiu
+  COMPLETED       // Completat
+  PAUSED          // Pausat
+  CANCELLED       // Cancel·lat
+  EXPIRED         // Expirat
+}
+
+enum LessonStatus {
+  NOT_STARTED     // No començat
+  IN_PROGRESS     // En progrés
+  COMPLETED       // Completat
+}
+
+model Course {
+  id                String          @id @default(cuid())
+
+  // Informació bàsica
+  title             String
+  slug              String          @unique
+  description       String?         @db.Text
+  shortDescription  String?         @db.VarChar(500)
+
+  // Imatges
+  thumbnail         String?
+  coverImage        String?
+
+  // Classificació
+  type              CourseType      @default(BASIC)
+  level             CourseLevel     @default(BEGINNER)
+  categoryId        String?
+  category          CourseCategory? @relation(fields: [categoryId], references: [id])
+  tags              String[]        @default([])
+
+  // Instructor/Autor
+  instructorId      String?
+  instructor        User?           @relation("CourseInstructor", fields: [instructorId], references: [id])
+  instructorName    String?         // Per si no té usuari associat
+  instructorBio     String?         @db.Text
+
+  // Duració i contingut
+  estimatedDuration Int             @default(0)    // Minuts totals estimats
+  lessonsCount      Int             @default(0)    // Denormalitzat
+  modulesCount      Int             @default(0)    // Denormalitzat
+
+  // Preu i accés
+  price             Float           @default(0)
+  isFree            Boolean         @default(true)
+  requiresEnrollment Boolean        @default(true)
+
+  // Configuració
+  isActive          Boolean         @default(true)
+  isPublished       Boolean         @default(false)
+  publishedAt       DateTime?
+  isFeatured        Boolean         @default(false)
+
+  // Requisits i objectius
+  requirements      String[]        @default([])
+  objectives        String[]        @default([])
+  targetAudience    String?         @db.Text
+
+  // Certificat
+  hasCertificate    Boolean         @default(false)
+  certificateTemplate String?
+
+  // Estadístiques
+  enrollmentsCount  Int             @default(0)
+  completionsCount  Int             @default(0)
+  averageRating     Float           @default(0)
+  ratingsCount      Int             @default(0)
+
+  // IA
+  aiGenerated       Boolean         @default(false)
+  aiPrompt          String?         @db.Text
+
+  // Relacions
+  modules           CourseModule[]
+  enrollments       CourseEnrollment[]
+  reviews           CourseReview[]
+  certificates      CourseCertificate[]
+
+  // Audit
+  createdById       String
+  createdBy         User            @relation("CourseCreatedBy", fields: [createdById], references: [id])
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([categoryId])
+  @@index([type])
+  @@index([isPublished, isActive])
+  @@index([isFeatured])
+  @@map("course_items")
+}
+
+model CourseCategory {
+  id              String    @id @default(cuid())
+
+  name            String
+  slug            String    @unique
+  description     String?   @db.Text
+  icon            String?
+  color           String?   @default("#6366f1")
+  order           Int       @default(0)
+
+  isActive        Boolean   @default(true)
+
+  courses         Course[]
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("course_categories")
+}
+
+model CourseModule {
+  id                String    @id @default(cuid())
+
+  courseId          String
+  course            Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  title             String
+  description       String?   @db.Text
+  order             Int       @default(0)
+
+  // Duració total del mòdul
+  estimatedDuration Int       @default(0)
+
+  // Configuració
+  isPublished       Boolean   @default(true)
+  isFree            Boolean   @default(false)  // Mòdul de mostra gratuït
+
+  lessons           CourseLesson[]
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([courseId, order])
+  @@map("course_modules")
+}
+
+model CourseLesson {
+  id                String        @id @default(cuid())
+
+  moduleId          String
+  module            CourseModule  @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  title             String
+  slug              String
+  description       String?       @db.Text
+  order             Int           @default(0)
+
+  // Tipus de contingut
+  type              LessonType    @default(TEXT)
+
+  // Contingut segons tipus
+  content           String?       @db.Text      // HTML per TEXT
+  videoUrl          String?                      // URL per VIDEO
+  videoDuration     Int?                         // Segons
+  documentUrl       String?                      // URL per DOCUMENT
+  externalUrl       String?                      // URL per EXTERNAL
+
+  // Quiz (si type = QUIZ)
+  quiz              LessonQuiz?
+
+  // Recursos addicionals
+  resources         LessonResource[]
+
+  // Duració estimada (minuts)
+  estimatedDuration Int           @default(5)
+
+  // Configuració
+  isPublished       Boolean       @default(true)
+  isFree            Boolean       @default(false)  // Lliçó de mostra
+  requiresCompletion Boolean      @default(true)   // Cal completar per avançar
+
+  // IA
+  aiGenerated       Boolean       @default(false)
+
+  // Progrés
+  progress          LessonProgress[]
+
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@unique([moduleId, slug])
+  @@index([moduleId, order])
+  @@map("course_lessons")
+}
+
+model LessonResource {
+  id              String              @id @default(cuid())
+
+  lessonId        String
+  lesson          CourseLesson        @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  title           String
+  type            LessonResourceType  @default(LINK)
+  url             String
+  description     String?
+  fileSize        Int?
+
+  order           Int           @default(0)
+
+  createdAt       DateTime      @default(now())
+
+  @@index([lessonId])
+  @@map("lesson_resources")
+}
+
+// ============================================
+// QUIZ/EXÀMENS
+// ============================================
+
+model LessonQuiz {
+  id                String          @id @default(cuid())
+
+  lessonId          String          @unique
+  lesson            CourseLesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  title             String?
+  description       String?         @db.Text
+
+  // Configuració
+  passingScore      Int             @default(70)    // % mínim per aprovar
+  maxAttempts       Int             @default(3)     // 0 = il·limitat
+  timeLimit         Int?                            // Minuts, null = sense límit
+  shuffleQuestions  Boolean         @default(false)
+  showCorrectAnswers Boolean        @default(true)
+
+  questions         QuizQuestion[]
+  attempts          QuizAttempt[]
+
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@map("lesson_quizzes")
+}
+
+model QuizQuestion {
+  id              String          @id @default(cuid())
+
+  quizId          String
+  quiz            LessonQuiz      @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  type            QuestionType    @default(SINGLE_CHOICE)
+  question        String          @db.Text
+  explanation     String?         @db.Text    // Explicació de la resposta
+
+  order           Int             @default(0)
+  points          Int             @default(1)
+
+  options         QuizOption[]
+
+  createdAt       DateTime        @default(now())
+
+  @@index([quizId, order])
+  @@map("quiz_questions")
+}
+
+model QuizOption {
+  id              String        @id @default(cuid())
+
+  questionId      String
+  question        QuizQuestion  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  text            String
+  isCorrect       Boolean       @default(false)
+  order           Int           @default(0)
+
+  @@index([questionId])
+  @@map("quiz_options")
+}
+
+model QuizAttempt {
+  id              String        @id @default(cuid())
+
+  quizId          String
+  quiz            LessonQuiz    @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  userId          String
+  user            User          @relation("QuizAttempts", fields: [userId], references: [id])
+
+  score           Float         // Puntuació obtinguda (%)
+  passed          Boolean
+  timeSpent       Int?          // Segons
+
+  answers         Json          // Respostes donades
+
+  startedAt       DateTime      @default(now())
+  completedAt     DateTime?
+
+  @@index([quizId, userId])
+  @@map("quiz_attempts")
+}
+
+// ============================================
+// INSCRIPCIONS I PROGRÉS
+// ============================================
+
+model CourseEnrollment {
+  id                String            @id @default(cuid())
+
+  courseId          String
+  course            Course            @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  userId            String
+  user              User              @relation("CourseEnrollments", fields: [userId], references: [id])
+
+  status            EnrollmentStatus  @default(ACTIVE)
+
+  // Progrés
+  progress          Float             @default(0)     // % completat (0-100)
+  lessonsCompleted  Int               @default(0)
+  currentLessonId   String?
+
+  // Dates
+  enrolledAt        DateTime          @default(now())
+  startedAt         DateTime?
+  completedAt       DateTime?
+  lastAccessAt      DateTime?
+
+  // Temps
+  totalTimeSpent    Int               @default(0)     // Segons totals
+
+  // Certificat
+  certificateId     String?
+  certificate       CourseCertificate? @relation(fields: [certificateId], references: [id])
+
+  // Valoració
+  rating            Int?              // 1-5
+  reviewId          String?
+
+  lessonProgress    LessonProgress[]
+
+  @@unique([courseId, userId])
+  @@index([userId])
+  @@index([status])
+  @@map("course_enrollments")
+}
+
+model LessonProgress {
+  id              String            @id @default(cuid())
+
+  enrollmentId    String
+  enrollment      CourseEnrollment  @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  lessonId        String
+  lesson          CourseLesson      @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  status          LessonStatus      @default(NOT_STARTED)
+
+  // Progrés
+  progress        Float             @default(0)     // % (per vídeos, lectura)
+  timeSpent       Int               @default(0)     // Segons
+
+  // Quiz
+  quizScore       Float?
+  quizPassed      Boolean?
+  quizAttempts    Int               @default(0)
+
+  startedAt       DateTime?
+  completedAt     DateTime?
+  lastAccessAt    DateTime          @default(now())
+
+  @@unique([enrollmentId, lessonId])
+  @@index([lessonId])
+  @@map("lesson_progress")
+}
+
+// ============================================
+// CERTIFICATS
+// ============================================
+
+model CourseCertificate {
+  id                  String    @id @default(cuid())
+
+  courseId            String
+  course              Course    @relation(fields: [courseId], references: [id])
+
+  userId              String
+  user                User      @relation("CourseCertificates", fields: [userId], references: [id])
+
+  // Dades del certificat
+  certificateNumber   String    @unique
+  title               String
+  completionDate      DateTime  @default(now())
+
+  // Informació addicional
+  grade               Float?    // Nota final
+  hoursCompleted      Int?      // Hores de formació
+
+  // PDF generat
+  pdfUrl              String?
+
+  // Validació
+  validUntil          DateTime?
+  isValid             Boolean   @default(true)
+
+  enrollments         CourseEnrollment[]
+
+  createdAt           DateTime  @default(now())
+
+  @@index([userId])
+  @@index([courseId])
+  @@map("course_certificates")
+}
+
+// ============================================
+// VALORACIONS DE CURSOS
+// ============================================
+
+model CourseReview {
+  id              String    @id @default(cuid())
+
+  courseId        String
+  course          Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  userId          String
+  user            User      @relation("CourseReviews", fields: [userId], references: [id])
+
+  rating          Int       // 1-5
+  title           String?
+  comment         String?   @db.Text
+
+  isVerified      Boolean   @default(false)  // Ha completat el curs
+  isPublished     Boolean   @default(true)
+
+  helpfulCount    Int       @default(0)
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([courseId, userId])
+  @@index([courseId, isPublished])
+  @@map("course_reviews")
+}
+
+// ============================================
+// ENLLAÇOS D'INTERÈS
+// ============================================
+
+model UsefulLinkCategory {
+  id          String        @id @default(cuid())
+
+  name        String
+  slug        String        @unique
+  description String?
+  icon        String?       // Nom icona Lucide
+  color       String        @default("#6366f1")
+  order       Int           @default(0)
+
+  isActive    Boolean       @default(true)
+
+  links       UsefulLink[]
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@map("useful_link_categories")
+}
+
+model UsefulLink {
+  id          String              @id @default(cuid())
+
+  // Informació bàsica
+  name        String
+  slug        String              @unique
+  slogan      String?             // Subtítol curt
+  description String?             @db.Text
+
+  // Enllaç
+  website     String
+
+  // Contacte (opcional)
+  phone       String?
+  email       String?
+  address     String?
+
+  // Imatge
+  logo        String?
+
+  // Categoria
+  categoryId  String
+  category    UsefulLinkCategory  @relation(fields: [categoryId], references: [id])
+
+  // Configuració
+  order       Int                 @default(0)
+  isActive    Boolean             @default(true)
+  isHighlighted Boolean           @default(false)  // Destacat
+
+  // Estadístiques
+  totalVisits Int                 @default(0)
+
+  // Favorits dels usuaris
+  favorites   UserFavoriteLink[]
+
+  // Audit
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@index([categoryId])
+  @@index([isActive, isHighlighted])
+  @@map("useful_links")
+}
+
+// ============================================
+// FAVORITS I ENLLAÇOS PERSONALS D'USUARIS
+// ============================================
+
+// Favorits d'enllaços públics
+model UserFavoriteLink {
+  id          String      @id @default(cuid())
+
+  userId      String
+  user        User        @relation("UserFavoriteLinks", fields: [userId], references: [id], onDelete: Cascade)
+
+  linkId      String
+  link        UsefulLink  @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  // Personalització
+  customName  String?     // Nom personalitzat (opcional)
+  notes       String?     // Notes personals
+
+  // Organització
+  folderId    String?
+  folder      UserLinkFolder? @relation(fields: [folderId], references: [id])
+  order       Int         @default(0)
+
+  createdAt   DateTime    @default(now())
+
+  @@unique([userId, linkId])
+  @@index([userId])
+  @@map("user_favorite_links")
+}
+
+// Enllaços personals (creats per l'usuari)
+model UserCustomLink {
+  id          String      @id @default(cuid())
+
+  userId      String
+  user        User        @relation("UserCustomLinks", fields: [userId], references: [id], onDelete: Cascade)
+
+  // Informació
+  name        String
+  url         String
+  description String?
+  icon        String?     // Emoji o nom d'icona
+  color       String?     @default("#6366f1")
+
+  // Organització
+  folderId    String?
+  folder      UserLinkFolder? @relation(fields: [folderId], references: [id])
+  order       Int         @default(0)
+
+  // Stats
+  visitCount  Int         @default(0)
+  lastVisitAt DateTime?
+
+  isActive    Boolean     @default(true)
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([userId])
+  @@map("user_custom_links")
+}
+
+// Carpetes per organitzar enllaços
+model UserLinkFolder {
+  id          String      @id @default(cuid())
+
+  userId      String
+  user        User        @relation("UserLinkFolders", fields: [userId], references: [id], onDelete: Cascade)
+
+  name        String
+  icon        String?     // Emoji
+  color       String?     @default("#6366f1")
+  order       Int         @default(0)
+
+  // Enllaços dins la carpeta
+  favoriteLinks  UserFavoriteLink[]
+  customLinks    UserCustomLink[]
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([userId])
+  @@map("user_link_folders")
+}
+
+// ============================================
+// AGENDA DE CONTACTES
+// ============================================
+
+model UserContact {
+  id            String              @id @default(cuid())
+
+  userId        String
+  user          User                @relation("UserContacts", fields: [userId], references: [id], onDelete: Cascade)
+
+  // Informació bàsica
+  name          String
+  contactType   String?             // persona, empresa, proveidor, client
+  position      String?
+  department    String?
+  organization  String?
+  taxId         String?             // CIF/NIF per empreses
+  sector        String?             // Sector o activitat
+
+  // Contacte
+  email         String?
+  phone         String?
+  mobile        String?
+  extension     String?
+
+  // Ubicació
+  address       String?
+  city          String?
+  building      String?
+  floor         String?
+
+  // Enllaços
+  linkedin      String?
+  website       String?
+
+  // Organització
+  categoryId    String?
+  category      UserContactCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  // Notes i etiquetes
+  notes         String?             @db.Text
+  tags          String[]
+
+  // Configuració
+  isFavorite    Boolean             @default(false)
+  isFrequent    Boolean             @default(false)
+  color         String?
+  avatar        String?
+
+  // Audit
+  lastContactAt DateTime?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@index([userId])
+  @@index([userId, isFavorite])
+  @@map("user_contacts")
+}
+
+model UserContactCategory {
+  id          String        @id @default(cuid())
+
+  userId      String
+  user        User          @relation("UserContactCategories", fields: [userId], references: [id], onDelete: Cascade)
+
+  name        String
+  icon        String?
+  color       String        @default("#8b5cf6")
+  order       Int           @default(0)
+
+  contacts    UserContact[]
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([userId])
+  @@map("user_contact_categories")
 }

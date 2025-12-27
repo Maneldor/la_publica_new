@@ -96,7 +96,7 @@ export const Step5Experience = ({
                     onChange={(e) => updateExperience(exp.id, 'position', e.target.value)}
                     placeholder="Ex: Tècnic en Transformació Digital"
                     className={`
-                      w-full px-4 py-3 rounded-lg border
+                      w-full px-4 py-3 rounded-lg border text-gray-900 placeholder:text-gray-400
                       ${errors[`experience_${index}_position`] ? 'border-red-500 bg-red-50' : 'border-gray-300'}
                       focus:ring-2 focus:ring-blue-500 focus:border-transparent
                       transition-all
@@ -117,7 +117,7 @@ export const Step5Experience = ({
                     onChange={(e) => updateExperience(exp.id, 'company', e.target.value)}
                     placeholder="Ex: Ajuntament de Barcelona"
                     className={`
-                      w-full px-4 py-3 rounded-lg border
+                      w-full px-4 py-3 rounded-lg border text-gray-900 placeholder:text-gray-400
                       ${errors[`experience_${index}_company`] ? 'border-red-500 bg-red-50' : 'border-gray-300'}
                       focus:ring-2 focus:ring-blue-500 focus:border-transparent
                       transition-all
@@ -140,7 +140,7 @@ export const Step5Experience = ({
                   placeholder="Descriu les teves responsabilitats, èxits i projectes destacats en aquest rol..."
                   rows={4}
                   maxLength={500}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none text-gray-900 placeholder:text-gray-400"
                 />
                 <p className="text-sm text-gray-500 mt-1">
                   {exp.description.length}/500 caràcters
@@ -158,7 +158,7 @@ export const Step5Experience = ({
                     type="month"
                     value={formatDateForInput(exp.startDate)}
                     onChange={(e) => updateExperience(exp.id, 'startDate', e.target.value)}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
                   />
                 </div>
 
@@ -174,7 +174,7 @@ export const Step5Experience = ({
                       onChange={(e) => updateExperience(exp.id, 'endDate', e.target.value)}
                       disabled={exp.endDate === 'Present'}
                       className={`
-                        w-full px-4 py-3 rounded-lg border border-gray-300
+                        w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 placeholder:text-gray-400
                         focus:ring-2 focus:ring-blue-500 focus:border-transparent
                         transition-all
                         ${exp.endDate === 'Present' ? 'bg-gray-100 cursor-not-allowed' : ''}

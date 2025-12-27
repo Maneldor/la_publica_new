@@ -348,18 +348,16 @@ export const SIDEBAR_CONFIG: SidebarSection[] = [
       {
         id: 'feed',
         label: 'Feed / Posts',
-        href: '/gestio/contingut/feed',
+        href: '/gestio/contingut/feed-posts',
         icon: MessagesSquare,
         roles: ['ADMIN_GESTIO', 'CRM_CONTINGUT'] as UserRole[],
-        disabled: true,
       },
       {
         id: 'blogs',
         label: 'Blogs',
-        href: '/gestio/contingut/blogs',
+        href: '/gestio/contingut/blog',
         icon: FileText,
         roles: ['ADMIN_GESTIO', 'CRM_CONTINGUT'] as UserRole[],
-        disabled: true,
       },
       {
         id: 'forums',
@@ -367,7 +365,6 @@ export const SIDEBAR_CONFIG: SidebarSection[] = [
         href: '/gestio/contingut/forums',
         icon: MessageSquare,
         roles: ['ADMIN_GESTIO', 'CRM_CONTINGUT'] as UserRole[],
-        disabled: true,
       },
       {
         id: 'grups',
@@ -383,7 +380,6 @@ export const SIDEBAR_CONFIG: SidebarSection[] = [
         href: '/gestio/contingut/formacio',
         icon: GraduationCap,
         roles: ['ADMIN_GESTIO', 'CRM_CONTINGUT'] as UserRole[],
-        disabled: true,
       },
       {
         id: 'enllacos',
@@ -391,7 +387,6 @@ export const SIDEBAR_CONFIG: SidebarSection[] = [
         href: '/gestio/contingut/enllacos',
         icon: Link,
         roles: ['ADMIN_GESTIO', 'CRM_CONTINGUT'] as UserRole[],
-        disabled: true,
       },
       // --- Serveis (Visibilitat) ---
       {
