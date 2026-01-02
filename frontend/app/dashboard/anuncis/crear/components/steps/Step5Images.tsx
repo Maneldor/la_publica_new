@@ -124,10 +124,10 @@ export const Step5Images = ({ formData, errors, updateField }: Step5ImagesProps)
           className={`
             relative border-2 border-dashed rounded-lg p-8 text-center transition-all
             ${dragActive
-              ? 'border-blue-500 bg-blue-50'
+              ? 'border-info bg-info/10'
               : formData.images.length >= MAX_IMAGES
-                ? 'border-gray-200 bg-gray-50'
-                : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
+                ? 'border-border-light bg-slate-50'
+                : 'border-border hover:border-border-dark hover:bg-slate-50'
             }
             ${formData.images.length >= MAX_IMAGES ? 'cursor-not-allowed' : 'cursor-pointer'}
           `}
@@ -153,7 +153,7 @@ export const Step5Images = ({ formData, errors, updateField }: Step5ImagesProps)
               <p className="text-sm">Has afegit {MAX_IMAGES} imatges (màxim permès)</p>
             </div>
           ) : (
-            <div className={dragActive ? 'text-blue-600' : 'text-gray-500'}>
+            <div className={dragActive ? 'text-info' : 'text-slate-500'}>
               <Upload className="mx-auto h-12 w-12 mb-4" />
               <p className="text-lg font-medium mb-2">
                 {dragActive ? 'Deixa anar les imatges aquí' : 'Afegeix imatges'}
@@ -170,14 +170,14 @@ export const Step5Images = ({ formData, errors, updateField }: Step5ImagesProps)
 
         {/* Upload Errors */}
         {uploadErrors.length > 0 && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="bg-error/10 border border-error/30 rounded-lg p-4">
             <div className="flex items-start gap-2">
-              <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
+              <AlertCircle className="w-5 h-5 text-error mt-0.5" />
               <div>
-                <h4 className="text-sm font-medium text-red-800 mb-1">
+                <h4 className="text-sm font-medium text-error-dark mb-1">
                   Error en pujar imatges:
                 </h4>
-                <ul className="text-sm text-red-700 space-y-1">
+                <ul className="text-sm text-error space-y-1">
                   {uploadErrors.map((error, index) => (
                     <li key={index}>• {error}</li>
                   ))}
@@ -189,8 +189,8 @@ export const Step5Images = ({ formData, errors, updateField }: Step5ImagesProps)
 
         {/* Form Error */}
         {errors.images && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-sm text-red-600 flex items-center gap-2">
+          <div className="bg-error/10 border border-error/30 rounded-lg p-4">
+            <p className="text-sm text-error flex items-center gap-2">
               <AlertCircle className="w-4 h-4" />
               {errors.images}
             </p>
@@ -265,7 +265,7 @@ export const Step5Images = ({ formData, errors, updateField }: Step5ImagesProps)
                     {/* Remove button */}
                     <button
                       onClick={() => removeImage(index)}
-                      className="p-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-all"
+                      className="p-2 bg-error text-white rounded-full hover:bg-error-dark transition-all"
                       title="Eliminar imatge"
                     >
                       <X className="w-4 h-4" />
@@ -289,11 +289,11 @@ export const Step5Images = ({ formData, errors, updateField }: Step5ImagesProps)
       )}
 
       {/* Info Box */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <p className="text-sm text-blue-800 font-medium mb-2">
+      <div className="bg-info/10 border border-info/30 rounded-lg p-4">
+        <p className="text-sm text-info-dark font-medium mb-2">
           📸 Consells per a bones imatges:
         </p>
-        <ul className="text-sm text-blue-700 space-y-1">
+        <ul className="text-sm text-info space-y-1">
           <li>• Usa bona il·luminació natural sempre que sigui possible</li>
           <li>• Mostra el producte des de diferents angles</li>
           <li>• Inclou imatges de detalls o defectes si n'hi ha</li>

@@ -5,17 +5,17 @@ import { FileText } from 'lucide-react';
 export default function PostsTab() {
   return (
     <div style={{
-      backgroundColor: '#fff',
-      borderRadius: '12px',
-      padding: '20px',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+      backgroundColor: 'var(--PostsTab-background, #ffffff)',
+      borderRadius: 'var(--PostsTab-border-radius, 12px)',
+      padding: 'var(--PostsTab-padding, 20px)',
+      boxShadow: 'var(--PostsTab-shadow, 0 2px 8px rgba(0,0,0,0.1))',
       marginBottom: '20px',
-      border: '1px solid #f0f0f0'
+      border: '1px solid var(--PostsTab-border-color, #f0f0f0)'
     }}>
       <h3 style={{
         fontSize: '18px',
         fontWeight: '600',
-        color: '#1f2937',
+        color: 'var(--PostsTab-title-color, #1f2937)',
         margin: '0 0 20px 0',
         display: 'flex',
         alignItems: 'center',
@@ -33,21 +33,21 @@ export default function PostsTab() {
       }}>
         <div style={{
           padding: '16px',
-          backgroundColor: '#f8f9fa',
+          backgroundColor: 'var(--PostsTab-stat-bg, #f8f9fa)',
           borderRadius: '8px',
           textAlign: 'center'
         }}>
           <h4 style={{
             fontSize: '24px',
             fontWeight: 'bold',
-            color: '#3b82f6',
+            color: 'var(--PostsTab-stat-posts-color, #3b82f6)',
             margin: '0 0 4px 0'
           }}>
             23
           </h4>
           <p style={{
             fontSize: '12px',
-            color: '#6b7280',
+            color: 'var(--PostsTab-stat-label-color, #6b7280)',
             margin: 0
           }}>
             Total Posts
@@ -55,21 +55,21 @@ export default function PostsTab() {
         </div>
         <div style={{
           padding: '16px',
-          backgroundColor: '#f8f9fa',
+          backgroundColor: 'var(--PostsTab-stat-bg, #f8f9fa)',
           borderRadius: '8px',
           textAlign: 'center'
         }}>
           <h4 style={{
             fontSize: '24px',
             fontWeight: 'bold',
-            color: '#ef4444',
+            color: 'var(--PostsTab-stat-likes-color, #ef4444)',
             margin: '0 0 4px 0'
           }}>
             367
           </h4>
           <p style={{
             fontSize: '12px',
-            color: '#6b7280',
+            color: 'var(--PostsTab-stat-label-color, #6b7280)',
             margin: 0
           }}>
             Likes Rebuts
@@ -77,21 +77,21 @@ export default function PostsTab() {
         </div>
         <div style={{
           padding: '16px',
-          backgroundColor: '#f8f9fa',
+          backgroundColor: 'var(--PostsTab-stat-bg, #f8f9fa)',
           borderRadius: '8px',
           textAlign: 'center'
         }}>
           <h4 style={{
             fontSize: '24px',
             fontWeight: 'bold',
-            color: '#10b981',
+            color: 'var(--PostsTab-stat-comments-color, #10b981)',
             margin: '0 0 4px 0'
           }}>
             89
           </h4>
           <p style={{
             fontSize: '12px',
-            color: '#6b7280',
+            color: 'var(--PostsTab-stat-label-color, #6b7280)',
             margin: 0
           }}>
             Comentaris
@@ -102,7 +102,7 @@ export default function PostsTab() {
       <div style={{
         textAlign: 'center',
         padding: '40px 20px',
-        color: '#6b7280'
+        color: 'var(--PostsTab-empty-color, #6b7280)'
       }}>
         <FileText style={{
           width: '48px',

@@ -29,7 +29,7 @@ export interface FeatureCategory {
 }
 
 export const ENTERPRISE_CATALOG: FeatureCategory = {
-  // 📦 CATEGORÍA: Storage Extra
+  // Storage Extra
   storage: [
     {
       key: 'storage_10gb',
@@ -37,7 +37,7 @@ export const ENTERPRISE_CATALOG: FeatureCategory = {
       description: 'Espai addicional per a documents i arxius',
       basePrice: 10,
       value: { amount: 10, unit: 'GB' },
-      icon: '💾',
+      icon: 'HardDrive',
       color: '#3B82F6',
       isActive: true
     },
@@ -47,7 +47,7 @@ export const ENTERPRISE_CATALOG: FeatureCategory = {
       description: 'Paquet gran d\'emmagatzematge',
       basePrice: 40,
       value: { amount: 50, unit: 'GB' },
-      icon: '💾',
+      icon: 'HardDrive',
       color: '#3B82F6',
       discount: '20% vs 5x10GB',
       isActive: true
@@ -58,14 +58,14 @@ export const ENTERPRISE_CATALOG: FeatureCategory = {
       description: 'Emmagatzematge massiu per grans corporacions',
       basePrice: 70,
       value: { amount: 100, unit: 'GB' },
-      icon: '💾',
+      icon: 'HardDrive',
       color: '#3B82F6',
       discount: '30% vs 10x10GB',
       isActive: true
     }
   ],
 
-  // 👥 CATEGORÍA: Miembros Extra
+  // Miembros Extra
   members: [
     {
       key: 'members_5',
@@ -74,7 +74,7 @@ export const ENTERPRISE_CATALOG: FeatureCategory = {
       basePrice: 25,
       priceModel: 'monthly',
       value: { amount: 5, unit: 'membres' },
-      icon: '👥',
+      icon: 'Users',
       color: '#10B981',
       isActive: true
     },
@@ -84,7 +84,7 @@ export const ENTERPRISE_CATALOG: FeatureCategory = {
       description: 'Equip gran per a departaments',
       basePrice: 45,
       value: { amount: 10, unit: 'membres' },
-      icon: '👥',
+      icon: 'Users',
       color: '#10B981',
       discount: '10% vs individual',
       isActive: true
@@ -95,13 +95,13 @@ export const ENTERPRISE_CATALOG: FeatureCategory = {
       description: 'Sense límit de membres per a grans organitzacions',
       basePrice: 100,
       value: { amount: -1, unit: 'membres' },
-      icon: '👥',
+      icon: 'Users',
       color: '#10B981',
       isActive: true
     }
   ],
 
-  // 🤖 CATEGORÍA: Agentes IA
+  // Agentes IA
   ai_agents: [
     {
       key: 'ai_basic',
@@ -109,7 +109,7 @@ export const ENTERPRISE_CATALOG: FeatureCategory = {
       description: '1 agent IA per generar contingut automàtic',
       basePrice: 30,
       value: { amount: 1, unit: 'agents' },
-      icon: '🤖',
+      icon: 'Bot',
       color: '#8B5CF6',
       isActive: true
     },
@@ -119,7 +119,7 @@ export const ENTERPRISE_CATALOG: FeatureCategory = {
       description: '3 agents IA especialitzats en diferents tasques',
       basePrice: 80,
       value: { amount: 3, unit: 'agents' },
-      icon: '🤖',
+      icon: 'Bot',
       color: '#8B5CF6',
       discount: '15% vs 3 individuals',
       isActive: true
@@ -130,13 +130,13 @@ export const ENTERPRISE_CATALOG: FeatureCategory = {
       description: 'Tots els agents IA disponibles',
       basePrice: 150,
       value: { amount: -1, unit: 'agents' },
-      icon: '🤖',
+      icon: 'Bot',
       color: '#8B5CF6',
       isActive: true
     }
   ],
 
-  // 📊 CATEGORÍA: Features Premium
+  // Features Premium
   features: [
     {
       key: 'api_access',
@@ -144,7 +144,7 @@ export const ENTERPRISE_CATALOG: FeatureCategory = {
       description: 'API RESTful completa per a integració amb sistemes externs',
       basePrice: 50,
       value: { enabled: true },
-      icon: '🔌',
+      icon: 'Plug',
       color: '#F59E0B',
       isActive: true
     },
@@ -155,7 +155,7 @@ export const ENTERPRISE_CATALOG: FeatureCategory = {
       basePrice: 40,
       setupFee: 200,
       value: { enabled: true },
-      icon: '🎨',
+      icon: 'Palette',
       color: '#F59E0B',
       isActive: true
     },
@@ -166,7 +166,7 @@ export const ENTERPRISE_CATALOG: FeatureCategory = {
       basePrice: 200,
       setupFee: 1000,
       value: { enabled: true },
-      icon: '⚪',
+      icon: 'Globe',
       color: '#F59E0B',
       isActive: true
     },
@@ -177,7 +177,7 @@ export const ENTERPRISE_CATALOG: FeatureCategory = {
       basePrice: 100,
       setupFee: 500,
       value: { enabled: true },
-      icon: '🔐',
+      icon: 'Shield',
       color: '#F59E0B',
       isActive: true
     },
@@ -187,13 +187,13 @@ export const ENTERPRISE_CATALOG: FeatureCategory = {
       description: 'Dashboard personalitzat amb mètriques avançades',
       basePrice: 60,
       value: { enabled: true },
-      icon: '📈',
+      icon: 'BarChart3',
       color: '#F59E0B',
       isActive: true
     }
   ],
 
-  // 🎓 CATEGORÍA: Formación y Soporte
+  // Formación y Soporte
   support: [
     {
       key: 'dedicated_manager',
@@ -201,7 +201,7 @@ export const ENTERPRISE_CATALOG: FeatureCategory = {
       description: 'Gestor personal assignat exclusivament',
       basePrice: 200,
       value: { enabled: true },
-      icon: '👔',
+      icon: 'UserCheck',
       color: '#EF4444',
       isActive: true
     },
@@ -213,7 +213,7 @@ export const ENTERPRISE_CATALOG: FeatureCategory = {
       setupFee: 800,
       priceModel: 'one_time',
       value: { hours: 4 },
-      icon: '🎓',
+      icon: 'GraduationCap',
       color: '#EF4444',
       isActive: true
     },
@@ -223,7 +223,7 @@ export const ENTERPRISE_CATALOG: FeatureCategory = {
       description: 'Resposta garantida en menys de 2 hores',
       basePrice: 150,
       value: { sla: '2h' },
-      icon: '🚨',
+      icon: 'Headphones',
       color: '#EF4444',
       isActive: true
     },
@@ -233,13 +233,13 @@ export const ENTERPRISE_CATALOG: FeatureCategory = {
       description: '2 sessions formatives mensuals per al teu equip',
       basePrice: 100,
       value: { sessions: 2, unit: 'mes' },
-      icon: '📚',
+      icon: 'BookOpen',
       color: '#EF4444',
       isActive: true
     }
   ],
 
-  // 📄 CATEGORÍA: Documentos y Publicaciones
+  // Documentos y Publicaciones
   content: [
     {
       key: 'documents_unlimited',
@@ -247,7 +247,7 @@ export const ENTERPRISE_CATALOG: FeatureCategory = {
       description: 'Sense cap límit en el nombre de documents',
       basePrice: 30,
       value: { amount: -1, unit: 'documents' },
-      icon: '📄',
+      icon: 'FileText',
       color: '#06B6D4',
       isActive: true
     },
@@ -257,7 +257,7 @@ export const ENTERPRISE_CATALOG: FeatureCategory = {
       description: 'Crea tots els projectes que necessitis',
       basePrice: 40,
       value: { amount: -1, unit: 'projectes' },
-      icon: '📁',
+      icon: 'FolderOpen',
       color: '#06B6D4',
       isActive: true
     },
@@ -267,7 +267,7 @@ export const ENTERPRISE_CATALOG: FeatureCategory = {
       description: '50 publicacions mensuals destacades',
       basePrice: 60,
       value: { amount: 50, unit: 'publicacions' },
-      icon: '📢',
+      icon: 'Megaphone',
       color: '#06B6D4',
       isActive: true
     }
@@ -303,18 +303,6 @@ export function getCategoryDisplayName(category: string): string {
   return names[category] || category;
 }
 
-export function getCategoryIcon(category: string): string {
-  const icons: Record<string, string> = {
-    storage: '📦',
-    members: '👥',
-    ai_agents: '🤖',
-    features: '📊',
-    support: '🎓',
-    content: '📄'
-  };
-  return icons[category] || '📌';
-}
-
 // Calculadora de precios
 export interface SelectedFeature {
   featureId: string;
@@ -334,12 +322,20 @@ export interface PricingCalculation {
   annualSavings: number;
 }
 
+export type PlanTier = 'STANDARD' | 'STRATEGIC' | 'ENTERPRISE';
+
 export function calculatePricing(
-  basePlan: 'STANDARD' | 'PREMIUM',
+  basePlan: PlanTier,
   selectedFeatures: SelectedFeature[],
-  discountPercent: number = 0
+  discountPercent: number = 0,
+  applyFirstYearDiscount: boolean = true
 ): PricingCalculation {
-  const basePlanPrice = basePlan === 'PREMIUM' ? 149 : 79;
+  const plan = BASE_PLANS[basePlan];
+  const basePrice = plan?.basePrice || 500;
+  const firstYearDiscount = applyFirstYearDiscount ? (plan?.firstYearDiscount || 0) : 0;
+
+  // Aplicar descompte 1r any al pla base
+  const basePlanPrice = basePrice * (1 - firstYearDiscount / 100);
   const featuresSubtotal = selectedFeatures.reduce((sum, f) => sum + f.totalPrice, 0);
   const subtotal = basePlanPrice + featuresSubtotal;
   const discountAmount = (subtotal * discountPercent) / 100;
@@ -364,33 +360,83 @@ export function calculatePricing(
   };
 }
 
-// Plan bases disponibles
+// Plan bases disponibles (sin Pioners) - Preus ANUALS amb descompte 1r any
 export const BASE_PLANS = {
   STANDARD: {
     id: 'STANDARD',
     name: 'Estàndard',
-    price: 79,
-    description: 'Fins a 3 membres, funcionalitats bàsiques',
+    basePrice: 500,
+    firstYearDiscount: 50,
+    priceType: 'annual' as const,
+    color: '#3B82F6',
+    description: 'Pla per començar',
+    limits: {
+      maxTeamMembers: 1,
+      maxActiveOffers: 5,
+      maxFeaturedOffers: 0,
+    },
     features: [
-      'Fins a 3 membres d\'equip',
-      'Estadístiques avançades',
-      'Suport telefònic',
-      '10 ofertes actives/mes',
-      '1 Agent IA comercial'
+      'Fitxa empresarial completa',
+      'Ofertes editables',
+      'Estadístiques i analítiques bàsiques',
+      'Newsletter (nova col·laboració i noves ofertes)',
+      '1 agent IA comercial bàsic',
+      'Suport per email',
+      'Gestor comercial d\'administració'
     ]
   },
-  PREMIUM: {
-    id: 'PREMIUM',
-    name: 'Premium',
-    price: 149,
-    description: 'Fins a 10 membres, funcionalitats avançades',
+  STRATEGIC: {
+    id: 'STRATEGIC',
+    name: 'Estratègic',
+    basePrice: 1000,
+    firstYearDiscount: 50,
+    priceType: 'annual' as const,
+    color: '#8B5CF6',
+    description: 'Per empreses en creixement',
+    limits: {
+      maxTeamMembers: 3,
+      maxActiveOffers: 10,
+      maxFeaturedOffers: 1,
+    },
     features: [
-      'Fins a 10 membres d\'equip',
-      'Analítiques completes',
-      'Suport prioritari 24/7',
-      'Ofertes il·limitades',
-      '3 Agents IA avançats',
-      'Perfil destacat'
+      'Tot del pla Estàndard',
+      'Posicionament preferent',
+      '1 oferta destacada',
+      'Publicació sectorial',
+      'Informe branding web',
+      'Estadístiques i analítiques ampliades',
+      'Suport per email i missatgeria interna',
+      '2 agents IA bàsics (Comercial + Marketing)',
+      'Newsletter ampliada 2 publicacions mensuals',
+      'Gestor comercial dedicat'
+    ]
+  },
+  ENTERPRISE: {
+    id: 'ENTERPRISE',
+    name: 'Enterprise',
+    basePrice: 2000,
+    firstYearDiscount: 50,
+    priceType: 'annual' as const,
+    color: '#F59E0B',
+    description: 'Solució completa per grans empreses',
+    limits: {
+      maxTeamMembers: 5,
+      maxActiveOffers: 999,
+      maxFeaturedOffers: 3,
+    },
+    features: [
+      'Tot del pla Estratègic',
+      '3 ofertes destacades',
+      'Posicionament preferent màxim',
+      'Analítiques e informes Pro',
+      'Dashboard Pro',
+      'Integració API',
+      '2 Agents IA Pro (Comercial Pro + Marketing Pro)',
+      'Campanyes exclusives',
+      'Suport prioritari',
+      'Reunió estratègica anual',
+      'Presència editorial garantida en blogs',
+      'SmartLinks amb tracking'
     ]
   }
 } as const;

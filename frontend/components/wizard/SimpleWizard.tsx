@@ -23,6 +23,8 @@ interface SimpleWizardProps {
   children: ReactNode; // El contenido del paso actual
   showModal?: boolean; // Si mostrar como modal o no
   maxWidth?: string; // Ancho máximo del wizard
+  hasChanges?: boolean; // Si hay cambios para enviar (para mostrar/ocultar botón submit)
+  closeText?: string; // Texto del botón cerrar
 }
 
 export default function SimpleWizard({
@@ -38,7 +40,9 @@ export default function SimpleWizard({
   loadingText = 'Guardant...',
   children,
   showModal = true,
-  maxWidth = 'max-w-5xl'
+  maxWidth = 'max-w-5xl',
+  hasChanges = true, // Por defecto true para compatibilidad
+  closeText = 'Tancar'
 }: SimpleWizardProps) {
   const isLastStep = currentStep === steps.length;
   const isFirstStep = currentStep === 1;
@@ -57,31 +61,86 @@ export default function SimpleWizard({
           </button>
         </div>
 
-        {/* Progress Steps */}
-        <div className="flex items-center justify-between">
-          {steps.map((step, index) => (
-            <div key={step.id} className="flex items-center">
-              <div
-                className={`flex items-center gap-2 ${
-                  currentStep >= step.id ? 'opacity-100' : 'opacity-50'
-                }`}
-              >
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                  currentStep === step.id ? 'bg-white text-green-600' :
-                  currentStep > step.id ? 'bg-green-500 text-white' : 'bg-white/20 text-white'
-                }`}>
-                  {currentStep > step.id ? '✓' : step.icon}
+        {/* Progress Steps - En dos filas si hay más de 5 pasos */}
+        {steps.length > 5 ? (
+          <div className="space-y-3">
+            {/* Primera fila */}
+            <div className="flex items-center justify-center gap-2">
+              {steps.slice(0, Math.ceil(steps.length / 2)).map((step, index) => (
+                <div key={step.id} className="flex items-center">
+                  <div
+                    className={`flex items-center gap-1.5 ${
+                      currentStep >= step.id ? 'opacity-100' : 'opacity-50'
+                    }`}
+                  >
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${
+                      currentStep === step.id ? 'bg-white text-green-600' :
+                      currentStep > step.id ? 'bg-green-500 text-white' : 'bg-white/20 text-white'
+                    }`}>
+                      {currentStep > step.id ? '✓' : step.icon}
+                    </div>
+                    <span className="text-xs font-medium">{step.title}</span>
+                  </div>
+                  {index < Math.ceil(steps.length / 2) - 1 && (
+                    <div className={`h-0.5 w-6 mx-1.5 ${
+                      currentStep > step.id ? 'bg-white' : 'bg-white/20'
+                    }`} />
+                  )}
                 </div>
-                <span className="text-sm font-medium hidden md:inline">{step.title}</span>
-              </div>
-              {index < steps.length - 1 && (
-                <div className={`h-1 w-8 md:w-16 mx-2 ${
-                  currentStep > step.id ? 'bg-white' : 'bg-white/20'
-                }`} />
-              )}
+              ))}
             </div>
-          ))}
-        </div>
+            {/* Segunda fila */}
+            <div className="flex items-center justify-center gap-2">
+              {steps.slice(Math.ceil(steps.length / 2)).map((step, index) => (
+                <div key={step.id} className="flex items-center">
+                  <div
+                    className={`flex items-center gap-1.5 ${
+                      currentStep >= step.id ? 'opacity-100' : 'opacity-50'
+                    }`}
+                  >
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${
+                      currentStep === step.id ? 'bg-white text-green-600' :
+                      currentStep > step.id ? 'bg-green-500 text-white' : 'bg-white/20 text-white'
+                    }`}>
+                      {currentStep > step.id ? '✓' : step.icon}
+                    </div>
+                    <span className="text-xs font-medium">{step.title}</span>
+                  </div>
+                  {index < steps.slice(Math.ceil(steps.length / 2)).length - 1 && (
+                    <div className={`h-0.5 w-6 mx-1.5 ${
+                      currentStep > step.id ? 'bg-white' : 'bg-white/20'
+                    }`} />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between">
+            {steps.map((step, index) => (
+              <div key={step.id} className="flex items-center">
+                <div
+                  className={`flex items-center gap-2 ${
+                    currentStep >= step.id ? 'opacity-100' : 'opacity-50'
+                  }`}
+                >
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                    currentStep === step.id ? 'bg-white text-green-600' :
+                    currentStep > step.id ? 'bg-green-500 text-white' : 'bg-white/20 text-white'
+                  }`}>
+                    {currentStep > step.id ? '✓' : step.icon}
+                  </div>
+                  <span className="text-sm font-medium hidden md:inline">{step.title}</span>
+                </div>
+                {index < steps.length - 1 && (
+                  <div className={`h-1 w-8 md:w-16 mx-2 ${
+                    currentStep > step.id ? 'bg-white' : 'bg-white/20'
+                  }`} />
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Content */}
@@ -107,24 +166,33 @@ export default function SimpleWizard({
             </span>
           </div>
 
-          {isLastStep && onSubmit ? (
-            <button
-              onClick={onSubmit}
-              disabled={isLoading}
-              className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
-            >
-              {isLoading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  {loadingText}
-                </>
-              ) : (
-                <>
-                  {submitText}
-                  <CheckCircle className="w-4 h-4" />
-                </>
-              )}
-            </button>
+          {isLastStep ? (
+            hasChanges && onSubmit ? (
+              <button
+                onClick={onSubmit}
+                disabled={isLoading}
+                className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+              >
+                {isLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    {loadingText}
+                  </>
+                ) : (
+                  <>
+                    {submitText}
+                    <CheckCircle className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            ) : (
+              <button
+                onClick={onClose}
+                className="flex items-center gap-2 px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
+              >
+                {closeText}
+              </button>
+            )
           ) : (
             <button
               onClick={onNext}

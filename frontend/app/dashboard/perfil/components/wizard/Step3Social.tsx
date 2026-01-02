@@ -97,37 +97,67 @@ export const Step3Social = ({ data, addSocialLink, deleteSocialLink, isSaving }:
   };
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Header */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+      <div style={{ marginBottom: '32px' }}>
+        <h2 style={{
+          fontSize: '24px',
+          fontWeight: '700',
+          color: 'var(--Step3Social-title-color, #111827)',
+          marginBottom: '8px'
+        }}>
           Xarxes Socials
         </h2>
-        <p className="text-gray-600">
+        <p style={{ color: 'var(--Step3Social-description-color, #4b5563)' }}>
           Connecta les teves xarxes socials per facilitar que altres usuaris et trobin i contactin
         </p>
       </div>
 
       {/* Social Networks */}
-      <div className="space-y-6">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {/* Twitter */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-              <Twitter className="w-6 h-6 text-blue-600" />
+        <div style={{
+          backgroundColor: 'var(--Step3Social-card-bg, #ffffff)',
+          border: '1px solid var(--Step3Social-card-border, #e5e7eb)',
+          borderRadius: '8px',
+          padding: '24px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
+            <div style={{
+              width: '48px',
+              height: '48px',
+              backgroundColor: 'var(--Step3Social-twitter-bg, #dbeafe)',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <Twitter style={{ width: '24px', height: '24px', color: 'var(--Step3Social-twitter-icon, #2563eb)' }} />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Twitter / X</h3>
-              <p className="text-sm text-gray-600">Connecta el teu compte de Twitter</p>
+              <h3 style={{ fontSize: '18px', fontWeight: '600', color: 'var(--Step3Social-card-title, #111827)' }}>Twitter / X</h3>
+              <p style={{ fontSize: '14px', color: 'var(--Step3Social-card-subtitle, #4b5563)' }}>Connecta el teu compte de Twitter</p>
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label style={{
+              display: 'block',
+              fontSize: '14px',
+              fontWeight: '500',
+              color: 'var(--Step3Social-label-color, #374151)',
+              marginBottom: '8px'
+            }}>
               Nom d'usuari (sense @)
             </label>
-            <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">
+            <div style={{ position: 'relative' }}>
+              <span style={{
+                position: 'absolute',
+                top: '50%',
+                left: '12px',
+                transform: 'translateY(-50%)',
+                color: 'var(--Step3Social-prefix-color, #6b7280)'
+              }}>
                 @
               </span>
               <input
@@ -136,62 +166,118 @@ export const Step3Social = ({ data, addSocialLink, deleteSocialLink, isSaving }:
                 onChange={(e) => handleSocialChange('twitter', e.target.value.replace('@', ''))}
                 onBlur={() => handleSocialSave('twitter')}
                 placeholder="jordi_garcia"
-                className="w-full pl-8 pr-12 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
+                style={{
+                  width: '100%',
+                  paddingLeft: '32px',
+                  paddingRight: '48px',
+                  paddingTop: '12px',
+                  paddingBottom: '12px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--Step3Social-input-border, #d1d5db)',
+                  color: 'var(--Step3Social-input-text, #111827)',
+                  backgroundColor: 'var(--Step3Social-input-bg, #ffffff)',
+                  transition: 'all 0.2s'
+                }}
               />
               {socialInputs.twitter && (
                 <button
                   onClick={() => handleSocialRemove('twitter')}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-red-500"
+                  style={{
+                    position: 'absolute',
+                    top: '50%',
+                    right: '12px',
+                    transform: 'translateY(-50%)',
+                    color: 'var(--Step3Social-remove-color, #9ca3af)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer'
+                  }}
                 >
-                  <X className="w-4 h-4" />
+                  <X style={{ width: '16px', height: '16px' }} />
                 </button>
               )}
             </div>
             {socialInputs.twitter && (
-              <p className="text-sm text-blue-600 mt-1">
-                📱 Perfil: https://twitter.com/{socialInputs.twitter}
+              <p style={{ fontSize: '14px', color: 'var(--Step3Social-twitter-link, #2563eb)', marginTop: '4px' }}>
+                Perfil: https://twitter.com/{socialInputs.twitter}
               </p>
             )}
           </div>
         </div>
 
         {/* LinkedIn */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-              <Linkedin className="w-6 h-6 text-blue-700" />
+        <div style={{
+          backgroundColor: 'var(--Step3Social-card-bg, #ffffff)',
+          border: '1px solid var(--Step3Social-card-border, #e5e7eb)',
+          borderRadius: '8px',
+          padding: '24px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
+            <div style={{
+              width: '48px',
+              height: '48px',
+              backgroundColor: 'var(--Step3Social-linkedin-bg, #dbeafe)',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <Linkedin style={{ width: '24px', height: '24px', color: 'var(--Step3Social-linkedin-icon, #1d4ed8)' }} />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">LinkedIn</h3>
-              <p className="text-sm text-gray-600">Connecta el teu perfil professional</p>
+              <h3 style={{ fontSize: '18px', fontWeight: '600', color: 'var(--Step3Social-card-title, #111827)' }}>LinkedIn</h3>
+              <p style={{ fontSize: '14px', color: 'var(--Step3Social-card-subtitle, #4b5563)' }}>Connecta el teu perfil professional</p>
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label style={{
+              display: 'block',
+              fontSize: '14px',
+              fontWeight: '500',
+              color: 'var(--Step3Social-label-color, #374151)',
+              marginBottom: '8px'
+            }}>
               Nom d'usuari o URL completa
             </label>
-            <div className="relative">
+            <div style={{ position: 'relative' }}>
               <input
                 type="text"
                 value={socialInputs.linkedin}
                 onChange={(e) => handleSocialChange('linkedin', e.target.value)}
                 onBlur={() => handleSocialSave('linkedin')}
                 placeholder="jordi-garcia-martinez o https://linkedin.com/in/jordi-garcia-martinez"
-                className="w-full px-4 pr-12 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
+                style={{
+                  width: '100%',
+                  padding: '12px 48px 12px 16px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--Step3Social-input-border, #d1d5db)',
+                  color: 'var(--Step3Social-input-text, #111827)',
+                  backgroundColor: 'var(--Step3Social-input-bg, #ffffff)',
+                  transition: 'all 0.2s'
+                }}
               />
               {socialInputs.linkedin && (
                 <button
                   onClick={() => handleSocialRemove('linkedin')}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-red-500"
+                  style={{
+                    position: 'absolute',
+                    top: '50%',
+                    right: '12px',
+                    transform: 'translateY(-50%)',
+                    color: 'var(--Step3Social-remove-color, #9ca3af)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer'
+                  }}
                 >
-                  <X className="w-4 h-4" />
+                  <X style={{ width: '16px', height: '16px' }} />
                 </button>
               )}
             </div>
             {socialInputs.linkedin && (
-              <p className="text-sm text-blue-600 mt-1">
-                💼 Perfil: {socialInputs.linkedin.startsWith('http')
+              <p style={{ fontSize: '14px', color: 'var(--Step3Social-linkedin-link, #1d4ed8)', marginTop: '4px' }}>
+                Perfil: {socialInputs.linkedin.startsWith('http')
                   ? socialInputs.linkedin
                   : `https://linkedin.com/in/${socialInputs.linkedin}`}
               </p>
@@ -200,23 +286,48 @@ export const Step3Social = ({ data, addSocialLink, deleteSocialLink, isSaving }:
         </div>
 
         {/* Instagram */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center">
-              <Instagram className="w-6 h-6 text-pink-600" />
+        <div style={{
+          backgroundColor: 'var(--Step3Social-card-bg, #ffffff)',
+          border: '1px solid var(--Step3Social-card-border, #e5e7eb)',
+          borderRadius: '8px',
+          padding: '24px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
+            <div style={{
+              width: '48px',
+              height: '48px',
+              backgroundColor: 'var(--Step3Social-instagram-bg, #fce7f3)',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <Instagram style={{ width: '24px', height: '24px', color: 'var(--Step3Social-instagram-icon, #db2777)' }} />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Instagram</h3>
-              <p className="text-sm text-gray-600">Connecta el teu compte d'Instagram</p>
+              <h3 style={{ fontSize: '18px', fontWeight: '600', color: 'var(--Step3Social-card-title, #111827)' }}>Instagram</h3>
+              <p style={{ fontSize: '14px', color: 'var(--Step3Social-card-subtitle, #4b5563)' }}>Connecta el teu compte d'Instagram</p>
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label style={{
+              display: 'block',
+              fontSize: '14px',
+              fontWeight: '500',
+              color: 'var(--Step3Social-label-color, #374151)',
+              marginBottom: '8px'
+            }}>
               Nom d'usuari (sense @)
             </label>
-            <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">
+            <div style={{ position: 'relative' }}>
+              <span style={{
+                position: 'absolute',
+                top: '50%',
+                left: '12px',
+                transform: 'translateY(-50%)',
+                color: 'var(--Step3Social-prefix-color, #6b7280)'
+              }}>
                 @
               </span>
               <input
@@ -225,20 +336,40 @@ export const Step3Social = ({ data, addSocialLink, deleteSocialLink, isSaving }:
                 onChange={(e) => handleSocialChange('instagram', e.target.value.replace('@', ''))}
                 onBlur={() => handleSocialSave('instagram')}
                 placeholder="jordigarcia_public"
-                className="w-full pl-8 pr-12 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
+                style={{
+                  width: '100%',
+                  paddingLeft: '32px',
+                  paddingRight: '48px',
+                  paddingTop: '12px',
+                  paddingBottom: '12px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--Step3Social-input-border, #d1d5db)',
+                  color: 'var(--Step3Social-input-text, #111827)',
+                  backgroundColor: 'var(--Step3Social-input-bg, #ffffff)',
+                  transition: 'all 0.2s'
+                }}
               />
               {socialInputs.instagram && (
                 <button
                   onClick={() => handleSocialRemove('instagram')}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-red-500"
+                  style={{
+                    position: 'absolute',
+                    top: '50%',
+                    right: '12px',
+                    transform: 'translateY(-50%)',
+                    color: 'var(--Step3Social-remove-color, #9ca3af)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer'
+                  }}
                 >
-                  <X className="w-4 h-4" />
+                  <X style={{ width: '16px', height: '16px' }} />
                 </button>
               )}
             </div>
             {socialInputs.instagram && (
-              <p className="text-sm text-pink-600 mt-1">
-                📸 Perfil: https://instagram.com/{socialInputs.instagram}
+              <p style={{ fontSize: '14px', color: 'var(--Step3Social-instagram-link, #db2777)', marginTop: '4px' }}>
+                Perfil: https://instagram.com/{socialInputs.instagram}
               </p>
             )}
           </div>
@@ -246,11 +377,30 @@ export const Step3Social = ({ data, addSocialLink, deleteSocialLink, isSaving }:
       </div>
 
       {/* Privacy Note */}
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-        <h4 className="text-sm font-medium text-yellow-800 mb-2">
-          🔒 Nota sobre Privacitat:
+      <div style={{
+        backgroundColor: 'var(--Step3Social-warning-bg, #fefce8)',
+        border: '1px solid var(--Step3Social-warning-border, #fef08a)',
+        borderRadius: '8px',
+        padding: '16px'
+      }}>
+        <h4 style={{
+          fontSize: '14px',
+          fontWeight: '500',
+          color: 'var(--Step3Social-warning-title, #854d0e)',
+          marginBottom: '8px'
+        }}>
+          Nota sobre Privacitat:
         </h4>
-        <ul className="text-sm text-yellow-700 space-y-1">
+        <ul style={{
+          fontSize: '14px',
+          color: 'var(--Step3Social-warning-text, #a16207)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '4px',
+          margin: 0,
+          paddingLeft: '0',
+          listStyle: 'none'
+        }}>
           <li>• Les xarxes socials que afegeixis seran visibles per altres usuaris de La Pública</li>
           <li>• Assegura't que els teus perfils siguin públics o professionals</li>
           <li>• Pots deixar qualsevol camp buit si no vols compartir aquesta informació</li>
@@ -259,11 +409,30 @@ export const Step3Social = ({ data, addSocialLink, deleteSocialLink, isSaving }:
       </div>
 
       {/* Benefits Section */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h4 className="text-sm font-medium text-blue-800 mb-2">
-          🌟 Beneficis de connectar les xarxes socials:
+      <div style={{
+        backgroundColor: 'var(--Step3Social-info-bg, #eff6ff)',
+        border: '1px solid var(--Step3Social-info-border, #bfdbfe)',
+        borderRadius: '8px',
+        padding: '16px'
+      }}>
+        <h4 style={{
+          fontSize: '14px',
+          fontWeight: '500',
+          color: 'var(--Step3Social-info-title, #1e40af)',
+          marginBottom: '8px'
+        }}>
+          Beneficis de connectar les xarxes socials:
         </h4>
-        <ul className="text-sm text-blue-700 space-y-1">
+        <ul style={{
+          fontSize: '14px',
+          color: 'var(--Step3Social-info-text, #1d4ed8)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '4px',
+          margin: 0,
+          paddingLeft: '0',
+          listStyle: 'none'
+        }}>
           <li>• Facilita que altres professionals et trobin i contactin</li>
           <li>• Augmenta la credibilitat del teu perfil</li>
           <li>• Permet mostrar la teva experiència i projectes</li>
@@ -273,25 +442,43 @@ export const Step3Social = ({ data, addSocialLink, deleteSocialLink, isSaving }:
 
       {/* Preview Section */}
       {data.socialLinks && data.socialLinks.length > 0 && (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-          <h4 className="text-sm font-medium text-gray-900 mb-3">
-            👀 Vista prèvia de les teves xarxes:
+        <div style={{
+          backgroundColor: 'var(--Step3Social-preview-bg, #f9fafb)',
+          border: '1px solid var(--Step3Social-preview-border, #e5e7eb)',
+          borderRadius: '8px',
+          padding: '16px'
+        }}>
+          <h4 style={{
+            fontSize: '14px',
+            fontWeight: '500',
+            color: 'var(--Step3Social-preview-title, #111827)',
+            marginBottom: '12px'
+          }}>
+            Vista prèvia de les teves xarxes:
           </h4>
-          <div className="flex flex-wrap gap-3">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
             {data.socialLinks.map((link) => {
               const getPlatformIcon = () => {
                 switch (link.platform) {
-                  case 'Twitter': return <Twitter className="w-4 h-4 text-blue-600" />;
-                  case 'LinkedIn': return <Linkedin className="w-4 h-4 text-blue-700" />;
-                  case 'Instagram': return <Instagram className="w-4 h-4 text-pink-600" />;
-                  default: return <Plus className="w-4 h-4 text-gray-600" />;
+                  case 'Twitter': return <Twitter style={{ width: '16px', height: '16px', color: 'var(--Step3Social-twitter-icon, #2563eb)' }} />;
+                  case 'LinkedIn': return <Linkedin style={{ width: '16px', height: '16px', color: 'var(--Step3Social-linkedin-icon, #1d4ed8)' }} />;
+                  case 'Instagram': return <Instagram style={{ width: '16px', height: '16px', color: 'var(--Step3Social-instagram-icon, #db2777)' }} />;
+                  default: return <Plus style={{ width: '16px', height: '16px', color: 'var(--Step3Social-default-icon, #4b5563)' }} />;
                 }
               };
-              
+
               return (
-                <div key={link.id} className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200">
+                <div key={link.id} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  backgroundColor: 'var(--Step3Social-tag-bg, #ffffff)',
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--Step3Social-tag-border, #e5e7eb)'
+                }}>
                   {getPlatformIcon()}
-                  <span className="text-sm text-gray-700">
+                  <span style={{ fontSize: '14px', color: 'var(--Step3Social-tag-text, #374151)' }}>
                     {link.platform === 'LinkedIn' && link.url.startsWith('http')
                       ? 'LinkedIn Profile'
                       : link.username || link.url}

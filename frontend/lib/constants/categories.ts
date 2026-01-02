@@ -409,21 +409,78 @@ export const CATEGORY_COLORS: Record<string, { bg: string; text: string; border:
 }
 
 // ============================================
+// MAPEIG SECTORS LEGACY (anglès → català)
+// ============================================
+
+const LEGACY_SECTOR_MAP: Record<string, string> = {
+    'TECHNOLOGY': 'tecnologia',
+    'TECH': 'tecnologia',
+    'TRAVEL': 'viatges',
+    'HOSPITALITY': 'viatges',
+    'FOOD': 'gastronomia',
+    'GASTRONOMY': 'gastronomia',
+    'HEALTH': 'salut',
+    'HEALTHCARE': 'salut',
+    'WELLNESS': 'salut',
+    'SPORTS': 'esport',
+    'FITNESS': 'esport',
+    'FASHION': 'moda',
+    'RETAIL': 'moda',
+    'HOME': 'llar',
+    'FURNITURE': 'llar',
+    'AUTOMOTIVE': 'automocio',
+    'TRANSPORT': 'automocio',
+    'EDUCATION': 'educacio',
+    'TRAINING': 'educacio',
+    'SERVICES': 'serveis',
+    'PROFESSIONAL': 'serveis',
+    'FINANCE': 'serveis',
+    'LEGAL': 'serveis',
+    'CULTURE': 'cultura',
+    'ENTERTAINMENT': 'cultura',
+    'FAMILY': 'familia',
+    'KIDS': 'familia',
+    'PETS': 'mascotes',
+    'ANIMALS': 'mascotes',
+    'SUSTAINABILITY': 'sostenibilitat',
+    'ECO': 'sostenibilitat',
+    'GREEN': 'sostenibilitat',
+    'BRANDS': 'marques',
+    'PARTNERS': 'marques',
+    'OTHER': 'serveis',
+}
+
+// ============================================
 // HELPERS
 // ============================================
+
+/**
+ * Normalitza un valor de sector (converteix legacy anglès a català)
+ */
+export const normalizeSector = (value: string): string => {
+    if (!value) return value
+    // Si ja és un valor català vàlid, retornar-lo
+    if (CATEGORIES.find(c => c.value === value.toLowerCase())) {
+        return value.toLowerCase()
+    }
+    // Si és un valor legacy en anglès, convertir-lo
+    return LEGACY_SECTOR_MAP[value.toUpperCase()] || value.toLowerCase()
+}
 
 /**
  * Obté una categoria pel seu value
  */
 export const getCategory = (value: string): Category | undefined => {
-    return CATEGORIES.find(c => c.value === value)
+    const normalizedValue = normalizeSector(value)
+    return CATEGORIES.find(c => c.value === normalizedValue)
 }
 
 /**
  * Obté el label d'una categoria
  */
 export const getCategoryLabel = (value: string): string => {
-    return getCategory(value)?.label || value
+    const category = getCategory(value)
+    return category?.label || value
 }
 
 /**

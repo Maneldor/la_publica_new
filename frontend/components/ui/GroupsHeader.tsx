@@ -32,11 +32,11 @@ export function GroupsHeader({ viewMode, onViewChange, totalResults, activeTab }
 
   return (
     <div style={{
-      backgroundColor: '#fff',
-      borderRadius: '12px',
-      padding: '20px',
-      border: '2px solid #e5e7eb',
-      boxShadow: '0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06)',
+      backgroundColor: 'var(--GroupsHeader-background, #ffffff)',
+      borderRadius: 'var(--GroupsHeader-border-radius, 12px)',
+      padding: 'var(--GroupsHeader-padding, 20px)',
+      border: '2px solid var(--GroupsHeader-border-color, #e5e7eb)',
+      boxShadow: 'var(--GroupsHeader-shadow, 0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06))',
       marginBottom: '20px'
     }}>
       <div style={{
@@ -51,14 +51,14 @@ export function GroupsHeader({ viewMode, onViewChange, totalResults, activeTab }
           <h2 style={{
             fontSize: '20px',
             fontWeight: '600',
-            color: '#2c3e50',
+            color: 'var(--GroupsHeader-title-color, #2c3e50)',
             margin: '0 0 4px 0'
           }}>
             {getTitle()}
           </h2>
           <p style={{
             fontSize: '14px',
-            color: '#6c757d',
+            color: 'var(--GroupsHeader-subtitle-color, #6c757d)',
             margin: 0
           }}>
             {totalResults} grup{totalResults !== 1 ? 's' : ''} trobat{totalResults !== 1 ? 's' : ''}
@@ -76,8 +76,8 @@ export function GroupsHeader({ viewMode, onViewChange, totalResults, activeTab }
             onClick={handleCreateGroup}
             style={{
               padding: '8px 16px',
-              backgroundColor: '#3b82f6',
-              color: 'white',
+              backgroundColor: 'var(--GroupsHeader-create-button-bg, #3b82f6)',
+              color: 'var(--GroupsHeader-create-button-color, #ffffff)',
               border: 'none',
               borderRadius: '8px',
               fontSize: '14px',
@@ -89,13 +89,13 @@ export function GroupsHeader({ viewMode, onViewChange, totalResults, activeTab }
               gap: '6px'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#2563eb';
+              e.currentTarget.style.backgroundColor = 'var(--GroupsHeader-create-button-hover-bg, #2563eb)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#3b82f6';
+              e.currentTarget.style.backgroundColor = 'var(--GroupsHeader-create-button-bg, #3b82f6)';
             }}
           >
-            📝 Sol·licitar Grup
+            Sol·licitar Grup
           </button>
 
           {/* Toggle de vista */}
@@ -110,7 +110,7 @@ export function GroupsHeader({ viewMode, onViewChange, totalResults, activeTab }
       <div style={{
         marginTop: '12px',
         paddingTop: '12px',
-        borderTop: '1px solid #f0f0f0'
+        borderTop: '1px solid var(--GroupsHeader-divider-color, #f0f0f0)'
       }}>
         {activeTab === 'myGroups' && (
           <div style={{
@@ -118,10 +118,9 @@ export function GroupsHeader({ viewMode, onViewChange, totalResults, activeTab }
             alignItems: 'center',
             gap: '8px',
             fontSize: '13px',
-            color: '#10b981',
+            color: 'var(--GroupsHeader-tab-mygroups-color, #10b981)',
             fontWeight: '500'
           }}>
-            <span>ℹ️</span>
             <span>Aquests són els grups dels quals ets membre</span>
           </div>
         )}
@@ -132,10 +131,9 @@ export function GroupsHeader({ viewMode, onViewChange, totalResults, activeTab }
             alignItems: 'center',
             gap: '8px',
             fontSize: '13px',
-            color: '#3b82f6',
+            color: 'var(--GroupsHeader-tab-recommended-color, #3b82f6)',
             fontWeight: '500'
           }}>
-            <span>⭐</span>
             <span>Grups recomanats basats en els teus interessos i activitat</span>
           </div>
         )}
@@ -146,10 +144,9 @@ export function GroupsHeader({ viewMode, onViewChange, totalResults, activeTab }
             alignItems: 'center',
             gap: '8px',
             fontSize: '13px',
-            color: '#f59e0b',
+            color: 'var(--GroupsHeader-tab-popular-color, #f59e0b)',
             fontWeight: '500'
           }}>
-            <span>🔥</span>
             <span>Grups amb més activitat i interacció recent</span>
           </div>
         )}
@@ -160,10 +157,9 @@ export function GroupsHeader({ viewMode, onViewChange, totalResults, activeTab }
             alignItems: 'center',
             gap: '8px',
             fontSize: '13px',
-            color: '#6c757d',
+            color: 'var(--GroupsHeader-tab-all-color, #6c757d)',
             fontWeight: '500'
           }}>
-            <span>🌐</span>
             <span>Explora tots els grups disponibles a la plataforma</span>
           </div>
         )}

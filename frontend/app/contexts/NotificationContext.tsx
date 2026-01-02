@@ -13,6 +13,11 @@ interface Notification {
   actionUrl?: string;
   createdAt: Date;
   read: boolean;
+  sender?: {
+    id: string;
+    name: string | null;
+    image: string | null;
+  };
 }
 
 interface NotificationContextType {
@@ -22,8 +27,9 @@ interface NotificationContextType {
   hasErrors: boolean;
   isLoading: boolean;
   fetchNotifications: () => Promise<void>;
-  markAsRead: (id: string) => void;
-  markAllAsRead: () => void;
+  markAsRead: (id: string) => Promise<void>;
+  markAllAsRead: () => Promise<void>;
+  deleteNotification: (id: string) => Promise<void>;
   showToast: (type: 'success' | 'error' | 'info' | 'warning', message: string) => void;
 }
 
@@ -54,16 +60,64 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const markAsRead = (id: string) => {
-    setNotifications(prev =>
-      prev.map(n => (n.id === id ? { ...n, read: true } : n))
-    );
-    setUnreadCount(prev => Math.max(0, prev - 1));
+  const markAsRead = async (id: string) => {
+    // Actualizar estado local inmediatamente
+    const notification = notifications.find(n => n.id === id);
+    if (notification && !notification.read) {
+      setNotifications(prev =>
+        prev.map(n => (n.id === id ? { ...n, read: true } : n))
+      );
+      setUnreadCount(prev => Math.max(0, prev - 1));
+
+      // Persistir al servidor (solo si es una notificación real de BD, no generada)
+      if (!id.startsWith('trial-') && !id.startsWith('limit-')) {
+        try {
+          await fetch('/api/empresa/notifications', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ notificationId: id })
+          });
+        } catch (error) {
+          console.error('Error marcant notificació com a llegida:', error);
+        }
+      }
+    }
   };
 
-  const markAllAsRead = () => {
+  const markAllAsRead = async () => {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     setUnreadCount(0);
+
+    // Persistir al servidor
+    try {
+      await fetch('/api/empresa/notifications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ markAll: true })
+      });
+    } catch (error) {
+      console.error('Error marcant totes com a llegides:', error);
+    }
+  };
+
+  const deleteNotification = async (id: string) => {
+    // Solo eliminar notificaciones reales de BD
+    if (id.startsWith('trial-') || id.startsWith('limit-')) {
+      // Las notificaciones generadas dinámicamente no se pueden eliminar
+      return;
+    }
+
+    setNotifications(prev => prev.filter(n => n.id !== id));
+
+    try {
+      await fetch(`/api/empresa/notifications?id=${id}`, {
+        method: 'DELETE'
+      });
+    } catch (error) {
+      console.error('Error eliminant notificació:', error);
+      // Recargar para restaurar el estado
+      fetchNotifications();
+    }
   };
 
   const showToast = (type: 'success' | 'error' | 'info' | 'warning', message: string) => {
@@ -101,6 +155,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         fetchNotifications,
         markAsRead,
         markAllAsRead,
+        deleteNotification,
         showToast
       }}
     >

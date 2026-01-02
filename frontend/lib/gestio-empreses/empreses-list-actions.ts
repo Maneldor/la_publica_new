@@ -14,16 +14,19 @@ export interface EmpresaListItem {
   isActive: boolean
   status: string
   createdAt: string
+  publishedAt: string | null
   sector: string | null
   accountManager: { id: string; name: string } | null
   planName: string | null
-  classification: 'nova' | 'renovada' | 'cancellada'
+  classification: 'per_assignar' | 'en_gestio' | 'publicada' | 'renovada' | 'cancellada'
 }
 
 export interface EmpresesListData {
   stats: {
     total: number
-    noves: number
+    perAssignar: number
+    enGestio: number
+    publicades: number
     renovades: number
     cancellades: number
   }
@@ -43,11 +46,11 @@ export async function getEmpresesList(
   // Filtro base según rol
   const whereBase: any = {}
 
-  if (role.includes('GESTOR')) {
+  if (role.includes('GESTOR') && !role.includes('ADMIN')) {
     // Gestores solo ven sus empresas asignadas
     whereBase.accountManagerId = userId
   } else if (role.includes('CRM')) {
-    // CRM ve empresas de sus gestores subordinados + las suyas
+    // CRM ve empresas de sus gestores subordinados + las suyas + las no asignadas
     const gestors = await prismaClient.user.findMany({
       where: { supervisorId: userId },
       select: { id: true }
@@ -55,10 +58,11 @@ export async function getEmpresesList(
     const gestorIds = gestors.map(g => g.id)
     whereBase.OR = [
       { accountManagerId: userId },
-      { accountManagerId: { in: gestorIds } }
+      { accountManagerId: { in: gestorIds } },
+      { accountManagerId: null } // Incluir empresas sin gestor asignado
     ]
   }
-  // ADMIN, SUPER_ADMIN, ADMIN_GESTIO ven todas
+  // ADMIN, SUPER_ADMIN, ADMIN_GESTIO ven todas (sin filtro)
 
   // Obtener todas las empresas
   const empreses = await prismaClient.company.findMany({
@@ -70,19 +74,31 @@ export async function getEmpresesList(
     orderBy: { createdAt: 'desc' }
   })
 
-  // Clasificar empresas
+  // Clasificar empresas según assignació i estat
   const classified: EmpresaListItem[] = empreses.map(emp => {
-    let classification: 'nova' | 'renovada' | 'cancellada' = 'nova'
+    let classification: 'per_assignar' | 'en_gestio' | 'publicada' | 'renovada' | 'cancellada' = 'per_assignar'
 
-    // Empresas canceladas/inactivas
-    if (!emp.isActive || emp.status === 'INACTIVE' || emp.status === 'SUSPENDED') {
+    // 1. Empresas canceladas/inactivas (prioritat màxima)
+    if (!emp.isActive || emp.status === 'INACTIVE' || emp.status === 'SUSPENDED' || emp.status === 'REJECTED') {
       classification = 'cancellada'
     }
-    // Empresas con más de 1 año (renovadas)
-    else if (emp.createdAt < oneYearAgo) {
-      classification = 'renovada'
+    // 2. Empresas publicades (status = PUBLISHED)
+    else if (emp.status === 'PUBLISHED') {
+      // Les publicades que tenen més d'1 any es consideren renovades
+      if (emp.createdAt < oneYearAgo) {
+        classification = 'renovada'
+      } else {
+        classification = 'publicada'
+      }
     }
-    // El resto son nuevas (menos de 1 año)
+    // 3. Empresas en gestió (tenen gestor assignat, no publicades)
+    else if (emp.accountManagerId) {
+      classification = 'en_gestio'
+    }
+    // 4. Empresas per assignar (sense gestor, no publicades)
+    else {
+      classification = 'per_assignar'
+    }
 
     return {
       id: emp.id,
@@ -93,6 +109,7 @@ export async function getEmpresesList(
       isActive: emp.isActive,
       status: emp.status,
       createdAt: emp.createdAt.toISOString(),
+      publishedAt: emp.approvedAt?.toISOString() || null,
       sector: emp.sector,
       accountManager: emp.accountManager ? {
         id: emp.accountManager.id,
@@ -106,7 +123,9 @@ export async function getEmpresesList(
   // Calcular stats
   const stats = {
     total: classified.length,
-    noves: classified.filter(e => e.classification === 'nova').length,
+    perAssignar: classified.filter(e => e.classification === 'per_assignar').length,
+    enGestio: classified.filter(e => e.classification === 'en_gestio').length,
+    publicades: classified.filter(e => e.classification === 'publicada').length,
     renovades: classified.filter(e => e.classification === 'renovada').length,
     cancellades: classified.filter(e => e.classification === 'cancellada').length,
   }

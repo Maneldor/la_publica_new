@@ -2,7 +2,12 @@
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { getVerificationStats, getPendingVerificationLeads } from '@/lib/gestio-empreses/verification-actions'
+import {
+  getVerificationStats,
+  getPendingVerificationLeads,
+  getPendingVerificationCompanies,
+  getCompanyVerificationStats
+} from '@/lib/gestio-empreses/verification-actions'
 import { VerificacioClient } from './VerificacioClient'
 import { AlertCircle } from 'lucide-react'
 import Link from 'next/link'
@@ -37,15 +42,19 @@ export default async function VerificacioPage() {
   }
 
   // Carga paralela de dades
-  const [stats, leads] = await Promise.all([
+  const [stats, leads, companies, companyStats] = await Promise.all([
     getVerificationStats(),
     getPendingVerificationLeads(),
+    getPendingVerificationCompanies(),
+    getCompanyVerificationStats(),
   ])
 
   return (
     <VerificacioClient
       initialStats={stats}
       initialLeads={leads}
+      initialCompanies={companies}
+      initialCompanyStats={companyStats}
       currentUserId={userId}
     />
   )

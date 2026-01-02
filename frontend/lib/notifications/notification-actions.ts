@@ -10,8 +10,13 @@ export type NotificationType =
   | 'LEAD_TO_VERIFY'          // Gestor envia lead a verificar
   | 'LEAD_VERIFIED'           // CRM ha verificat el lead
   | 'LEAD_TO_ADMIN'           // Lead enviat a Admin per contractar
+  | 'LEAD_CONVERTED'          // Lead convertit en empresa
+  | 'LEAD_INACTIVE_REMINDER'  // Recordatori lead inactiu (7 dies)
+  | 'LEAD_EXPIRING'           // Lead a punt d'expirar (30 dies)
   | 'COMPANY_REGISTERED'      // Admin ha registrat l'empresa
   | 'COMPANY_ASSIGNED'        // CRM ha assignat empresa a Gestor
+  | 'COMPANY_PROFILE_COMPLETED' // Empresa ha completat el perfil
+  | 'COMPANY_PUBLISHED'       // Empresa publicada (visible al directori)
   // Connexions entre usuaris
   | 'CONNECTION_REQUEST'      // Sol·licitud de connexió rebuda
   | 'CONNECTION_ACCEPTED'     // Sol·licitud acceptada
@@ -38,10 +43,15 @@ function mapNotificationTypeToPrisma(type: NotificationType): string {
   const typeMap: Record<NotificationType, string> = {
     'LEAD_ASSIGNED': 'COMPANY_ASSIGNED',
     'LEAD_TO_VERIFY': 'COMPANY_PENDING',
-    'LEAD_VERIFIED': 'LEAD_VERIFIED',
+    'LEAD_VERIFIED': 'COMPANY_APPROVED',
     'LEAD_TO_ADMIN': 'COMPANY_PENDING',
+    'LEAD_CONVERTED': 'COMPANY_COMPLETED',
+    'LEAD_INACTIVE_REMINDER': 'GENERAL',
+    'LEAD_EXPIRING': 'GENERAL',
     'COMPANY_REGISTERED': 'COMPANY_APPROVED',
     'COMPANY_ASSIGNED': 'COMPANY_ASSIGNED',
+    'COMPANY_PROFILE_COMPLETED': 'COMPANY_COMPLETED',
+    'COMPANY_PUBLISHED': 'COMPANY_PUBLISHED',
     // Connexions
     'CONNECTION_REQUEST': 'CONNECTION_REQUEST',
     'CONNECTION_ACCEPTED': 'CONNECTION_ACCEPTED',
@@ -476,5 +486,167 @@ export async function notifyNewMessage(
     message: preview,
     link: `/dashboard/missatges?conversation=${conversationId}`,
     metadata: { senderId, senderName, conversationId, messagePreview: preview }
+  })
+}
+
+// ============================================
+// FUNCIONS ADDICIONALS DEL FLUX LEAD → EMPRESA
+// ============================================
+
+/**
+ * Notificar Gestor: El seu lead s'ha convertit en empresa
+ */
+export async function notifyLeadConvertedToGestor(
+  gestorId: string,
+  leadName: string,
+  companyId: string,
+  companyName: string
+) {
+  return createNotification({
+    userId: gestorId,
+    type: 'LEAD_CONVERTED',
+    title: 'Lead convertit en empresa! 🎉',
+    message: `El teu lead "${leadName}" s'ha convertit en l'empresa col·laboradora "${companyName}".`,
+    link: `/gestio/empreses/${companyId}`,
+    companyId,
+    metadata: { leadName, companyId, companyName }
+  })
+}
+
+/**
+ * Notificar Gestor: Lead sense activitat (recordatori 7 dies)
+ */
+export async function notifyLeadInactiveReminder(
+  gestorId: string,
+  leadId: string,
+  leadName: string,
+  daysInactive: number
+) {
+  return createNotification({
+    userId: gestorId,
+    type: 'LEAD_INACTIVE_REMINDER',
+    title: 'Lead sense activitat',
+    message: `El lead "${leadName}" porta ${daysInactive} dies sense activitat. Recorda fer seguiment!`,
+    link: `/gestio/pipeline?highlight=${leadId}`,
+    leadId,
+    metadata: { leadId, leadName, daysInactive }
+  })
+}
+
+/**
+ * Notificar Gestor + CRM: Lead a punt d'expirar (30 dies)
+ */
+export async function notifyLeadExpiring(
+  userId: string,
+  leadId: string,
+  leadName: string,
+  isGestor: boolean = true
+) {
+  return createNotification({
+    userId,
+    type: 'LEAD_EXPIRING',
+    title: '⚠️ Lead a punt d\'expirar',
+    message: isGestor
+      ? `El lead "${leadName}" porta 30 dies sense activitat i pot ser reassignat.`
+      : `El lead "${leadName}" porta 30 dies sense activitat. Considera reassignar-lo.`,
+    link: `/gestio/pipeline?highlight=${leadId}`,
+    leadId,
+    metadata: { leadId, leadName, isGestor }
+  })
+}
+
+/**
+ * Notificar CRM: Perfil d'empresa completat, pendent de revisió
+ */
+export async function notifyCompanyProfileCompleted(
+  crmUserIds: string[],
+  companyId: string,
+  companyName: string
+) {
+  const results = []
+
+  for (const crmId of crmUserIds) {
+    const result = await createNotification({
+      userId: crmId,
+      type: 'COMPANY_PROFILE_COMPLETED',
+      title: 'Perfil empresa completat',
+      message: `L'empresa "${companyName}" ha completat el seu perfil. Pendent de revisió.`,
+      link: `/gestio/empreses/${companyId}`,
+      companyId,
+      metadata: { companyId, companyName }
+    })
+    results.push(result)
+  }
+
+  return results
+}
+
+// ============================================
+// FUNCIONS DE PUBLICACIÓ D'EMPRESES
+// ============================================
+
+/**
+ * Notificar Gestor: L'empresa ha estat publicada
+ */
+export async function notifyCompanyPublishedToGestor(
+  gestorId: string,
+  companyId: string,
+  companyName: string,
+  publishedBy: string
+) {
+  return createNotification({
+    userId: gestorId,
+    type: 'COMPANY_PUBLISHED',
+    title: 'Empresa publicada! 🎉',
+    message: `L'empresa "${companyName}" que gestiones ha estat verificada i publicada al directori.`,
+    link: `/gestio/empreses/${companyId}`,
+    companyId,
+    metadata: { companyId, companyName, publishedBy }
+  })
+}
+
+/**
+ * Notificar Admins: Una empresa ha estat publicada
+ */
+export async function notifyCompanyPublishedToAdmins(
+  adminUserIds: string[],
+  companyId: string,
+  companyName: string,
+  publishedBy: string
+) {
+  const results = []
+
+  for (const adminId of adminUserIds) {
+    const result = await createNotification({
+      userId: adminId,
+      type: 'COMPANY_PUBLISHED',
+      title: 'Nova empresa publicada',
+      message: `L'empresa "${companyName}" ha estat publicada per ${publishedBy}.`,
+      link: `/gestio/empreses/${companyId}`,
+      companyId,
+      metadata: { companyId, companyName, publishedBy }
+    })
+    results.push(result)
+  }
+
+  return results
+}
+
+/**
+ * Notificar al representant de l'empresa: Empresa publicada
+ */
+export async function notifyCompanyOwnerPublished(
+  companyUserId: string,
+  companyId: string,
+  companyName: string
+) {
+  return createNotification({
+    userId: companyUserId,
+    type: 'COMPANY_PUBLISHED',
+    title: 'La vostra empresa ja està publicada! 🎉',
+    message: `Felicitats! "${companyName}" ja és visible al directori d'empreses col·laboradores.`,
+    link: `/empresa/dashboard`,
+    companyId,
+    metadata: { companyId, companyName }
   })
 }

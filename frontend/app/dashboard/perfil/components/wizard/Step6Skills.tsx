@@ -69,13 +69,18 @@ export const Step6Skills = ({ formData, errors, updateField }: Step6Props) => {
   };
 
   return (
-    <div className="space-y-8">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
       {/* Header */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+      <div style={{ marginBottom: '32px' }}>
+        <h2 style={{
+          fontSize: '24px',
+          fontWeight: '700',
+          color: 'var(--Step6Skills-title-color, #111827)',
+          marginBottom: '8px'
+        }}>
           Habilitats i Interessos
         </h2>
-        <p className="text-gray-600">
+        <p style={{ color: 'var(--Step6Skills-description-color, #4b5563)' }}>
           Defineix les teves competències tècniques i àrees d'interès per connectar amb projectes i persones afins
         </p>
       </div>
@@ -83,8 +88,8 @@ export const Step6Skills = ({ formData, errors, updateField }: Step6Props) => {
       {/* Skills Section */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-            <Target className="w-5 h-5 text-blue-600" />
+          <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+            <Target className="w-5 h-5 text-primary" />
           </div>
           <div>
             <h3 className="text-lg font-semibold text-gray-900">Habilitats Tècniques</h3>
@@ -104,12 +109,12 @@ export const Step6Skills = ({ formData, errors, updateField }: Step6Props) => {
               onChange={(e) => setSkillInput(e.target.value)}
               onKeyPress={handleSkillKeyPress}
               placeholder="Ex: Transformació Digital, React, Gestió de Projectes..."
-              className="flex-1 px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
+              className="flex-1 px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
             />
             <button
               onClick={() => addSkill(skillInput)}
               disabled={!skillInput.trim()}
-              className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 transition-colors"
+              className="px-4 py-3 bg-primary text-white rounded-lg hover:bg-primary-dark disabled:bg-gray-300 transition-colors"
             >
               <Plus className="w-4 h-4" />
             </button>
@@ -129,12 +134,12 @@ export const Step6Skills = ({ formData, errors, updateField }: Step6Props) => {
               {formData.skills.map((skill, index) => (
                 <span
                   key={index}
-                  className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
+                  className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary-dark text-sm rounded-full"
                 >
                   {skill}
                   <button
                     onClick={() => removeSkill(skill)}
-                    className="ml-1 hover:bg-blue-200 rounded-full p-0.5 transition-colors"
+                    className="ml-1 hover:bg-primary/20 rounded-full p-0.5 transition-colors"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -157,7 +162,7 @@ export const Step6Skills = ({ formData, errors, updateField }: Step6Props) => {
                 <button
                   key={skill}
                   onClick={() => addSkill(skill)}
-                  className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full hover:bg-blue-100 hover:text-blue-700 transition-colors"
+                  className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
                 >
                   + {skill}
                 </button>
@@ -169,8 +174,8 @@ export const Step6Skills = ({ formData, errors, updateField }: Step6Props) => {
       {/* Interests Section */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-            <Lightbulb className="w-5 h-5 text-green-600" />
+          <div className="w-10 h-10 bg-success/10 rounded-full flex items-center justify-center">
+            <Lightbulb className="w-5 h-5 text-success" />
           </div>
           <div>
             <h3 className="text-lg font-semibold text-gray-900">Interessos Professionals</h3>
@@ -190,12 +195,12 @@ export const Step6Skills = ({ formData, errors, updateField }: Step6Props) => {
               onChange={(e) => setInterestInput(e.target.value)}
               onKeyPress={handleInterestKeyPress}
               placeholder="Ex: Innovació Pública, Smart Cities, Sostenibilitat..."
-              className="flex-1 px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+              className="flex-1 px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-success focus:border-transparent transition-all"
             />
             <button
               onClick={() => addInterest(interestInput)}
               disabled={!interestInput.trim()}
-              className="px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 transition-colors"
+              className="px-4 py-3 bg-success text-white rounded-lg hover:bg-success-dark disabled:bg-gray-300 transition-colors"
             >
               <Plus className="w-4 h-4" />
             </button>
@@ -215,12 +220,12 @@ export const Step6Skills = ({ formData, errors, updateField }: Step6Props) => {
               {formData.interests.map((interest, index) => (
                 <span
                   key={index}
-                  className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 text-sm rounded-full"
+                  className="inline-flex items-center gap-1 px-3 py-1 bg-success/10 text-success-dark text-sm rounded-full"
                 >
                   {interest}
                   <button
                     onClick={() => removeInterest(interest)}
-                    className="ml-1 hover:bg-green-200 rounded-full p-0.5 transition-colors"
+                    className="ml-1 hover:bg-success/20 rounded-full p-0.5 transition-colors"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -243,7 +248,7 @@ export const Step6Skills = ({ formData, errors, updateField }: Step6Props) => {
                 <button
                   key={interest}
                   onClick={() => addInterest(interest)}
-                  className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full hover:bg-green-100 hover:text-green-700 transition-colors"
+                  className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full hover:bg-success/10 hover:text-success transition-colors"
                 >
                   + {interest}
                 </button>
@@ -253,11 +258,11 @@ export const Step6Skills = ({ formData, errors, updateField }: Step6Props) => {
       </div>
 
       {/* Tips Section */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <p className="text-sm text-blue-800 font-medium mb-2">
+      <div className="bg-info/10 border border-info/30 rounded-lg p-4">
+        <p className="text-sm text-info-dark font-medium mb-2">
           🎯 Consells per completar aquesta secció:
         </p>
-        <ul className="text-sm text-blue-700 space-y-1">
+        <ul className="text-sm text-info space-y-1">
           <li>• Afegeix habilitats específiques i mesurables</li>
           <li>• Inclou tant competències tècniques com transversals</li>
           <li>• Els interessos ajuden a trobar oportunitats de col·laboració</li>
@@ -275,13 +280,13 @@ export const Step6Skills = ({ formData, errors, updateField }: Step6Props) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {formData.skills.length > 0 && (
               <div>
-                <h5 className="text-sm font-medium text-blue-800 mb-2">
+                <h5 className="text-sm font-medium text-primary-dark mb-2">
                   <Target className="w-4 h-4 inline mr-1" />
                   Habilitats ({formData.skills.length})
                 </h5>
                 <div className="flex flex-wrap gap-1">
                   {formData.skills.slice(0, 5).map((skill, index) => (
-                    <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
+                    <span key={index} className="px-2 py-1 bg-primary/10 text-primary-dark text-xs rounded">
                       {skill}
                     </span>
                   ))}
@@ -296,13 +301,13 @@ export const Step6Skills = ({ formData, errors, updateField }: Step6Props) => {
 
             {formData.interests.length > 0 && (
               <div>
-                <h5 className="text-sm font-medium text-green-800 mb-2">
+                <h5 className="text-sm font-medium text-success-dark mb-2">
                   <Lightbulb className="w-4 h-4 inline mr-1" />
                   Interessos ({formData.interests.length})
                 </h5>
                 <div className="flex flex-wrap gap-1">
                   {formData.interests.slice(0, 5).map((interest, index) => (
-                    <span key={index} className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded">
+                    <span key={index} className="px-2 py-1 bg-success/10 text-success-dark text-xs rounded">
                       {interest}
                     </span>
                   ))}

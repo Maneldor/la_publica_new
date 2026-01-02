@@ -156,11 +156,22 @@ export function GroupCard({ group, viewMode }: GroupCardProps) {
     return (
       <div
         onClick={handleViewGroup}
-        className={`bg-white rounded-xl p-4 border-2 transition-all duration-200 cursor-pointer ${
+        className={`rounded-xl border-2 transition-all duration-200 cursor-pointer ${
           isHovered
-            ? 'border-indigo-400 shadow-md bg-gray-50 ring-2 ring-indigo-500 ring-offset-1'
-            : 'border-gray-200 shadow-sm'
+            ? 'border-indigo-400 shadow-md ring-2 ring-indigo-500 ring-offset-1'
+            : 'shadow-sm'
         }`}
+        style={{
+          background: isHovered
+            ? 'var(--GroupCard-hover-background, #f9fafb)'
+            : 'var(--GroupCard-background, #ffffff)',
+          borderRadius: 'var(--GroupCard-border-radius, 12px)',
+          borderColor: isHovered ? undefined : 'var(--GroupCard-border-color, #e5e7eb)',
+          boxShadow: isHovered
+            ? 'var(--GroupCard-hover-shadow, 0 4px 6px -1px rgb(0 0 0 / 0.1))'
+            : 'var(--GroupCard-shadow, 0 1px 3px 0 rgb(0 0 0 / 0.1))',
+          padding: 'var(--GroupCard-padding, 16px)',
+        }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
@@ -279,16 +290,27 @@ export function GroupCard({ group, viewMode }: GroupCardProps) {
   return (
     <div
       onClick={handleViewGroup}
-      className={`bg-white rounded-2xl overflow-hidden border-2 transition-all duration-300 cursor-pointer h-full flex flex-col group ${
+      className={`overflow-hidden border-2 transition-all duration-300 cursor-pointer h-full flex flex-col group ${
         isHovered
           ? 'border-indigo-400 shadow-xl -translate-y-1 ring-2 ring-indigo-500 ring-offset-2'
-          : 'border-gray-200 shadow-sm'
+          : 'shadow-sm'
       }`}
+      style={{
+        background: 'var(--GroupCard-background, #ffffff)',
+        borderRadius: 'var(--GroupCard-border-radius, 12px)',
+        borderColor: isHovered ? undefined : 'var(--GroupCard-border-color, #e5e7eb)',
+        boxShadow: isHovered
+          ? 'var(--GroupCard-hover-shadow, 0 4px 6px -1px rgb(0 0 0 / 0.1))'
+          : 'var(--GroupCard-shadow, 0 1px 3px 0 rgb(0 0 0 / 0.1))',
+      }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Cover Image */}
-      <div className="h-32 relative flex-shrink-0">
+      <div
+        className="relative flex-shrink-0"
+        style={{ height: 'var(--GroupCard-header-height, 128px)' }}
+      >
         {currentGroup.coverImage ? (
           <img
             src={currentGroup.coverImage}
@@ -319,7 +341,10 @@ export function GroupCard({ group, viewMode }: GroupCardProps) {
       </div>
 
       {/* Contingut */}
-      <div className="flex-1 flex flex-col p-4">
+      <div
+        className="flex-1 flex flex-col"
+        style={{ padding: 'var(--GroupCard-padding, 16px)' }}
+      >
         {/* Nom i categoria */}
         <h3 className="font-semibold text-gray-900 text-base line-clamp-1">{currentGroup.name}</h3>
         <p className="text-xs text-gray-500 font-medium mt-0.5">{currentGroup.category}</p>
@@ -333,7 +358,11 @@ export function GroupCard({ group, viewMode }: GroupCardProps) {
             {currentGroup.tags.slice(0, 3).map((tag, index) => (
               <span
                 key={index}
-                className="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-xs font-medium rounded"
+                className="px-2 py-0.5 text-xs font-medium rounded"
+                style={{
+                  background: 'var(--GroupCard-badge-background, #dbeafe)',
+                  color: 'var(--GroupCard-badge-color, #1e40af)',
+                }}
               >
                 {tag}
               </span>

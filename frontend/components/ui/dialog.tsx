@@ -22,13 +22,28 @@ export function Dialog({ children, open, onOpenChange }: DialogProps) {
 
   if (!open) return null;
 
+  const overlayStyles: React.CSSProperties = {
+    position: 'fixed',
+    inset: 0,
+    backgroundColor: 'var(--Dialog-overlay-background, rgba(0, 0, 0, 0.5))',
+  };
+
+  const containerStyles: React.CSSProperties = {
+    position: 'fixed',
+    inset: 0,
+    zIndex: 50,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div 
-        className="fixed inset-0 bg-black/50" 
+    <div style={containerStyles}>
+      <div
+        style={overlayStyles}
         onClick={() => onOpenChange(false)}
       />
-      <div className="relative">
+      <div style={{ position: 'relative' }}>
         {children}
       </div>
     </div>
@@ -38,11 +53,24 @@ export function Dialog({ children, open, onOpenChange }: DialogProps) {
 interface DialogContentProps {
   children: ReactNode;
   className?: string;
+  style?: React.CSSProperties;
 }
 
-export function DialogContent({ children, className = '' }: DialogContentProps) {
+export function DialogContent({ children, className = '', style }: DialogContentProps) {
+  const contentStyles: React.CSSProperties = {
+    backgroundColor: 'var(--Dialog-content-background, #ffffff)',
+    borderRadius: 'var(--Dialog-content-border-radius, 8px)',
+    boxShadow: 'var(--Dialog-content-shadow, 0 25px 50px -12px rgba(0, 0, 0, 0.25))',
+    padding: 0,
+    minWidth: 'var(--Dialog-content-min-width, 320px)',
+    maxWidth: 'var(--Dialog-content-max-width, 448px)',
+    width: '100%',
+    margin: '0 16px',
+    ...style,
+  };
+
   return (
-    <div className={`bg-white rounded-lg shadow-lg p-0 min-w-[320px] max-w-md w-full mx-4 ${className}`}>
+    <div className={className} style={contentStyles}>
       {children}
     </div>
   );
@@ -51,11 +79,18 @@ export function DialogContent({ children, className = '' }: DialogContentProps) 
 interface DialogHeaderProps {
   children: ReactNode;
   className?: string;
+  style?: React.CSSProperties;
 }
 
-export function DialogHeader({ children, className = '' }: DialogHeaderProps) {
+export function DialogHeader({ children, className = '', style }: DialogHeaderProps) {
+  const headerStyles: React.CSSProperties = {
+    padding: 'var(--Dialog-header-padding, 16px 24px)',
+    borderBottom: '1px solid var(--Dialog-border-color, #e5e7eb)',
+    ...style,
+  };
+
   return (
-    <div className={`px-6 py-4 border-b border-gray-200 ${className}`}>
+    <div className={className} style={headerStyles}>
       {children}
     </div>
   );
@@ -64,11 +99,20 @@ export function DialogHeader({ children, className = '' }: DialogHeaderProps) {
 interface DialogTitleProps {
   children: ReactNode;
   className?: string;
+  style?: React.CSSProperties;
 }
 
-export function DialogTitle({ children, className = '' }: DialogTitleProps) {
+export function DialogTitle({ children, className = '', style }: DialogTitleProps) {
+  const titleStyles: React.CSSProperties = {
+    fontSize: 'var(--Dialog-title-font-size, 18px)',
+    fontWeight: 'var(--Dialog-title-font-weight, 600)' as any,
+    color: 'var(--Dialog-title-color, #111827)',
+    margin: 0,
+    ...style,
+  };
+
   return (
-    <h2 className={`text-lg font-semibold text-gray-900 ${className}`}>
+    <h2 className={className} style={titleStyles}>
       {children}
     </h2>
   );
@@ -77,11 +121,21 @@ export function DialogTitle({ children, className = '' }: DialogTitleProps) {
 interface DialogFooterProps {
   children: ReactNode;
   className?: string;
+  style?: React.CSSProperties;
 }
 
-export function DialogFooter({ children, className = '' }: DialogFooterProps) {
+export function DialogFooter({ children, className = '', style }: DialogFooterProps) {
+  const footerStyles: React.CSSProperties = {
+    padding: 'var(--Dialog-footer-padding, 16px 24px)',
+    borderTop: '1px solid var(--Dialog-border-color, #e5e7eb)',
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: 'var(--Dialog-footer-gap, 8px)',
+    ...style,
+  };
+
   return (
-    <div className={`px-6 py-4 border-t border-gray-200 flex justify-end space-x-2 ${className}`}>
+    <div className={className} style={footerStyles}>
       {children}
     </div>
   );
@@ -90,12 +144,39 @@ export function DialogFooter({ children, className = '' }: DialogFooterProps) {
 interface DialogDescriptionProps {
   children: ReactNode;
   className?: string;
+  style?: React.CSSProperties;
 }
 
-export function DialogDescription({ children, className = '' }: DialogDescriptionProps) {
+export function DialogDescription({ children, className = '', style }: DialogDescriptionProps) {
+  const descriptionStyles: React.CSSProperties = {
+    fontSize: 'var(--Dialog-description-font-size, 14px)',
+    color: 'var(--Dialog-description-color, #6b7280)',
+    margin: 0,
+    ...style,
+  };
+
   return (
-    <p className={`text-sm text-gray-500 ${className}`}>
+    <p className={className} style={descriptionStyles}>
       {children}
     </p>
+  );
+}
+
+interface DialogBodyProps {
+  children: ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+}
+
+export function DialogBody({ children, className = '', style }: DialogBodyProps) {
+  const bodyStyles: React.CSSProperties = {
+    padding: 'var(--Dialog-body-padding, 24px)',
+    ...style,
+  };
+
+  return (
+    <div className={className} style={bodyStyles}>
+      {children}
+    </div>
   );
 }

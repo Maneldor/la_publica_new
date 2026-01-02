@@ -662,10 +662,16 @@ function EmpresaRow({
                                     </span>
                                 </div>
                             ) : hasFullAccess && (
-                                <div className="flex items-center gap-1 text-xs text-amber-600">
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        onOpenAssignar(empresa)
+                                    }}
+                                    className="flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 hover:underline cursor-pointer"
+                                >
                                     <AlertCircle className="h-3 w-3" strokeWidth={1.5} />
                                     <span>Sense assignar</span>
-                                </div>
+                                </button>
                             )}
                         </div>
                     </div>

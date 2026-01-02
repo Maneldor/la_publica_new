@@ -239,6 +239,14 @@ model User {
   contacts                UserContact[]         @relation("UserContacts")
   contactCategories       UserContactCategory[] @relation("UserContactCategories")
 
+  // Relacions Canvis de Perfil d'Empresa
+  profileChangesRequested  CompanyProfileChange[] @relation("ProfileChangeRequester")
+  profileChangesApproved   CompanyProfileChange[] @relation("ProfileChangeApprover")
+  profileChangesRejected   CompanyProfileChange[] @relation("ProfileChangeRejecter")
+
+  // Preferències de mòduls a la pàgina Avui
+  modulePreferences        UserModulePreference[] @relation("UserModulePreferences")
+
   @@index([email])
   @@index([nick])
   @@index([role])
@@ -255,6 +263,23 @@ model User {
 
   employee                 Employee?
   publicAdministration     PublicAdministration?
+}
+
+// Preferències de mòduls per la pàgina Avui
+model UserModulePreference {
+  id        String   @id @default(cuid())
+  userId    String
+  moduleId  String   // "objectives", "habits", "gratitude", etc.
+  enabled   Boolean  @default(false)
+  order     Int      @default(0)  // Ordre d'activació (per saber 1r, 2n, 3r...)
+
+  user      User     @relation("UserModulePreferences", fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, moduleId])
+  @@index([userId])
 }
 
 // Connexions entre usuaris (sol·licituds d'amistat/connexió professional)
@@ -450,6 +475,7 @@ model AnuncioMetrics {
 model Company {
   id               String                 @id @default(cuid())
   name             String
+  slug             String?                @unique
   cif              String?                @unique
   email            String
   contactEmail     String?                // Email de contacte alternatiu
@@ -491,6 +517,33 @@ model Company {
   assignedAt              DateTime?
   onboardingCompletedAt   DateTime?
   fromLeadId              String?
+
+  // Camps perfil empresa (Gestor)
+  slogan                  String?
+  coverImage              String?
+
+  // Contacte Admin (intern)
+  adminContactPerson      String?
+  adminPhone              String?
+  adminEmail              String?
+
+  // Contacte públic addicional
+  whatsappNumber          String?
+  workingHours            String?                // Horaris d'atenció
+
+  // Info ampliada
+  services                String[]               @default([])
+  specializations         String[]               @default([])
+  collaborationType       String?                // Tipus col·laboració preferida
+  averageBudget           String?                // Rang pressupost
+
+  // Branding
+  gallery                 String[]               @default([])
+  brandColors             Json?                  // { primary, secondary }
+
+  // Completitud perfil
+  profileCompleteness     Int                    @default(0)
+  profileCompletedAt      DateTime?
 
   offers           Offer[]
   teamMembers      User[]                 @relation("CompanyMembers")
@@ -872,6 +925,9 @@ model CompanyProfileChange {
   createdAt       DateTime            @default(now())
   reviewedAt      DateTime?
   company         Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  requestedBy     User                @relation("ProfileChangeRequester", fields: [requestedById], references: [id])
+  approvedBy      User?               @relation("ProfileChangeApprover", fields: [approvedById], references: [id])
+  rejectedBy      User?               @relation("ProfileChangeRejecter", fields: [rejectedById], references: [id])
 
   @@index([companyId, status])
   @@index([type, status])
@@ -1449,6 +1505,10 @@ model CompanyLead {
   preContractAt         DateTime?
   contractedAt          DateTime?
   assignedAt            DateTime?
+
+  // Dades CRM per a conversió
+  crmVerification       Json?
+  precontract           Json?
 
   assignedTo            User?             @relation("LeadAssignee", fields: [assignedToId], references: [id])
   createdByUser         User?             @relation("LeadCreator", fields: [createdById], references: [id])
@@ -2802,6 +2862,7 @@ enum EmailTemplate {
   WELCOME
   PASSWORD_RESET
   EMAIL_VERIFICATION
+  COMPANY_PUBLISHED
 }
 
 enum EmailStatus {
@@ -3837,15 +3898,23 @@ model SystemSettings {
 // ==========================================
 
 model AgendaEvent {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date        DateTime @db.Date
-  time        String   // Formato "HH:MM"
-  title       String
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date         DateTime @db.Date
+  time         String   // Formato "HH:MM" (legacy, usar startTime)
+  startTime    String?  // Hora d'inici "HH:MM"
+  endTime      String?  // Hora de fi "HH:MM"
+  allDay       Boolean  @default(false)
+  title        String
+  description  String?
+  category     String   @default("altres")
+  location     String?
+  reminder     String   @default("none")
+  repeat       String   @default("none")
+  notification String   @default("none")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@index([userId, date])
   @@map("agenda_events")
@@ -6716,4 +6785,138 @@ model UserContactCategory {
 
   @@index([userId])
   @@map("user_contact_categories")
+}
+
+
+// ============================================
+// DESIGN SYSTEM
+// ============================================
+
+model DesignToken {
+  id          String   @id @default(cuid())
+  category    String   // "colors", "typography", "spacing", "shadows", etc.
+  name        String   // "primary", "heading-1", "button-radius", etc.
+  value       String   // "#1E3A5F", "32px", "0.5rem", etc.
+  cssVariable String?  // "--color-primary", "--font-size-h1", etc.
+  description String?
+  metadata    Json?    // Additional data like usage examples, related tokens
+  isDefault   Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([category, name])
+  @@index([category])
+  @@map("design_tokens")
+}
+
+model ComponentConfig {
+  id          String   @id @default(cuid())
+  category    String   // "empreses", "ofertes", "ui", "emails", etc.
+  name        String   @unique
+  displayName String
+  description String?
+  config      Json     // Component-specific configuration
+  styles      Json?    // CSS/style overrides
+  isActive    Boolean  @default(true)
+  previewData Json?    // Sample data for preview
+  version     Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+  @@map("component_configs")
+}
+
+model EmailTemplateContent {
+  id          String   @id @default(cuid())
+  name        String   @unique  // "benvinguda", "notificacio", "nova-oferta", etc.
+  displayName String            // "Benvinguda"
+  description String?           // "Email de benvinguda per a nous usuaris"
+
+  // Contingut editable
+  subject     String            // Assumpte del correu
+  preheader   String?           // Text de previsualització (inbox preview)
+  title       String            // Títol principal
+  subtitle    String?           // Subtítol opcional
+  body        String   @db.Text // Cos del missatge (suporta variables {{nom}})
+  buttonText  String?           // Text del botó CTA
+  buttonUrl   String?           // URL del botó (pot ser variable {{url}})
+  footer      String?  @db.Text // Peu de pàgina
+
+  // Configuració
+  templateType String  @default("transactional") // "transactional", "marketing", "notification"
+  isActive    Boolean  @default(true)
+
+  // Estils específics (override dels globals)
+  styles      Json?    // { "headerBg": "#1E3A5F", "buttonColor": "#fff" }
+
+  // Variables disponibles per aquest template
+  variables   Json?    // ["nom", "email", "empresa", "url"]
+
+  // Metadades
+  lastSentAt  DateTime?
+  sentCount   Int      @default(0)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([templateType])
+  @@map("email_template_contents")
+}
+
+model MenuConfig {
+  id          String   @id @default(cuid())
+  name        String   @unique  // "sidebar-admin", "sidebar-empresa", etc.
+  displayName String
+  description String?
+  items       Json     // Array of menu items
+  styles      Json?    // Menu styling options
+  isActive    Boolean  @default(true)
+  version     Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("menu_configs")
+}
+
+// ============================================
+// COMPONENT REGISTRY - Sistema de registre de components
+// ============================================
+model ComponentRegistry {
+  id            String   @id @default(cuid())
+
+  // Identificació
+  name          String   @unique // "CompanyCard", "OfferCard", etc.
+  displayName   String   // "Targeta d'Empresa"
+  description   String?  // "Mostra informació bàsica d'una empresa"
+
+  // Ubicació
+  filePath      String   // "components/ui/CompanyCard.tsx"
+  usedIn        String[] // ["/dashboard/empreses", "/gestio/empreses"]
+  category      String   // "cards", "buttons", "layouts", etc.
+  section       String   // "dashboard", "gestio", "empresa", "public"
+
+  // Propietats editables (JSON)
+  editableProps Json     // { background: "#fff", borderRadius: "12px", ... }
+  defaultProps  Json     // Valors per defecte originals
+
+  // Metadades
+  thumbnail     String?  // URL de captura/preview
+  tags          String[] // ["card", "empresa", "llistat"]
+  dependencies  String[] // Altres components que utilitza
+
+  // Estat
+  isRegistered  Boolean  @default(true)
+  isActive      Boolean  @default(true)
+  version       Int      @default(1)
+
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([category])
+  @@index([section])
+  @@map("component_registry")
 }

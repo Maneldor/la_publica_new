@@ -24,7 +24,11 @@ import {
     AlertTriangle,
     Loader2,
     UserX,
-    UserCheck
+    UserCheck,
+    Key,
+    ShieldCheck,
+    Copy,
+    Check
 } from 'lucide-react'
 
 // Tipus basats en Prisma schema
@@ -60,6 +64,8 @@ interface User {
     cargo: string | null
     createdAt: string
     lastLogin: string | null
+    companyId: string | null
+    companyName: string | null
 }
 
 // Configuració de rols (excloem COMPANY que es crea a /gestio/)
@@ -128,6 +134,19 @@ export default function AdminUsuarisPage() {
         action: 'deactivate',
     })
     const [isToggling, setIsToggling] = useState(false)
+
+    // Estado para el modal de credenciales (verificar email + contraseña)
+    const [credentialsModal, setCredentialsModal] = useState<{
+        open: boolean
+        user: User | null
+    }>({
+        open: false,
+        user: null,
+    })
+    const [isProcessingCredentials, setIsProcessingCredentials] = useState(false)
+    const [newPassword, setNewPassword] = useState('')
+    const [generatedPassword, setGeneratedPassword] = useState<string | null>(null)
+    const [copiedPassword, setCopiedPassword] = useState(false)
 
     // Función para cargar usuarios
     const loadUsers = async () => {
@@ -232,6 +251,117 @@ export default function AdminUsuarisPage() {
             user,
             action: user.isActive ? 'deactivate' : 'activate'
         })
+    }
+
+    // Función para abrir modal de credenciales
+    const openCredentialsModal = (user: User) => {
+        setCredentialsModal({ open: true, user })
+        setNewPassword('')
+        setGeneratedPassword(null)
+        setCopiedPassword(false)
+    }
+
+    // Función para verificar email
+    const handleVerifyEmail = async (verify: boolean) => {
+        if (!credentialsModal.user) return
+
+        setIsProcessingCredentials(true)
+        try {
+            const res = await fetch(`/api/admin/users/${credentialsModal.user.id}/credentials`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: verify ? 'verify_email' : 'unverify_email' }),
+            })
+
+            if (res.ok) {
+                showToast(verify ? 'Email verificat correctament' : 'Verificació eliminada', 'success')
+                loadUsers()
+                // Actualizar usuario en el modal
+                setCredentialsModal(prev => ({
+                    ...prev,
+                    user: prev.user ? { ...prev.user, isEmailVerified: verify } : null
+                }))
+            } else {
+                const error = await res.json()
+                showToast(error.error || 'Error', 'error')
+            }
+        } catch (error) {
+            showToast('Error de connexió', 'error')
+        } finally {
+            setIsProcessingCredentials(false)
+        }
+    }
+
+    // Función para cambiar contraseña
+    const handleSetPassword = async () => {
+        if (!credentialsModal.user || !newPassword) return
+
+        if (newPassword.length < 6) {
+            showToast('La contrasenya ha de tenir mínim 6 caràcters', 'error')
+            return
+        }
+
+        setIsProcessingCredentials(true)
+        try {
+            const res = await fetch(`/api/admin/users/${credentialsModal.user.id}/credentials`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'set_password', password: newPassword }),
+            })
+
+            if (res.ok) {
+                showToast('Contrasenya actualitzada', 'success')
+                setGeneratedPassword(newPassword)
+                setNewPassword('')
+            } else {
+                const error = await res.json()
+                showToast(error.error || 'Error', 'error')
+            }
+        } catch (error) {
+            showToast('Error de connexió', 'error')
+        } finally {
+            setIsProcessingCredentials(false)
+        }
+    }
+
+    // Función para generar contraseña
+    const handleGeneratePassword = async () => {
+        if (!credentialsModal.user) return
+
+        setIsProcessingCredentials(true)
+        try {
+            const res = await fetch(`/api/admin/users/${credentialsModal.user.id}/credentials`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'generate_password' }),
+            })
+
+            const data = await res.json()
+
+            if (res.ok && data.success) {
+                showToast('Nova contrasenya generada', 'success')
+                setGeneratedPassword(data.data.password)
+                setNewPassword('')
+            } else {
+                showToast(data.error || 'Error', 'error')
+            }
+        } catch (error) {
+            showToast('Error de connexió', 'error')
+        } finally {
+            setIsProcessingCredentials(false)
+        }
+    }
+
+    // Copiar contraseña al portapapeles
+    const copyPassword = async () => {
+        if (!generatedPassword) return
+        try {
+            await navigator.clipboard.writeText(generatedPassword)
+            setCopiedPassword(true)
+            setTimeout(() => setCopiedPassword(false), 2000)
+        } catch (error) {
+            showToast('Error copiant', 'error')
+        }
     }
 
     // Filtrar usuaris
@@ -433,7 +563,7 @@ export default function AdminUsuarisPage() {
                                         Rol
                                     </th>
                                     <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                                        Càrrec
+                                        Empresa
                                     </th>
                                     <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                                         Estat
@@ -458,6 +588,7 @@ export default function AdminUsuarisPage() {
                                         onToggleSelect={() => toggleSelectUser(user.id)}
                                         onDelete={openDeleteModal}
                                         onToggleActive={openToggleActiveModal}
+                                        onManageCredentials={openCredentialsModal}
                                     />
                                 ))}
                             </tbody>
@@ -612,6 +743,140 @@ export default function AdminUsuarisPage() {
                 </div>
             )}
 
+            {/* Modal de Credenciales */}
+            {credentialsModal.open && credentialsModal.user && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                    <div className="bg-white rounded-xl shadow-xl max-w-lg w-full mx-4 overflow-hidden">
+                        <div className="p-6">
+                            <div className="flex items-center gap-4 mb-6">
+                                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                                    <Key className="w-6 h-6 text-blue-600" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-semibold text-gray-900">Gestionar Credencials</h3>
+                                    <p className="text-gray-500 text-sm">{credentialsModal.user.email}</p>
+                                </div>
+                            </div>
+
+                            {/* Sección: Verificación de Email */}
+                            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="font-medium text-gray-900">Verificació d'Email</p>
+                                        <p className="text-sm text-gray-500">
+                                            Estat: {credentialsModal.user.isEmailVerified ? (
+                                                <span className="text-green-600 font-medium">Verificat</span>
+                                            ) : (
+                                                <span className="text-amber-600 font-medium">No verificat</span>
+                                            )}
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={() => handleVerifyEmail(!credentialsModal.user?.isEmailVerified)}
+                                        disabled={isProcessingCredentials}
+                                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
+                                            credentialsModal.user.isEmailVerified
+                                                ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                                                : 'bg-green-100 text-green-700 hover:bg-green-200'
+                                        }`}
+                                    >
+                                        {isProcessingCredentials ? (
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                        ) : credentialsModal.user.isEmailVerified ? (
+                                            <>Treure verificació</>
+                                        ) : (
+                                            <>
+                                                <ShieldCheck className="w-4 h-4 inline mr-1" />
+                                                Verificar
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Sección: Contraseña */}
+                            <div className="p-4 bg-gray-50 rounded-lg">
+                                <p className="font-medium text-gray-900 mb-4">Contrasenya</p>
+
+                                {/* Contraseña generada/establecida */}
+                                {generatedPassword && (
+                                    <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                                        <p className="text-xs text-green-700 mb-2 font-medium">Nova contrasenya:</p>
+                                        <div className="flex items-center gap-2">
+                                            <code className="flex-1 px-3 py-2 bg-white border border-green-300 rounded text-gray-900 font-mono text-sm">
+                                                {generatedPassword}
+                                            </code>
+                                            <button
+                                                onClick={copyPassword}
+                                                className="p-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                                                title="Copiar"
+                                            >
+                                                {copiedPassword ? (
+                                                    <Check className="w-4 h-4" />
+                                                ) : (
+                                                    <Copy className="w-4 h-4" />
+                                                )}
+                                            </button>
+                                        </div>
+                                        <p className="text-xs text-green-600 mt-2">
+                                            ⚠️ Guarda aquesta contrasenya, no es mostrarà de nou
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* Generar nueva */}
+                                <div className="flex gap-2 mb-4">
+                                    <button
+                                        onClick={handleGeneratePassword}
+                                        disabled={isProcessingCredentials}
+                                        className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                                    >
+                                        {isProcessingCredentials ? (
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                        ) : (
+                                            <>
+                                                <RefreshCw className="w-4 h-4" />
+                                                Generar nova contrasenya
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+
+                                {/* Establecer manualmente */}
+                                <div className="border-t border-gray-200 pt-4 mt-4">
+                                    <p className="text-sm text-gray-600 mb-2">O establir manualment:</p>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={newPassword}
+                                            onChange={(e) => setNewPassword(e.target.value)}
+                                            placeholder="Nova contrasenya (mínim 6 caràcters)"
+                                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        />
+                                        <button
+                                            onClick={handleSetPassword}
+                                            disabled={isProcessingCredentials || !newPassword || newPassword.length < 6}
+                                            className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors disabled:opacity-50"
+                                        >
+                                            Establir
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex justify-end mt-6">
+                                <button
+                                    onClick={() => setCredentialsModal({ open: false, user: null })}
+                                    className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                                >
+                                    Tancar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Toast de notificación */}
             {toast.show && (
                 <div className={`fixed bottom-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 ${
@@ -671,9 +936,10 @@ interface UserRowProps {
     onToggleSelect: () => void
     onDelete: (user: User) => void
     onToggleActive: (user: User) => void
+    onManageCredentials: (user: User) => void
 }
 
-function UserRow({ user, isSelected, onToggleSelect, onDelete, onToggleActive }: UserRowProps) {
+function UserRow({ user, isSelected, onToggleSelect, onDelete, onToggleActive, onManageCredentials }: UserRowProps) {
     const roleConfig = ROLE_CONFIG[user.role]
     const initials = user.name
         ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
@@ -721,7 +987,11 @@ function UserRow({ user, isSelected, onToggleSelect, onDelete, onToggleActive }:
                 </span>
             </td>
             <td className="px-4 py-3">
-                <span className="text-sm text-slate-600">{user.cargo || '-'}</span>
+                {user.companyName ? (
+                    <span className="text-sm text-slate-900 font-medium">{user.companyName}</span>
+                ) : (
+                    <span className="text-sm text-slate-400">-</span>
+                )}
             </td>
             <td className="px-4 py-3">
                 <div className="flex items-center gap-2">
@@ -765,6 +1035,13 @@ function UserRow({ user, isSelected, onToggleSelect, onDelete, onToggleActive }:
                     </Link>
                     <button className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                         <Mail className="h-4 w-4" strokeWidth={1.5} />
+                    </button>
+                    <button
+                        onClick={() => onManageCredentials(user)}
+                        className="p-1.5 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                        title="Gestionar credencials"
+                    >
+                        <Key className="h-4 w-4" strokeWidth={1.5} />
                     </button>
                     <button
                         onClick={() => onToggleActive(user)}

@@ -40,6 +40,8 @@ import {
   type UserEmpresesPipelineData
 } from '@/lib/gestio-empreses/empreses-pipeline-actions'
 import toast, { Toaster } from 'react-hot-toast'
+import { AssignarGestorModal } from '../AssignarGestorModal'
+import { CompanyEditPanel } from '@/components/gestio/empreses/CompanyEditPanel'
 
 interface EmpresesPipelineClientProps {
   initialData: UnifiedEmpresesPipelineData
@@ -412,6 +414,7 @@ export function EmpresesPipelineClient({
   const [data, setData] = useState(initialData)
   const [showFilters, setShowFilters] = useState(false)
   const [showAssignModal, setShowAssignModal] = useState(false)
+  const [showEditPanel, setShowEditPanel] = useState(false)
   const [selectedEmpresa, setSelectedEmpresa] = useState<EmpresesPipelineItem | null>(null)
 
   const hasTeam = data.teamPipelines.length > 0
@@ -439,7 +442,15 @@ export function EmpresesPipelineClient({
   }
 
   const handleItemClick = (item: EmpresesPipelineItem) => {
-    window.open(`/gestio/empreses/${item.id}`, '_blank')
+    setSelectedEmpresa(item)
+
+    // Si l'empresa no té gestor assignat, obrir modal d'assignació
+    if (!item.accountManager) {
+      setShowAssignModal(true)
+    } else {
+      // Si ja té gestor, obrir el panel d'edició de perfil
+      setShowEditPanel(true)
+    }
   }
 
   const handleRefresh = () => {
@@ -577,37 +588,44 @@ export function EmpresesPipelineClient({
         </div>
       </div>
 
-      {/* Modal de assignación (simple) */}
-      {showAssignModal && selectedEmpresa && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4">
-              Assignar gestor a {selectedEmpresa.name}
-            </h3>
-            <div className="space-y-2 max-h-[300px] overflow-y-auto">
-              {data.availableGestors.map((gestor) => (
-                <button
-                  key={gestor.id}
-                  onClick={() => handleAssign(selectedEmpresa.id, gestor.id)}
-                  className="w-full text-left px-4 py-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors"
-                >
-                  <p className="font-medium text-slate-900">{gestor.name}</p>
-                  <p className="text-xs text-slate-500">{roleLabels[gestor.role] || gestor.role}</p>
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={() => {
-                setShowAssignModal(false)
-                setSelectedEmpresa(null)
-              }}
-              className="mt-4 w-full px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200"
-            >
-              Cancel·lar
-            </button>
-          </div>
-        </div>
+      {/* Modal d'assignació de gestor */}
+      {selectedEmpresa && (
+        <AssignarGestorModal
+          isOpen={showAssignModal}
+          onClose={() => {
+            setShowAssignModal(false)
+            setSelectedEmpresa(null)
+          }}
+          empresa={{
+            id: selectedEmpresa.id,
+            name: selectedEmpresa.name,
+            accountManagerId: selectedEmpresa.accountManager?.id || null,
+            accountManager: selectedEmpresa.accountManager
+          }}
+          onAssigned={() => {
+            setShowAssignModal(false)
+            setSelectedEmpresa(null)
+            startTransition(() => {
+              router.refresh()
+            })
+          }}
+        />
       )}
+
+      {/* Panel d'edició del perfil de l'empresa */}
+      <CompanyEditPanel
+        companyId={selectedEmpresa?.id || null}
+        isOpen={showEditPanel}
+        onClose={() => {
+          setShowEditPanel(false)
+          setSelectedEmpresa(null)
+        }}
+        onSaved={() => {
+          startTransition(() => {
+            router.refresh()
+          })
+        }}
+      />
     </div>
   )
 }

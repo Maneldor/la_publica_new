@@ -122,7 +122,7 @@ export const Step8Review = ({ formData, errors, onSave, isSaving = false }: Step
               <div className="flex-1 mt-16">
                 <div className="flex items-center gap-3 mb-2">
                   <h1 className="text-3xl font-bold text-gray-900">{formData.fullName || 'Nom complet'}</h1>
-                  <span className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
+                  <span className="px-3 py-1 bg-primary/10 text-primary-dark text-sm rounded-full">
                     {formData.profileType || 'Local'}
                   </span>
                 </div>
@@ -155,19 +155,19 @@ export const Step8Review = ({ formData, errors, onSave, isSaving = false }: Step
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Xarxes Socials</h3>
                 <div className="flex flex-wrap gap-3">
                   {formData.socialNetworks.twitter && (
-                    <a href={`https://twitter.com/${formData.socialNetworks.twitter}`} className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg">
+                    <a href={`https://twitter.com/${formData.socialNetworks.twitter}`} className="flex items-center gap-2 px-3 py-2 bg-info/10 text-info rounded-lg">
                       <Twitter className="w-4 h-4" />
                       @{formData.socialNetworks.twitter}
                     </a>
                   )}
                   {formData.socialNetworks.linkedin && (
-                    <a href={formData.socialNetworks.linkedin.startsWith('http') ? formData.socialNetworks.linkedin : `https://linkedin.com/in/${formData.socialNetworks.linkedin}`} className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg">
+                    <a href={formData.socialNetworks.linkedin.startsWith('http') ? formData.socialNetworks.linkedin : `https://linkedin.com/in/${formData.socialNetworks.linkedin}`} className="flex items-center gap-2 px-3 py-2 bg-info/10 text-info rounded-lg">
                       <Linkedin className="w-4 h-4" />
                       LinkedIn
                     </a>
                   )}
                   {formData.socialNetworks.instagram && (
-                    <a href={`https://instagram.com/${formData.socialNetworks.instagram}`} className="flex items-center gap-2 px-3 py-2 bg-pink-50 text-pink-700 rounded-lg">
+                    <a href={`https://instagram.com/${formData.socialNetworks.instagram}`} className="flex items-center gap-2 px-3 py-2 bg-accent/10 text-accent rounded-lg">
                       <Instagram className="w-4 h-4" />
                       @{formData.socialNetworks.instagram}
                     </a>
@@ -186,7 +186,7 @@ export const Step8Review = ({ formData, errors, onSave, isSaving = false }: Step
                       <h4 className="text-sm font-medium text-gray-700 mb-2">Habilitats</h4>
                       <div className="flex flex-wrap gap-2">
                         {formData.skills.map((skill, index) => (
-                          <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
+                          <span key={index} className="px-3 py-1 bg-primary/10 text-primary-dark text-sm rounded-full">
                             {skill}
                           </span>
                         ))}
@@ -198,7 +198,7 @@ export const Step8Review = ({ formData, errors, onSave, isSaving = false }: Step
                       <h4 className="text-sm font-medium text-gray-700 mb-2">Interessos</h4>
                       <div className="flex flex-wrap gap-2">
                         {formData.interests.map((interest, index) => (
-                          <span key={index} className="px-3 py-1 bg-green-100 text-green-800 text-sm rounded-full">
+                          <span key={index} className="px-3 py-1 bg-success/10 text-success-dark text-sm rounded-full">
                             {interest}
                           </span>
                         ))}
@@ -215,9 +215,9 @@ export const Step8Review = ({ formData, errors, onSave, isSaving = false }: Step
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Experiència Professional</h3>
                 <div className="space-y-4">
                   {formData.experience.slice(0, 3).map((exp, index) => (
-                    <div key={exp.id} className="border-l-2 border-blue-200 pl-4">
+                    <div key={exp.id} className="border-l-2 border-primary/30 pl-4">
                       <h4 className="font-semibold text-gray-900">{exp.position}</h4>
-                      <p className="text-blue-600">{exp.company}</p>
+                      <p className="text-primary">{exp.company}</p>
                       <p className="text-sm text-gray-600">
                         {formatDate(exp.startDate)} - {formatDate(exp.endDate) || 'Present'}
                       </p>
@@ -241,7 +241,7 @@ export const Step8Review = ({ formData, errors, onSave, isSaving = false }: Step
                   {formData.education.slice(0, 3).map((edu, index) => (
                     <div key={edu.id}>
                       <h4 className="font-semibold text-gray-900">{edu.title}</h4>
-                      <p className="text-blue-600">{edu.institution}</p>
+                      <p className="text-primary">{edu.institution}</p>
                       {edu.specialization && (
                         <p className="text-gray-600">{edu.specialization}</p>
                       )}
@@ -308,9 +308,9 @@ export const Step8Review = ({ formData, errors, onSave, isSaving = false }: Step
           <h3 className="text-lg font-semibold text-gray-900">Completesa del Perfil</h3>
           <div className="flex items-center gap-2">
             <div className={`w-16 h-16 rounded-full flex items-center justify-center text-lg font-bold ${
-              percentage >= 80 ? 'bg-green-100 text-green-800' :
-              percentage >= 60 ? 'bg-yellow-100 text-yellow-800' :
-              'bg-red-100 text-red-800'
+              percentage >= 80 ? 'bg-success/10 text-success-dark' :
+              percentage >= 60 ? 'bg-warning/10 text-warning-dark' :
+              'bg-error/10 text-error-dark'
             }`}>
               {percentage}%
             </div>
@@ -323,11 +323,11 @@ export const Step8Review = ({ formData, errors, onSave, isSaving = false }: Step
               <span className="text-gray-700">{section.name}</span>
               <div className="flex items-center gap-2">
                 {section.completed ? (
-                  <CheckCircle className="w-5 h-5 text-green-500" />
+                  <CheckCircle className="w-5 h-5 text-success" />
                 ) : (
                   <div className="w-5 h-5 rounded-full border-2 border-gray-300" />
                 )}
-                <span className={`text-sm ${section.completed ? 'text-green-600' : 'text-gray-500'}`}>
+                <span className={`text-sm ${section.completed ? 'text-success' : 'text-gray-500'}`}>
                   {section.completed ? 'Completat' : 'Pendent'}
                 </span>
               </div>
@@ -390,7 +390,7 @@ export const Step8Review = ({ formData, errors, onSave, isSaving = false }: Step
         <button
           onClick={onSave}
           disabled={isSaving}
-          className="flex items-center gap-2 px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400 transition-colors"
+          className="flex items-center gap-2 px-8 py-3 bg-primary text-white rounded-lg hover:bg-primary-dark disabled:bg-primary/50 transition-colors"
         >
           <Save className="w-5 h-5" />
           {isSaving ? 'Desant...' : 'Desar Perfil'}
@@ -398,11 +398,11 @@ export const Step8Review = ({ formData, errors, onSave, isSaving = false }: Step
       </div>
 
       {/* Final Tips */}
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-        <p className="text-sm text-green-800 font-medium mb-2">
+      <div className="bg-success/10 border border-success/30 rounded-lg p-4">
+        <p className="text-sm text-success-dark font-medium mb-2">
           🎉 Felicitats! Estàs a punt de completar el teu perfil
         </p>
-        <ul className="text-sm text-green-700 space-y-1">
+        <ul className="text-sm text-success space-y-1">
           <li>• Un perfil complet té més visibilitat a la plataforma</li>
           <li>• Podràs editar qualsevol informació més tard</li>
           <li>• La teva informació ajudarà a trobar oportunitats de col·laboració</li>

@@ -7,27 +7,94 @@ interface ProgressIndicatorProps {
 }
 
 export const ProgressIndicator = ({ currentStep, totalSteps, steps }: ProgressIndicatorProps) => {
+  const getStepStyles = (isCompleted: boolean, isCurrent: boolean): React.CSSProperties => {
+    if (isCompleted) {
+      return {
+        backgroundColor: 'var(--ProgressIndicator-completed-bg, #dcfce7)',
+        color: 'var(--ProgressIndicator-completed-color, #166534)',
+      };
+    }
+    if (isCurrent) {
+      return {
+        backgroundColor: 'var(--ProgressIndicator-current-bg, #dbeafe)',
+        color: 'var(--ProgressIndicator-current-color, #1e40af)',
+        boxShadow: '0 0 0 2px var(--ProgressIndicator-current-ring-color, #3b82f6)',
+      };
+    }
+    return {
+      backgroundColor: 'var(--ProgressIndicator-pending-bg, #f3f4f6)',
+      color: 'var(--ProgressIndicator-pending-color, #6b7280)',
+    };
+  };
+
+  const getStepNumberStyles = (isCompleted: boolean, isCurrent: boolean): React.CSSProperties => {
+    if (isCompleted) {
+      return {
+        backgroundColor: 'var(--ProgressIndicator-completed-number-bg, #16a34a)',
+        color: 'var(--ProgressIndicator-completed-number-color, #ffffff)',
+      };
+    }
+    if (isCurrent) {
+      return {
+        backgroundColor: 'var(--ProgressIndicator-current-number-bg, #2563eb)',
+        color: 'var(--ProgressIndicator-current-number-color, #ffffff)',
+      };
+    }
+    return {
+      backgroundColor: 'var(--ProgressIndicator-pending-number-bg, #d1d5db)',
+      color: 'var(--ProgressIndicator-pending-number-color, #4b5563)',
+    };
+  };
+
   return (
-    <div className="mb-8">
-      <div className="flex items-center justify-between mb-4">
-        <span className="text-sm font-medium text-gray-900">
+    <div style={{ marginBottom: '32px' }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: '16px'
+      }}>
+        <span style={{
+          fontSize: '14px',
+          fontWeight: '500',
+          color: 'var(--ProgressIndicator-title-color, #111827)'
+        }}>
           Pas {currentStep} de {totalSteps}
         </span>
-        <span className="text-sm text-gray-500">
+        <span style={{
+          fontSize: '14px',
+          color: 'var(--ProgressIndicator-subtitle-color, #6b7280)'
+        }}>
           {Math.round((currentStep / totalSteps) * 100)}% completat
         </span>
       </div>
 
       {/* Progress Bar */}
-      <div className="w-full bg-gray-200 rounded-full h-2 mb-6">
+      <div style={{
+        width: '100%',
+        backgroundColor: 'var(--ProgressIndicator-track-color, #e5e7eb)',
+        borderRadius: '9999px',
+        height: '8px',
+        marginBottom: '24px'
+      }}>
         <div
-          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-          style={{ width: `${(currentStep / totalSteps) * 100}%` }}
+          style={{
+            backgroundColor: 'var(--ProgressIndicator-bar-color, #2563eb)',
+            height: '8px',
+            borderRadius: '9999px',
+            transition: 'all 0.3s',
+            width: `${(currentStep / totalSteps) * 100}%`
+          }}
         />
       </div>
 
       {/* Steps List */}
-      <div className="grid grid-cols-4 md:grid-cols-8 gap-2 text-xs">
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        gap: '8px',
+        fontSize: '12px'
+      }}>
         {steps.map((step, index) => {
           const stepNumber = index + 1;
           const isCompleted = stepNumber < currentStep;
@@ -36,28 +103,29 @@ export const ProgressIndicator = ({ currentStep, totalSteps, steps }: ProgressIn
           return (
             <div
               key={stepNumber}
-              className={`
-                text-center p-2 rounded-lg transition-all
-                ${isCompleted
-                  ? 'bg-green-100 text-green-800'
-                  : isCurrent
-                    ? 'bg-blue-100 text-blue-800 ring-2 ring-blue-500'
-                    : 'bg-gray-100 text-gray-500'
-                }
-              `}
+              style={{
+                textAlign: 'center',
+                padding: '8px',
+                borderRadius: '8px',
+                transition: 'all 0.2s',
+                ...getStepStyles(isCompleted, isCurrent)
+              }}
             >
-              <div className={`
-                w-6 h-6 mx-auto mb-1 rounded-full flex items-center justify-center text-xs font-bold
-                ${isCompleted
-                  ? 'bg-green-600 text-white'
-                  : isCurrent
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-300 text-gray-600'
-                }
-              `}>
+              <div style={{
+                width: '24px',
+                height: '24px',
+                margin: '0 auto 4px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '12px',
+                fontWeight: '700',
+                ...getStepNumberStyles(isCompleted, isCurrent)
+              }}>
                 {isCompleted ? '✓' : stepNumber}
               </div>
-              <div className="font-medium leading-tight">
+              <div style={{ fontWeight: '500', lineHeight: '1.2' }}>
                 {step}
               </div>
             </div>

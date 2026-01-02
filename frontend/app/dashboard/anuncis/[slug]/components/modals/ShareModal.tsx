@@ -56,9 +56,9 @@ export function ShareModal({
     {
       name: 'WhatsApp',
       icon: MessageCircle,
-      bgColor: 'bg-green-50',
-      hoverColor: 'hover:bg-green-100',
-      textColor: 'text-green-700',
+      bgColor: 'bg-success/10',
+      hoverColor: 'hover:bg-success/20',
+      textColor: 'text-success-dark',
       action: () => {
         const url = `https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`;
         window.open(url, '_blank');
@@ -67,9 +67,9 @@ export function ShareModal({
     {
       name: 'Facebook',
       icon: Facebook,
-      bgColor: 'bg-blue-50',
-      hoverColor: 'hover:bg-blue-100',
-      textColor: 'text-blue-700',
+      bgColor: 'bg-info/10',
+      hoverColor: 'hover:bg-info/20',
+      textColor: 'text-info-dark',
       action: () => {
         const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
         window.open(url, '_blank');
@@ -78,9 +78,9 @@ export function ShareModal({
     {
       name: 'Twitter/X',
       icon: Twitter,
-      bgColor: 'bg-gray-50',
-      hoverColor: 'hover:bg-gray-100',
-      textColor: 'text-gray-700',
+      bgColor: 'bg-slate-100',
+      hoverColor: 'hover:bg-slate-200',
+      textColor: 'text-slate-700',
       action: () => {
         const url = `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`;
         window.open(url, '_blank');
@@ -89,9 +89,9 @@ export function ShareModal({
     {
       name: 'Email',
       icon: Mail,
-      bgColor: 'bg-purple-50',
-      hoverColor: 'hover:bg-purple-100',
-      textColor: 'text-purple-700',
+      bgColor: 'bg-accent/10',
+      hoverColor: 'hover:bg-accent/20',
+      textColor: 'text-accent-dark',
       action: () => {
         const subject = encodeURIComponent(`Anunci: ${anunci.title}`);
         const body = encodeURIComponent(`${shareText}\n\n${shareUrl}`);
@@ -155,8 +155,8 @@ export function ShareModal({
               onClick={handleCopyLink}
               className={`px-4 py-3 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 ${
                 copied
-                  ? 'bg-green-600 text-white'
-                  : 'bg-blue-600 hover:bg-blue-700 text-white'
+                  ? 'bg-success text-white'
+                  : 'bg-primary hover:bg-primary-light text-white'
               }`}
             >
               {copied ? (
@@ -174,7 +174,7 @@ export function ShareModal({
           </div>
 
           {copied && (
-            <p className="text-sm text-green-600 flex items-center gap-1">
+            <p className="text-sm text-success flex items-center gap-1">
               <Check className="w-4 h-4" />
               Enllaç copiat al portapapers
             </p>

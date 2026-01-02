@@ -83,15 +83,17 @@ export function CourseCard({ course, viewMode }: CourseCardProps) {
       <div
         style={{
           display: 'flex',
-          backgroundColor: '#fff',
-          border: isHovered ? '2px solid #3b82f6' : '2px solid #e5e7eb',
-          borderRadius: '12px',
+          backgroundColor: 'var(--CourseCard-background, #ffffff)',
+          border: `2px solid ${isHovered ? 'var(--CourseCard-hover-border-color, #3b82f6)' : 'var(--CourseCard-border-color, #e5e7eb)'}`,
+          borderRadius: 'var(--CourseCard-border-radius-list, 12px)',
           marginBottom: '12px',
           overflow: 'hidden',
           cursor: 'pointer',
           transition: 'all 0.2s ease-in-out',
           transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
-          boxShadow: isHovered ? '0 8px 16px -4px rgba(59, 130, 246, 0.2)' : '0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06)'
+          boxShadow: isHovered
+            ? 'var(--CourseCard-hover-shadow, 0 8px 16px -4px rgba(59, 130, 246, 0.2))'
+            : 'var(--CourseCard-shadow, 0 4px 6px -1px rgba(59, 130, 246, 0.1))'
         }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -100,8 +102,8 @@ export function CourseCard({ course, viewMode }: CourseCardProps) {
         {/* Imagen solo si existe */}
         {course.featuredImage && (
           <div style={{
-            width: '140px',
-            height: '100px',
+            width: 'var(--CourseCard-image-width-list, 140px)',
+            height: 'var(--CourseCard-image-height-list, 100px)',
             backgroundImage: `url(${course.featuredImage})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
@@ -112,7 +114,7 @@ export function CourseCard({ course, viewMode }: CourseCardProps) {
         {/* Content */}
         <div style={{
           flex: 1,
-          padding: '16px 20px',
+          padding: 'var(--CourseCard-padding, 16px 20px)',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between'
@@ -128,7 +130,7 @@ export function CourseCard({ course, viewMode }: CourseCardProps) {
               <h3 style={{
                 fontSize: '16px',
                 fontWeight: '600',
-                color: '#2c3e50',
+                color: 'var(--CourseCard-title-color, #2c3e50)',
                 margin: 0,
                 lineHeight: '1.3'
               }}>
@@ -150,7 +152,7 @@ export function CourseCard({ course, viewMode }: CourseCardProps) {
 
             <p style={{
               fontSize: '14px',
-              color: '#6c757d',
+              color: 'var(--CourseCard-description-color, #6c757d)',
               margin: '0 0 12px 0',
               lineHeight: '1.4',
               display: '-webkit-box',
@@ -168,8 +170,8 @@ export function CourseCard({ course, viewMode }: CourseCardProps) {
               marginBottom: '12px'
             }}>
               <span style={{
-                backgroundColor: '#f0f7ff',
-                color: '#3b82f6',
+                backgroundColor: 'var(--CourseCard-category-background, #f0f7ff)',
+                color: 'var(--CourseCard-category-color, #3b82f6)',
                 padding: '4px 8px',
                 borderRadius: '6px',
                 fontSize: '12px',
@@ -179,19 +181,19 @@ export function CourseCard({ course, viewMode }: CourseCardProps) {
               </span>
               <span style={{
                 fontSize: '12px',
-                color: '#6c757d'
+                color: 'var(--CourseCard-meta-color, #6c757d)'
               }}>
                 {getModeIcon()} {getModeText()}
               </span>
               <span style={{
                 fontSize: '12px',
-                color: '#6c757d'
+                color: 'var(--CourseCard-meta-color, #6c757d)'
               }}>
                 ⏱️ {course.duration}h
               </span>
               <span style={{
                 fontSize: '12px',
-                color: '#6c757d'
+                color: 'var(--CourseCard-rating-color, #f59e0b)'
               }}>
                 ⭐ {course.rating}
               </span>
@@ -208,13 +210,13 @@ export function CourseCard({ course, viewMode }: CourseCardProps) {
               <div style={{
                 fontSize: '18px',
                 fontWeight: '700',
-                color: '#2c3e50'
+                color: 'var(--CourseCard-price-color, #2c3e50)'
               }}>
                 {course.price}€
                 {course.originalPrice > course.price && (
                   <span style={{
                     fontSize: '14px',
-                    color: '#9ca3af',
+                    color: 'var(--CourseCard-original-price-color, #9ca3af)',
                     textDecoration: 'line-through',
                     marginLeft: '8px',
                     fontWeight: '400'
@@ -225,7 +227,7 @@ export function CourseCard({ course, viewMode }: CourseCardProps) {
               </div>
               <div style={{
                 fontSize: '12px',
-                color: '#10b981'
+                color: 'var(--CourseCard-slots-color, #10b981)'
               }}>
                 {course.availableSlots} places disponibles
               </div>
@@ -235,8 +237,8 @@ export function CourseCard({ course, viewMode }: CourseCardProps) {
               onClick={handleEnroll}
               style={{
                 padding: '8px 16px',
-                backgroundColor: '#3b82f6',
-                color: 'white',
+                backgroundColor: 'var(--CourseCard-enroll-button-background, #3b82f6)',
+                color: 'var(--CourseCard-enroll-button-color, white)',
                 border: 'none',
                 borderRadius: '8px',
                 fontSize: '14px',
@@ -244,8 +246,8 @@ export function CourseCard({ course, viewMode }: CourseCardProps) {
                 cursor: 'pointer',
                 transition: 'background-color 0.2s'
               }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3b82f6'}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--CourseCard-enroll-button-hover-background, #2563eb)'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--CourseCard-enroll-button-background, #3b82f6)'}
             >
               Inscriure&apos;s
             </button>
@@ -259,14 +261,16 @@ export function CourseCard({ course, viewMode }: CourseCardProps) {
   return (
     <div
       style={{
-        backgroundColor: '#fff',
-        border: isHovered ? '2px solid #3b82f6' : '2px solid #e5e7eb',
-        borderRadius: '12px',
+        backgroundColor: 'var(--CourseCard-background, #ffffff)',
+        border: `2px solid ${isHovered ? 'var(--CourseCard-hover-border-color, #3b82f6)' : 'var(--CourseCard-border-color, #e5e7eb)'}`,
+        borderRadius: 'var(--CourseCard-border-radius, 12px)',
         overflow: 'hidden',
         cursor: 'pointer',
         transition: 'all 0.2s ease-in-out',
         transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
-        boxShadow: isHovered ? '0 8px 16px -4px rgba(59, 130, 246, 0.2)' : '0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06)',
+        boxShadow: isHovered
+          ? 'var(--CourseCard-hover-shadow, 0 8px 16px -4px rgba(59, 130, 246, 0.2))'
+          : 'var(--CourseCard-shadow, 0 4px 6px -1px rgba(59, 130, 246, 0.1))',
         height: '420px',
         display: 'flex',
         flexDirection: 'column'
@@ -278,7 +282,7 @@ export function CourseCard({ course, viewMode }: CourseCardProps) {
       {/* Imagen de cabecera */}
       {course.featuredImage && (
         <div style={{
-          height: '140px',
+          height: 'var(--CourseCard-cover-height, 140px)',
           backgroundImage: `url(${course.featuredImage})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
@@ -311,8 +315,8 @@ export function CourseCard({ course, viewMode }: CourseCardProps) {
             position: 'absolute',
             bottom: '8px',
             left: '8px',
-            backgroundColor: 'rgba(59, 130, 246, 0.9)',
-            color: 'white',
+            backgroundColor: 'var(--CourseCard-category-badge-background, rgba(59, 130, 246, 0.9))',
+            color: 'var(--CourseCard-category-badge-color, white)',
             padding: '4px 8px',
             borderRadius: '6px',
             fontSize: '11px',
@@ -325,7 +329,7 @@ export function CourseCard({ course, viewMode }: CourseCardProps) {
 
       {/* Contenido */}
       <div style={{
-        padding: '16px',
+        padding: 'var(--CourseCard-content-padding, 16px)',
         flex: 1,
         display: 'flex',
         flexDirection: 'column'
@@ -334,7 +338,7 @@ export function CourseCard({ course, viewMode }: CourseCardProps) {
         <h3 style={{
           fontSize: '15px',
           fontWeight: '600',
-          color: '#2c3e50',
+          color: 'var(--CourseCard-title-color, #2c3e50)',
           margin: '0 0 8px 0',
           lineHeight: '1.3',
           display: '-webkit-box',
@@ -348,7 +352,7 @@ export function CourseCard({ course, viewMode }: CourseCardProps) {
         {/* Descripción */}
         <p style={{
           fontSize: '13px',
-          color: '#6c757d',
+          color: 'var(--CourseCard-description-color, #6c757d)',
           margin: '0 0 12px 0',
           lineHeight: '1.4',
           display: '-webkit-box',
@@ -366,18 +370,18 @@ export function CourseCard({ course, viewMode }: CourseCardProps) {
           gap: '8px',
           marginBottom: '12px',
           fontSize: '11px',
-          color: '#6c757d',
+          color: 'var(--CourseCard-meta-color, #6c757d)',
           flexWrap: 'wrap'
         }}>
           <span>{getModeIcon()} {getModeText()}</span>
           <span>⏱️ {course.duration}h</span>
-          <span>⭐ {course.rating}</span>
+          <span style={{ color: 'var(--CourseCard-rating-color, #f59e0b)' }}>⭐ {course.rating}</span>
         </div>
 
         {/* Instructor */}
         <div style={{
           fontSize: '12px',
-          color: '#6c757d',
+          color: 'var(--CourseCard-instructor-color, #6c757d)',
           marginBottom: '12px'
         }}>
           👨‍🏫 {course.instructor}
@@ -394,13 +398,13 @@ export function CourseCard({ course, viewMode }: CourseCardProps) {
             <div style={{
               fontSize: '16px',
               fontWeight: '700',
-              color: '#2c3e50'
+              color: 'var(--CourseCard-price-color, #2c3e50)'
             }}>
               {course.price}€
               {course.originalPrice > course.price && (
                 <span style={{
                   fontSize: '12px',
-                  color: '#9ca3af',
+                  color: 'var(--CourseCard-original-price-color, #9ca3af)',
                   textDecoration: 'line-through',
                   marginLeft: '6px',
                   fontWeight: '400'
@@ -411,7 +415,7 @@ export function CourseCard({ course, viewMode }: CourseCardProps) {
             </div>
             <div style={{
               fontSize: '11px',
-              color: '#10b981'
+              color: 'var(--CourseCard-slots-color, #10b981)'
             }}>
               {course.availableSlots} places
             </div>
@@ -421,8 +425,8 @@ export function CourseCard({ course, viewMode }: CourseCardProps) {
             onClick={handleEnroll}
             style={{
               padding: '6px 12px',
-              backgroundColor: '#3b82f6',
-              color: 'white',
+              backgroundColor: 'var(--CourseCard-enroll-button-background, #3b82f6)',
+              color: 'var(--CourseCard-enroll-button-color, white)',
               border: 'none',
               borderRadius: '6px',
               fontSize: '12px',
@@ -430,8 +434,8 @@ export function CourseCard({ course, viewMode }: CourseCardProps) {
               cursor: 'pointer',
               transition: 'background-color 0.2s'
             }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3b82f6'}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--CourseCard-enroll-button-hover-background, #2563eb)'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--CourseCard-enroll-button-background, #3b82f6)'}
           >
             Inscriure&apos;s
           </button>

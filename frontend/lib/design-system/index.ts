@@ -1,18 +1,6 @@
-/**
- * SISTEMA DE DISEÑO - LA PÚBLICA
- *
- * Exporta todas las constantes y utilidades del design system.
- * Importar desde '@/lib/design-system'
- */
+// Design System Module
+// Export all design system utilities
 
-export {
-  PAGE_SPACING,
-  TYPOGRAPHY,
-  CARDS,
-  LAYOUTS,
-  BREADCRUMB,
-  ICON_SIZES,
-  BUTTONS,
-  INPUTS,
-  COLORS,
-} from './spacing'
+export * from './categories'
+export * from './defaults'
+export * from './spacing'

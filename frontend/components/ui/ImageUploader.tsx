@@ -1,140 +1,146 @@
-'use client';
+'use client'
 
-import { useState, useCallback, useRef } from 'react';
-import { Upload, X, Image as ImageIcon, FileText } from 'lucide-react';
+import { useState, useCallback, useRef } from 'react'
+import { Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface ImageUploaderProps {
-  value?: string;
-  onChange: (value: string) => void;
-  className?: string;
-  placeholder?: string;
-  accept?: string;
+  value?: string
+  onChange: (value: string) => void
+  className?: string
+  placeholder?: string
+  accept?: string
+  folder?: string
+  aspectRatio?: 'square' | 'cover' | 'auto'
+  recommendedSize?: string
+  showUrlInput?: boolean
 }
 
-export default function ImageUploader({
+export function ImageUploader({
   value = '',
   onChange,
   className = '',
-  placeholder = 'Arrossega una imatge aquí o clica per seleccionar',
-  accept = 'image/*'
+  placeholder = 'Arrossega una imatge o fes clic',
+  accept = 'image/*',
+  folder = 'general',
+  aspectRatio = 'auto',
+  recommendedSize,
+  showUrlInput = false
 }: ImageUploaderProps) {
-  const [isDragOver, setIsDragOver] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [preview, setPreview] = useState<string>(value);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragOver, setIsDragOver] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleFileSelect = useCallback((file: File) => {
-    if (!file) return;
+  const aspectClasses: Record<string, string> = {
+    square: 'aspect-square w-32',
+    cover: 'aspect-[3/1] w-full min-h-[120px]',
+    auto: 'min-h-[120px] w-full'
+  }
 
-    // Verificar que es una imagen
+  const uploadToCloudinary = async (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('type', folder)
+
+    const response = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData
+    })
+
+    const data = await response.json()
+
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || 'Error pujant imatge')
+    }
+
+    return data.url
+  }
+
+  const handleFileSelect = useCallback(async (file: File) => {
+    if (!file) return
+
     if (!file.type.startsWith('image/')) {
-      alert('Si us plau, selecciona només fitxers d\'imatge');
-      return;
+      toast.error('Només es permeten imatges')
+      return
     }
 
-    // Verificar tamaño (máximo 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert('La imatge és massa gran. El tamany màxim és de 5MB');
-      return;
+      toast.error('La imatge no pot superar els 5MB')
+      return
     }
 
-    setIsUploading(true);
+    setIsUploading(true)
 
-    // Crear preview
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const result = e.target?.result as string;
-      setPreview(result);
-      onChange(result);
-      setIsUploading(false);
-    };
-    reader.onerror = () => {
-      alert('Error al llegir el fitxer');
-      setIsUploading(false);
-    };
-    reader.readAsDataURL(file);
-  }, [onChange]);
+    try {
+      const url = await uploadToCloudinary(file)
+      onChange(url)
+      toast.success('Imatge pujada correctament')
+    } catch (error: any) {
+      console.error('Upload error:', error)
+      toast.error(error.message || 'Error pujant la imatge')
+    } finally {
+      setIsUploading(false)
+    }
+  }, [onChange, folder])
 
   const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
+    e.preventDefault()
+    setIsDragOver(false)
 
-    const files = e.dataTransfer.files;
+    const files = e.dataTransfer.files
     if (files && files[0]) {
-      handleFileSelect(files[0]);
+      handleFileSelect(files[0])
     }
-  }, [handleFileSelect]);
+  }, [handleFileSelect])
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(true);
-  }, []);
+    e.preventDefault()
+    setIsDragOver(true)
+  }, [])
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-  }, []);
+    e.preventDefault()
+    setIsDragOver(false)
+  }, [])
 
   const handleClick = useCallback(() => {
-    fileInputRef.current?.click();
-  }, []);
+    fileInputRef.current?.click()
+  }, [])
 
   const handleFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
+    const files = e.target.files
     if (files && files[0]) {
-      handleFileSelect(files[0]);
+      handleFileSelect(files[0])
     }
-  }, [handleFileSelect]);
+  }, [handleFileSelect])
 
   const handleUrlChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const url = e.target.value;
-    setPreview(url);
-    onChange(url);
-  }, [onChange]);
+    onChange(e.target.value)
+  }, [onChange])
 
-  const handleRemove = useCallback(() => {
-    setPreview('');
-    onChange('');
+  const handleRemove = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    onChange('')
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = ''
     }
-  }, [onChange]);
+  }, [onChange])
+
+  const baseClasses = 'relative border-2 border-dashed rounded-lg transition-all cursor-pointer overflow-hidden'
+  const stateClasses = isDragOver
+    ? 'border-indigo-500 bg-indigo-50'
+    : value
+      ? 'border-gray-200 hover:border-gray-300 bg-white'
+      : 'border-gray-300 hover:border-indigo-400 bg-gray-50 hover:bg-gray-100'
 
   return (
-    <div className={`space-y-4 ${className}`}>
-      {/* Vista previa de la imagen */}
-      {preview && (
-        <div className="relative inline-block">
-          <img
-            src={preview}
-            alt="Vista prèvia"
-            className="w-32 h-32 object-cover border border-gray-200 rounded-lg"
-            onError={() => {
-              setPreview('');
-              onChange('');
-            }}
-          />
-          <button
-            type="button"
-            onClick={handleRemove}
-            className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      )}
-
-      {/* Área de arrastrar y soltar */}
+    <div className={`space-y-2 ${className}`}>
       <div
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onClick={handleClick}
-        className={`relative border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all ${
-          isDragOver
-            ? 'border-blue-500 bg-blue-50'
-            : 'border-gray-300 hover:border-gray-400 bg-gray-50'
-        } ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
+        className={`${baseClasses} ${aspectClasses[aspectRatio]} ${stateClasses} ${isUploading ? 'pointer-events-none' : ''}`}
       >
         <input
           ref={fileInputRef}
@@ -145,32 +151,54 @@ export default function ImageUploader({
         />
 
         {isUploading ? (
-          <div className="flex items-center justify-center">
-            <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-2"></div>
-            <span className="text-gray-600">Pujant imatge...</span>
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/90">
+            <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+            <span className="mt-2 text-sm text-gray-600">Pujant...</span>
           </div>
+        ) : value ? (
+          <>
+            <img
+              src={value}
+              alt="Preview"
+              className="w-full h-full object-cover"
+              onError={() => onChange('')}
+            />
+            <button
+              type="button"
+              onClick={handleRemove}
+              className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </>
         ) : (
-          <div className="flex flex-col items-center">
-            <Upload className="w-12 h-12 text-gray-400 mb-2" />
-            <p className="text-gray-600 mb-1">{placeholder}</p>
-            <p className="text-xs text-gray-400">PNG, JPG, GIF fins a 5MB</p>
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
+            <div className="p-2 bg-gray-100 rounded-full mb-2">
+              {isDragOver ? (
+                <Upload className="w-5 h-5 text-indigo-600" />
+              ) : (
+                <ImageIcon className="w-5 h-5 text-gray-400" />
+              )}
+            </div>
+            <p className="text-sm text-gray-700 text-center font-medium">{placeholder}</p>
+            {recommendedSize && (
+              <p className="text-xs text-gray-600 mt-1 font-medium">{recommendedSize}</p>
+            )}
           </div>
         )}
       </div>
 
-      {/* Campo alternativo para URL */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          O introdueix una URL de la imatge
-        </label>
+      {showUrlInput && (
         <input
           type="url"
           value={value}
           onChange={handleUrlChange}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          placeholder="https://exemple.com/imatge.jpg"
+          className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none placeholder:text-gray-400"
+          placeholder="O enganxa una URL"
         />
-      </div>
+      )}
     </div>
-  );
+  )
 }
+
+export default ImageUploader

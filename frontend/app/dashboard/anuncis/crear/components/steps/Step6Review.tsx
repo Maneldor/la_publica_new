@@ -61,13 +61,13 @@ export const Step6Review = ({ formData, errors, onPublish, isPublishing = false 
       </div>
 
       {/* Alert de éxito potencial */}
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
-        <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+      <div className="bg-success/10 border border-success/30 rounded-lg p-4 flex items-start gap-3">
+        <CheckCircle className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
         <div>
-          <p className="text-sm font-medium text-green-900">
+          <p className="text-sm font-medium text-success-dark">
             Tot llest per publicar!
           </p>
-          <p className="text-sm text-green-700 mt-1">
+          <p className="text-sm text-success mt-1">
             El teu anunci estarà visible per a tots els usuaris de La Pública
           </p>
         </div>
@@ -78,7 +78,7 @@ export const Step6Review = ({ formData, errors, onPublish, isPublishing = false 
         {/* Card 1: Información Básica */}
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <span className="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-bold">
+            <span className="w-8 h-8 bg-info/20 text-info rounded-full flex items-center justify-center text-sm font-bold">
               1
             </span>
             Informació Bàsica
@@ -92,7 +92,7 @@ export const Step6Review = ({ formData, errors, onPublish, isPublishing = false 
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Tipus:</span>
-              <span className={`font-medium ${formData.type === 'oferta' ? 'text-blue-600' : 'text-green-600'}`}>
+              <span className={`font-medium ${formData.type === 'oferta' ? 'text-info' : 'text-success'}`}>
                 {formData.type === 'oferta' ? '📤 Oferta' : '📥 Demanda'}
               </span>
             </div>
@@ -114,7 +114,7 @@ export const Step6Review = ({ formData, errors, onPublish, isPublishing = false 
         {/* Card 2: Detalles y Precio */}
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <span className="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-bold">
+            <span className="w-8 h-8 bg-info/20 text-info rounded-full flex items-center justify-center text-sm font-bold">
               2
             </span>
             Detalls i Preu
@@ -159,7 +159,7 @@ export const Step6Review = ({ formData, errors, onPublish, isPublishing = false 
         {/* Card 3: Ubicación */}
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <span className="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-bold">
+            <span className="w-8 h-8 bg-info/20 text-info rounded-full flex items-center justify-center text-sm font-bold">
               3
             </span>
             Ubicació i Enviament
@@ -189,17 +189,17 @@ export const Step6Review = ({ formData, errors, onPublish, isPublishing = false 
               <span className="text-gray-600 block mb-2">Opcions d'entrega:</span>
               <div className="flex flex-wrap gap-2">
                 {formData.pickupAvailable && (
-                  <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                  <span className="text-xs bg-info/20 text-info-dark px-2 py-1 rounded-full">
                     📦 Recollida
                   </span>
                 )}
                 {formData.shippingAvailable && (
-                  <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
+                  <span className="text-xs bg-slate-100 text-slate-700 px-2 py-1 rounded-full">
                     🚚 Enviament
                   </span>
                 )}
                 {formData.shippingIncluded && (
-                  <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                  <span className="text-xs bg-success/20 text-success-dark px-2 py-1 rounded-full">
                     ✅ Enviament inclòs
                   </span>
                 )}
@@ -211,7 +211,7 @@ export const Step6Review = ({ formData, errors, onPublish, isPublishing = false 
         {/* Card 4: Contacte */}
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <span className="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-bold">
+            <span className="w-8 h-8 bg-info/20 text-info rounded-full flex items-center justify-center text-sm font-bold">
               4
             </span>
             Informació de Contacte
@@ -254,7 +254,7 @@ export const Step6Review = ({ formData, errors, onPublish, isPublishing = false 
               </>
             ) : (
               <div className="text-center py-4">
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                <div className="w-12 h-12 bg-info/20 rounded-full flex items-center justify-center mx-auto mb-2">
                   💬
                 </div>
                 <p className="text-gray-600 text-sm">
@@ -268,7 +268,7 @@ export const Step6Review = ({ formData, errors, onPublish, isPublishing = false 
         {/* Card 5: Imágenes */}
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <span className="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-bold">
+            <span className="w-8 h-8 bg-info/20 text-info rounded-full flex items-center justify-center text-sm font-bold">
               5
             </span>
             Imatges ({formData.images.length})
@@ -280,7 +280,7 @@ export const Step6Review = ({ formData, errors, onPublish, isPublishing = false 
                 alt="Vista prèvia"
                 className="w-full h-48 object-cover rounded-lg"
               />
-              <div className="absolute top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+              <div className="absolute top-2 left-2 bg-info text-white text-xs px-2 py-1 rounded-full">
                 Imatge principal
               </div>
               {formData.images.length > 1 && (
@@ -324,7 +324,7 @@ export const Step6Review = ({ formData, errors, onPublish, isPublishing = false 
                     <p className="text-gray-600">{getCategoryLabel(formData.category)}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl font-bold text-blue-600">
+                    <p className="text-2xl font-bold text-info">
                       {formData.price ? `${formData.price.toFixed(2)}€` : 'A consultar'}
                     </p>
                     {formData.price && formData.priceType === 'negociable' && (
@@ -367,8 +367,8 @@ export const Step6Review = ({ formData, errors, onPublish, isPublishing = false 
           className={`
             flex-1 flex items-center justify-center gap-2 px-6 py-4 rounded-lg font-medium transition-all
             ${isPublishing
-              ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-green-600 hover:bg-green-700'
+              ? 'bg-slate-400 cursor-not-allowed'
+              : 'bg-success hover:bg-success-dark'
             }
             text-white
           `}

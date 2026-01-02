@@ -9,7 +9,7 @@ interface EmpresaLayoutProps {
   children: ReactNode;
   empresaNom: string;
   empresaLogo?: string;
-  plan: 'BÀSIC' | 'ESTÀNDARD' | 'PREMIUM' | 'EMPRESARIAL';
+  plan: string;
   notificacionsCount: number;
   missatgesCount: number;
 }

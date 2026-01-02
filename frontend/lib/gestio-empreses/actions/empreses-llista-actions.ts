@@ -82,7 +82,7 @@ async function getSessionWithRole() {
   const userId = session.user.id
 
   // Determinar nivell d'accés
-  const hasFullAccess = ['SUPER_ADMIN', 'ADMIN', 'CRM_COMERCIAL'].includes(role)
+  const hasFullAccess = ['SUPER_ADMIN', 'ADMIN', 'ADMIN_GESTIO', 'CRM_COMERCIAL'].includes(role)
 
   return {
     authorized: true,
@@ -353,8 +353,8 @@ export async function deleteEmpresa(
     return { success: false, error: session.error }
   }
 
-  // Només Admin pot eliminar
-  if (!['SUPER_ADMIN', 'ADMIN'].includes(session.role!)) {
+  // Només Admin i Admin Gestió pot eliminar
+  if (!['SUPER_ADMIN', 'ADMIN', 'ADMIN_GESTIO'].includes(session.role!)) {
     return { success: false, error: 'No tens permisos per eliminar empreses' }
   }
 
@@ -451,12 +451,13 @@ export async function assignarGestor(
       return { success: false, error: 'Empresa no trobada' }
     }
 
-    // Actualitzar l'empresa
+    // Actualitzar l'empresa: assignar gestor i canviar stage a ASSIGNADA
     await prisma.company.update({
       where: { id: empresaId },
       data: {
         accountManagerId: gestorId,
-        status: empresa.status === 'PENDING' ? 'ASSIGNED' : empresa.status,
+        stage: 'ASSIGNADA',
+        assignedAt: new Date(),
         updatedAt: new Date()
       }
     })
@@ -481,6 +482,7 @@ export async function assignarGestor(
 
     // Revalidar pàgines
     revalidatePath('/gestio/empreses')
+    revalidatePath('/gestio/empreses/pipeline')
     revalidatePath(`/gestio/empreses/${empresaId}`)
 
     return { success: true }
@@ -540,10 +542,9 @@ export async function getGestorsDisponibles(): Promise<{
   try {
     const gestors = await prisma.user.findMany({
       where: {
-        OR: [
-          { role: { startsWith: 'GESTOR_' } },
-          { role: 'CRM_COMERCIAL' }
-        ],
+        role: {
+          in: ['GESTOR_ESTANDARD', 'GESTOR_ESTRATEGIC', 'GESTOR_ENTERPRISE', 'CRM_COMERCIAL']
+        },
         isActive: true
       },
       select: {

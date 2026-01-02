@@ -9,11 +9,13 @@ import {
   Filter,
   ChevronDown,
   Users,
-  AlertCircle
+  AlertCircle,
+  Loader2
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PipelineSection } from '@/components/gestio-empreses/unified-pipeline'
 import { updateItemStage } from '@/lib/gestio-empreses/unified-pipeline-actions'
+import { LeadEditPanel } from '@/app/gestio/leads/components/LeadEditPanel'
 import toast, { Toaster } from 'react-hot-toast'
 
 interface PipelineColumn {
@@ -98,6 +100,11 @@ export function UnifiedPipelineClient({
   const [data, setData] = useState(initialData)
   const [showFilters, setShowFilters] = useState(false)
 
+  // Estado para el panel lateral de edición de leads
+  const [selectedLead, setSelectedLead] = useState<any>(null)
+  const [isEditPanelOpen, setIsEditPanelOpen] = useState(false)
+  const [isLoadingLead, setIsLoadingLead] = useState(false)
+
   const hasTeam = data.teamPipelines.length > 0
 
   const handleStageChange = async (
@@ -120,12 +127,65 @@ export function UnifiedPipelineClient({
     }
   }
 
-  const handleItemClick = (item: PipelineItem) => {
+  const handleItemClick = async (item: PipelineItem) => {
     if (item.type === 'lead') {
-      window.open(`/gestio/leads/${item.id}`, '_blank')
+      // Abrir panel lateral para leads
+      setIsLoadingLead(true)
+      try {
+        const res = await fetch(`/api/gestio/leads/${item.id}`)
+        if (!res.ok) throw new Error('Error carregant lead')
+        const leadData = await res.json()
+
+        setSelectedLead({
+          id: leadData.id,
+          companyName: leadData.companyName || item.name,
+          cif: leadData.cif,
+          sector: leadData.sector,
+          industry: leadData.industry,
+          website: leadData.website,
+          description: leadData.description,
+          companySize: leadData.companySize,
+          employeeCount: leadData.employeeCount || leadData.employees,
+          address: leadData.address,
+          city: leadData.city,
+          zipCode: leadData.zipCode,
+          state: leadData.state,
+          country: leadData.country,
+          contactName: leadData.contactName || item.contactName,
+          contactRole: leadData.contactRole,
+          email: leadData.email || item.email,
+          phone: leadData.phone || item.phone,
+          linkedinProfile: leadData.linkedinProfile,
+          facebookProfile: leadData.facebookProfile,
+          twitterProfile: leadData.twitterProfile,
+          source: leadData.source || 'MANUAL',
+          priority: leadData.priority || item.priority || 'MEDIUM',
+          estimatedRevenue: leadData.estimatedRevenue || item.estimatedValue,
+          score: leadData.score,
+          tags: leadData.tags || [],
+          notes: leadData.notes,
+          internalNotes: leadData.internalNotes,
+          nextFollowUpDate: leadData.nextFollowUpDate,
+          status: leadData.status || item.stage || 'NEW'
+        })
+        setIsEditPanelOpen(true)
+      } catch (error) {
+        console.error('Error carregant lead:', error)
+        toast.error('Error carregant el lead')
+      } finally {
+        setIsLoadingLead(false)
+      }
     } else {
+      // Para empresas, abrir en nueva pestaña (por ahora)
       window.open(`/gestio/empreses/${item.id}`, '_blank')
     }
+  }
+
+  const handleLeadSaved = () => {
+    // Recargar datos después de guardar
+    startTransition(() => {
+      router.refresh()
+    })
   }
 
   const handleRefresh = () => {
@@ -241,6 +301,27 @@ export function UnifiedPipelineClient({
           <span className="text-orange-600">Taronja = +7 dies en stage</span>
         </div>
       </div>
+
+      {/* Panel lateral de edición de lead */}
+      <LeadEditPanel
+        lead={selectedLead}
+        isOpen={isEditPanelOpen}
+        onClose={() => {
+          setIsEditPanelOpen(false)
+          setSelectedLead(null)
+        }}
+        onSaved={handleLeadSaved}
+      />
+
+      {/* Indicador de carga cuando se abre un lead */}
+      {isLoadingLead && (
+        <div className="fixed inset-0 bg-black/20 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-4 flex items-center gap-3 shadow-xl">
+            <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+            <span className="text-sm text-slate-700">Carregant lead...</span>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

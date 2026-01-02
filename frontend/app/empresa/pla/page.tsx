@@ -1,6 +1,7 @@
-'use client';
+'use client'
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import {
   Crown,
   TrendingUp,
@@ -9,220 +10,161 @@ import {
   Ticket,
   CheckCircle2,
   XCircle,
-  ArrowRight,
   Zap,
   Shield,
-  Sparkles
-} from 'lucide-react';
-import UpgradePlanModal from '@/components/empresa/UpgradePlanModal';
-import PlanCard from '@/components/plans/PlanCard';
-
-type PlanTier = 'PIONERES' | 'STANDARD' | 'STRATEGIC' | 'ENTERPRISE';
+  Sparkles,
+  Loader2,
+  AlertCircle,
+  LucideIcon
+} from 'lucide-react'
 
 interface PlanData {
   plan: {
-    tier: string;
-    name: string;
-    price: number;
+    tier: string
+    name: string
+    price: number
     limits: {
-      maxOffers: number | string;
-      maxActiveOffers: number | string;
-      maxCouponsPerMonth: number | string;
-      maxTeamMembers: number | string;
-    };
-    features: Record<string, boolean>;
-  };
+      maxOffers: number | string
+      maxActiveOffers: number | string
+      maxCouponsPerMonth: number | string
+      maxTeamMembers: number | string
+    }
+    features: Record<string, boolean>
+  }
   config: {
-    funcionalidades?: string;
-    [key: string]: any;
-  };
+    funcionalidades?: string
+    [key: string]: any
+  }
   usage: {
-    offers: { current: number; limit: number | string; percentage: number };
-    activeOffers: { current: number; limit: number | string; percentage: number };
-    coupons: { current: number; limit: number | string; percentage: number };
-    team: { current: number; limit: number | string; percentage: number };
-  };
-}
-
-interface AvailablePlan {
-  id: string;
-  slug: string;
-  tier: string;
-  name: string;
-  nameEs?: string;
-  nameEn?: string;
-  basePrice: number;
-  firstYearDiscount: number;
-  maxActiveOffers: number;
-  maxTeamMembers: number;
-  maxFeaturedOffers: number;
-  maxStorage: number;
-  badge?: string;
-  badgeColor?: string;
-  destacado?: boolean;
-  color?: string;
-  icono?: string;
-  funcionalidades?: string;
-  features: Record<string, boolean>;
-  isActive?: boolean;
-  isVisible?: boolean;
+    offers: { current: number; limit: number | string; percentage: number }
+    activeOffers: { current: number; limit: number | string; percentage: number }
+    coupons: { current: number; limit: number | string; percentage: number }
+    team: { current: number; limit: number | string; percentage: number }
+  }
 }
 
 export default function ElMeuPlaPage() {
-  const [planData, setPlanData] = useState<PlanData | null>(null);
-  const [availablePlans, setAvailablePlans] = useState<AvailablePlan[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [planData, setPlanData] = useState<PlanData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    loadPlanData();
-    loadAvailablePlans();
-  }, []);
+    const loadPlanData = async () => {
+      try {
+        const response = await fetch('/api/empresa/plan')
+        const data = await response.json()
 
-  async function loadPlanData() {
-    try {
-      const response = await fetch('/api/empresa/plan');
-      const data = await response.json();
-
-      if (data.success) {
-        setPlanData(data);
-      } else {
-        setError(data.error || 'Error al carregar pla');
+        if (data.success) {
+          setPlanData(data)
+        } else {
+          setError(data.error || 'Error carregant el pla')
+        }
+      } catch (err) {
+        console.error('Error:', err)
+        setError('Error de connexió')
+      } finally {
+        setLoading(false)
       }
-    } catch (err) {
-      setError('Error de connexió');
-    } finally {
-      setLoading(false);
     }
-  }
 
-  async function loadAvailablePlans() {
-    try {
-      const response = await fetch('/api/plans');
-      const data = await response.json();
-
-      if (data.success) {
-        // Usar los datos de BD directamente (misma estructura que admin)
-        const mappedPlans = (data.data || []).map((plan: any) => ({
-          id: plan.id,
-          slug: plan.slug,
-          tier: plan.tier,
-          name: plan.name,
-          nameEs: plan.nameEs,
-          nameEn: plan.nameEn,
-          basePrice: plan.basePrice,
-          firstYearDiscount: plan.firstYearDiscount,
-          maxActiveOffers: plan.maxActiveOffers,
-          maxTeamMembers: plan.maxTeamMembers,
-          maxFeaturedOffers: plan.maxFeaturedOffers,
-          maxStorage: plan.maxStorage,
-          badge: plan.badge,
-          badgeColor: plan.badgeColor,
-          destacado: plan.destacado,
-          color: plan.color,
-          icono: plan.icono,
-          funcionalidades: plan.funcionalidades,
-          features: plan.features || {},
-          isActive: plan.isActive,
-          isVisible: plan.isVisible,
-        }));
-        setAvailablePlans(mappedPlans);
-      }
-    } catch (err) {
-      console.error('Error loading plans:', err);
-    }
-  }
-
+    loadPlanData()
+  }, [])
 
   if (loading) {
     return (
-      <div className="p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
+          <p className="text-slate-500">Carregant pla...</p>
         </div>
       </div>
-    );
+    )
   }
 
   if (error || !planData) {
     return (
-      <div className="p-6">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <XCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <p className="text-red-800">{error || 'No s\'ha pogut carregar el pla'}</p>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-3 text-center">
+          <AlertCircle className="h-12 w-12 text-red-500" />
+          <p className="text-slate-900 font-medium">Error carregant el pla</p>
+          <p className="text-slate-500">{error}</p>
         </div>
       </div>
-    );
+    )
   }
 
-  const { plan, config, usage } = planData;
-
+  const { plan, config, usage } = planData
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">El Meu Pla</h1>
-          <p className="text-gray-600 mt-1">Gestiona la teva subscripció i límits</p>
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center">
+            <Crown className="h-6 w-6 text-slate-600" strokeWidth={1.5} />
+          </div>
+          <div>
+            <h1 className="text-2xl font-semibold text-slate-900">El Meu Pla</h1>
+            <p className="text-slate-500">Gestiona la teva subscripció i límits</p>
+          </div>
         </div>
 
         {plan.tier !== 'ENTERPRISE' && (
-          <a
+          <Link
             href="/empresa/pla/millorar"
-            className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-decoration-none"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
-            <TrendingUp className="w-5 h-5" />
-            ⬆️ Millorar el meu Pla
-          </a>
+            <TrendingUp className="h-4 w-4" strokeWidth={1.5} />
+            Millorar pla
+          </Link>
         )}
       </div>
 
       {/* Plan Actual Card */}
-      <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-xl p-8 text-white">
+      <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl p-6 text-white">
         <div className="flex items-start justify-between mb-6">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <Crown className="w-8 h-8" />
-              <h2 className="text-3xl font-bold">{plan.name}</h2>
+              <Crown className="w-7 h-7" strokeWidth={1.5} />
+              <h2 className="text-2xl font-semibold">{plan.name}</h2>
             </div>
-            <p className="text-indigo-100">El teu pla actual</p>
+            <p className="text-blue-100">El teu pla actual</p>
           </div>
 
           <div className="text-right">
-            <div className="text-4xl font-bold">
+            <div className="text-3xl font-semibold">
               {plan.price === 0 ? 'Gratis' : `${plan.price}€`}
             </div>
             {plan.price > 0 && (
-              <div className="text-indigo-100 text-sm">per mes</div>
+              <div className="text-blue-100 text-sm">per mes</div>
             )}
           </div>
         </div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatCard
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <QuickStat
             icon={FileText}
             label="Ofertes"
             current={usage.offers.current}
             limit={usage.offers.limit}
             percentage={usage.offers.percentage}
           />
-          <StatCard
+          <QuickStat
             icon={Zap}
             label="Ofertes Actives"
             current={usage.activeOffers.current}
             limit={usage.activeOffers.limit}
             percentage={usage.activeOffers.percentage}
           />
-          <StatCard
+          <QuickStat
             icon={Ticket}
             label="Cupons (mes)"
             current={usage.coupons.current}
             limit={usage.coupons.limit}
             percentage={usage.coupons.percentage}
           />
-          <StatCard
+          <QuickStat
             icon={Users}
             label="Equip"
             current={usage.team.current}
@@ -235,9 +177,9 @@ export default function ElMeuPlaPage() {
       {/* Usage Details */}
       <div className="grid md:grid-cols-2 gap-6">
         {/* Límits d'Ús */}
-        <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Shield className="w-5 h-5 text-indigo-600" />
+        <div className="bg-white border border-slate-200 rounded-xl p-6">
+          <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
+            <Shield className="w-5 h-5 text-blue-600" strokeWidth={1.5} />
             Límits d'Ús
           </h3>
 
@@ -270,26 +212,22 @@ export default function ElMeuPlaPage() {
         </div>
 
         {/* Features Actives */}
-        <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-indigo-600" />
+        <div className="bg-white border border-slate-200 rounded-xl p-6">
+          <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-blue-600" strokeWidth={1.5} />
             Funcionalitats del Pla
           </h3>
 
           <div className="space-y-2">
             {Object.entries(plan.features)
               .filter(([key, value]) => {
-                // Solo mostrar si está activa Y tiene contenido real
-                if (!value) return false;
-
-                // Verificar que existe línea correspondiente en funcionalidades
+                if (!value) return false
                 if (config?.funcionalidades) {
-                  const lines = config.funcionalidades.split('\n').filter((line: string) => line.trim());
-                  const index = parseInt(key);
-                  return !isNaN(index) && lines[index];
+                  const lines = config.funcionalidades.split('\n').filter((line: string) => line.trim())
+                  const index = parseInt(key)
+                  return !isNaN(index) && lines[index]
                 }
-
-                return true; // Fallback para claves no numéricas
+                return true
               })
               .map(([key, value]) => (
                 <FeatureItem
@@ -301,101 +239,96 @@ export default function ElMeuPlaPage() {
           </div>
         </div>
       </div>
-
-
     </div>
-  );
+  )
 }
 
-// Componente para stats rápidos en el header del plan
-function StatCard({
+// Components auxiliars
+
+function QuickStat({
   icon: Icon,
   label,
   current,
   limit,
   percentage
 }: {
-  icon: any;
-  label: string;
-  current: number;
-  limit: number | string;
-  percentage: number;
+  icon: LucideIcon
+  label: string
+  current: number
+  limit: number | string
+  percentage: number
 }) {
-  const isUnlimited = limit === 'unlimited';
-  const isNearLimit = percentage >= 80 && !isUnlimited;
+  const isUnlimited = limit === 'unlimited'
+  const isNearLimit = percentage >= 80 && !isUnlimited
 
   return (
-    <div className="bg-white/10 backdrop-blur rounded-lg p-4">
-      <Icon className="w-5 h-5 mb-2 text-indigo-200" />
-      <div className="text-2xl font-bold">
+    <div className="bg-white/10 backdrop-blur rounded-lg p-3">
+      <Icon className="w-4 h-4 mb-2 text-blue-200" strokeWidth={1.5} />
+      <div className="text-xl font-semibold">
         {current}
-        {!isUnlimited && <span className="text-lg font-normal text-indigo-200">/{limit}</span>}
+        {!isUnlimited && <span className="text-base font-normal text-blue-200">/{limit}</span>}
       </div>
-      <div className="text-sm text-indigo-100">{label}</div>
+      <div className="text-sm text-blue-100">{label}</div>
       {isNearLimit && (
-        <div className="text-xs text-yellow-300 mt-1">Prop del límit</div>
+        <div className="text-xs text-amber-300 mt-1">Prop del límit</div>
       )}
     </div>
-  );
+  )
 }
 
-// Barra de uso con porcentaje
 function UsageBar({
   label,
   current,
   limit,
   percentage
 }: {
-  label: string;
-  current: number;
-  limit: number | string;
-  percentage: number;
+  label: string
+  current: number
+  limit: number | string
+  percentage: number
 }) {
-  const isUnlimited = limit === 'unlimited';
-  const isNearLimit = percentage >= 80 && !isUnlimited;
-  const isAtLimit = percentage >= 100 && !isUnlimited;
+  const isUnlimited = limit === 'unlimited'
+  const isNearLimit = percentage >= 80 && !isUnlimited
+  const isAtLimit = percentage >= 100 && !isUnlimited
 
   const barColor = isAtLimit
     ? 'bg-red-500'
     : isNearLimit
-    ? 'bg-yellow-500'
-    : 'bg-indigo-600';
+    ? 'bg-amber-500'
+    : 'bg-blue-600'
 
   return (
     <div>
       <div className="flex justify-between text-sm mb-1">
-        <span className="text-gray-700 font-medium">{label}</span>
-        <span className="text-gray-600">
+        <span className="text-slate-700 font-medium">{label}</span>
+        <span className="text-slate-500">
           {current} {!isUnlimited && `/ ${limit}`}
         </span>
       </div>
 
       {!isUnlimited ? (
-        <div className="w-full bg-gray-200 rounded-full h-2">
+        <div className="w-full bg-slate-200 rounded-full h-2">
           <div
             className={`${barColor} h-2 rounded-full transition-all duration-300`}
             style={{ width: `${Math.min(percentage, 100)}%` }}
           />
         </div>
       ) : (
-        <div className="text-xs text-gray-500 italic">Il·limitat</div>
+        <div className="text-xs text-slate-400 italic">Il·limitat</div>
       )}
     </div>
-  );
+  )
 }
 
-// Función para formatear nombres de features
 function formatFeatureName(key: string, planData?: any): string {
-  // Si tenemos el texto original de funcionalidades, usar esas líneas
   if (planData?.config?.funcionalidades) {
-    const lines = planData.config.funcionalidades.split('\n').filter((line: string) => line.trim());
-    const index = parseInt(key);
+    const lines = planData.config.funcionalidades.split('\n').filter((line: string) => line.trim())
+    const index = parseInt(key)
     if (!isNaN(index) && lines[index]) {
-      return lines[index].trim();
+      return lines[index].trim()
     }
   }
 
-  // Traducciones por clave descriptiva (fallback)
   const translations: Record<string, string> = {
     canCreateOffers: 'Crear ofertes',
     canManageTeam: 'Gestionar equip',
@@ -407,14 +340,12 @@ function formatFeatureName(key: string, planData?: any): string {
     canUseCoupons: 'Cupons',
     canUseFeaturedOffers: 'Ofertes destacades',
     canUseCustomFields: 'Camps personalitzats'
-  };
-
-  // Si es una clave descriptiva, usarla
-  if (translations[key]) {
-    return translations[key];
   }
 
-  // Fallback para índices numéricos
+  if (translations[key]) {
+    return translations[key]
+  }
+
   const featuresByIndex: Record<string, string> = {
     '0': 'Crear ofertes bàsiques',
     '1': 'Gestió d\'equip',
@@ -423,24 +354,22 @@ function formatFeatureName(key: string, planData?: any): string {
     '4': 'Exportar dades CSV',
     '5': 'Filtres avançats',
     '6': 'Ofertes destacades'
-  };
+  }
 
-  return featuresByIndex[key] || `Funcionalitat ${key}`;
+  return featuresByIndex[key] || `Funcionalitat ${key}`
 }
 
-// Item de feature con check/cross
 function FeatureItem({ label, active }: { label: string; active: boolean }) {
   return (
     <div className="flex items-center gap-2">
       {active ? (
         <CheckCircle2 className="w-5 h-5 text-green-500" />
       ) : (
-        <XCircle className="w-5 h-5 text-gray-300" />
+        <XCircle className="w-5 h-5 text-slate-300" />
       )}
-      <span className={active ? 'text-gray-900' : 'text-gray-400'}>
+      <span className={active ? 'text-slate-900' : 'text-slate-400'}>
         {label}
       </span>
     </div>
-  );
+  )
 }
-

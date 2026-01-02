@@ -22,8 +22,8 @@ export function Step4Contact({ formData, errors, updateField }: Step4ContactProp
         </p>
       </div>
 
-      <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
-        <p className="text-sm text-blue-700">
+      <div className="bg-info/10 border-l-4 border-info p-4 mb-6">
+        <p className="text-sm text-info-dark">
           💬 Si no omples aquests camps, els interessats podran contactar-te via missatge intern
         </p>
       </div>
@@ -39,13 +39,13 @@ export function Step4Contact({ formData, errors, updateField }: Step4ContactProp
             type="text"
             value={formData.contactName}
             onChange={(e) => updateField('contactName', e.target.value)}
-            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-              errors.contactName ? 'border-red-500' : 'border-gray-300'
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-info focus:border-transparent transition-colors ${
+              errors.contactName ? 'border-error' : 'border-border'
             }`}
             placeholder="Ex: Joan Garcia"
           />
           {errors.contactName && (
-            <p className="mt-1 text-sm text-red-600">{errors.contactName}</p>
+            <p className="mt-1 text-sm text-error">{errors.contactName}</p>
           )}
         </div>
 
@@ -59,13 +59,13 @@ export function Step4Contact({ formData, errors, updateField }: Step4ContactProp
             type="tel"
             value={formData.contactPhone}
             onChange={(e) => updateField('contactPhone', e.target.value)}
-            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-              errors.contactPhone ? 'border-red-500' : 'border-gray-300'
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-info focus:border-transparent transition-colors ${
+              errors.contactPhone ? 'border-error' : 'border-border'
             }`}
             placeholder="Ex: 666 123 456"
           />
           {errors.contactPhone && (
-            <p className="mt-1 text-sm text-red-600">{errors.contactPhone}</p>
+            <p className="mt-1 text-sm text-error">{errors.contactPhone}</p>
           )}
         </div>
 
@@ -79,13 +79,13 @@ export function Step4Contact({ formData, errors, updateField }: Step4ContactProp
             type="email"
             value={formData.contactEmail}
             onChange={(e) => updateField('contactEmail', e.target.value)}
-            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-              errors.contactEmail ? 'border-red-500' : 'border-gray-300'
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-info focus:border-transparent transition-colors ${
+              errors.contactEmail ? 'border-error' : 'border-border'
             }`}
             placeholder="Ex: joan.garcia@example.com"
           />
           {errors.contactEmail && (
-            <p className="mt-1 text-sm text-red-600">{errors.contactEmail}</p>
+            <p className="mt-1 text-sm text-error">{errors.contactEmail}</p>
           )}
         </div>
 
@@ -99,7 +99,7 @@ export function Step4Contact({ formData, errors, updateField }: Step4ContactProp
             value={formData.contactSchedule}
             onChange={(e) => updateField('contactSchedule', e.target.value)}
             rows={3}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+            className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-info focus:border-transparent transition-colors"
             placeholder="Ex: Disponible de dilluns a divendres de 9h a 18h. Caps de setmana només matins."
           />
           <p className="mt-1 text-sm text-gray-500">

@@ -166,28 +166,57 @@ export function CreatePostBox({ onCreatePost }: CreatePostBoxProps) {
   const VisibilityIcon = visibility === 'PUBLIC' ? Globe : visibility === 'CONNECTIONS' ? Users : Lock;
 
   return (
-    <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm mb-5">
-      <div className="flex gap-4">
+    <div style={{
+      backgroundColor: 'var(--CreatePostBox-background, #ffffff)',
+      borderRadius: 'var(--CreatePostBox-border-radius, 12px)',
+      padding: '20px',
+      border: '1px solid var(--CreatePostBox-border-color, #e5e7eb)',
+      boxShadow: 'var(--CreatePostBox-shadow, 0 1px 3px rgba(0,0,0,0.1))',
+      marginBottom: '20px'
+    }}>
+      <div style={{ display: 'flex', gap: '16px' }}>
         {/* Avatar */}
-        <div className="w-12 h-12 rounded-full bg-indigo-600 text-white flex items-center justify-center font-semibold flex-shrink-0 overflow-hidden">
+        <div style={{
+          width: '48px',
+          height: '48px',
+          borderRadius: '50%',
+          backgroundColor: 'var(--CreatePostBox-avatar-bg, #4f46e5)',
+          color: 'var(--CreatePostBox-avatar-color, #ffffff)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontWeight: '600',
+          flexShrink: 0,
+          overflow: 'hidden'
+        }}>
           {userImage ? (
-            <img src={userImage} alt="Avatar" className="w-full h-full object-cover" />
+            <img src={userImage} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           ) : (
             userInitial.toUpperCase()
           )}
         </div>
 
         {/* Contingut */}
-        <div className="flex-1">
+        <div style={{ flex: 1 }}>
           {/* Header amb visibilitat */}
-          <div className="flex items-center gap-2 mb-3">
-            <span className="font-semibold text-gray-900">{session?.user?.name || 'Usuari'}</span>
-            <div className="flex items-center gap-1.5">
-              <VisibilityIcon className="w-3.5 h-3.5 text-gray-500" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+            <span style={{ fontWeight: '600', color: 'var(--CreatePostBox-user-name, #111827)' }}>
+              {session?.user?.name || 'Usuari'}
+            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <VisibilityIcon style={{ width: '14px', height: '14px', color: 'var(--CreatePostBox-icon-color, #6b7280)' }} />
               <select
                 value={visibility}
                 onChange={(e) => setVisibility(e.target.value as Visibility)}
-                className="text-sm text-gray-600 border border-gray-200 rounded-md px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                style={{
+                  fontSize: '14px',
+                  color: 'var(--CreatePostBox-select-color, #4b5563)',
+                  border: '1px solid var(--CreatePostBox-select-border, #e5e7eb)',
+                  borderRadius: '6px',
+                  padding: '4px 8px',
+                  backgroundColor: 'var(--CreatePostBox-select-bg, #ffffff)',
+                  outline: 'none'
+                }}
               >
                 <option value="PUBLIC">Public</option>
                 <option value="CONNECTIONS">Nomes connexions</option>
@@ -200,29 +229,76 @@ export function CreatePostBox({ onCreatePost }: CreatePostBoxProps) {
             value={newPost}
             onChange={(e) => setNewPost(e.target.value)}
             placeholder="Que vols compartir amb la comunitat?"
-            className="w-full min-h-[100px] p-4 border border-gray-200 rounded-xl text-sm text-gray-900 bg-white resize-y font-sans placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            style={{
+              width: '100%',
+              minHeight: '100px',
+              padding: '16px',
+              border: '1px solid var(--CreatePostBox-textarea-border, #e5e7eb)',
+              borderRadius: '12px',
+              fontSize: '14px',
+              color: 'var(--CreatePostBox-textarea-color, #111827)',
+              backgroundColor: 'var(--CreatePostBox-textarea-bg, #ffffff)',
+              resize: 'vertical',
+              fontFamily: 'inherit',
+              outline: 'none'
+            }}
           />
 
           {/* Preview d'adjunts */}
           {attachments.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div style={{ marginTop: '12px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
               {attachments.map((att, index) => (
-                <div key={index} className="relative group">
+                <div key={index} style={{ position: 'relative' }}>
                   {att.type === 'IMAGE' ? (
-                    <div className="w-24 h-24 rounded-lg overflow-hidden border border-gray-200">
-                      <img src={att.preview || att.url} alt="" className="w-full h-full object-cover" />
+                    <div style={{
+                      width: '96px',
+                      height: '96px',
+                      borderRadius: '8px',
+                      overflow: 'hidden',
+                      border: '1px solid var(--CreatePostBox-attachment-border, #e5e7eb)'
+                    }}>
+                      <img src={att.preview || att.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg border border-gray-200">
-                      <FileText className="w-4 h-4 text-gray-500" />
-                      <span className="text-xs text-gray-700 max-w-[100px] truncate">{att.filename}</span>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '8px 12px',
+                      backgroundColor: 'var(--CreatePostBox-document-bg, #f3f4f6)',
+                      borderRadius: '8px',
+                      border: '1px solid var(--CreatePostBox-attachment-border, #e5e7eb)'
+                    }}>
+                      <FileText style={{ width: '16px', height: '16px', color: 'var(--CreatePostBox-document-icon, #6b7280)' }} />
+                      <span style={{
+                        fontSize: '12px',
+                        color: 'var(--CreatePostBox-document-text, #374151)',
+                        maxWidth: '100px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>{att.filename}</span>
                     </div>
                   )}
                   <button
                     onClick={() => removeAttachment(index)}
-                    className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{
+                      position: 'absolute',
+                      top: '-8px',
+                      right: '-8px',
+                      width: '20px',
+                      height: '20px',
+                      backgroundColor: 'var(--CreatePostBox-remove-bg, #ef4444)',
+                      color: 'var(--CreatePostBox-remove-color, #ffffff)',
+                      borderRadius: '50%',
+                      border: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer'
+                    }}
                   >
-                    <X className="w-3 h-3" />
+                    <X style={{ width: '12px', height: '12px' }} />
                   </button>
                 </div>
               ))}
@@ -231,19 +307,34 @@ export function CreatePostBox({ onCreatePost }: CreatePostBoxProps) {
 
           {/* Formulari d'enquesta */}
           {showPollForm && (
-            <div className="mt-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-medium text-gray-700">Opcions de l'enquesta</span>
+            <div style={{
+              marginTop: '12px',
+              padding: '16px',
+              backgroundColor: 'var(--CreatePostBox-poll-bg, #f9fafb)',
+              borderRadius: '12px',
+              border: '1px solid var(--CreatePostBox-poll-border, #e5e7eb)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <span style={{ fontSize: '14px', fontWeight: '500', color: 'var(--CreatePostBox-poll-title, #374151)' }}>
+                  Opcions de l'enquesta
+                </span>
                 <button
                   onClick={() => setShowPollForm(false)}
-                  className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-lg transition-colors"
+                  style={{
+                    padding: '4px',
+                    color: 'var(--CreatePostBox-poll-close, #9ca3af)',
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer'
+                  }}
                 >
-                  <X className="w-4 h-4" />
+                  <X style={{ width: '16px', height: '16px' }} />
                 </button>
               </div>
-              <div className="space-y-2">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {pollOptions.map((option, index) => (
-                  <div key={index} className="flex items-center gap-2">
+                  <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <input
                       type="text"
                       value={option}
@@ -253,14 +344,30 @@ export function CreatePostBox({ onCreatePost }: CreatePostBoxProps) {
                         setPollOptions(newOptions);
                       }}
                       placeholder={`Opcio ${index + 1}`}
-                      className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg text-gray-900 bg-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      style={{
+                        flex: 1,
+                        padding: '8px 12px',
+                        fontSize: '14px',
+                        border: '1px solid var(--CreatePostBox-poll-input-border, #e5e7eb)',
+                        borderRadius: '8px',
+                        color: 'var(--CreatePostBox-poll-input-color, #111827)',
+                        backgroundColor: 'var(--CreatePostBox-poll-input-bg, #ffffff)',
+                        outline: 'none'
+                      }}
                     />
                     {pollOptions.length > 2 && (
                       <button
                         onClick={() => removePollOption(index)}
-                        className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        style={{
+                          padding: '6px',
+                          color: 'var(--CreatePostBox-remove-bg, #ef4444)',
+                          backgroundColor: 'transparent',
+                          border: 'none',
+                          borderRadius: '8px',
+                          cursor: 'pointer'
+                        }}
                       >
-                        <X className="w-4 h-4" />
+                        <X style={{ width: '16px', height: '16px' }} />
                       </button>
                     )}
                   </div>
@@ -269,18 +376,36 @@ export function CreatePostBox({ onCreatePost }: CreatePostBoxProps) {
               {pollOptions.length < 4 && (
                 <button
                   onClick={addPollOption}
-                  className="mt-3 flex items-center gap-1 text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+                  style={{
+                    marginTop: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    fontSize: '14px',
+                    color: 'var(--CreatePostBox-primary-color, #4f46e5)',
+                    fontWeight: '500',
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer'
+                  }}
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus style={{ width: '16px', height: '16px' }} />
                   Afegir opcio
                 </button>
               )}
             </div>
           )}
 
-          <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-100">
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginTop: '16px',
+            paddingTop: '16px',
+            borderTop: '1px solid var(--CreatePostBox-divider, #f3f4f6)'
+          }}>
             {/* Botons d'adjunts */}
-            <div className="flex gap-1">
+            <div style={{ display: 'flex', gap: '4px' }}>
               {/* Input ocult per imatges */}
               <input
                 ref={imageInputRef}
@@ -288,18 +413,31 @@ export function CreatePostBox({ onCreatePost }: CreatePostBoxProps) {
                 accept="image/*"
                 multiple
                 onChange={handleImageSelect}
-                className="hidden"
+                style={{ display: 'none' }}
               />
               <button
                 type="button"
                 onClick={() => imageInputRef.current?.click()}
                 disabled={isUploading}
-                className="flex items-center gap-1.5 px-3 py-2 text-gray-600 text-sm rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '8px 12px',
+                  color: 'var(--CreatePostBox-action-color, #4b5563)',
+                  fontSize: '14px',
+                  borderRadius: '8px',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  cursor: isUploading ? 'not-allowed' : 'pointer',
+                  opacity: isUploading ? 0.5 : 1,
+                  transition: 'background-color 0.2s'
+                }}
               >
                 {isUploading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 style={{ width: '16px', height: '16px', animation: 'spin 1s linear infinite' }} />
                 ) : (
-                  <ImageIcon className="w-4 h-4" />
+                  <ImageIcon style={{ width: '16px', height: '16px' }} />
                 )}
                 Foto
               </button>
@@ -311,15 +449,27 @@ export function CreatePostBox({ onCreatePost }: CreatePostBoxProps) {
                 accept=".pdf,.doc,.docx,.xls,.xlsx,.txt"
                 multiple
                 onChange={handleDocumentSelect}
-                className="hidden"
+                style={{ display: 'none' }}
               />
               <button
                 type="button"
                 onClick={() => documentInputRef.current?.click()}
                 disabled={isUploading}
-                className="flex items-center gap-1.5 px-3 py-2 text-gray-600 text-sm rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '8px 12px',
+                  color: 'var(--CreatePostBox-action-color, #4b5563)',
+                  fontSize: '14px',
+                  borderRadius: '8px',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  cursor: isUploading ? 'not-allowed' : 'pointer',
+                  opacity: isUploading ? 0.5 : 1
+                }}
               >
-                <FileText className="w-4 h-4" />
+                <FileText style={{ width: '16px', height: '16px' }} />
                 Document
               </button>
 
@@ -327,13 +477,21 @@ export function CreatePostBox({ onCreatePost }: CreatePostBoxProps) {
               <button
                 type="button"
                 onClick={() => setShowPollForm(!showPollForm)}
-                className={`flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg transition-colors ${
-                  showPollForm
-                    ? 'bg-indigo-100 text-indigo-600'
-                    : 'text-gray-600 hover:bg-gray-100'
-                }`}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '8px 12px',
+                  fontSize: '14px',
+                  borderRadius: '8px',
+                  backgroundColor: showPollForm ? 'var(--CreatePostBox-poll-active-bg, #e0e7ff)' : 'transparent',
+                  color: showPollForm ? 'var(--CreatePostBox-primary-color, #4f46e5)' : 'var(--CreatePostBox-action-color, #4b5563)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
               >
-                <BarChart3 className="w-4 h-4" />
+                <BarChart3 style={{ width: '16px', height: '16px' }} />
                 Enquesta
               </button>
             </div>
@@ -342,13 +500,22 @@ export function CreatePostBox({ onCreatePost }: CreatePostBoxProps) {
             <button
               onClick={handlePost}
               disabled={!canPost || isUploading}
-              className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 ${
-                canPost && !isUploading
-                  ? 'bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer'
-                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-              }`}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                backgroundColor: canPost && !isUploading ? 'var(--CreatePostBox-submit-bg, #4f46e5)' : 'var(--CreatePostBox-submit-disabled-bg, #e5e7eb)',
+                color: canPost && !isUploading ? 'var(--CreatePostBox-submit-color, #ffffff)' : 'var(--CreatePostBox-submit-disabled-color, #9ca3af)',
+                border: 'none',
+                cursor: canPost && !isUploading ? 'pointer' : 'not-allowed',
+                transition: 'background-color 0.2s'
+              }}
             >
-              {isUploading && <Loader2 className="w-4 h-4 animate-spin" />}
+              {isUploading && <Loader2 style={{ width: '16px', height: '16px', animation: 'spin 1s linear infinite' }} />}
               Publicar
             </button>
           </div>

@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { X, Building2, User, Mail, Phone, Globe, Linkedin, MapPin, Euro, Calendar, Tag, FileText, ChevronRight, CheckCircle2, Clock, AlertCircle, ListTodo, Circle, CheckCircle, Loader2, Plus, ExternalLink } from 'lucide-react'
+import { X, Building2, User, Mail, Phone, Globe, Linkedin, MapPin, Euro, Calendar, Tag, FileText, ChevronRight, CheckCircle2, Clock, AlertCircle, ListTodo, Circle, CheckCircle, Loader2, Plus, ExternalLink, Pencil } from 'lucide-react'
+import { LeadEditPanel } from '@/app/gestio/leads/components/LeadEditPanel'
 import { cn } from '@/lib/utils'
 import { getTasksByLeadId, completeTask, LeadTask } from '@/lib/gestio-empreses/lead-tasks-actions'
 import { CreateTaskForLeadModal } from './CreateTaskForLeadModal'
@@ -107,11 +108,18 @@ export function LeadDetailPanel({
   const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false)
   const [canAdvancePhase, setCanAdvancePhase] = useState(true)
   const [isResourcesPanelOpen, setIsResourcesPanelOpen] = useState(false)
+  const [isEditPanelOpen, setIsEditPanelOpen] = useState(false)
+  const [currentLead, setCurrentLead] = useState<Lead | null>(lead)
+
+  // Sincronitzar currentLead amb lead prop
+  useEffect(() => {
+    setCurrentLead(lead)
+  }, [lead])
 
   // Tancar amb ESC
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape' && !isEditPanelOpen) onClose()
     }
     if (isOpen) {
       document.addEventListener('keydown', handleEsc)
@@ -121,7 +129,23 @@ export function LeadDetailPanel({
       document.removeEventListener('keydown', handleEsc)
       document.body.style.overflow = 'unset'
     }
-  }, [isOpen, onClose])
+  }, [isOpen, onClose, isEditPanelOpen])
+
+  // Callback quan es guarda l'edició
+  const handleEditSaved = async () => {
+    // Recarregar les dades del lead
+    if (lead?.id) {
+      try {
+        const res = await fetch(`/api/gestio/leads/${lead.id}`)
+        if (res.ok) {
+          const updatedLead = await res.json()
+          setCurrentLead(updatedLead)
+        }
+      } catch (error) {
+        console.error('Error reloading lead:', error)
+      }
+    }
+  }
 
   // Carregar tasques quan s'obre el panel
   const loadTasks = useCallback(async () => {
@@ -225,12 +249,21 @@ export function LeadDetailPanel({
               <p className="text-sm text-slate-500 mt-1">{lead.sector}</p>
             )}
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
-          >
-            <X className="h-5 w-5 text-slate-500" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsEditPanelOpen(true)}
+              className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
+              title="Editar lead"
+            >
+              <Pencil className="h-5 w-5 text-slate-500" />
+            </button>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
+            >
+              <X className="h-5 w-5 text-slate-500" />
+            </button>
+          </div>
         </div>
 
         {/* Content - Scrollable */}
@@ -627,6 +660,16 @@ export function LeadDetailPanel({
           onTaskCreated={() => {
             loadTasks()  // Recarregar tasques
           }}
+        />
+      )}
+
+      {/* Panel d'edició del lead */}
+      {currentLead && (
+        <LeadEditPanel
+          lead={currentLead as any}
+          isOpen={isEditPanelOpen}
+          onClose={() => setIsEditPanelOpen(false)}
+          onSaved={handleEditSaved}
         />
       )}
     </>

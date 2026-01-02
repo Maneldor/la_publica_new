@@ -40,7 +40,6 @@ export function AnunciCard({ anunci, viewMode }: AnunciCardProps) {
   const [isHovered, setIsHovered] = useState(false);
 
   const handleViewAnunci = () => {
-    // Usar directamente el ID real del anuncio
     router.push(`/dashboard/anuncis/${anunci.id}`);
   };
 
@@ -58,18 +57,26 @@ export function AnunciCard({ anunci, viewMode }: AnunciCardProps) {
 
   const getStatusColor = () => {
     switch (anunci.status) {
-      case 'actiu': return '#10b981';
-      case 'reservat': return '#f59e0b';
-      case 'tancat': return '#6b7280';
-      case 'caducat': return '#ef4444';
+      case 'actiu': return 'var(--AnunciCard-status-actiu, #10b981)';
+      case 'reservat': return 'var(--AnunciCard-status-reservat, #f59e0b)';
+      case 'tancat': return 'var(--AnunciCard-status-tancat, #6b7280)';
+      case 'caducat': return 'var(--AnunciCard-status-caducat, #ef4444)';
       default: return '#6b7280';
     }
   };
 
   const getTypeStyle = () => {
     return anunci.type === 'oferta'
-      ? { bg: '#dcfce7', color: '#16a34a', label: 'OFERTA' }
-      : { bg: '#dbeafe', color: '#2563eb', label: 'DEMANDA' };
+      ? {
+          bg: 'var(--AnunciCard-oferta-background, #dcfce7)',
+          color: 'var(--AnunciCard-oferta-color, #16a34a)',
+          label: 'OFERTA'
+        }
+      : {
+          bg: 'var(--AnunciCard-demanda-background, #dbeafe)',
+          color: 'var(--AnunciCard-demanda-color, #2563eb)',
+          label: 'DEMANDA'
+        };
   };
 
   if (viewMode === 'list') {
@@ -79,11 +86,13 @@ export function AnunciCard({ anunci, viewMode }: AnunciCardProps) {
       <div
         onClick={handleViewAnunci}
         style={{
-          backgroundColor: '#fff',
-          borderRadius: '12px',
-          padding: '20px',
-          border: isHovered ? '2px solid #3b82f6' : '2px solid #e5e7eb',
-          boxShadow: isHovered ? '0 8px 16px -4px rgba(59, 130, 246, 0.2)' : '0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06)',
+          backgroundColor: 'var(--AnunciCard-background, #ffffff)',
+          borderRadius: 'var(--AnunciCard-border-radius-list, 12px)',
+          padding: 'var(--AnunciCard-padding, 20px)',
+          border: `2px solid ${isHovered ? 'var(--AnunciCard-hover-border-color, #3b82f6)' : 'var(--AnunciCard-border-color, #e5e7eb)'}`,
+          boxShadow: isHovered
+            ? 'var(--AnunciCard-hover-shadow, 0 8px 16px -4px rgba(59, 130, 246, 0.2))'
+            : 'var(--AnunciCard-shadow, 0 4px 6px -1px rgba(59, 130, 246, 0.1))',
           cursor: 'pointer',
           transition: 'all 0.2s ease-in-out',
           transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
@@ -108,14 +117,11 @@ export function AnunciCard({ anunci, viewMode }: AnunciCardProps) {
           {typeStyle.label}
         </div>
 
-        <div style={{
-          display: 'flex',
-          gap: '16px'
-        }}>
+        <div style={{ display: 'flex', gap: '16px' }}>
           {/* Imatge */}
           <div style={{
-            width: '120px',
-            height: '80px',
+            width: 'var(--AnunciCard-image-width-list, 120px)',
+            height: 'var(--AnunciCard-image-height-list, 80px)',
             borderRadius: '8px',
             backgroundImage: `url(${anunci.images[0]})`,
             backgroundSize: 'cover',
@@ -135,7 +141,7 @@ export function AnunciCard({ anunci, viewMode }: AnunciCardProps) {
                 <h3 style={{
                   fontSize: '16px',
                   fontWeight: '600',
-                  color: '#2c3e50',
+                  color: 'var(--AnunciCard-title-color, #2c3e50)',
                   margin: '0 0 4px 0',
                   lineHeight: '1.3'
                 }}>
@@ -149,14 +155,14 @@ export function AnunciCard({ anunci, viewMode }: AnunciCardProps) {
                 }}>
                   <span style={{
                     fontSize: '12px',
-                    color: '#3b82f6',
+                    color: 'var(--AnunciCard-category-color, #3b82f6)',
                     fontWeight: '500'
                   }}>
                     {anunci.category}
                   </span>
                   <span style={{
                     fontSize: '12px',
-                    color: '#8e8e93'
+                    color: 'var(--AnunciCard-location-color, #8e8e93)'
                   }}>
                     {anunci.location}
                   </span>
@@ -167,7 +173,7 @@ export function AnunciCard({ anunci, viewMode }: AnunciCardProps) {
               <div style={{
                 fontSize: '18px',
                 fontWeight: '700',
-                color: '#16a34a'
+                color: 'var(--AnunciCard-price-color, #16a34a)'
               }}>
                 {getPriceDisplay()}
               </div>
@@ -175,16 +181,13 @@ export function AnunciCard({ anunci, viewMode }: AnunciCardProps) {
 
             <p style={{
               fontSize: '13px',
-              color: '#6c757d',
+              color: 'var(--AnunciCard-description-color, #6c757d)',
               margin: '0 0 12px 0',
               lineHeight: '1.4',
               overflow: 'hidden',
               display: '-webkit-box',
-              WebkitLineClamp: '2',
-              WebkitBoxOrient: 'vertical' as const,
-              textOverflow: 'ellipsis',
-              wordBreak: 'break-word',
-              maxHeight: '2.8em'
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical'
             }}>
               {anunci.description}
             </p>
@@ -201,8 +204,8 @@ export function AnunciCard({ anunci, viewMode }: AnunciCardProps) {
                 gap: '8px'
               }}>
                 <div style={{
-                  width: '24px',
-                  height: '24px',
+                  width: 'var(--AnunciCard-avatar-size, 24px)',
+                  height: 'var(--AnunciCard-avatar-size, 24px)',
                   borderRadius: '50%',
                   backgroundImage: `url(${anunci.authorAvatar})`,
                   backgroundSize: 'cover',
@@ -210,7 +213,7 @@ export function AnunciCard({ anunci, viewMode }: AnunciCardProps) {
                 }} />
                 <span style={{
                   fontSize: '12px',
-                  color: '#6c757d',
+                  color: 'var(--AnunciCard-author-color, #6c757d)',
                   fontWeight: '500'
                 }}>
                   {anunci.author} · {anunci.authorDepartment}
@@ -222,7 +225,7 @@ export function AnunciCard({ anunci, viewMode }: AnunciCardProps) {
                 alignItems: 'center',
                 gap: '12px',
                 fontSize: '11px',
-                color: '#8e8e93'
+                color: 'var(--AnunciCard-meta-color, #8e8e93)'
               }}>
                 <span>{anunci.views} visites</span>
                 <span>{anunci.createdAt}</span>
@@ -241,11 +244,13 @@ export function AnunciCard({ anunci, viewMode }: AnunciCardProps) {
     <div
       onClick={handleViewAnunci}
       style={{
-        backgroundColor: '#fff',
-        borderRadius: '16px',
+        backgroundColor: 'var(--AnunciCard-background, #ffffff)',
+        borderRadius: 'var(--AnunciCard-border-radius, 16px)',
         overflow: 'hidden',
-        border: isHovered ? '2px solid #3b82f6' : '2px solid #e5e7eb',
-        boxShadow: isHovered ? '0 8px 16px -4px rgba(59, 130, 246, 0.2)' : '0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06)',
+        border: `2px solid ${isHovered ? 'var(--AnunciCard-hover-border-color, #3b82f6)' : 'var(--AnunciCard-border-color, #e5e7eb)'}`,
+        boxShadow: isHovered
+          ? 'var(--AnunciCard-hover-shadow, 0 8px 16px -4px rgba(59, 130, 246, 0.2))'
+          : 'var(--AnunciCard-shadow, 0 4px 6px -1px rgba(59, 130, 246, 0.1))',
         cursor: 'pointer',
         transition: 'all 0.2s ease-in-out',
         transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
@@ -281,8 +286,12 @@ export function AnunciCard({ anunci, viewMode }: AnunciCardProps) {
           top: '12px',
           right: '12px',
           padding: '6px',
-          backgroundColor: anunci.isFavorite ? '#ef4444' : 'rgba(255,255,255,0.9)',
-          color: anunci.isFavorite ? 'white' : '#6b7280',
+          backgroundColor: anunci.isFavorite
+            ? 'var(--AnunciCard-favorite-active-background, #ef4444)'
+            : 'rgba(255,255,255,0.9)',
+          color: anunci.isFavorite
+            ? 'var(--AnunciCard-favorite-active-color, #ffffff)'
+            : 'var(--AnunciCard-favorite-color, #6b7280)',
           border: 'none',
           borderRadius: '50%',
           fontSize: '14px',
@@ -301,7 +310,7 @@ export function AnunciCard({ anunci, viewMode }: AnunciCardProps) {
 
       {/* Imatge principal */}
       <div style={{
-        height: '160px',
+        height: 'var(--AnunciCard-cover-height, 160px)',
         backgroundImage: `url(${anunci.images[0]})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
@@ -314,8 +323,8 @@ export function AnunciCard({ anunci, viewMode }: AnunciCardProps) {
             position: 'absolute',
             bottom: '8px',
             right: '8px',
-            backgroundColor: 'rgba(0,0,0,0.7)',
-            color: 'white',
+            backgroundColor: 'var(--AnunciCard-image-counter-background, rgba(0,0,0,0.7))',
+            color: 'var(--AnunciCard-image-counter-color, #ffffff)',
             padding: '4px 8px',
             borderRadius: '4px',
             fontSize: '11px',
@@ -328,7 +337,7 @@ export function AnunciCard({ anunci, viewMode }: AnunciCardProps) {
 
       {/* Contingut */}
       <div style={{
-        padding: '16px',
+        padding: 'var(--AnunciCard-content-padding, 16px)',
         flex: 1,
         display: 'flex',
         flexDirection: 'column'
@@ -342,14 +351,14 @@ export function AnunciCard({ anunci, viewMode }: AnunciCardProps) {
         }}>
           <span style={{
             fontSize: '12px',
-            color: '#3b82f6',
+            color: 'var(--AnunciCard-category-color, #3b82f6)',
             fontWeight: '500'
           }}>
             {anunci.category}
           </span>
           <span style={{
             fontSize: '11px',
-            color: '#8e8e93'
+            color: 'var(--AnunciCard-location-color, #8e8e93)'
           }}>
             📍 {anunci.location}
           </span>
@@ -359,16 +368,13 @@ export function AnunciCard({ anunci, viewMode }: AnunciCardProps) {
         <h3 style={{
           fontSize: '15px',
           fontWeight: '600',
-          color: '#2c3e50',
+          color: 'var(--AnunciCard-title-color, #2c3e50)',
           margin: '0 0 8px 0',
           lineHeight: '1.3',
           overflow: 'hidden',
           display: '-webkit-box',
-          WebkitLineClamp: '2',
-          WebkitBoxOrient: 'vertical' as const,
-          textOverflow: 'ellipsis',
-          wordBreak: 'break-word',
-          maxHeight: '2.6em'
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical'
         }}>
           {anunci.title}
         </h3>
@@ -377,7 +383,7 @@ export function AnunciCard({ anunci, viewMode }: AnunciCardProps) {
         <div style={{
           fontSize: '20px',
           fontWeight: '700',
-          color: '#16a34a',
+          color: 'var(--AnunciCard-price-color, #16a34a)',
           marginBottom: '8px'
         }}>
           {getPriceDisplay()}
@@ -386,22 +392,19 @@ export function AnunciCard({ anunci, viewMode }: AnunciCardProps) {
         {/* Descripció */}
         <p style={{
           fontSize: '13px',
-          color: '#6c757d',
+          color: 'var(--AnunciCard-description-color, #6c757d)',
           lineHeight: '1.4',
           margin: '0 0 12px 0',
           flex: 1,
           overflow: 'hidden',
           display: '-webkit-box',
-          WebkitLineClamp: '2',
-          WebkitBoxOrient: 'vertical' as const,
-          textOverflow: 'ellipsis',
-          wordBreak: 'break-word',
-          maxHeight: '2.8em'
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical'
         }}>
           {anunci.description}
         </p>
 
-        {/* Peu: Autor i estat */}
+        {/* Footer */}
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -422,7 +425,7 @@ export function AnunciCard({ anunci, viewMode }: AnunciCardProps) {
             }} />
             <span style={{
               fontSize: '11px',
-              color: '#6c757d',
+              color: 'var(--AnunciCard-author-color, #6c757d)',
               fontWeight: '500'
             }}>
               {anunci.author}
@@ -436,7 +439,7 @@ export function AnunciCard({ anunci, viewMode }: AnunciCardProps) {
           }}>
             <span style={{
               fontSize: '10px',
-              color: '#8e8e93'
+              color: 'var(--AnunciCard-meta-color, #8e8e93)'
             }}>
               {anunci.views} visites
             </span>

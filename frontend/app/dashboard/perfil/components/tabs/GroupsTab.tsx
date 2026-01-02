@@ -17,14 +17,23 @@ interface Group {
 export default function GroupsTab() {
   const groups: Group[] = mockGroups as Group[];
 
+  const getRoleBadge = (role: GroupRole) => {
+    const badges = {
+      admin: { bg: 'var(--GroupsTab-role-admin-bg, #fef3c7)', color: 'var(--GroupsTab-role-admin-color, #92400e)' },
+      moderator: { bg: 'var(--GroupsTab-role-moderator-bg, #dbeafe)', color: 'var(--GroupsTab-role-moderator-color, #1e40af)' },
+      member: { bg: 'var(--GroupsTab-role-member-bg, #f3e8ff)', color: 'var(--GroupsTab-role-member-color, #7c3aed)' }
+    };
+    return badges[role];
+  };
+
   return (
     <div style={{
-      backgroundColor: '#fff',
-      borderRadius: '12px',
-      padding: '20px',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+      backgroundColor: 'var(--GroupsTab-background, #ffffff)',
+      borderRadius: 'var(--GroupsTab-border-radius, 12px)',
+      padding: 'var(--GroupsTab-padding, 20px)',
+      boxShadow: 'var(--GroupsTab-shadow, 0 2px 8px rgba(0,0,0,0.1))',
       marginBottom: '20px',
-      border: '1px solid #f0f0f0'
+      border: '1px solid var(--GroupsTab-border-color, #f0f0f0)'
     }}>
       <div style={{
         display: 'flex',
@@ -35,7 +44,7 @@ export default function GroupsTab() {
         <h3 style={{
           fontSize: '18px',
           fontWeight: '600',
-          color: '#1f2937',
+          color: 'var(--GroupsTab-title-color, #1f2937)',
           margin: 0,
           display: 'flex',
           alignItems: 'center',
@@ -46,10 +55,10 @@ export default function GroupsTab() {
         </h3>
         <button style={{
           padding: '8px 16px',
-          backgroundColor: '#3b82f6',
+          backgroundColor: 'var(--GroupsTab-button-bg, #3b82f6)',
           border: 'none',
           borderRadius: '6px',
-          color: 'white',
+          color: 'var(--GroupsTab-button-color, #ffffff)',
           fontSize: '14px',
           cursor: 'pointer'
         }}>
@@ -65,20 +74,20 @@ export default function GroupsTab() {
         {groups.map((group) => (
           <div key={group.id} style={{
             padding: '16px',
-            backgroundColor: '#f8f9fa',
+            backgroundColor: 'var(--GroupsTab-card-bg, #f8f9fa)',
             borderRadius: '8px',
-            border: '1px solid #e9ecef'
+            border: '1px solid var(--GroupsTab-card-border, #e9ecef)'
           }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
               <div style={{
                 width: '50px',
                 height: '50px',
-                backgroundColor: '#8b5cf6',
+                backgroundColor: 'var(--GroupsTab-avatar-bg, #8b5cf6)',
                 borderRadius: '8px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: 'white',
+                color: 'var(--GroupsTab-avatar-color, #ffffff)',
                 fontSize: '16px',
                 fontWeight: 'bold',
                 flexShrink: 0
@@ -95,7 +104,7 @@ export default function GroupsTab() {
                   <h4 style={{
                     fontSize: '14px',
                     fontWeight: '600',
-                    color: '#1f2937',
+                    color: 'var(--GroupsTab-group-name, #1f2937)',
                     margin: 0
                   }}>
                     {group.name}
@@ -103,10 +112,8 @@ export default function GroupsTab() {
                   <span style={{
                     fontSize: '10px',
                     padding: '2px 6px',
-                    backgroundColor: group.role === 'admin' ? '#fef3c7' :
-                                     group.role === 'moderator' ? '#dbeafe' : '#f3e8ff',
-                    color: group.role === 'admin' ? '#92400e' :
-                           group.role === 'moderator' ? '#1e40af' : '#7c3aed',
+                    backgroundColor: getRoleBadge(group.role).bg,
+                    color: getRoleBadge(group.role).color,
                     borderRadius: '4px',
                     fontWeight: '500',
                     textTransform: 'capitalize'
@@ -116,14 +123,14 @@ export default function GroupsTab() {
                 </div>
                 <p style={{
                   fontSize: '12px',
-                  color: '#6b7280',
+                  color: 'var(--GroupsTab-group-members, #6b7280)',
                   margin: '0 0 8px 0'
                 }}>
                   {group.members.toLocaleString()} membres
                 </p>
                 <p style={{
                   fontSize: '11px',
-                  color: '#9ca3af',
+                  color: 'var(--GroupsTab-group-activity, #9ca3af)',
                   margin: 0
                 }}>
                   Última activitat: {group.lastActivity}

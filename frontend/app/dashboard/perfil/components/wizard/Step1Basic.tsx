@@ -152,11 +152,21 @@ export const Step1Basic = ({ data, updateProfile, isSaving, userData }: Step1Pro
   }
 
   return (
-    <div className="space-y-8">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
       {/* Header */}
-      <div className="mb-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-1">Dades Bàsiques</h2>
-        <p className="text-gray-600 text-sm">
+      <div style={{ marginBottom: '24px' }}>
+        <h2 style={{
+          fontSize: '20px',
+          fontWeight: '700',
+          color: 'var(--Step1Basic-title-color, #111827)',
+          marginBottom: '4px'
+        }}>
+          Dades Bàsiques
+        </h2>
+        <p style={{
+          color: 'var(--Step1Basic-description-color, #4b5563)',
+          fontSize: '14px'
+        }}>
           Revisa i actualitza la teva informació bàsica
         </p>
       </div>
@@ -179,63 +189,131 @@ export const Step1Basic = ({ data, updateProfile, isSaving, userData }: Step1Pro
       />
 
       {/* Sección de imágenes */}
-      <div className="border-t pt-6 mt-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Imatges</h3>
+      <div style={{
+        borderTop: '1px solid var(--Step1Basic-divider-color, #e5e7eb)',
+        paddingTop: '24px',
+        marginTop: '24px'
+      }}>
+        <h3 style={{
+          fontSize: '18px',
+          fontWeight: '600',
+          color: 'var(--Step1Basic-title-color, #111827)',
+          marginBottom: '16px'
+        }}>
+          Imatges
+        </h3>
 
         {/* Imagen de Portada */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+        <div style={{ marginBottom: '24px' }}>
+          <label style={{
+            display: 'block',
+            fontSize: '14px',
+            fontWeight: '500',
+            color: 'var(--Step1Basic-label-color, #374151)',
+            marginBottom: '8px'
+          }}>
             Imatge de Portada
           </label>
-          <p className="text-xs text-gray-500 mb-3">
+          <p style={{
+            fontSize: '12px',
+            color: 'var(--Step1Basic-hint-color, #6b7280)',
+            marginBottom: '12px'
+          }}>
             Imatge gran que apareixerà a la part superior del teu perfil (recomanat: 1200x300px)
           </p>
 
           <div
-            className={`
-              relative border-2 border-dashed rounded-xl p-8 text-center transition-all
-              ${dragActive && dragTarget === 'cover'
-                ? 'border-indigo-500 bg-indigo-50'
-                : 'border-gray-300 hover:border-gray-400'
-              }
-            `}
+            style={{
+              position: 'relative',
+              border: `2px dashed ${dragActive && dragTarget === 'cover'
+                ? 'var(--Step1Basic-drag-active-border, #6366f1)'
+                : 'var(--Step1Basic-border-color, #d1d5db)'}`,
+              borderRadius: '12px',
+              padding: '32px',
+              textAlign: 'center',
+              transition: 'all 0.2s',
+              backgroundColor: dragActive && dragTarget === 'cover'
+                ? 'var(--Step1Basic-drag-active-bg, #eef2ff)'
+                : 'transparent'
+            }}
             onDragEnter={(e) => handleDrag(e, 'cover')}
             onDragLeave={(e) => handleDrag(e, 'cover')}
             onDragOver={(e) => handleDrag(e, 'cover')}
             onDrop={(e) => handleDrop(e, 'cover')}
           >
             {coverImageUrl ? (
-              <div className="relative">
+              <div style={{ position: 'relative' }}>
                 <img
                   src={coverImageUrl}
                   alt="Vista prèvia portada"
-                  className="w-full h-40 object-cover rounded-lg"
+                  style={{
+                    width: '100%',
+                    height: '160px',
+                    objectFit: 'cover',
+                    borderRadius: '8px'
+                  }}
                 />
                 <button
                   type="button"
                   onClick={() => removeImage('cover')}
-                  className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                  style={{
+                    position: 'absolute',
+                    top: '8px',
+                    right: '8px',
+                    padding: '6px',
+                    backgroundColor: 'var(--Step1Basic-danger-bg, #ef4444)',
+                    color: 'var(--Step1Basic-danger-color, #ffffff)',
+                    border: 'none',
+                    borderRadius: '50%',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
                 >
-                  <X className="w-4 h-4" />
+                  <X style={{ width: '16px', height: '16px' }} />
                 </button>
               </div>
             ) : (
-              <div className="flex flex-col items-center">
-                <Upload className="w-8 h-8 text-gray-400 mb-2" />
-                <p className="text-sm text-gray-600 mb-1">
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <Upload style={{
+                  width: '32px',
+                  height: '32px',
+                  color: 'var(--Step1Basic-icon-color, #9ca3af)',
+                  marginBottom: '8px'
+                }} />
+                <p style={{
+                  fontSize: '14px',
+                  color: 'var(--Step1Basic-text-color, #4b5563)',
+                  marginBottom: '4px'
+                }}>
                   Arrossega la imatge aquí o fes clic per seleccionar
                 </p>
-                <p className="text-xs text-gray-400 mb-3">PNG, JPG, GIF fins a 10MB</p>
+                <p style={{
+                  fontSize: '12px',
+                  color: 'var(--Step1Basic-hint-color, #9ca3af)',
+                  marginBottom: '12px'
+                }}>
+                  PNG, JPG, GIF fins a 10MB
+                </p>
                 <input
                   type="file"
                   accept="image/*"
                   onChange={(e) => e.target.files?.[0] && handleFiles(e.target.files[0], 'cover')}
-                  className="hidden"
+                  style={{ display: 'none' }}
                   id="cover-upload"
                 />
                 <label
                   htmlFor="cover-upload"
-                  className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 cursor-pointer transition-colors"
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: 'var(--Step1Basic-primary-bg, #4f46e5)',
+                    color: 'var(--Step1Basic-primary-color, #ffffff)',
+                    fontSize: '14px',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    transition: 'background-color 0.2s'
+                  }}
                 >
                   Seleccionar Arxiu
                 </label>
@@ -246,20 +324,36 @@ export const Step1Basic = ({ data, updateProfile, isSaving, userData }: Step1Pro
 
         {/* Foto de Perfil */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label style={{
+            display: 'block',
+            fontSize: '14px',
+            fontWeight: '500',
+            color: 'var(--Step1Basic-label-color, #374151)',
+            marginBottom: '8px'
+          }}>
             Foto de Perfil
           </label>
-          <p className="text-xs text-gray-500 mb-3">
+          <p style={{
+            fontSize: '12px',
+            color: 'var(--Step1Basic-hint-color, #6b7280)',
+            marginBottom: '12px'
+          }}>
             Imatge que apareixerà al teu avatar (recomanat: 400x400px, format quadrat)
           </p>
 
-          <div className="flex items-center gap-4">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             {/* Avatar actual o preview */}
             <div
-              className={`
-                relative w-20 h-20 rounded-full overflow-hidden
-                ${dragActive && dragTarget === 'profile' ? 'ring-4 ring-indigo-500' : ''}
-              `}
+              style={{
+                position: 'relative',
+                width: '80px',
+                height: '80px',
+                borderRadius: '50%',
+                overflow: 'hidden',
+                boxShadow: dragActive && dragTarget === 'profile'
+                  ? '0 0 0 4px var(--Step1Basic-primary-bg, #6366f1)'
+                  : 'none'
+              }}
               onDragEnter={(e) => handleDrag(e, 'profile')}
               onDragLeave={(e) => handleDrag(e, 'profile')}
               onDragOver={(e) => handleDrag(e, 'profile')}
@@ -270,34 +364,67 @@ export const Step1Basic = ({ data, updateProfile, isSaving, userData }: Step1Pro
                   <img
                     src={profileImageUrl}
                     alt="Avatar"
-                    className="w-full h-full object-cover"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />
                   <button
                     type="button"
                     onClick={() => removeImage('profile')}
-                    className="absolute -top-1 -right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                    style={{
+                      position: 'absolute',
+                      top: '-4px',
+                      right: '-4px',
+                      padding: '4px',
+                      backgroundColor: 'var(--Step1Basic-danger-bg, #ef4444)',
+                      color: 'var(--Step1Basic-danger-color, #ffffff)',
+                      border: 'none',
+                      borderRadius: '50%',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
                   >
-                    <X className="w-3 h-3" />
+                    <X style={{ width: '12px', height: '12px' }} />
                   </button>
                 </>
               ) : (
-                <div className="w-full h-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-xl">
+                <div style={{
+                  width: '100%',
+                  height: '100%',
+                  backgroundColor: 'var(--Step1Basic-avatar-bg, #e0e7ff)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--Step1Basic-avatar-color, #4f46e5)',
+                  fontWeight: '700',
+                  fontSize: '20px'
+                }}>
                   {getInitials()}
                 </div>
               )}
             </div>
 
-            <div className="flex flex-col gap-2">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <input
                 type="file"
                 accept="image/*"
                 onChange={(e) => e.target.files?.[0] && handleFiles(e.target.files[0], 'profile')}
-                className="hidden"
+                style={{ display: 'none' }}
                 id="profile-upload"
               />
               <label
                 htmlFor="profile-upload"
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium cursor-pointer transition-colors text-center"
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: 'var(--Step1Basic-primary-bg, #4f46e5)',
+                  color: 'var(--Step1Basic-primary-color, #ffffff)',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  transition: 'background-color 0.2s'
+                }}
               >
                 Canviar foto
               </label>
@@ -305,7 +432,22 @@ export const Step1Basic = ({ data, updateProfile, isSaving, userData }: Step1Pro
                 <button
                   type="button"
                   onClick={() => removeImage('profile')}
-                  className="px-4 py-2 text-red-600 text-sm hover:bg-red-50 rounded-lg transition-colors"
+                  style={{
+                    padding: '8px 16px',
+                    color: 'var(--Step1Basic-danger-text, #dc2626)',
+                    fontSize: '14px',
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    transition: 'background-color 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--Step1Basic-danger-hover-bg, #fef2f2)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
                 >
                   Eliminar
                 </button>
@@ -317,8 +459,21 @@ export const Step1Basic = ({ data, updateProfile, isSaving, userData }: Step1Pro
 
       {/* Indicador de guardado */}
       {isSaving && (
-        <div className="flex items-center gap-2 text-sm text-indigo-600">
-          <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          fontSize: '14px',
+          color: 'var(--Step1Basic-saving-color, #4f46e5)'
+        }}>
+          <div style={{
+            width: '16px',
+            height: '16px',
+            border: '2px solid var(--Step1Basic-saving-color, #4f46e5)',
+            borderTopColor: 'transparent',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite'
+          }} />
           Guardant canvis...
         </div>
       )}

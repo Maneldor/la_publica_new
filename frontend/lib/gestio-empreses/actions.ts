@@ -21,12 +21,12 @@ async function verifyAccess() {
   }
 
   // Comprovar el tipus d'usuari (userType en lloc de role)
-  const allowedRoles = ['SUPER_ADMIN', 'ADMIN', 'ACCOUNT_MANAGER']
+  const allowedRoles = ['SUPER_ADMIN', 'ADMIN', 'ADMIN_GESTIO', 'ACCOUNT_MANAGER']
   if (!session.user.userType || !allowedRoles.includes(session.user.userType)) {
     throw new Error('Accés denegat')
   }
 
-  const isSupervisor = ['SUPER_ADMIN', 'ADMIN'].includes(session.user.userType)
+  const isSupervisor = ['SUPER_ADMIN', 'ADMIN', 'ADMIN_GESTIO'].includes(session.user.userType)
 
   return { session, isSupervisor }
 }

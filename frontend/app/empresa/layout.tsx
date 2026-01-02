@@ -2,11 +2,20 @@
 
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { UserRole } from '@/lib/permissions';
 import EmpresaLayout from '@/components/empresa/EmpresaLayout';
 import { NotificationProvider } from '@/app/contexts/NotificationContext';
+import { MessagesProvider } from '@/app/contexts/MessagesContext';
 import { Toaster } from 'react-hot-toast';
+
+interface EmpresaData {
+  empresaNom: string;
+  empresaLogo?: string;
+  plan: string;
+  notificacionsCount: number;
+  missatgesCount: number;
+}
 
 export default function EmpresaRootLayout({
   children,
@@ -15,6 +24,14 @@ export default function EmpresaRootLayout({
 }) {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [empresaData, setEmpresaData] = useState<EmpresaData>({
+    empresaNom: 'Empresa',
+    empresaLogo: undefined,
+    plan: 'Pioneres',
+    notificacionsCount: 0,
+    missatgesCount: 0,
+  });
+  const [loading, setLoading] = useState(true);
 
   // Verificar autenticación y rol
   useEffect(() => {
@@ -33,7 +50,39 @@ export default function EmpresaRootLayout({
     }
   }, [session, status, router]);
 
-  if (status === 'loading') {
+  // Cargar datos de la empresa
+  useEffect(() => {
+    const fetchEmpresaData = async () => {
+      if (!session?.user?.id) return;
+
+      try {
+        const response = await fetch('/api/empresa/perfil');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.data) {
+            const company = data.data;
+            setEmpresaData({
+              empresaNom: company.name || 'Empresa',
+              empresaLogo: company.logo || company.logoUrl || undefined,
+              plan: company.currentPlan?.name || company.currentPlan?.planType || 'Pioneres',
+              notificacionsCount: 0, // Se actualiza desde NotificationContext
+              missatgesCount: 0,
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error carregant dades empresa:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (session) {
+      fetchEmpresaData();
+    }
+  }, [session]);
+
+  if (status === 'loading' || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-gray-500">Carregant...</div>
@@ -45,28 +94,20 @@ export default function EmpresaRootLayout({
     return null;
   }
 
-  // Obtener datos de la empresa del usuario
-  // TODO: Cargar estos datos desde el backend según el usuario autenticado
-  const empresaData = {
-    empresaNom: session.user.name || 'Empresa',
-    empresaLogo: undefined, // TODO: Cargar desde el perfil de la empresa
-    plan: 'PREMIUM' as const, // TODO: Cargar desde el backend
-    notificacionsCount: 3, // TODO: Cargar desde el backend
-    missatgesCount: 2, // TODO: Cargar desde el backend
-  };
-
   return (
     <NotificationProvider>
-      <EmpresaLayout
-        empresaNom={empresaData.empresaNom}
-        empresaLogo={empresaData.empresaLogo}
-        plan={empresaData.plan}
-        notificacionsCount={empresaData.notificacionsCount}
-        missatgesCount={empresaData.missatgesCount}
-      >
-        {children}
-      </EmpresaLayout>
-      <Toaster position="top-right" />
+      <MessagesProvider>
+        <EmpresaLayout
+          empresaNom={empresaData.empresaNom}
+          empresaLogo={empresaData.empresaLogo}
+          plan={empresaData.plan}
+          notificacionsCount={empresaData.notificacionsCount}
+          missatgesCount={empresaData.missatgesCount}
+        >
+          {children}
+        </EmpresaLayout>
+        <Toaster position="top-right" />
+      </MessagesProvider>
     </NotificationProvider>
   );
 }

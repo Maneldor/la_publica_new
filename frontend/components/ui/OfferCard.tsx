@@ -48,11 +48,6 @@ export function OfferCard({ offer, viewMode }: OfferCardProps) {
     console.log(offer.isFavorite ? 'Eliminar de favorits:' : 'Afegir a favorits:', offer.title);
   };
 
-  const handleContactCompany = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    router.push(`/dashboard/empreses/${offer.company.id}`);
-  };
-
   const formatPrice = (price: number) => {
     return price.toLocaleString('ca-ES') + '€';
   };
@@ -73,6 +68,7 @@ export function OfferCard({ offer, viewMode }: OfferCardProps) {
     }
   };
 
+  // ==================== VISTA LIST ====================
   if (viewMode === 'list') {
     const discountBadge = getDiscountBadgeColor();
     const planBadge = getPlanBadgeColor();
@@ -81,11 +77,13 @@ export function OfferCard({ offer, viewMode }: OfferCardProps) {
       <div
         onClick={handleViewOffer}
         style={{
-          backgroundColor: '#fff',
-          borderRadius: '12px',
-          padding: '20px',
-          border: isHovered ? '2px solid #3b82f6' : '2px solid #e5e7eb',
-          boxShadow: isHovered ? '0 8px 16px -4px rgba(59, 130, 246, 0.2)' : '0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06)',
+          backgroundColor: 'var(--OfferCard-background, #ffffff)',
+          borderRadius: 'var(--OfferCard-border-radius, 12px)',
+          padding: 'var(--OfferCard-padding, 20px)',
+          border: `2px solid ${isHovered ? 'var(--OfferCard-hover-border-color, #3b82f6)' : 'var(--OfferCard-border-color, #e5e7eb)'}`,
+          boxShadow: isHovered
+            ? 'var(--OfferCard-hover-shadow, 0 8px 16px -4px rgba(59, 130, 246, 0.2))'
+            : 'var(--OfferCard-shadow, 0 4px 6px -1px rgba(59, 130, 246, 0.1))',
           cursor: 'pointer',
           transition: 'all 0.2s ease-in-out',
           transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
@@ -101,8 +99,8 @@ export function OfferCard({ offer, viewMode }: OfferCardProps) {
             position: 'absolute',
             top: '16px',
             right: '16px',
-            backgroundColor: discountBadge.bg,
-            color: discountBadge.color,
+            backgroundColor: 'var(--OfferCard-discount-badge-background, ' + discountBadge.bg + ')',
+            color: 'var(--OfferCard-discount-badge-color, ' + discountBadge.color + ')',
             padding: '4px 8px',
             borderRadius: '4px',
             fontSize: '12px',
@@ -118,8 +116,8 @@ export function OfferCard({ offer, viewMode }: OfferCardProps) {
             position: 'absolute',
             top: '16px',
             left: '16px',
-            backgroundColor: '#3b82f6',
-            color: 'white',
+            backgroundColor: 'var(--OfferCard-highlight-background, #3b82f6)',
+            color: 'var(--OfferCard-highlight-color, white)',
             padding: '4px 8px',
             borderRadius: '4px',
             fontSize: '10px',
@@ -129,14 +127,11 @@ export function OfferCard({ offer, viewMode }: OfferCardProps) {
           </div>
         )}
 
-        <div style={{
-          display: 'flex',
-          gap: '16px'
-        }}>
+        <div style={{ display: 'flex', gap: '16px' }}>
           {/* Imagen */}
           <div style={{
-            width: '120px',
-            height: '80px',
+            width: 'var(--OfferCard-image-width, 120px)',
+            height: 'var(--OfferCard-image-height, 80px)',
             borderRadius: '8px',
             backgroundImage: `url(${offer.images[0]})`,
             backgroundSize: 'cover',
@@ -157,7 +152,7 @@ export function OfferCard({ offer, viewMode }: OfferCardProps) {
                 <h3 style={{
                   fontSize: '16px',
                   fontWeight: '600',
-                  color: '#2c3e50',
+                  color: 'var(--OfferCard-title-color, #2c3e50)',
                   margin: '0 0 4px 0',
                   lineHeight: '1.3'
                 }}>
@@ -171,21 +166,21 @@ export function OfferCard({ offer, viewMode }: OfferCardProps) {
                 }}>
                   <span style={{
                     fontSize: '12px',
-                    color: '#3b82f6',
+                    color: 'var(--OfferCard-category-color, #3b82f6)',
                     fontWeight: '500'
                   }}>
                     {offer.category}
                   </span>
                   <span style={{
                     fontSize: '12px',
-                    color: '#8e8e93'
+                    color: 'var(--OfferCard-text-color, #8e8e93)'
                   }}>
                     Vàlid fins: {offer.validUntil}
                   </span>
                   {offer.stock && (
                     <span style={{
                       fontSize: '12px',
-                      color: '#f59e0b'
+                      color: 'var(--OfferCard-stock-color, #f59e0b)'
                     }}>
                       Stock: {offer.stock}
                     </span>
@@ -199,7 +194,7 @@ export function OfferCard({ offer, viewMode }: OfferCardProps) {
                   <>
                     <div style={{
                       fontSize: '14px',
-                      color: '#8e8e93',
+                      color: 'var(--OfferCard-original-price-color, #8e8e93)',
                       textDecoration: 'line-through'
                     }}>
                       {formatPrice(offer.originalPrice)}
@@ -207,7 +202,7 @@ export function OfferCard({ offer, viewMode }: OfferCardProps) {
                     <div style={{
                       fontSize: '18px',
                       fontWeight: '700',
-                      color: '#ef4444'
+                      color: 'var(--OfferCard-discount-price-color, #ef4444)'
                     }}>
                       {offer.discountPrice === 0 ? 'GRATUÏT' : formatPrice(offer.discountPrice)}
                     </div>
@@ -216,7 +211,7 @@ export function OfferCard({ offer, viewMode }: OfferCardProps) {
                   <div style={{
                     fontSize: '18px',
                     fontWeight: '700',
-                    color: '#16a34a'
+                    color: 'var(--OfferCard-price-color, #16a34a)'
                   }}>
                     {formatPrice(offer.originalPrice)}
                   </div>
@@ -226,7 +221,7 @@ export function OfferCard({ offer, viewMode }: OfferCardProps) {
 
             <p style={{
               fontSize: '13px',
-              color: '#6c757d',
+              color: 'var(--OfferCard-description-color, #6c757d)',
               margin: '0 0 12px 0',
               lineHeight: '1.4',
               overflow: 'hidden',
@@ -258,7 +253,7 @@ export function OfferCard({ offer, viewMode }: OfferCardProps) {
                 }} />
                 <span style={{
                   fontSize: '12px',
-                  color: '#6c757d',
+                  color: 'var(--OfferCard-company-color, #6c757d)',
                   fontWeight: '500'
                 }}>
                   {offer.company.name}
@@ -284,8 +279,8 @@ export function OfferCard({ offer, viewMode }: OfferCardProps) {
                   onClick={handleToggleFavorite}
                   style={{
                     padding: '4px',
-                    backgroundColor: offer.isFavorite ? '#ef4444' : 'transparent',
-                    color: offer.isFavorite ? 'white' : '#6b7280',
+                    backgroundColor: offer.isFavorite ? 'var(--OfferCard-favorite-active-background, #ef4444)' : 'transparent',
+                    color: offer.isFavorite ? 'var(--OfferCard-favorite-active-color, white)' : 'var(--OfferCard-favorite-color, #6b7280)',
                     border: 'none',
                     borderRadius: '4px',
                     fontSize: '12px',
@@ -296,7 +291,7 @@ export function OfferCard({ offer, viewMode }: OfferCardProps) {
                 </button>
                 <span style={{
                   fontSize: '11px',
-                  color: '#8e8e93'
+                  color: 'var(--OfferCard-text-color, #8e8e93)'
                 }}>
                   {offer.views} visites
                 </span>
@@ -308,19 +303,20 @@ export function OfferCard({ offer, viewMode }: OfferCardProps) {
     );
   }
 
-  // Vista Grid
+  // ==================== VISTA GRID ====================
   const discountBadge = getDiscountBadgeColor();
-  const planBadge = getPlanBadgeColor();
 
   return (
     <div
       onClick={handleViewOffer}
       style={{
-        backgroundColor: '#fff',
-        borderRadius: '16px',
+        backgroundColor: 'var(--OfferCard-background, #ffffff)',
+        borderRadius: 'var(--OfferCard-border-radius, 16px)',
         overflow: 'hidden',
-        border: isHovered ? '2px solid #3b82f6' : '2px solid #e5e7eb',
-        boxShadow: isHovered ? '0 8px 16px -4px rgba(59, 130, 246, 0.2)' : '0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06)',
+        border: `2px solid ${isHovered ? 'var(--OfferCard-hover-border-color, #3b82f6)' : 'var(--OfferCard-border-color, #e5e7eb)'}`,
+        boxShadow: isHovered
+          ? 'var(--OfferCard-hover-shadow, 0 8px 16px -4px rgba(59, 130, 246, 0.2))'
+          : 'var(--OfferCard-shadow, 0 4px 6px -1px rgba(59, 130, 246, 0.1))',
         cursor: 'pointer',
         transition: 'all 0.2s ease-in-out',
         transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
@@ -338,8 +334,8 @@ export function OfferCard({ offer, viewMode }: OfferCardProps) {
           position: 'absolute',
           top: '12px',
           right: '12px',
-          backgroundColor: discountBadge.bg,
-          color: discountBadge.color,
+          backgroundColor: 'var(--OfferCard-discount-badge-background, ' + discountBadge.bg + ')',
+          color: 'var(--OfferCard-discount-badge-color, ' + discountBadge.color + ')',
           padding: '6px 10px',
           borderRadius: '6px',
           fontSize: '14px',
@@ -356,8 +352,8 @@ export function OfferCard({ offer, viewMode }: OfferCardProps) {
           position: 'absolute',
           top: '12px',
           left: '12px',
-          backgroundColor: '#3b82f6',
-          color: 'white',
+          backgroundColor: 'var(--OfferCard-highlight-background, #3b82f6)',
+          color: 'var(--OfferCard-highlight-color, white)',
           padding: '4px 8px',
           borderRadius: '6px',
           fontSize: '10px',
@@ -376,8 +372,8 @@ export function OfferCard({ offer, viewMode }: OfferCardProps) {
           top: offer.discountPercentage > 0 ? '52px' : '12px',
           right: '12px',
           padding: '6px',
-          backgroundColor: offer.isFavorite ? '#ef4444' : 'rgba(255,255,255,0.9)',
-          color: offer.isFavorite ? 'white' : '#6b7280',
+          backgroundColor: offer.isFavorite ? 'var(--OfferCard-favorite-active-background, #ef4444)' : 'rgba(255,255,255,0.9)',
+          color: offer.isFavorite ? 'var(--OfferCard-favorite-active-color, white)' : 'var(--OfferCard-favorite-color, #6b7280)',
           border: 'none',
           borderRadius: '50%',
           fontSize: '14px',
@@ -396,7 +392,7 @@ export function OfferCard({ offer, viewMode }: OfferCardProps) {
 
       {/* Imagen principal */}
       <div style={{
-        height: '120px',
+        height: 'var(--OfferCard-cover-height, 120px)',
         backgroundImage: `url(${offer.images[0]})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
@@ -421,9 +417,9 @@ export function OfferCard({ offer, viewMode }: OfferCardProps) {
         )}
       </div>
 
-      {/* Contenido simplificado */}
+      {/* Contenido */}
       <div style={{
-        padding: '16px',
+        padding: 'var(--OfferCard-content-padding, 16px)',
         flex: 1,
         display: 'flex',
         flexDirection: 'column'
@@ -431,7 +427,7 @@ export function OfferCard({ offer, viewMode }: OfferCardProps) {
         {/* Categoria */}
         <span style={{
           fontSize: '12px',
-          color: '#3b82f6',
+          color: 'var(--OfferCard-category-color, #3b82f6)',
           fontWeight: '500',
           marginBottom: '8px'
         }}>
@@ -442,7 +438,7 @@ export function OfferCard({ offer, viewMode }: OfferCardProps) {
         <h3 style={{
           fontSize: '16px',
           fontWeight: '600',
-          color: '#2c3e50',
+          color: 'var(--OfferCard-title-color, #2c3e50)',
           margin: '0 0 12px 0',
           lineHeight: '1.3',
           overflow: 'hidden',
@@ -464,7 +460,7 @@ export function OfferCard({ offer, viewMode }: OfferCardProps) {
             }}>
               <span style={{
                 fontSize: '14px',
-                color: '#8e8e93',
+                color: 'var(--OfferCard-original-price-color, #8e8e93)',
                 textDecoration: 'line-through'
               }}>
                 {formatPrice(offer.originalPrice)}
@@ -472,7 +468,7 @@ export function OfferCard({ offer, viewMode }: OfferCardProps) {
               <span style={{
                 fontSize: '20px',
                 fontWeight: '700',
-                color: '#ef4444'
+                color: 'var(--OfferCard-discount-price-color, #ef4444)'
               }}>
                 {offer.discountPrice === 0 ? 'GRATUÏT' : formatPrice(offer.discountPrice)}
               </span>
@@ -481,7 +477,7 @@ export function OfferCard({ offer, viewMode }: OfferCardProps) {
             <span style={{
               fontSize: '20px',
               fontWeight: '700',
-              color: '#16a34a'
+              color: 'var(--OfferCard-price-color, #16a34a)'
             }}>
               {formatPrice(offer.originalPrice)}
             </span>
@@ -504,7 +500,7 @@ export function OfferCard({ offer, viewMode }: OfferCardProps) {
           }} />
           <span style={{
             fontSize: '12px',
-            color: '#6c757d',
+            color: 'var(--OfferCard-company-color, #6c757d)',
             fontWeight: '500'
           }}>
             {offer.company.name}

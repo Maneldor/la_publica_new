@@ -33,7 +33,9 @@ import {
     Activity,
     Wrench,
     AlertTriangle,
-    UsersRound
+    UsersRound,
+    Layers,
+    Boxes
 } from 'lucide-react'
 
 // Using native React state for collapsible sections since @radix-ui/react-collapsible is not available
@@ -128,6 +130,7 @@ const ADMIN_SIDEBAR_SECTIONS = [
             { label: 'Logs', href: '/admin/logs', icon: ScrollText },
             { label: 'Avisos', href: '/admin/avisos', icon: Bell },
             { label: 'Notificacions', href: '/admin/notificacions', icon: Bell },
+            { label: 'Design System', href: '/admin/componentes', icon: Layers },
             { label: 'Configuració', href: '/admin/configuracio', icon: Settings },
         ]
     },

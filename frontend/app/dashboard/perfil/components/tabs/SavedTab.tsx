@@ -7,17 +7,17 @@ export default function SavedTab() {
     <div>
       {/* Resum estadístiques */}
       <div style={{
-        backgroundColor: '#fff',
-        borderRadius: '12px',
+        backgroundColor: 'var(--SavedTab-background, #ffffff)',
+        borderRadius: 'var(--SavedTab-border-radius, 12px)',
         padding: '24px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        boxShadow: 'var(--SavedTab-shadow, 0 2px 8px rgba(0,0,0,0.1))',
         marginBottom: '24px',
-        border: '1px solid #f0f0f0'
+        border: '1px solid var(--SavedTab-border-color, #f0f0f0)'
       }}>
         <h2 style={{
           fontSize: '20px',
           fontWeight: '600',
-          color: '#111827',
+          color: 'var(--SavedTab-title-color, #111827)',
           margin: '0 0 16px 0',
           display: 'flex',
           alignItems: 'center',
@@ -27,7 +27,7 @@ export default function SavedTab() {
           📊 Resum de Guardats
         </h2>
 
-        <p style={{ margin: '0 0 16px 0', color: '#6b7280' }}>
+        <p style={{ margin: '0 0 16px 0', color: 'var(--SavedTab-subtitle-color, #6b7280)' }}>
           Total guardats: **47**
         </p>
 
@@ -36,49 +36,49 @@ export default function SavedTab() {
           gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
           gap: '12px'
         }}>
-          <div style={{ textAlign: 'center', padding: '12px', backgroundColor: '#f0f9ff', borderRadius: '8px' }}>
-            <div style={{ fontSize: '18px', fontWeight: '600', color: '#0369a1' }}>📝 12</div>
-            <div style={{ fontSize: '12px', color: '#0369a1' }}>Blogs</div>
+          <div style={{ textAlign: 'center', padding: '12px', backgroundColor: 'var(--SavedTab-stat-blogs-bg, #f0f9ff)', borderRadius: '8px' }}>
+            <div style={{ fontSize: '18px', fontWeight: '600', color: 'var(--SavedTab-stat-blogs-color, #0369a1)' }}>📝 12</div>
+            <div style={{ fontSize: '12px', color: 'var(--SavedTab-stat-blogs-color, #0369a1)' }}>Blogs</div>
           </div>
-          <div style={{ textAlign: 'center', padding: '12px', backgroundColor: '#f0fdf4', borderRadius: '8px' }}>
-            <div style={{ fontSize: '18px', fontWeight: '600', color: '#166534' }}>🎁 8</div>
-            <div style={{ fontSize: '12px', color: '#166534' }}>Ofertes</div>
+          <div style={{ textAlign: 'center', padding: '12px', backgroundColor: 'var(--SavedTab-stat-offers-bg, #f0fdf4)', borderRadius: '8px' }}>
+            <div style={{ fontSize: '18px', fontWeight: '600', color: 'var(--SavedTab-stat-offers-color, #166534)' }}>🎁 8</div>
+            <div style={{ fontSize: '12px', color: 'var(--SavedTab-stat-offers-color, #166534)' }}>Ofertes</div>
           </div>
-          <div style={{ textAlign: 'center', padding: '12px', backgroundColor: '#fdf4ff', borderRadius: '8px' }}>
-            <div style={{ fontSize: '18px', fontWeight: '600', color: '#86198f' }}>💬 15</div>
-            <div style={{ fontSize: '12px', color: '#86198f' }}>Forums</div>
+          <div style={{ textAlign: 'center', padding: '12px', backgroundColor: 'var(--SavedTab-stat-forums-bg, #fdf4ff)', borderRadius: '8px' }}>
+            <div style={{ fontSize: '18px', fontWeight: '600', color: 'var(--SavedTab-stat-forums-color, #86198f)' }}>💬 15</div>
+            <div style={{ fontSize: '12px', color: 'var(--SavedTab-stat-forums-color, #86198f)' }}>Forums</div>
           </div>
-          <div style={{ textAlign: 'center', padding: '12px', backgroundColor: '#fff7ed', borderRadius: '8px' }}>
-            <div style={{ fontSize: '18px', fontWeight: '600', color: '#c2410c' }}>📢 6</div>
-            <div style={{ fontSize: '12px', color: '#c2410c' }}>Anuncis</div>
+          <div style={{ textAlign: 'center', padding: '12px', backgroundColor: 'var(--SavedTab-stat-anuncis-bg, #fff7ed)', borderRadius: '8px' }}>
+            <div style={{ fontSize: '18px', fontWeight: '600', color: 'var(--SavedTab-stat-anuncis-color, #c2410c)' }}>📢 6</div>
+            <div style={{ fontSize: '12px', color: 'var(--SavedTab-stat-anuncis-color, #c2410c)' }}>Anuncis</div>
           </div>
-          <div style={{ textAlign: 'center', padding: '12px', backgroundColor: '#eef2ff', borderRadius: '8px' }}>
-            <div style={{ fontSize: '18px', fontWeight: '600', color: '#4338ca' }}>🏢 3</div>
-            <div style={{ fontSize: '12px', color: '#4338ca' }}>Empreses</div>
+          <div style={{ textAlign: 'center', padding: '12px', backgroundColor: 'var(--SavedTab-stat-empreses-bg, #eef2ff)', borderRadius: '8px' }}>
+            <div style={{ fontSize: '18px', fontWeight: '600', color: 'var(--SavedTab-stat-empreses-color, #4338ca)' }}>🏢 3</div>
+            <div style={{ fontSize: '12px', color: 'var(--SavedTab-stat-empreses-color, #4338ca)' }}>Empreses</div>
           </div>
-          <div style={{ textAlign: 'center', padding: '12px', backgroundColor: '#fdf2f8', borderRadius: '8px' }}>
-            <div style={{ fontSize: '18px', fontWeight: '600', color: '#be185d' }}>👥 3</div>
-            <div style={{ fontSize: '12px', color: '#be185d' }}>Grups</div>
+          <div style={{ textAlign: 'center', padding: '12px', backgroundColor: 'var(--SavedTab-stat-grups-bg, #fdf2f8)', borderRadius: '8px' }}>
+            <div style={{ fontSize: '18px', fontWeight: '600', color: 'var(--SavedTab-stat-grups-color, #be185d)' }}>👥 3</div>
+            <div style={{ fontSize: '12px', color: 'var(--SavedTab-stat-grups-color, #be185d)' }}>Grups</div>
           </div>
         </div>
       </div>
 
       {/* Ofertes guardades */}
       <div style={{
-        backgroundColor: '#fff',
-        borderRadius: '12px',
+        backgroundColor: 'var(--SavedTab-background, #ffffff)',
+        borderRadius: 'var(--SavedTab-border-radius, 12px)',
         padding: '20px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        boxShadow: 'var(--SavedTab-shadow, 0 2px 8px rgba(0,0,0,0.1))',
         marginBottom: '20px',
-        border: '1px solid #f0f0f0'
+        border: '1px solid var(--SavedTab-border-color, #f0f0f0)'
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', margin: 0 }}>
+          <h3 style={{ fontSize: '18px', fontWeight: '600', color: 'var(--SavedTab-title-color, #111827)', margin: 0 }}>
             🎁 OFERTES GUARDADES (8)
           </h3>
           <button
             style={{
-              color: '#3b82f6',
+              color: 'var(--SavedTab-link-color, #3b82f6)',
               background: 'none',
               border: 'none',
               cursor: 'pointer',
@@ -129,10 +129,10 @@ export default function SavedTab() {
             <div
               key={index}
               style={{
-                backgroundColor: '#fff',
-                borderRadius: '8px',
+                backgroundColor: 'var(--SavedTab-card-bg, #ffffff)',
+                borderRadius: 'var(--SavedTab-card-radius, 8px)',
                 overflow: 'hidden',
-                border: '1px solid #e5e7eb',
+                border: '1px solid var(--SavedTab-card-border, #e5e7eb)',
                 cursor: 'pointer',
                 position: 'relative'
               }}
@@ -143,17 +143,17 @@ export default function SavedTab() {
                 style={{ width: '100%', height: '120px', objectFit: 'cover' }}
               />
               <div style={{ padding: '12px' }}>
-                <h4 style={{ fontSize: '14px', fontWeight: '600', color: '#111827', margin: '0 0 8px 0', lineHeight: '1.3' }}>
+                <h4 style={{ fontSize: '14px', fontWeight: '600', color: 'var(--SavedTab-card-title, #111827)', margin: '0 0 8px 0', lineHeight: '1.3' }}>
                   {offer.title}
                 </h4>
-                <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '8px' }}>
+                <div style={{ fontSize: '12px', color: 'var(--SavedTab-card-subtitle, #6b7280)', marginBottom: '8px' }}>
                   {offer.company}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '16px', fontWeight: '700', color: '#16a34a' }}>
+                  <span style={{ fontSize: '16px', fontWeight: '700', color: 'var(--SavedTab-price-color, #16a34a)' }}>
                     {offer.price}
                   </span>
-                  <span style={{ fontSize: '12px', color: '#6b7280', textDecoration: 'line-through' }}>
+                  <span style={{ fontSize: '12px', color: 'var(--SavedTab-card-subtitle, #6b7280)', textDecoration: 'line-through' }}>
                     {offer.originalPrice}
                   </span>
                 </div>
@@ -165,15 +165,15 @@ export default function SavedTab() {
                   top: '8px',
                   right: '8px',
                   padding: '4px',
-                  backgroundColor: 'rgba(255,255,255,0.9)',
+                  backgroundColor: 'var(--SavedTab-button-bg, rgba(255,255,255,0.9))',
                   border: 'none',
                   borderRadius: '4px',
                   cursor: 'pointer',
-                  color: '#ef4444'
+                  color: 'var(--SavedTab-heart-color, #ef4444)'
                 }}
                 title="Eliminar de guardats"
               >
-                <Heart style={{ width: '14px', height: '14px', fill: '#ef4444' }} />
+                <Heart style={{ width: '14px', height: '14px', fill: 'var(--SavedTab-heart-color, #ef4444)' }} />
               </button>
             </div>
           ))}
@@ -182,20 +182,20 @@ export default function SavedTab() {
 
       {/* Blogs guardats */}
       <div style={{
-        backgroundColor: '#fff',
-        borderRadius: '12px',
+        backgroundColor: 'var(--SavedTab-background, #ffffff)',
+        borderRadius: 'var(--SavedTab-border-radius, 12px)',
         padding: '20px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        boxShadow: 'var(--SavedTab-shadow, 0 2px 8px rgba(0,0,0,0.1))',
         marginBottom: '20px',
-        border: '1px solid #f0f0f0'
+        border: '1px solid var(--SavedTab-border-color, #f0f0f0)'
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', margin: 0 }}>
+          <h3 style={{ fontSize: '18px', fontWeight: '600', color: 'var(--SavedTab-title-color, #111827)', margin: 0 }}>
             📝 BLOGS GUARDATS (12)
           </h3>
           <button
             style={{
-              color: '#3b82f6',
+              color: 'var(--SavedTab-link-color, #3b82f6)',
               background: 'none',
               border: 'none',
               cursor: 'pointer',
@@ -238,10 +238,10 @@ export default function SavedTab() {
             <div
               key={index}
               style={{
-                backgroundColor: '#fff',
-                borderRadius: '8px',
+                backgroundColor: 'var(--SavedTab-card-bg, #ffffff)',
+                borderRadius: 'var(--SavedTab-card-radius, 8px)',
                 overflow: 'hidden',
-                border: '1px solid #e5e7eb',
+                border: '1px solid var(--SavedTab-card-border, #e5e7eb)',
                 cursor: 'pointer',
                 position: 'relative'
               }}
@@ -252,10 +252,10 @@ export default function SavedTab() {
                 style={{ width: '100%', height: '120px', objectFit: 'cover' }}
               />
               <div style={{ padding: '12px' }}>
-                <h4 style={{ fontSize: '14px', fontWeight: '600', color: '#111827', margin: '0 0 8px 0', lineHeight: '1.3' }}>
+                <h4 style={{ fontSize: '14px', fontWeight: '600', color: 'var(--SavedTab-card-title, #111827)', margin: '0 0 8px 0', lineHeight: '1.3' }}>
                   {blog.title}
                 </h4>
-                <p style={{ fontSize: '12px', color: '#6b7280', margin: 0, lineHeight: '1.4' }}>
+                <p style={{ fontSize: '12px', color: 'var(--SavedTab-card-subtitle, #6b7280)', margin: 0, lineHeight: '1.4' }}>
                   {blog.description}
                 </p>
               </div>
@@ -266,15 +266,15 @@ export default function SavedTab() {
                   top: '8px',
                   right: '8px',
                   padding: '4px',
-                  backgroundColor: 'rgba(255,255,255,0.9)',
+                  backgroundColor: 'var(--SavedTab-button-bg, rgba(255,255,255,0.9))',
                   border: 'none',
                   borderRadius: '4px',
                   cursor: 'pointer',
-                  color: '#3b82f6'
+                  color: 'var(--SavedTab-bookmark-color, #3b82f6)'
                 }}
                 title="Eliminar de guardats"
               >
-                <Bookmark style={{ width: '14px', height: '14px', fill: '#3b82f6' }} />
+                <Bookmark style={{ width: '14px', height: '14px', fill: 'var(--SavedTab-bookmark-color, #3b82f6)' }} />
               </button>
             </div>
           ))}
@@ -283,45 +283,45 @@ export default function SavedTab() {
 
       {/* Altres categories */}
       <div style={{
-        backgroundColor: '#fff',
-        borderRadius: '12px',
+        backgroundColor: 'var(--SavedTab-background, #ffffff)',
+        borderRadius: 'var(--SavedTab-border-radius, 12px)',
         padding: '20px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        boxShadow: 'var(--SavedTab-shadow, 0 2px 8px rgba(0,0,0,0.1))',
         marginBottom: '20px',
-        border: '1px solid #f0f0f0'
+        border: '1px solid var(--SavedTab-border-color, #f0f0f0)'
       }}>
-        <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', margin: '0 0 16px 0' }}>
+        <h3 style={{ fontSize: '18px', fontWeight: '600', color: 'var(--SavedTab-title-color, #111827)', margin: '0 0 16px 0' }}>
           📂 Altres Categories
         </h3>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
-          <div style={{ padding: '16px', backgroundColor: '#fdf4ff', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ padding: '16px', backgroundColor: 'var(--SavedTab-cat-forums-bg, #fdf4ff)', borderRadius: '8px', textAlign: 'center' }}>
             <div style={{ fontSize: '24px', marginBottom: '8px' }}>💬</div>
-            <div style={{ fontWeight: '600', color: '#86198f' }}>Forums (15)</div>
-            <div style={{ fontSize: '12px', color: '#a855f7' }}>Temes guardats</div>
+            <div style={{ fontWeight: '600', color: 'var(--SavedTab-cat-forums-color, #86198f)' }}>Forums (15)</div>
+            <div style={{ fontSize: '12px', color: 'var(--SavedTab-cat-forums-light, #a855f7)' }}>Temes guardats</div>
           </div>
-          <div style={{ padding: '16px', backgroundColor: '#fff7ed', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ padding: '16px', backgroundColor: 'var(--SavedTab-cat-anuncis-bg, #fff7ed)', borderRadius: '8px', textAlign: 'center' }}>
             <div style={{ fontSize: '24px', marginBottom: '8px' }}>📢</div>
-            <div style={{ fontWeight: '600', color: '#c2410c' }}>Anuncis (6)</div>
-            <div style={{ fontSize: '12px', color: '#ea580c' }}>Anuncis d'interès</div>
+            <div style={{ fontWeight: '600', color: 'var(--SavedTab-cat-anuncis-color, #c2410c)' }}>Anuncis (6)</div>
+            <div style={{ fontSize: '12px', color: 'var(--SavedTab-cat-anuncis-light, #ea580c)' }}>Anuncis d'interès</div>
           </div>
-          <div style={{ padding: '16px', backgroundColor: '#eef2ff', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ padding: '16px', backgroundColor: 'var(--SavedTab-cat-empreses-bg, #eef2ff)', borderRadius: '8px', textAlign: 'center' }}>
             <div style={{ fontSize: '24px', marginBottom: '8px' }}>🏢</div>
-            <div style={{ fontWeight: '600', color: '#4338ca' }}>Empreses (3)</div>
-            <div style={{ fontSize: '12px', color: '#6366f1' }}>Empreses seguides</div>
+            <div style={{ fontWeight: '600', color: 'var(--SavedTab-cat-empreses-color, #4338ca)' }}>Empreses (3)</div>
+            <div style={{ fontSize: '12px', color: 'var(--SavedTab-cat-empreses-light, #6366f1)' }}>Empreses seguides</div>
           </div>
-          <div style={{ padding: '16px', backgroundColor: '#fdf2f8', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ padding: '16px', backgroundColor: 'var(--SavedTab-cat-grups-bg, #fdf2f8)', borderRadius: '8px', textAlign: 'center' }}>
             <div style={{ fontSize: '24px', marginBottom: '8px' }}>👥</div>
-            <div style={{ fontWeight: '600', color: '#be185d' }}>Grups (3)</div>
-            <div style={{ fontSize: '12px', color: '#ec4899' }}>Grups d'interès</div>
+            <div style={{ fontWeight: '600', color: 'var(--SavedTab-cat-grups-color, #be185d)' }}>Grups (3)</div>
+            <div style={{ fontSize: '12px', color: 'var(--SavedTab-cat-grups-light, #ec4899)' }}>Grups d'interès</div>
           </div>
         </div>
 
         <div style={{ textAlign: 'center', marginTop: '16px' }}>
           <button
             style={{
-              backgroundColor: '#3b82f6',
-              color: 'white',
+              backgroundColor: 'var(--SavedTab-primary-button-bg, #3b82f6)',
+              color: 'var(--SavedTab-primary-button-text, white)',
               padding: '10px 20px',
               borderRadius: '6px',
               border: 'none',

@@ -61,10 +61,24 @@ export function CompanyCard({ company, viewMode }: CompanyCardProps) {
     const hasHalfStar = rating % 1 !== 0;
 
     for (let i = 0; i < fullStars; i++) {
-      stars.push(<span key={i} style={{ color: '#fbbf24' }}>★</span>);
+      stars.push(
+        <span
+          key={i}
+          style={{ color: 'var(--CompanyCard-rating-color, #fbbf24)' }}
+        >
+          ★
+        </span>
+      );
     }
     if (hasHalfStar) {
-      stars.push(<span key="half" style={{ color: '#fbbf24' }}>☆</span>);
+      stars.push(
+        <span
+          key="half"
+          style={{ color: 'var(--CompanyCard-rating-color, #fbbf24)' }}
+        >
+          ☆
+        </span>
+      );
     }
     while (stars.length < 5) {
       stars.push(<span key={stars.length} style={{ color: '#e5e7eb' }}>☆</span>);
@@ -72,16 +86,19 @@ export function CompanyCard({ company, viewMode }: CompanyCardProps) {
     return stars;
   };
 
+  // ==================== VISTA LIST ====================
   if (viewMode === 'list') {
     return (
       <div
         onClick={handleViewCompany}
         style={{
-          backgroundColor: '#fff',
-          borderRadius: '12px',
-          padding: '20px',
-          border: isHovered ? '2px solid #3b82f6' : '2px solid #e5e7eb',
-          boxShadow: isHovered ? '0 8px 16px -4px rgba(59, 130, 246, 0.2)' : '0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06)',
+          backgroundColor: 'var(--CompanyCard-background, #ffffff)',
+          borderRadius: 'var(--CompanyCard-border-radius, 12px)',
+          padding: 'var(--CompanyCard-padding, 20px)',
+          border: `2px solid ${isHovered ? 'var(--CompanyCard-hover-border-color, #3b82f6)' : 'var(--CompanyCard-border-color, #e5e7eb)'}`,
+          boxShadow: isHovered
+            ? 'var(--CompanyCard-hover-shadow, 0 8px 16px -4px rgba(59, 130, 246, 0.2))'
+            : 'var(--CompanyCard-shadow, 0 4px 6px -1px rgba(59, 130, 246, 0.1))',
           cursor: 'pointer',
           transition: 'all 0.2s ease-in-out',
           transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
@@ -112,8 +129,8 @@ export function CompanyCard({ company, viewMode }: CompanyCardProps) {
         }}>
           {/* Logo */}
           <div style={{
-            width: '80px',
-            height: '80px',
+            width: 'var(--CompanyCard-logo-size, 80px)',
+            height: 'var(--CompanyCard-logo-size, 80px)',
             borderRadius: '8px',
             backgroundImage: `url(${company.logo})`,
             backgroundSize: 'cover',
@@ -134,7 +151,7 @@ export function CompanyCard({ company, viewMode }: CompanyCardProps) {
                 <h3 style={{
                   fontSize: '16px',
                   fontWeight: '600',
-                  color: '#2c3e50',
+                  color: 'var(--CompanyCard-title-color, #2c3e50)',
                   margin: '0 0 4px 0',
                   lineHeight: '1.3'
                 }}>
@@ -148,20 +165,20 @@ export function CompanyCard({ company, viewMode }: CompanyCardProps) {
                 }}>
                   <span style={{
                     fontSize: '12px',
-                    color: '#3b82f6',
+                    color: 'var(--CompanyCard-sector-color, #3b82f6)',
                     fontWeight: '500'
                   }}>
                     {company.sector}
                   </span>
                   <span style={{
                     fontSize: '12px',
-                    color: '#8e8e93'
+                    color: 'var(--CompanyCard-text-color, #8e8e93)'
                   }}>
                     {company.location}
                   </span>
                   <span style={{
                     fontSize: '12px',
-                    color: '#6b7280'
+                    color: 'var(--CompanyCard-text-color, #6b7280)'
                   }}>
                     {company.collaborationType}
                   </span>
@@ -179,7 +196,7 @@ export function CompanyCard({ company, viewMode }: CompanyCardProps) {
                 </div>
                 <span style={{
                   fontSize: '12px',
-                  color: '#6b7280',
+                  color: 'var(--CompanyCard-text-color, #6b7280)',
                   marginLeft: '4px'
                 }}>
                   ({company.reviewsCount})
@@ -189,7 +206,7 @@ export function CompanyCard({ company, viewMode }: CompanyCardProps) {
 
             <p style={{
               fontSize: '13px',
-              color: '#6c757d',
+              color: 'var(--CompanyCard-description-color, #6c757d)',
               margin: '0 0 12px 0',
               lineHeight: '1.4',
               overflow: 'hidden',
@@ -214,8 +231,8 @@ export function CompanyCard({ company, viewMode }: CompanyCardProps) {
                 {company.certifications.slice(0, 2).map((cert) => (
                   <span key={cert} style={{
                     fontSize: '10px',
-                    color: '#6b7280',
-                    backgroundColor: '#f3f4f6',
+                    color: 'var(--CompanyCard-badge-color, #6b7280)',
+                    backgroundColor: 'var(--CompanyCard-badge-background, #f3f4f6)',
                     padding: '2px 6px',
                     borderRadius: '4px'
                   }}>
@@ -229,7 +246,7 @@ export function CompanyCard({ company, viewMode }: CompanyCardProps) {
                 alignItems: 'center',
                 gap: '12px',
                 fontSize: '11px',
-                color: '#8e8e93'
+                color: 'var(--CompanyCard-text-color, #8e8e93)'
               }}>
                 <span>Est. {company.yearEstablished}</span>
                 <span>{company.employeeCount} empleats</span>
@@ -241,16 +258,18 @@ export function CompanyCard({ company, viewMode }: CompanyCardProps) {
     );
   }
 
-  // Vista Grid
+  // ==================== VISTA GRID ====================
   return (
     <div
       onClick={handleViewCompany}
       style={{
-        backgroundColor: '#fff',
-        borderRadius: '16px',
+        backgroundColor: 'var(--CompanyCard-background, #ffffff)',
+        borderRadius: 'var(--CompanyCard-border-radius, 16px)',
         overflow: 'hidden',
-        border: isHovered ? '2px solid #3b82f6' : '2px solid #e5e7eb',
-        boxShadow: isHovered ? '0 8px 16px -4px rgba(59, 130, 246, 0.2)' : '0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06)',
+        border: `2px solid ${isHovered ? 'var(--CompanyCard-hover-border-color, #3b82f6)' : 'var(--CompanyCard-border-color, #e5e7eb)'}`,
+        boxShadow: isHovered
+          ? 'var(--CompanyCard-hover-shadow, 0 8px 16px -4px rgba(59, 130, 246, 0.2))'
+          : 'var(--CompanyCard-shadow, 0 4px 6px -1px rgba(59, 130, 246, 0.1))',
         cursor: 'pointer',
         transition: 'all 0.2s ease-in-out',
         transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
@@ -284,8 +303,8 @@ export function CompanyCard({ company, viewMode }: CompanyCardProps) {
           position: 'absolute',
           top: '12px',
           left: '12px',
-          backgroundColor: '#ef4444',
-          color: 'white',
+          backgroundColor: 'var(--CompanyCard-highlight-background, #ef4444)',
+          color: 'var(--CompanyCard-highlight-color, white)',
           padding: '4px 8px',
           borderRadius: '6px',
           fontSize: '10px',
@@ -298,7 +317,7 @@ export function CompanyCard({ company, viewMode }: CompanyCardProps) {
 
       {/* Imatge de portada */}
       <div style={{
-        height: '120px',
+        height: 'var(--CompanyCard-cover-height, 120px)',
         backgroundImage: `url(${company.coverImage})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
@@ -310,8 +329,8 @@ export function CompanyCard({ company, viewMode }: CompanyCardProps) {
           position: 'absolute',
           bottom: '-20px',
           left: '16px',
-          width: '40px',
-          height: '40px',
+          width: 'var(--CompanyCard-logo-size-grid, 40px)',
+          height: 'var(--CompanyCard-logo-size-grid, 40px)',
           borderRadius: '8px',
           backgroundImage: `url(${company.logo})`,
           backgroundSize: 'cover',
@@ -323,7 +342,7 @@ export function CompanyCard({ company, viewMode }: CompanyCardProps) {
 
       {/* Contingut */}
       <div style={{
-        padding: '28px 16px 16px 16px',
+        padding: 'var(--CompanyCard-content-padding, 28px 16px 16px 16px)',
         flex: 1,
         display: 'flex',
         flexDirection: 'column'
@@ -337,14 +356,14 @@ export function CompanyCard({ company, viewMode }: CompanyCardProps) {
         }}>
           <span style={{
             fontSize: '12px',
-            color: '#3b82f6',
+            color: 'var(--CompanyCard-sector-color, #3b82f6)',
             fontWeight: '500'
           }}>
             {company.sector}
           </span>
           <span style={{
             fontSize: '11px',
-            color: '#8e8e93'
+            color: 'var(--CompanyCard-text-color, #8e8e93)'
           }}>
             {company.location}
           </span>
@@ -354,7 +373,7 @@ export function CompanyCard({ company, viewMode }: CompanyCardProps) {
         <h3 style={{
           fontSize: '15px',
           fontWeight: '600',
-          color: '#2c3e50',
+          color: 'var(--CompanyCard-title-color, #2c3e50)',
           margin: '0 0 4px 0',
           lineHeight: '1.3',
           overflow: 'hidden',
@@ -368,7 +387,7 @@ export function CompanyCard({ company, viewMode }: CompanyCardProps) {
         {/* Tipus de col·laboració */}
         <div style={{
           fontSize: '11px',
-          color: '#6b7280',
+          color: 'var(--CompanyCard-text-color, #6b7280)',
           marginBottom: '8px'
         }}>
           {company.collaborationType}
@@ -386,7 +405,7 @@ export function CompanyCard({ company, viewMode }: CompanyCardProps) {
           </div>
           <span style={{
             fontSize: '11px',
-            color: '#6b7280',
+            color: 'var(--CompanyCard-text-color, #6b7280)',
             marginLeft: '4px'
           }}>
             ({company.reviewsCount})
@@ -396,7 +415,7 @@ export function CompanyCard({ company, viewMode }: CompanyCardProps) {
         {/* Descripció */}
         <p style={{
           fontSize: '12px',
-          color: '#6c757d',
+          color: 'var(--CompanyCard-description-color, #6c757d)',
           lineHeight: '1.4',
           margin: '0 0 12px 0',
           flex: 1,
@@ -421,8 +440,8 @@ export function CompanyCard({ company, viewMode }: CompanyCardProps) {
             {company.certifications.slice(0, 2).map((cert) => (
               <span key={cert} style={{
                 fontSize: '9px',
-                color: '#6b7280',
-                backgroundColor: '#f3f4f6',
+                color: 'var(--CompanyCard-badge-color, #6b7280)',
+                backgroundColor: 'var(--CompanyCard-badge-background, #f3f4f6)',
                 padding: '2px 4px',
                 borderRadius: '3px'
               }}>
@@ -433,7 +452,7 @@ export function CompanyCard({ company, viewMode }: CompanyCardProps) {
 
           <div style={{
             fontSize: '10px',
-            color: '#8e8e93'
+            color: 'var(--CompanyCard-text-color, #8e8e93)'
           }}>
             Est. {company.yearEstablished}
           </div>

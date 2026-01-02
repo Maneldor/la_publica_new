@@ -75,20 +75,20 @@ interface MemberCardProps {
 }
 
 const adminLabels = {
-  LOCAL: { label: 'Administracio Local', color: 'bg-blue-100 text-blue-700 border-blue-200' },
-  AUTONOMICA: { label: 'Administracio Autonomica', color: 'bg-purple-100 text-purple-700 border-purple-200' },
-  CENTRAL: { label: 'Administracio Central', color: 'bg-amber-100 text-amber-700 border-amber-200' },
+  LOCAL: { label: 'Administracio Local', bgColor: '#dbeafe', color: '#1d4ed8', borderColor: '#bfdbfe' },
+  AUTONOMICA: { label: 'Administracio Autonomica', bgColor: '#f3e8ff', color: '#7c3aed', borderColor: '#e9d5ff' },
+  CENTRAL: { label: 'Administracio Central', bgColor: '#fef3c7', color: '#b45309', borderColor: '#fde68a' },
 };
 
 const coverGradients = [
-  'from-rose-400 via-fuchsia-500 to-indigo-500',
-  'from-blue-400 via-cyan-500 to-teal-500',
-  'from-amber-400 via-orange-500 to-red-500',
-  'from-emerald-400 via-teal-500 to-cyan-500',
-  'from-violet-400 via-purple-500 to-fuchsia-500',
-  'from-pink-400 via-rose-500 to-red-500',
-  'from-indigo-400 via-blue-500 to-cyan-500',
-  'from-green-400 via-emerald-500 to-teal-500',
+  'linear-gradient(135deg, #fb7185 0%, #d946ef 50%, #6366f1 100%)',
+  'linear-gradient(135deg, #60a5fa 0%, #22d3ee 50%, #14b8a6 100%)',
+  'linear-gradient(135deg, #fbbf24 0%, #f97316 50%, #ef4444 100%)',
+  'linear-gradient(135deg, #34d399 0%, #14b8a6 50%, #22d3ee 100%)',
+  'linear-gradient(135deg, #a78bfa 0%, #a855f7 50%, #d946ef 100%)',
+  'linear-gradient(135deg, #f472b6 0%, #fb7185 50%, #ef4444 100%)',
+  'linear-gradient(135deg, #818cf8 0%, #3b82f6 50%, #22d3ee 100%)',
+  'linear-gradient(135deg, #4ade80 0%, #10b981 50%, #14b8a6 100%)',
 ];
 
 export function MemberCard({ member, viewMode, connectionActions }: MemberCardProps) {
@@ -239,15 +239,107 @@ export function MemberCard({ member, viewMode, connectionActions }: MemberCardPr
     router.push(`/dashboard/membres/${member.username}`);
   };
 
+  // Button styles
+  const primaryButtonStyle: React.CSSProperties = {
+    padding: '8px 16px',
+    backgroundColor: 'var(--MemberCard-primary-button-bg, #4f46e5)',
+    color: 'var(--MemberCard-primary-button-color, #ffffff)',
+    fontSize: '14px',
+    fontWeight: '500',
+    borderRadius: '8px',
+    border: 'none',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    transition: 'all 0.2s',
+  };
+
+  const secondaryButtonStyle: React.CSSProperties = {
+    padding: '8px 16px',
+    backgroundColor: 'var(--MemberCard-secondary-button-bg, #f3f4f6)',
+    color: 'var(--MemberCard-secondary-button-color, #374151)',
+    fontSize: '14px',
+    fontWeight: '500',
+    borderRadius: '8px',
+    border: 'none',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    transition: 'all 0.2s',
+  };
+
+  const dangerButtonStyle: React.CSSProperties = {
+    padding: '8px 16px',
+    backgroundColor: 'var(--MemberCard-danger-button-bg, #fef2f2)',
+    color: 'var(--MemberCard-danger-button-color, #dc2626)',
+    fontSize: '14px',
+    fontWeight: '500',
+    borderRadius: '8px',
+    border: 'none',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    transition: 'all 0.2s',
+  };
+
+  const warningButtonStyle: React.CSSProperties = {
+    padding: '8px 16px',
+    backgroundColor: 'var(--MemberCard-warning-button-bg, #fef3c7)',
+    color: 'var(--MemberCard-warning-button-color, #b45309)',
+    fontSize: '14px',
+    fontWeight: '500',
+    borderRadius: '8px',
+    border: 'none',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    transition: 'all 0.2s',
+  };
+
+  const successButtonStyle: React.CSSProperties = {
+    padding: '8px 16px',
+    backgroundColor: 'var(--MemberCard-success-button-bg, #16a34a)',
+    color: 'var(--MemberCard-success-button-color, #ffffff)',
+    fontSize: '14px',
+    fontWeight: '500',
+    borderRadius: '8px',
+    border: 'none',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    transition: 'all 0.2s',
+  };
+
   // ==================== VISTA GRID ====================
   if (viewMode === 'grid') {
     return (
       <div
-        className={`bg-white rounded-2xl overflow-hidden border-2 transition-all duration-300 cursor-pointer h-full flex flex-col group relative ${
-          isHovered
-            ? 'border-indigo-400 shadow-xl -translate-y-1 ring-2 ring-indigo-500 ring-offset-2'
-            : 'border-gray-200 shadow-sm'
-        }`}
+        style={{
+          backgroundColor: 'var(--MemberCard-background, #ffffff)',
+          borderRadius: 'var(--MemberCard-border-radius, 16px)',
+          overflow: 'hidden',
+          border: `2px solid ${isHovered ? 'var(--MemberCard-hover-border-color, #818cf8)' : 'var(--MemberCard-border-color, #e5e7eb)'}`,
+          boxShadow: isHovered
+            ? 'var(--MemberCard-hover-shadow, 0 20px 25px -5px rgba(99, 102, 241, 0.1), 0 0 0 2px #818cf8, 0 0 0 4px rgba(129, 140, 248, 0.3))'
+            : 'var(--MemberCard-shadow, 0 1px 3px 0 rgb(0 0 0 / 0.1))',
+          cursor: 'pointer',
+          transition: 'all 0.3s ease',
+          transform: isHovered ? 'translateY(-4px)' : 'translateY(0)',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          position: 'relative',
+        }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         onClick={handleViewProfile}
@@ -255,103 +347,179 @@ export function MemberCard({ member, viewMode, connectionActions }: MemberCardPr
         {/* ========== CONTINGUT NORMAL DE LA TARGETA ========== */}
 
         {/* Cover Image */}
-        <div className={`h-28 flex-shrink-0 bg-gradient-to-br ${gradient} relative`}>
+        <div
+          style={{
+            height: 'var(--MemberCard-cover-height, 112px)',
+            flexShrink: 0,
+            background: member.coverImage ? undefined : gradient,
+            position: 'relative',
+          }}
+        >
           {member.coverImage && (
             <img
               src={member.coverImage}
               alt=""
-              className="w-full h-full object-cover"
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'linear-gradient(to top, rgba(0,0,0,0.2), transparent)',
+          }} />
           {/* Indicador de perfil amb restriccions */}
           {member.hasSystemRestrictions && (
-            <div className="absolute top-2 right-2 p-1.5 bg-white/20 backdrop-blur-sm rounded-full" title="Perfil amb restriccions de privacitat">
-              <Lock className="w-3.5 h-3.5 text-white" />
+            <div
+              style={{
+                position: 'absolute',
+                top: '8px',
+                right: '8px',
+                padding: '6px',
+                backgroundColor: 'rgba(255,255,255,0.2)',
+                backdropFilter: 'blur(4px)',
+                borderRadius: '9999px',
+              }}
+              title="Perfil amb restriccions de privacitat"
+            >
+              <Lock style={{ width: '14px', height: '14px', color: 'white' }} />
             </div>
           )}
         </div>
 
         {/* Avatar */}
-        <div className="relative px-4 -mt-11 z-10 flex-shrink-0">
-          <div className="relative w-[88px] h-[88px] mx-auto">
-            <div className="w-full h-full rounded-full border-4 border-white shadow-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center overflow-hidden">
+        <div style={{ position: 'relative', padding: '0 16px', marginTop: '-44px', zIndex: 10, flexShrink: 0 }}>
+          <div style={{ position: 'relative', width: 'var(--MemberCard-avatar-size, 88px)', height: 'var(--MemberCard-avatar-size, 88px)', margin: '0 auto' }}>
+            <div
+              style={{
+                width: '100%',
+                height: '100%',
+                borderRadius: '50%',
+                border: '4px solid white',
+                boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
+                background: 'var(--MemberCard-avatar-gradient, linear-gradient(135deg, #6366f1, #a855f7))',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                overflow: 'hidden',
+              }}
+            >
               {member.avatar ? (
-                <img src={member.avatar} alt={displayName} className="w-full h-full object-cover" />
+                <img src={member.avatar} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
-                <span className="text-white text-2xl font-bold">{initials}</span>
+                <span style={{ color: 'white', fontSize: '24px', fontWeight: 'bold' }}>{initials}</span>
               )}
             </div>
             {member.isOnline && (
-              <span className="absolute bottom-1 right-1 w-5 h-5 bg-green-500 border-[3px] border-white rounded-full shadow-md" />
+              <span
+                style={{
+                  position: 'absolute',
+                  bottom: '4px',
+                  right: '4px',
+                  width: '20px',
+                  height: '20px',
+                  backgroundColor: 'var(--MemberCard-online-color, #22c55e)',
+                  border: '3px solid white',
+                  borderRadius: '50%',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                }}
+              />
             )}
           </div>
         </div>
 
         {/* Content */}
-        <div className="flex-1 flex flex-col px-4 pb-3 pt-2 text-center">
-          <h3 className="font-semibold text-gray-900 text-base truncate">
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '8px 16px 12px', textAlign: 'center' }}>
+          <h3 style={{
+            fontWeight: '600',
+            color: 'var(--MemberCard-title-color, #111827)',
+            fontSize: '16px',
+            margin: 0,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}>
             {displayName}
           </h3>
           {showNickSeparate && (
-            <p className="text-sm text-gray-500">@{member.username}</p>
+            <p style={{
+              fontSize: '14px',
+              color: 'var(--MemberCard-text-color, #6b7280)',
+              margin: 0,
+            }}>
+              @{member.username}
+            </p>
           )}
 
-          <div className="mt-2 h-6 flex justify-center items-center">
+          <div style={{ marginTop: '8px', height: '24px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
             {adminInfo ? (
-              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${adminInfo.color}`}>
-                <Building2 className="w-3 h-3" />
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '2px 8px',
+                borderRadius: '9999px',
+                fontSize: '12px',
+                fontWeight: '500',
+                border: `1px solid ${adminInfo.borderColor}`,
+                backgroundColor: adminInfo.bgColor,
+                color: adminInfo.color,
+              }}>
+                <Building2 style={{ width: '12px', height: '12px' }} />
                 {adminInfo.label}
               </span>
             ) : (
-              <span className="invisible text-xs">placeholder</span>
+              <span style={{ visibility: 'hidden', fontSize: '12px' }}>placeholder</span>
             )}
           </div>
 
-          <div className="mt-3 flex justify-center gap-5 flex-1">
+          <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', gap: '20px', flex: 1 }}>
             {showConnections ? (
-              <div className="text-center">
-                <span className="block text-base font-bold text-gray-900">
+              <div style={{ textAlign: 'center' }}>
+                <span style={{
+                  display: 'block',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  color: 'var(--MemberCard-stats-value-color, #111827)',
+                }}>
                   {connectionsToShow}
                 </span>
-                <span className="text-xs text-gray-500">Connexions</span>
+                <span style={{ fontSize: '12px', color: 'var(--MemberCard-text-color, #6b7280)' }}>Connexions</span>
               </div>
             ) : (
-              <div className="text-center">
-                <span className="block text-base font-bold text-gray-400">-</span>
-                <span className="text-xs text-gray-400">Privat</span>
+              <div style={{ textAlign: 'center' }}>
+                <span style={{ display: 'block', fontSize: '16px', fontWeight: 'bold', color: '#9ca3af' }}>-</span>
+                <span style={{ fontSize: '12px', color: '#9ca3af' }}>Privat</span>
               </div>
             )}
-            <div className="text-center">
-              <span className="block text-base font-bold text-gray-900">
+            <div style={{ textAlign: 'center' }}>
+              <span style={{
+                display: 'block',
+                fontSize: '16px',
+                fontWeight: 'bold',
+                color: 'var(--MemberCard-stats-value-color, #111827)',
+              }}>
                 {member.followersCount || 0}
               </span>
-              <span className="text-xs text-gray-500">Seguidors</span>
+              <span style={{ fontSize: '12px', color: 'var(--MemberCard-text-color, #6b7280)' }}>Seguidors</span>
             </div>
           </div>
 
-          <div className="mt-auto pt-3 space-y-2">
+          <div style={{ marginTop: 'auto', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {connectionState === 'connected' ? (
               <>
-                <button
-                  onClick={handleMessage}
-                  className="w-full py-2 px-4 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
-                >
-                  <MessageCircle className="w-4 h-4" />
+                <button onClick={handleMessage} style={{ ...primaryButtonStyle, width: '100%' }}>
+                  <MessageCircle style={{ width: '16px', height: '16px' }} />
                   Enviar missatge
                 </button>
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleViewProfile}
-                    className="flex-1 py-1.5 px-4 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
-                  >
-                    <User className="w-4 h-4" />
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button onClick={handleViewProfile} style={{ ...secondaryButtonStyle, flex: 1, padding: '6px 16px' }}>
+                    <User style={{ width: '16px', height: '16px' }} />
                     Perfil
                   </button>
                   <button
                     onClick={handleDisconnect}
                     disabled={isConnecting}
-                    className="flex-1 py-1.5 px-4 bg-red-50 text-red-600 text-sm font-medium rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50"
+                    style={{ ...dangerButtonStyle, flex: 1, padding: '6px 16px', opacity: isConnecting ? 0.5 : 1 }}
                   >
                     {isConnecting ? '...' : 'Desconnectar'}
                   </button>
@@ -362,44 +530,38 @@ export function MemberCard({ member, viewMode, connectionActions }: MemberCardPr
                 <button
                   onClick={handleCancel}
                   disabled={isConnecting}
-                  className="w-full py-2 px-4 bg-amber-100 text-amber-700 text-sm font-medium rounded-lg hover:bg-amber-200 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                  style={{ ...warningButtonStyle, width: '100%', opacity: isConnecting ? 0.5 : 1 }}
                 >
-                  <Clock className="w-4 h-4" />
+                  <Clock style={{ width: '16px', height: '16px' }} />
                   {isConnecting ? 'Cancel-lant...' : `Sol-licitud enviada (${getDaysRemaining(member.expiresAt)}d)`}
                 </button>
-                <button
-                  onClick={handleViewProfile}
-                  className="w-full py-1.5 px-4 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
-                >
-                  <User className="w-4 h-4" />
+                <button onClick={handleViewProfile} style={{ ...secondaryButtonStyle, width: '100%', padding: '6px 16px' }}>
+                  <User style={{ width: '16px', height: '16px' }} />
                   Veure perfil
                 </button>
               </>
             ) : connectionState === 'pending_received' ? (
               <>
-                <div className="flex gap-2">
+                <div style={{ display: 'flex', gap: '8px' }}>
                   <button
                     onClick={handleAccept}
                     disabled={isConnecting}
-                    className="flex-1 py-2 px-4 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                    style={{ ...successButtonStyle, flex: 1, opacity: isConnecting ? 0.5 : 1 }}
                   >
-                    <Check className="w-4 h-4" />
+                    <Check style={{ width: '16px', height: '16px' }} />
                     {isConnecting ? '...' : 'Acceptar'}
                   </button>
                   <button
                     onClick={handleReject}
                     disabled={isConnecting}
-                    className="flex-1 py-2 px-4 bg-red-100 text-red-600 text-sm font-medium rounded-lg hover:bg-red-200 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                    style={{ ...dangerButtonStyle, flex: 1, opacity: isConnecting ? 0.5 : 1 }}
                   >
-                    <X className="w-4 h-4" />
+                    <X style={{ width: '16px', height: '16px' }} />
                     {isConnecting ? '...' : 'Rebutjar'}
                   </button>
                 </div>
-                <button
-                  onClick={handleViewProfile}
-                  className="w-full py-1.5 px-4 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
-                >
-                  <User className="w-4 h-4" />
+                <button onClick={handleViewProfile} style={{ ...secondaryButtonStyle, width: '100%', padding: '6px 16px' }}>
+                  <User style={{ width: '16px', height: '16px' }} />
                   Veure perfil
                 </button>
               </>
@@ -408,16 +570,13 @@ export function MemberCard({ member, viewMode, connectionActions }: MemberCardPr
                 <button
                   onClick={handleConnect}
                   disabled={isConnecting}
-                  className="w-full py-2 px-4 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                  style={{ ...primaryButtonStyle, width: '100%', opacity: isConnecting ? 0.5 : 1 }}
                 >
-                  <UserPlus className="w-4 h-4" />
+                  <UserPlus style={{ width: '16px', height: '16px' }} />
                   {isConnecting ? 'Enviant...' : 'Connectar'}
                 </button>
-                <button
-                  onClick={handleViewProfile}
-                  className="w-full py-1.5 px-4 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
-                >
-                  <User className="w-4 h-4" />
+                <button onClick={handleViewProfile} style={{ ...secondaryButtonStyle, width: '100%', padding: '6px 16px' }}>
+                  <User style={{ width: '16px', height: '16px' }} />
                   Veure perfil
                 </button>
               </>
@@ -426,85 +585,116 @@ export function MemberCard({ member, viewMode, connectionActions }: MemberCardPr
         </div>
 
         {/* ========== HOVER OVERLAY COMPLET ========== */}
-        <div className="absolute inset-0 z-20
-                        bg-gradient-to-b from-indigo-600/95 via-indigo-700/95 to-purple-800/95
-                        opacity-0 group-hover:opacity-100
-                        transition-all duration-300 ease-out
-                        flex flex-col items-center justify-center
-                        p-4 text-white
-                        pointer-events-none group-hover:pointer-events-auto
-                        rounded-2xl">
-
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            zIndex: 20,
+            background: 'var(--MemberCard-overlay-gradient, linear-gradient(to bottom, rgba(79, 70, 229, 0.95), rgba(109, 40, 217, 0.95)))',
+            opacity: isHovered ? 1 : 0,
+            transition: 'all 0.3s ease-out',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+            color: 'white',
+            pointerEvents: isHovered ? 'auto' : 'none',
+            borderRadius: 'var(--MemberCard-border-radius, 16px)',
+          }}
+        >
           {/* Avatar */}
-          <div className="relative mb-3">
-            <div className="w-16 h-16 rounded-full border-2 border-white/30 shadow-lg
-                            bg-gradient-to-br from-white/20 to-white/5
-                            flex items-center justify-center overflow-hidden">
+          <div style={{ position: 'relative', marginBottom: '12px' }}>
+            <div
+              style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: '50%',
+                border: '2px solid rgba(255,255,255,0.3)',
+                boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.05))',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                overflow: 'hidden',
+              }}
+            >
               {member.avatar ? (
-                <img src={member.avatar} alt={displayName} className="w-full h-full object-cover" />
+                <img src={member.avatar} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
-                <span className="text-white text-xl font-bold">{initials}</span>
+                <span style={{ color: 'white', fontSize: '20px', fontWeight: 'bold' }}>{initials}</span>
               )}
             </div>
             {member.isOnline && (
-              <span className="absolute bottom-0 right-0 w-4 h-4 bg-green-400 border-2 border-white rounded-full" />
+              <span
+                style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  right: 0,
+                  width: '16px',
+                  height: '16px',
+                  backgroundColor: '#4ade80',
+                  border: '2px solid white',
+                  borderRadius: '50%',
+                }}
+              />
             )}
           </div>
 
           {/* Nom i nick - respectant privacitat */}
-          <h4 className="font-semibold text-lg text-center">{displayName}</h4>
+          <h4 style={{ fontWeight: '600', fontSize: '18px', textAlign: 'center', margin: 0 }}>{displayName}</h4>
           {showNickSeparate && (
-            <p className="text-sm text-white/70">@{member.username}</p>
+            <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)', margin: 0 }}>@{member.username}</p>
           )}
 
           {/* Indicador de restriccions */}
           {member.hasSystemRestrictions && (
-            <div className="flex items-center gap-1.5 text-xs text-white/60 mt-1">
-              <Lock className="w-3 h-3" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginTop: '4px' }}>
+              <Lock style={{ width: '12px', height: '12px' }} />
               <span>Perfil restringit</span>
             </div>
           )}
 
           {/* Administracio - sempre visible */}
           {adminInfo && (
-            <div className="mt-3 flex items-center gap-1.5 text-sm">
-              <Building2 className="w-4 h-4 text-white/70" />
+            <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px' }}>
+              <Building2 style={{ width: '16px', height: '16px', color: 'rgba(255,255,255,0.7)' }} />
               <span>{adminInfo.label}</span>
             </div>
           )}
 
           {/* Departament - només si és públic */}
           {showDepartment && (
-            <div className="flex items-center gap-1.5 text-sm text-white/80 mt-1">
-              <Briefcase className="w-4 h-4 text-white/60" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', color: 'rgba(255,255,255,0.8)', marginTop: '4px' }}>
+              <Briefcase style={{ width: '16px', height: '16px', color: 'rgba(255,255,255,0.6)' }} />
               <span>{member.department}</span>
             </div>
           )}
 
           {/* Separador */}
-          <div className="w-16 h-px bg-white/20 my-4" />
+          <div style={{ width: '64px', height: '1px', backgroundColor: 'rgba(255,255,255,0.2)', margin: '16px 0' }} />
 
           {/* Meta info - respectant privacitat */}
-          <div className="flex items-center gap-3 text-xs text-white/70">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '12px', color: 'rgba(255,255,255,0.7)' }}>
             {member.isOnline ? (
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 bg-green-400 rounded-full" />
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span style={{ width: '8px', height: '8px', backgroundColor: '#4ade80', borderRadius: '50%' }} />
                 En linia
               </span>
             ) : showLastActive && member.lastActive && (
-              <span className="flex items-center gap-1">
-                <Clock className="w-3 h-3" />
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <Clock style={{ width: '12px', height: '12px' }} />
                 {formatLastActive(member.lastActive)}
               </span>
             )}
 
             {(member.isOnline || (showLastActive && member.lastActive)) && showJoinedDate && (
-              <span className="text-white/30">-</span>
+              <span style={{ color: 'rgba(255,255,255,0.3)' }}>-</span>
             )}
 
             {showJoinedDate && (member.joinedAt || member.createdAt) && (
-              <span className="flex items-center gap-1">
-                <Calendar className="w-3 h-3" />
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <Calendar style={{ width: '12px', height: '12px' }} />
                 {formatJoinedDate(member.joinedAt || (member.createdAt ? new Date(member.createdAt).toISOString() : undefined))}
               </span>
             )}
@@ -512,37 +702,57 @@ export function MemberCard({ member, viewMode, connectionActions }: MemberCardPr
 
           {/* Connexions - respectant privacitat */}
           {showConnections ? (
-            <p className="mt-3 text-sm">
-              <span className="font-semibold">{connectionsToShow}</span>
-              <span className="text-white/70 ml-1">Connexions</span>
+            <p style={{ marginTop: '12px', fontSize: '14px' }}>
+              <span style={{ fontWeight: '600' }}>{connectionsToShow}</span>
+              <span style={{ color: 'rgba(255,255,255,0.7)', marginLeft: '4px' }}>Connexions</span>
             </p>
           ) : (
-            <p className="mt-3 text-sm text-white/50">
-              <Lock className="w-3 h-3 inline mr-1" />
+            <p style={{ marginTop: '12px', fontSize: '14px', color: 'rgba(255,255,255,0.5)' }}>
+              <Lock style={{ width: '12px', height: '12px', display: 'inline', marginRight: '4px' }} />
               Connexions privades
             </p>
           )}
 
           {/* Botons d'accio */}
-          <div className="flex gap-2 mt-4">
+          <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
             {connectionState === 'connected' ? (
               <>
                 <button
                   onClick={handleMessage}
-                  className="px-4 py-2 bg-white text-indigo-700 text-sm font-medium rounded-lg
-                             hover:bg-white/90 transition-colors
-                             flex items-center gap-1.5"
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: 'white',
+                    color: 'var(--MemberCard-primary-button-bg, #4f46e5)',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    borderRadius: '8px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
                 >
-                  <MessageCircle className="w-4 h-4" />
+                  <MessageCircle style={{ width: '16px', height: '16px' }} />
                   Missatge
                 </button>
                 <button
                   onClick={handleViewProfile}
-                  className="px-4 py-2 bg-white/20 text-white text-sm font-medium rounded-lg
-                             hover:bg-white/30 transition-colors
-                             flex items-center gap-1.5"
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: 'rgba(255,255,255,0.2)',
+                    color: 'white',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    borderRadius: '8px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
                 >
-                  <User className="w-4 h-4" />
+                  <User style={{ width: '16px', height: '16px' }} />
                   Perfil
                 </button>
               </>
@@ -551,20 +761,41 @@ export function MemberCard({ member, viewMode, connectionActions }: MemberCardPr
                 <button
                   onClick={handleCancel}
                   disabled={isConnecting}
-                  className="px-4 py-2 bg-amber-400 text-amber-900 text-sm font-medium rounded-lg
-                             hover:bg-amber-300 transition-colors disabled:opacity-50
-                             flex items-center gap-1.5"
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#fbbf24',
+                    color: '#78350f',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    borderRadius: '8px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    opacity: isConnecting ? 0.5 : 1,
+                  }}
                 >
-                  <Clock className="w-4 h-4" />
+                  <Clock style={{ width: '16px', height: '16px' }} />
                   {isConnecting ? '...' : 'Cancel-lar'}
                 </button>
                 <button
                   onClick={handleViewProfile}
-                  className="px-4 py-2 bg-white/20 text-white text-sm font-medium rounded-lg
-                             hover:bg-white/30 transition-colors
-                             flex items-center gap-1.5"
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: 'rgba(255,255,255,0.2)',
+                    color: 'white',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    borderRadius: '8px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
                 >
-                  <User className="w-4 h-4" />
+                  <User style={{ width: '16px', height: '16px' }} />
                   Perfil
                 </button>
               </>
@@ -573,21 +804,43 @@ export function MemberCard({ member, viewMode, connectionActions }: MemberCardPr
                 <button
                   onClick={handleAccept}
                   disabled={isConnecting}
-                  className="px-4 py-2 bg-green-400 text-green-900 text-sm font-medium rounded-lg
-                             hover:bg-green-300 transition-colors disabled:opacity-50
-                             flex items-center gap-1.5"
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#4ade80',
+                    color: '#14532d',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    borderRadius: '8px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    opacity: isConnecting ? 0.5 : 1,
+                  }}
                 >
-                  <Check className="w-4 h-4" />
+                  <Check style={{ width: '16px', height: '16px' }} />
                   {isConnecting ? '...' : 'Acceptar'}
                 </button>
                 <button
                   onClick={handleReject}
                   disabled={isConnecting}
-                  className="px-4 py-2 bg-red-400 text-white text-sm font-medium rounded-lg
-                             hover:bg-red-300 transition-colors disabled:opacity-50
-                             flex items-center gap-1.5"
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#f87171',
+                    color: 'white',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    borderRadius: '8px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    opacity: isConnecting ? 0.5 : 1,
+                  }}
                 >
-                  <X className="w-4 h-4" />
+                  <X style={{ width: '16px', height: '16px' }} />
                   {isConnecting ? '...' : 'Rebutjar'}
                 </button>
               </>
@@ -596,20 +849,41 @@ export function MemberCard({ member, viewMode, connectionActions }: MemberCardPr
                 <button
                   onClick={handleConnect}
                   disabled={isConnecting}
-                  className="px-4 py-2 bg-white text-indigo-700 text-sm font-medium rounded-lg
-                             hover:bg-white/90 transition-colors disabled:opacity-50
-                             flex items-center gap-1.5"
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: 'white',
+                    color: 'var(--MemberCard-primary-button-bg, #4f46e5)',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    borderRadius: '8px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    opacity: isConnecting ? 0.5 : 1,
+                  }}
                 >
-                  <UserPlus className="w-4 h-4" />
+                  <UserPlus style={{ width: '16px', height: '16px' }} />
                   {isConnecting ? '...' : 'Connectar'}
                 </button>
                 <button
                   onClick={handleViewProfile}
-                  className="px-4 py-2 bg-white/20 text-white text-sm font-medium rounded-lg
-                             hover:bg-white/30 transition-colors
-                             flex items-center gap-1.5"
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: 'rgba(255,255,255,0.2)',
+                    color: 'white',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    borderRadius: '8px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
                 >
-                  <User className="w-4 h-4" />
+                  <User style={{ width: '16px', height: '16px' }} />
                   Perfil
                 </button>
               </>
@@ -623,77 +897,136 @@ export function MemberCard({ member, viewMode, connectionActions }: MemberCardPr
   // ==================== VISTA LIST ====================
   return (
     <div
-      className={`bg-white rounded-xl p-4 border-2 transition-all duration-200 cursor-pointer mb-3 ${
-        isHovered
-          ? 'border-indigo-400 shadow-md bg-gray-50 ring-2 ring-indigo-500 ring-offset-1'
-          : 'border-gray-200 shadow-sm'
-      }`}
+      style={{
+        backgroundColor: isHovered ? 'var(--MemberCard-hover-background, #f9fafb)' : 'var(--MemberCard-background, #ffffff)',
+        borderRadius: 'var(--MemberCard-border-radius-list, 12px)',
+        padding: 'var(--MemberCard-padding, 16px)',
+        border: `2px solid ${isHovered ? 'var(--MemberCard-hover-border-color, #818cf8)' : 'var(--MemberCard-border-color, #e5e7eb)'}`,
+        boxShadow: isHovered
+          ? 'var(--MemberCard-hover-shadow-list, 0 4px 12px -2px rgba(99, 102, 241, 0.15), 0 0 0 2px #818cf8, 0 0 0 4px rgba(129, 140, 248, 0.2))'
+          : 'var(--MemberCard-shadow, 0 1px 3px 0 rgb(0 0 0 / 0.1))',
+        cursor: 'pointer',
+        transition: 'all 0.2s ease',
+        marginBottom: '12px',
+      }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={handleViewProfile}
     >
-      <div className="flex items-center gap-4">
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
         {/* Avatar amb online indicator */}
-        <div className="relative flex-shrink-0">
-          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center overflow-hidden border-2 border-white shadow-md">
+        <div style={{ position: 'relative', flexShrink: 0 }}>
+          <div
+            style={{
+              width: 'var(--MemberCard-avatar-size-list, 56px)',
+              height: 'var(--MemberCard-avatar-size-list, 56px)',
+              borderRadius: '50%',
+              background: 'var(--MemberCard-avatar-gradient, linear-gradient(135deg, #6366f1, #a855f7))',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden',
+              border: '2px solid white',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+            }}
+          >
             {member.avatar ? (
-              <img src={member.avatar} alt={displayName} className="w-full h-full object-cover" />
+              <img src={member.avatar} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
-              <span className="text-white text-lg font-bold">{initials}</span>
+              <span style={{ color: 'white', fontSize: '18px', fontWeight: 'bold' }}>{initials}</span>
             )}
           </div>
           {member.isOnline && (
-            <span className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-white rounded-full shadow-sm" />
+            <span
+              style={{
+                position: 'absolute',
+                bottom: 0,
+                right: 0,
+                width: '16px',
+                height: '16px',
+                backgroundColor: 'var(--MemberCard-online-color, #22c55e)',
+                border: '2px solid white',
+                borderRadius: '50%',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+              }}
+            />
           )}
         </div>
 
         {/* Info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-semibold text-gray-900">{displayName}</h3>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <h3 style={{
+              fontWeight: '600',
+              color: 'var(--MemberCard-title-color, #111827)',
+              fontSize: '15px',
+              margin: 0,
+            }}>
+              {displayName}
+            </h3>
             {showNickSeparate && (
-              <span className="text-sm text-gray-500">@{member.username}</span>
+              <span style={{ fontSize: '14px', color: 'var(--MemberCard-text-color, #6b7280)' }}>
+                @{member.username}
+              </span>
             )}
             {adminInfo && (
-              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${adminInfo.color}`}>
-                <Building2 className="w-3 h-3" />
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '2px 8px',
+                borderRadius: '9999px',
+                fontSize: '12px',
+                fontWeight: '500',
+                border: `1px solid ${adminInfo.borderColor}`,
+                backgroundColor: adminInfo.bgColor,
+                color: adminInfo.color,
+              }}>
+                <Building2 style={{ width: '12px', height: '12px' }} />
                 {adminInfo.label}
               </span>
             )}
             {member.hasSystemRestrictions && (
               <span title="Perfil amb restriccions de privacitat">
-                <Lock className="w-3.5 h-3.5 text-gray-400" />
+                <Lock style={{ width: '14px', height: '14px', color: '#9ca3af' }} />
               </span>
             )}
           </div>
           {/* Rol i departament - respectant privacitat */}
           {(showRole || showDepartment) && (
-            <p className="text-sm text-gray-600 truncate">
+            <p style={{
+              fontSize: '14px',
+              color: 'var(--MemberCard-description-color, #4b5563)',
+              margin: '2px 0 0 0',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}>
               {showRole && member.role}
               {showRole && showDepartment && member.role && member.department && ' - '}
               {showDepartment && member.department}
             </p>
           )}
-          <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '4px', fontSize: '12px', color: 'var(--MemberCard-text-color, #6b7280)' }}>
             {showConnections ? (
-              <span className="flex items-center gap-1">
-                <Users className="w-3 h-3" />
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <Users style={{ width: '12px', height: '12px' }} />
                 {connectionsToShow} connexions
               </span>
             ) : (
-              <span className="flex items-center gap-1 text-gray-400">
-                <Lock className="w-3 h-3" />
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#9ca3af' }}>
+                <Lock style={{ width: '12px', height: '12px' }} />
                 Privat
               </span>
             )}
             {member.isOnline ? (
-              <span className="flex items-center gap-1 text-green-600">
-                <span className="w-2 h-2 bg-green-500 rounded-full" />
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#16a34a' }}>
+                <span style={{ width: '8px', height: '8px', backgroundColor: '#22c55e', borderRadius: '50%' }} />
                 En linia
               </span>
             ) : showLastActive && member.lastActive && (
-              <span className="flex items-center gap-1">
-                <Clock className="w-3 h-3" />
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <Clock style={{ width: '12px', height: '12px' }} />
                 {formatLastActive(member.lastActive)}
               </span>
             )}
@@ -701,19 +1034,16 @@ export function MemberCard({ member, viewMode, connectionActions }: MemberCardPr
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
           {connectionState === 'connected' ? (
             <>
-              <button
-                onClick={handleMessage}
-                className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
-              >
+              <button onClick={handleMessage} style={primaryButtonStyle}>
                 Missatge
               </button>
               <button
                 onClick={handleDisconnect}
                 disabled={isConnecting}
-                className="px-4 py-2 bg-red-50 text-red-600 text-sm font-medium rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50"
+                style={{ ...dangerButtonStyle, opacity: isConnecting ? 0.5 : 1 }}
               >
                 {isConnecting ? '...' : 'Desconnectar'}
               </button>
@@ -722,7 +1052,7 @@ export function MemberCard({ member, viewMode, connectionActions }: MemberCardPr
             <button
               onClick={handleCancel}
               disabled={isConnecting}
-              className="px-4 py-2 bg-amber-100 text-amber-700 text-sm font-medium rounded-lg hover:bg-amber-200 transition-colors disabled:opacity-50"
+              style={{ ...warningButtonStyle, opacity: isConnecting ? 0.5 : 1 }}
             >
               {isConnecting ? '...' : `Pendent (${getDaysRemaining(member.expiresAt)}d)`}
             </button>
@@ -731,14 +1061,14 @@ export function MemberCard({ member, viewMode, connectionActions }: MemberCardPr
               <button
                 onClick={handleAccept}
                 disabled={isConnecting}
-                className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                style={{ ...successButtonStyle, opacity: isConnecting ? 0.5 : 1 }}
               >
                 {isConnecting ? '...' : 'Acceptar'}
               </button>
               <button
                 onClick={handleReject}
                 disabled={isConnecting}
-                className="px-4 py-2 bg-red-50 text-red-600 text-sm font-medium rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50"
+                style={{ ...dangerButtonStyle, opacity: isConnecting ? 0.5 : 1 }}
               >
                 {isConnecting ? '...' : 'Rebutjar'}
               </button>
@@ -747,22 +1077,38 @@ export function MemberCard({ member, viewMode, connectionActions }: MemberCardPr
             <button
               onClick={handleConnect}
               disabled={isConnecting}
-              className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
+              style={{ ...primaryButtonStyle, opacity: isConnecting ? 0.5 : 1 }}
             >
               {isConnecting ? '...' : 'Connectar'}
             </button>
           )}
           <button
             onClick={handleViewProfile}
-            className="px-4 py-2 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+            style={{
+              padding: '8px 16px',
+              backgroundColor: 'transparent',
+              color: 'var(--MemberCard-secondary-button-color, #374151)',
+              fontSize: '14px',
+              fontWeight: '500',
+              borderRadius: '8px',
+              border: '1px solid var(--MemberCard-border-color, #e5e7eb)',
+              cursor: 'pointer',
+            }}
           >
             Perfil
           </button>
           <button
             onClick={(e) => e.stopPropagation()}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            style={{
+              padding: '8px',
+              backgroundColor: 'transparent',
+              color: '#9ca3af',
+              borderRadius: '8px',
+              border: 'none',
+              cursor: 'pointer',
+            }}
           >
-            <MoreHorizontal className="w-5 h-5" />
+            <MoreHorizontal style={{ width: '20px', height: '20px' }} />
           </button>
         </div>
       </div>

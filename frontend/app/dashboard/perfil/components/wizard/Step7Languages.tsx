@@ -35,10 +35,10 @@ export const Step7Languages = ({
 
   const getLevelColor = (level: string) => {
     const colors = {
-      'Bàsic': 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      'Intermig': 'bg-orange-100 text-orange-800 border-orange-200',
-      'Avançat': 'bg-green-100 text-green-800 border-green-200',
-      'Natiu': 'bg-blue-100 text-blue-800 border-blue-200'
+      'Bàsic': 'bg-warning/10 text-warning-dark border-warning/30',
+      'Intermig': 'bg-accent/10 text-accent-dark border-accent/30',
+      'Avançat': 'bg-success/10 text-success-dark border-success/30',
+      'Natiu': 'bg-primary/10 text-primary-dark border-primary/30'
     };
     return colors[level as keyof typeof colors] || 'bg-gray-100 text-gray-800 border-gray-200';
   };
@@ -54,13 +54,18 @@ export const Step7Languages = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Header */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+      <div style={{ marginBottom: '32px' }}>
+        <h2 style={{
+          fontSize: '24px',
+          fontWeight: '700',
+          color: 'var(--Step7Languages-title-color, #111827)',
+          marginBottom: '8px'
+        }}>
           Idiomes
         </h2>
-        <p className="text-gray-600">
+        <p style={{ color: 'var(--Step7Languages-description-color, #4b5563)' }}>
           Indica els idiomes que coneixes i el teu nivell de competència per facilitar la col·laboració internacional
         </p>
       </div>
@@ -71,8 +76,8 @@ export const Step7Languages = ({
           <div key={lang.id} className="bg-white border border-gray-200 rounded-lg p-6">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                  <Globe className="w-5 h-5 text-blue-600" />
+                <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                  <Globe className="w-5 h-5 text-primary" />
                 </div>
                 <h3 className="text-lg font-medium text-gray-900">
                   Idioma #{index + 1}
@@ -80,7 +85,7 @@ export const Step7Languages = ({
               </div>
               <button
                 onClick={() => removeLanguage(lang.id)}
-                className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                className="p-2 text-error hover:bg-error/10 rounded-lg transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -100,8 +105,8 @@ export const Step7Languages = ({
                   list={`languages-${lang.id}`}
                   className={`
                     w-full px-4 py-3 rounded-lg border text-gray-900 placeholder:text-gray-400
-                    ${errors[`language_${index}_name`] ? 'border-red-500 bg-red-50' : 'border-gray-300'}
-                    focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                    ${errors[`language_${index}_name`] ? 'border-error bg-error/10' : 'border-gray-300'}
+                    focus:ring-2 focus:ring-primary focus:border-transparent
                     transition-all
                   `}
                 />
@@ -111,7 +116,7 @@ export const Step7Languages = ({
                   ))}
                 </datalist>
                 {errors[`language_${index}_name`] && (
-                  <p className="text-sm text-red-600 mt-1">{errors[`language_${index}_name`]}</p>
+                  <p className="text-sm text-error mt-1">{errors[`language_${index}_name`]}</p>
                 )}
               </div>
 
@@ -125,8 +130,8 @@ export const Step7Languages = ({
                   onChange={(e) => updateLanguage(lang.id, 'level', e.target.value)}
                   className={`
                     w-full px-4 py-3 rounded-lg border text-gray-900 placeholder:text-gray-400
-                    ${errors[`language_${index}_level`] ? 'border-red-500 bg-red-50' : 'border-gray-300'}
-                    focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                    ${errors[`language_${index}_level`] ? 'border-error bg-error/10' : 'border-gray-300'}
+                    focus:ring-2 focus:ring-primary focus:border-transparent
                     transition-all
                   `}
                 >
@@ -138,7 +143,7 @@ export const Step7Languages = ({
                   ))}
                 </select>
                 {errors[`language_${index}_level`] && (
-                  <p className="text-sm text-red-600 mt-1">{errors[`language_${index}_level`]}</p>
+                  <p className="text-sm text-error mt-1">{errors[`language_${index}_level`]}</p>
                 )}
               </div>
             </div>
@@ -176,7 +181,7 @@ export const Step7Languages = ({
         {/* Add Language Button */}
         <button
           onClick={addLanguage}
-          className="w-full flex items-center justify-center gap-2 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all text-gray-600 hover:text-blue-600"
+          className="w-full flex items-center justify-center gap-2 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary hover:bg-primary/10 transition-all text-gray-600 hover:text-primary"
         >
           <Plus className="w-5 h-5" />
           Afegir Idioma
@@ -210,7 +215,7 @@ export const Step7Languages = ({
                     }
                   }, 100);
                 }}
-                className="text-left p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors"
+                className="text-left p-3 bg-white border border-gray-200 rounded-lg hover:border-primary/50 hover:bg-primary/10 transition-colors"
               >
                 <div className="font-medium text-sm text-gray-900">{suggestion.name}</div>
                 <div className="text-xs text-gray-600">{suggestion.level}</div>
@@ -221,8 +226,8 @@ export const Step7Languages = ({
       )}
 
       {/* Level Guide */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h4 className="text-sm font-medium text-blue-800 mb-3">
+      <div className="bg-info/10 border border-info/30 rounded-lg p-4">
+        <h4 className="text-sm font-medium text-info-dark mb-3">
           📚 Guia de nivells de competència:
         </h4>
         <div className="space-y-2">
@@ -232,7 +237,7 @@ export const Step7Languages = ({
                 <span className={`px-2 py-1 text-xs font-medium rounded border ${getLevelColor(level.value)}`}>
                   {level.label}
                 </span>
-                <span className="text-sm text-blue-700">{level.description}</span>
+                <span className="text-sm text-info">{level.description}</span>
               </div>
               <div className="flex">
                 {Array.from({ length: 5 }, (_, i) => (
@@ -252,11 +257,11 @@ export const Step7Languages = ({
       </div>
 
       {/* Tips */}
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-        <p className="text-sm text-green-800 font-medium mb-2">
+      <div className="bg-success/10 border border-success/30 rounded-lg p-4">
+        <p className="text-sm text-success-dark font-medium mb-2">
           💡 Consells per aquesta secció:
         </p>
-        <ul className="text-sm text-green-700 space-y-1">
+        <ul className="text-sm text-success space-y-1">
           <li>• Sigues honest amb el teu nivell real de competència</li>
           <li>• Inclou idiomes oficials i co-oficials del teu àmbit</li>
           <li>• Els idiomes t'ajudaran en projectes de cooperació</li>

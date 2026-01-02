@@ -173,12 +173,23 @@ export function GroupCard({ group, onRequestJoin, onJoin, isProcessing }: GroupC
 
   return (
     <div
-      className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg hover:border-indigo-300 transition-all duration-300 flex flex-col h-full"
+      className="overflow-hidden border transition-all duration-300 flex flex-col h-full hover:border-indigo-300"
+      style={{
+        background: 'var(--GroupCard-background, #ffffff)',
+        borderRadius: 'var(--GroupCard-border-radius, 12px)',
+        borderColor: 'var(--GroupCard-border-color, #e5e7eb)',
+        boxShadow: isHovered
+          ? 'var(--GroupCard-hover-shadow, 0 10px 15px -3px rgb(0 0 0 / 0.1))'
+          : 'var(--GroupCard-shadow, 0 1px 3px 0 rgb(0 0 0 / 0.1))',
+      }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Cover Image */}
-      <div className={`h-32 bg-gradient-to-br ${config.gradient} relative overflow-hidden`}>
+      <div
+        className={`bg-gradient-to-br ${config.gradient} relative overflow-hidden`}
+        style={{ height: 'var(--GroupCard-header-height, 128px)' }}
+      >
         {group.coverImage && (
           <Image
             src={group.coverImage}
@@ -229,7 +240,10 @@ export function GroupCard({ group, onRequestJoin, onJoin, isProcessing }: GroupC
       </div>
 
       {/* Contingut */}
-      <div className="flex-1 flex flex-col p-4 pt-3">
+      <div
+        className="flex-1 flex flex-col pt-3"
+        style={{ padding: 'var(--GroupCard-padding, 16px)', paddingTop: '12px' }}
+      >
         {/* Header */}
         <div className="flex items-start justify-between gap-2">
           <Link

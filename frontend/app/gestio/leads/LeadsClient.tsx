@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Target, Plus, ChevronRight, UserPlus, MoreVertical } from 'lucide-react'
+import { Target, Plus, ChevronRight, UserPlus, MoreVertical, Loader2 } from 'lucide-react'
 
 import { PageHeader } from '@/components/gestio-empreses/shared/PageHeader'
 import { StatCard } from '@/components/gestio-empreses/ui/StatCard'
 import { getLeadsAction } from '@/lib/gestio-empreses/leads-actions'
 import { AssignGestorModal } from '@/components/gestio-empreses/leads/AssignGestorModal'
+import { LeadEditPanel } from './components/LeadEditPanel'
 import { cn } from '@/lib/utils'
 import { getCategoriesAsOptions, getCategoryLabel, getCategoryColors } from '@/lib/constants/categories'
 
@@ -16,7 +17,7 @@ const LEAD_TABS = [
     { id: 'NOUS', label: 'Nous', stages: ['NOU'] },
     { id: 'GESTOR', label: 'Gestor', stages: ['ASSIGNAT', 'TREBALLANT'] },
     { id: 'CRM', label: 'CRM', stages: ['PER_VERIFICAR', 'VERIFICAT'] },
-    { id: 'ADMIN', label: 'Admin', stages: ['PRE_CONTRACTE'] },
+    { id: 'ADMIN', label: 'Admin', stages: ['PRE_CONTRACTE', 'EN_REVISIO'] },
     { id: 'GUANYATS', label: 'Guanyats', stages: ['CONTRACTAT'] },
     { id: 'PERDUTS', label: 'Perduts', stages: ['PERDUT'] },
 ]
@@ -42,6 +43,11 @@ export function LeadsClient({ initialLeads, currentUser }: LeadsClientProps) {
     const [selectedLeads, setSelectedLeads] = useState<string[]>([])
     const [showAssignModal, setShowAssignModal] = useState(false)
     const [openDropdown, setOpenDropdown] = useState<string | null>(null)
+
+    // Estado para el panel lateral de edición
+    const [selectedLead, setSelectedLead] = useState<any>(null)
+    const [isEditPanelOpen, setIsEditPanelOpen] = useState(false)
+    const [isLoadingLead, setIsLoadingLead] = useState(false)
 
     // Ref para controlar la carga inicial vs actualizaciones
     const [isFirstRender, setIsFirstRender] = useState(true)
@@ -126,8 +132,70 @@ export function LeadsClient({ initialLeads, currentUser }: LeadsClientProps) {
     // Nota: Si el backend ja filtra (fetchLeads usa filters), llavors 'leads' ja ve filtrat.
     // Tot i així, activeTab i search són purament clients-side en l'original.
 
-    const handleLeadClick = (leadId: string) => {
-        router.push(`/gestio/pipeline?leadId=${leadId}`)
+    const handleLeadClick = async (leadId: string) => {
+        setIsLoadingLead(true)
+        try {
+            const res = await fetch(`/api/gestio/leads/${leadId}`)
+            if (!res.ok) throw new Error('Error carregant lead')
+            const leadData = await res.json()
+
+            // Si és Admin i el lead està en PRE_CONTRACTE, canviar a EN_REVISIO
+            const isAdmin = ['ADMIN_GESTIO', 'ADMIN', 'SUPER_ADMIN'].includes(currentUser?.role || '')
+            if (isAdmin && leadData.stage === 'PRE_CONTRACTE') {
+                await fetch(`/api/gestio/leads/${leadId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ stage: 'EN_REVISIO' })
+                })
+                leadData.stage = 'EN_REVISIO'
+            }
+
+            // Mapear campos del API al formato del panel
+            setSelectedLead({
+                id: leadData.id,
+                companyName: leadData.companyName || leadData.company,
+                cif: leadData.cif,
+                sector: leadData.sector,
+                industry: leadData.industry,
+                website: leadData.website,
+                description: leadData.description,
+                companySize: leadData.companySize,
+                employeeCount: leadData.employeeCount || leadData.employees,
+                address: leadData.address,
+                city: leadData.city,
+                zipCode: leadData.zipCode,
+                state: leadData.state,
+                country: leadData.country,
+                contactName: leadData.contactName || leadData.contact,
+                contactRole: leadData.contactRole,
+                email: leadData.email,
+                phone: leadData.phone,
+                linkedinProfile: leadData.linkedinProfile,
+                facebookProfile: leadData.facebookProfile,
+                twitterProfile: leadData.twitterProfile,
+                source: leadData.source || 'MANUAL',
+                priority: leadData.priority || 'MEDIUM',
+                estimatedRevenue: leadData.estimatedRevenue || leadData.value,
+                score: leadData.score,
+                tags: leadData.tags || [],
+                notes: leadData.notes,
+                internalNotes: leadData.internalNotes,
+                nextFollowUpDate: leadData.nextFollowUpDate,
+                status: leadData.status || 'NEW',
+                stage: leadData.stage,
+                crmVerification: leadData.crmVerification,
+                precontract: leadData.precontract
+            })
+            setIsEditPanelOpen(true)
+        } catch (error) {
+            console.error('Error carregant lead:', error)
+        } finally {
+            setIsLoadingLead(false)
+        }
+    }
+
+    const handleLeadSaved = () => {
+        fetchLeads() // Recargar lista después de guardar
     }
 
     const formatValue = (value: number | null | undefined) => {
@@ -535,6 +603,27 @@ export function LeadsClient({ initialLeads, currentUser }: LeadsClientProps) {
                 onSuccess={handleAssignSuccess}
                 currentUserId={currentUser?.id || ''}
             />
+
+            {/* Panel lateral de edición de lead */}
+            <LeadEditPanel
+                lead={selectedLead}
+                isOpen={isEditPanelOpen}
+                onClose={() => {
+                    setIsEditPanelOpen(false)
+                    setSelectedLead(null)
+                }}
+                onSaved={handleLeadSaved}
+            />
+
+            {/* Indicador de carga cuando se abre un lead */}
+            {isLoadingLead && (
+                <div className="fixed inset-0 bg-black/20 z-50 flex items-center justify-center">
+                    <div className="bg-white rounded-lg p-4 flex items-center gap-3 shadow-xl">
+                        <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+                        <span className="text-sm text-slate-700">Carregant lead...</span>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

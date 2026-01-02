@@ -213,12 +213,12 @@ export default function SettingsTab({ profile, setProfile }: SettingsTabProps) {
           top: '16px',
           right: '16px',
           padding: '16px',
-          borderRadius: '8px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          borderRadius: 'var(--SettingsTab-border-radius, 8px)',
+          boxShadow: 'var(--SettingsTab-toast-shadow, 0 4px 12px rgba(0,0,0,0.15))',
           zIndex: 50,
-          backgroundColor: toast.type === 'success' ? '#f0f9ff' : '#fef2f2',
-          border: `1px solid ${toast.type === 'success' ? '#e0f2fe' : '#fecaca'}`,
-          color: toast.type === 'success' ? '#075985' : '#dc2626'
+          backgroundColor: toast.type === 'success' ? 'var(--SettingsTab-toast-success-bg, #f0f9ff)' : 'var(--SettingsTab-toast-error-bg, #fef2f2)',
+          border: `1px solid ${toast.type === 'success' ? 'var(--SettingsTab-toast-success-border, #e0f2fe)' : 'var(--SettingsTab-toast-error-border, #fecaca)'}`,
+          color: toast.type === 'success' ? 'var(--SettingsTab-toast-success-text, #075985)' : 'var(--SettingsTab-toast-error-text, #dc2626)'
         }}>
           {toast.message}
         </div>
@@ -226,17 +226,17 @@ export default function SettingsTab({ profile, setProfile }: SettingsTabProps) {
 
       {/* Formulari d'edició - Content moved from original */}
       <div style={{
-        backgroundColor: '#fff',
-        borderRadius: '12px',
-        padding: '20px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        backgroundColor: 'var(--SettingsTab-background, #ffffff)',
+        borderRadius: 'var(--SettingsTab-card-radius, 12px)',
+        padding: 'var(--SettingsTab-padding, 20px)',
+        boxShadow: 'var(--SettingsTab-shadow, 0 2px 8px rgba(0,0,0,0.1))',
         marginBottom: '20px',
-        border: '1px solid #f0f0f0'
+        border: '1px solid var(--SettingsTab-border-color, #f0f0f0)'
       }}>
         <h3 style={{
           fontSize: '18px',
           fontWeight: '600',
-          color: '#1f2937',
+          color: 'var(--SettingsTab-title-color, #1f2937)',
           margin: '0 0 24px 0'
         }}>
           Informació Personal
@@ -247,10 +247,10 @@ export default function SettingsTab({ profile, setProfile }: SettingsTabProps) {
           <div style={{
             marginBottom: '16px',
             padding: '12px',
-            backgroundColor: '#fef2f2',
-            border: '1px solid #fecaca',
-            color: '#dc2626',
-            borderRadius: '8px'
+            backgroundColor: 'var(--SettingsTab-toast-error-bg, #fef2f2)',
+            border: '1px solid var(--SettingsTab-toast-error-border, #fecaca)',
+            color: 'var(--SettingsTab-toast-error-text, #dc2626)',
+            borderRadius: 'var(--SettingsTab-border-radius, 8px)'
           }}>
             {uploadError}
           </div>
@@ -268,7 +268,7 @@ export default function SettingsTab({ profile, setProfile }: SettingsTabProps) {
               alignItems: 'center',
               fontSize: '14px',
               fontWeight: '500',
-              color: '#374151',
+              color: 'var(--SettingsTab-label-color, #374151)',
               marginBottom: '8px'
             }}>
               <Lock style={{ width: '16px', height: '16px', marginRight: '8px' }} />
@@ -280,17 +280,17 @@ export default function SettingsTab({ profile, setProfile }: SettingsTabProps) {
               readOnly
               style={{
                 width: '100%',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
+                border: '1px solid var(--SettingsTab-input-border, #d1d5db)',
+                borderRadius: 'var(--SettingsTab-border-radius, 8px)',
                 padding: '8px 12px',
-                backgroundColor: '#f9fafb',
-                color: '#6b7280',
+                backgroundColor: 'var(--SettingsTab-input-disabled-bg, #f9fafb)',
+                color: 'var(--SettingsTab-text-muted, #6b7280)',
                 cursor: 'not-allowed'
               }}
             />
             <p style={{
               fontSize: '12px',
-              color: '#6b7280',
+              color: 'var(--SettingsTab-text-muted, #6b7280)',
               margin: '4px 0 0 0'
             }}>
               El nick no es pot modificar
@@ -303,7 +303,7 @@ export default function SettingsTab({ profile, setProfile }: SettingsTabProps) {
               display: 'block',
               fontSize: '14px',
               fontWeight: '500',
-              color: '#374151',
+              color: 'var(--SettingsTab-label-color, #374151)',
               marginBottom: '8px'
             }}>
               Nom
@@ -315,14 +315,14 @@ export default function SettingsTab({ profile, setProfile }: SettingsTabProps) {
               onChange={handleInputChange}
               style={{
                 width: '100%',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
+                border: '1px solid var(--SettingsTab-input-border, #d1d5db)',
+                borderRadius: 'var(--SettingsTab-border-radius, 8px)',
                 padding: '8px 12px',
                 fontSize: '14px',
                 transition: 'border-color 0.2s'
               }}
-              onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-              onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+              onFocus={(e) => e.target.style.borderColor = 'var(--SettingsTab-focus-color, #3b82f6)'}
+              onBlur={(e) => e.target.style.borderColor = 'var(--SettingsTab-input-border, #d1d5db)'}
               required
             />
           </div>
@@ -333,7 +333,7 @@ export default function SettingsTab({ profile, setProfile }: SettingsTabProps) {
               display: 'block',
               fontSize: '14px',
               fontWeight: '500',
-              color: '#374151',
+              color: 'var(--SettingsTab-label-color, #374151)',
               marginBottom: '8px'
             }}>
               Cognoms
@@ -345,14 +345,14 @@ export default function SettingsTab({ profile, setProfile }: SettingsTabProps) {
               onChange={handleInputChange}
               style={{
                 width: '100%',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
+                border: '1px solid var(--SettingsTab-input-border, #d1d5db)',
+                borderRadius: 'var(--SettingsTab-border-radius, 8px)',
                 padding: '8px 12px',
                 fontSize: '14px',
                 transition: 'border-color 0.2s'
               }}
-              onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-              onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+              onFocus={(e) => e.target.style.borderColor = 'var(--SettingsTab-focus-color, #3b82f6)'}
+              onBlur={(e) => e.target.style.borderColor = 'var(--SettingsTab-input-border, #d1d5db)'}
               required
             />
           </div>
@@ -363,7 +363,7 @@ export default function SettingsTab({ profile, setProfile }: SettingsTabProps) {
               display: 'block',
               fontSize: '14px',
               fontWeight: '500',
-              color: '#374151',
+              color: 'var(--SettingsTab-label-color, #374151)',
               marginBottom: '8px'
             }}>
               Email
@@ -375,14 +375,14 @@ export default function SettingsTab({ profile, setProfile }: SettingsTabProps) {
               onChange={handleInputChange}
               style={{
                 width: '100%',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
+                border: '1px solid var(--SettingsTab-input-border, #d1d5db)',
+                borderRadius: 'var(--SettingsTab-border-radius, 8px)',
                 padding: '8px 12px',
                 fontSize: '14px',
                 transition: 'border-color 0.2s'
               }}
-              onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-              onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+              onFocus={(e) => e.target.style.borderColor = 'var(--SettingsTab-focus-color, #3b82f6)'}
+              onBlur={(e) => e.target.style.borderColor = 'var(--SettingsTab-input-border, #d1d5db)'}
               required
             />
           </div>
@@ -393,7 +393,7 @@ export default function SettingsTab({ profile, setProfile }: SettingsTabProps) {
               display: 'block',
               fontSize: '14px',
               fontWeight: '500',
-              color: '#374151',
+              color: 'var(--SettingsTab-label-color, #374151)',
               marginBottom: '8px'
             }}>
               Tipus d'Afiliació
@@ -404,16 +404,16 @@ export default function SettingsTab({ profile, setProfile }: SettingsTabProps) {
               onChange={handleInputChange}
               style={{
                 width: '100%',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
+                border: '1px solid var(--SettingsTab-input-border, #d1d5db)',
+                borderRadius: 'var(--SettingsTab-border-radius, 8px)',
                 padding: '8px 12px',
                 fontSize: '14px',
-                backgroundColor: '#fff',
+                backgroundColor: 'var(--SettingsTab-background, #ffffff)',
                 cursor: 'pointer',
                 transition: 'border-color 0.2s'
               }}
-              onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-              onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+              onFocus={(e) => e.target.style.borderColor = 'var(--SettingsTab-focus-color, #3b82f6)'}
+              onBlur={(e) => e.target.style.borderColor = 'var(--SettingsTab-input-border, #d1d5db)'}
             >
               <option value="LOCAL">Local - Ajuntaments, Diputacions</option>
               <option value="AUTONOMICA">Autonòmica - Generalitat de Catalunya</option>
@@ -433,9 +433,9 @@ export default function SettingsTab({ profile, setProfile }: SettingsTabProps) {
             disabled={!hasChanges || loading}
             style={{
               padding: '8px 24px',
-              backgroundColor: hasChanges && !loading ? '#2563eb' : '#9ca3af',
-              color: 'white',
-              borderRadius: '8px',
+              backgroundColor: hasChanges && !loading ? 'var(--SettingsTab-primary-button, #2563eb)' : 'var(--SettingsTab-button-disabled, #9ca3af)',
+              color: 'var(--SettingsTab-button-text, white)',
+              borderRadius: 'var(--SettingsTab-border-radius, 8px)',
               fontSize: '14px',
               fontWeight: '500',
               border: 'none',
@@ -444,12 +444,12 @@ export default function SettingsTab({ profile, setProfile }: SettingsTabProps) {
             }}
             onMouseEnter={(e) => {
               if (hasChanges && !loading) {
-                e.currentTarget.style.backgroundColor = '#1d4ed8';
+                e.currentTarget.style.backgroundColor = 'var(--SettingsTab-primary-button-hover, #1d4ed8)';
               }
             }}
             onMouseLeave={(e) => {
               if (hasChanges && !loading) {
-                e.currentTarget.style.backgroundColor = '#2563eb';
+                e.currentTarget.style.backgroundColor = 'var(--SettingsTab-primary-button, #2563eb)';
               }
             }}
           >
@@ -460,12 +460,12 @@ export default function SettingsTab({ profile, setProfile }: SettingsTabProps) {
 
       {/* Secció canvi de contrasenya */}
       <div style={{
-        backgroundColor: '#fff',
-        borderRadius: '12px',
-        padding: '20px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        backgroundColor: 'var(--SettingsTab-background, #ffffff)',
+        borderRadius: 'var(--SettingsTab-card-radius, 12px)',
+        padding: 'var(--SettingsTab-padding, 20px)',
+        boxShadow: 'var(--SettingsTab-shadow, 0 2px 8px rgba(0,0,0,0.1))',
         marginBottom: '20px',
-        border: '1px solid #f0f0f0'
+        border: '1px solid var(--SettingsTab-border-color, #f0f0f0)'
       }}>
         <div style={{
           display: 'flex',
@@ -476,7 +476,7 @@ export default function SettingsTab({ profile, setProfile }: SettingsTabProps) {
           <h3 style={{
             fontSize: '18px',
             fontWeight: '600',
-            color: '#1f2937',
+            color: 'var(--SettingsTab-title-color, #1f2937)',
             margin: 0
           }}>
             Contrasenya
@@ -484,7 +484,7 @@ export default function SettingsTab({ profile, setProfile }: SettingsTabProps) {
           <button
             onClick={() => setShowPasswordSection(!showPasswordSection)}
             style={{
-              color: '#2563eb',
+              color: 'var(--SettingsTab-link-color, #2563eb)',
               fontWeight: '500',
               fontSize: '14px',
               background: 'none',
@@ -492,8 +492,8 @@ export default function SettingsTab({ profile, setProfile }: SettingsTabProps) {
               cursor: 'pointer',
               transition: 'color 0.2s'
             }}
-            onMouseEnter={(e) => e.currentTarget.style.color = '#1d4ed8'}
-            onMouseLeave={(e) => e.currentTarget.style.color = '#2563eb'}
+            onMouseEnter={(e) => e.currentTarget.style.color = 'var(--SettingsTab-link-hover, #1d4ed8)'}
+            onMouseLeave={(e) => e.currentTarget.style.color = 'var(--SettingsTab-link-color, #2563eb)'}
           >
             {showPasswordSection ? 'Amagar' : 'Canviar contrasenya'}
           </button>
@@ -507,7 +507,7 @@ export default function SettingsTab({ profile, setProfile }: SettingsTabProps) {
                 display: 'block',
                 fontSize: '14px',
                 fontWeight: '500',
-                color: '#374151',
+                color: 'var(--SettingsTab-label-color, #374151)',
                 marginBottom: '8px'
               }}>
                 Contrasenya Actual
@@ -520,15 +520,15 @@ export default function SettingsTab({ profile, setProfile }: SettingsTabProps) {
                   onChange={handlePasswordChange}
                   style={{
                     width: '100%',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
+                    border: '1px solid var(--SettingsTab-input-border, #d1d5db)',
+                    borderRadius: 'var(--SettingsTab-border-radius, 8px)',
                     padding: '8px 12px',
                     paddingRight: '40px',
                     fontSize: '14px',
                     transition: 'border-color 0.2s'
                   }}
-                  onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                  onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+                  onFocus={(e) => e.target.style.borderColor = 'var(--SettingsTab-focus-color, #3b82f6)'}
+                  onBlur={(e) => e.target.style.borderColor = 'var(--SettingsTab-input-border, #d1d5db)'}
                   required
                 />
                 <button
@@ -541,14 +541,14 @@ export default function SettingsTab({ profile, setProfile }: SettingsTabProps) {
                     transform: 'translateY(-50%)',
                     border: 'none',
                     background: 'none',
-                    color: '#9ca3af',
+                    color: 'var(--SettingsTab-icon-muted, #9ca3af)',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     transition: 'color 0.2s'
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = '#6b7280'}
-                  onMouseLeave={(e) => e.currentTarget.style.color = '#9ca3af'}
+                  onMouseEnter={(e) => e.currentTarget.style.color = 'var(--SettingsTab-text-muted, #6b7280)'}
+                  onMouseLeave={(e) => e.currentTarget.style.color = 'var(--SettingsTab-icon-muted, #9ca3af)'}
                 >
                   {showCurrentPassword ? <EyeOff style={{ width: '16px', height: '16px' }} /> : <Eye style={{ width: '16px', height: '16px' }} />}
                 </button>
@@ -561,7 +561,7 @@ export default function SettingsTab({ profile, setProfile }: SettingsTabProps) {
                 display: 'block',
                 fontSize: '14px',
                 fontWeight: '500',
-                color: '#374151',
+                color: 'var(--SettingsTab-label-color, #374151)',
                 marginBottom: '8px'
               }}>
                 Nova Contrasenya
@@ -574,15 +574,15 @@ export default function SettingsTab({ profile, setProfile }: SettingsTabProps) {
                   onChange={handlePasswordChange}
                   style={{
                     width: '100%',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
+                    border: '1px solid var(--SettingsTab-input-border, #d1d5db)',
+                    borderRadius: 'var(--SettingsTab-border-radius, 8px)',
                     padding: '8px 12px',
                     paddingRight: '40px',
                     fontSize: '14px',
                     transition: 'border-color 0.2s'
                   }}
-                  onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                  onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+                  onFocus={(e) => e.target.style.borderColor = 'var(--SettingsTab-focus-color, #3b82f6)'}
+                  onBlur={(e) => e.target.style.borderColor = 'var(--SettingsTab-input-border, #d1d5db)'}
                   required
                 />
                 <button
@@ -595,14 +595,14 @@ export default function SettingsTab({ profile, setProfile }: SettingsTabProps) {
                     transform: 'translateY(-50%)',
                     border: 'none',
                     background: 'none',
-                    color: '#9ca3af',
+                    color: 'var(--SettingsTab-icon-muted, #9ca3af)',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     transition: 'color 0.2s'
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = '#6b7280'}
-                  onMouseLeave={(e) => e.currentTarget.style.color = '#9ca3af'}
+                  onMouseEnter={(e) => e.currentTarget.style.color = 'var(--SettingsTab-text-muted, #6b7280)'}
+                  onMouseLeave={(e) => e.currentTarget.style.color = 'var(--SettingsTab-icon-muted, #9ca3af)'}
                 >
                   {showNewPassword ? <EyeOff style={{ width: '16px', height: '16px' }} /> : <Eye style={{ width: '16px', height: '16px' }} />}
                 </button>
@@ -614,7 +614,7 @@ export default function SettingsTab({ profile, setProfile }: SettingsTabProps) {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <div style={{
                       flex: 1,
-                      backgroundColor: '#e5e7eb',
+                      backgroundColor: 'var(--SettingsTab-progress-bg, #e5e7eb)',
                       borderRadius: '9999px',
                       height: '8px'
                     }}>
@@ -624,19 +624,19 @@ export default function SettingsTab({ profile, setProfile }: SettingsTabProps) {
                           borderRadius: '9999px',
                           transition: 'all 0.3s',
                           width: `${(passwordStrength / 5) * 100}%`,
-                          backgroundColor: passwordStrength <= 2 ? '#ef4444' : passwordStrength <= 3 ? '#eab308' : '#10b981'
+                          backgroundColor: passwordStrength <= 2 ? 'var(--SettingsTab-strength-weak, #ef4444)' : passwordStrength <= 3 ? 'var(--SettingsTab-strength-medium, #eab308)' : 'var(--SettingsTab-strength-strong, #10b981)'
                         }}
                       />
                     </div>
                     <span style={{
                       fontSize: '12px',
                       fontWeight: '500',
-                      color: '#4b5563'
+                      color: 'var(--SettingsTab-strength-text, #4b5563)'
                     }}>
                       {getPasswordStrengthText(passwordStrength)}
                     </span>
                   </div>
-                  <div style={{ marginTop: '4px', fontSize: '12px', color: '#6b7280' }}>
+                  <div style={{ marginTop: '4px', fontSize: '12px', color: 'var(--SettingsTab-text-muted, #6b7280)' }}>
                     <p style={{ margin: 0 }}>La contrasenya ha de contenir:</p>
                     <ul style={{
                       listStyle: 'disc',
@@ -644,31 +644,31 @@ export default function SettingsTab({ profile, setProfile }: SettingsTabProps) {
                       margin: '4px 0 0 0'
                     }}>
                       <li style={{
-                        color: passwordData.newPassword.length >= 8 ? '#059669' : '#9ca3af',
+                        color: passwordData.newPassword.length >= 8 ? 'var(--SettingsTab-check-valid, #059669)' : 'var(--SettingsTab-icon-muted, #9ca3af)',
                         marginBottom: '2px'
                       }}>
                         Mínim 8 caràcters
                       </li>
                       <li style={{
-                        color: /[a-z]/.test(passwordData.newPassword) ? '#059669' : '#9ca3af',
+                        color: /[a-z]/.test(passwordData.newPassword) ? 'var(--SettingsTab-check-valid, #059669)' : 'var(--SettingsTab-icon-muted, #9ca3af)',
                         marginBottom: '2px'
                       }}>
                         Lletra minúscula
                       </li>
                       <li style={{
-                        color: /[A-Z]/.test(passwordData.newPassword) ? '#059669' : '#9ca3af',
+                        color: /[A-Z]/.test(passwordData.newPassword) ? 'var(--SettingsTab-check-valid, #059669)' : 'var(--SettingsTab-icon-muted, #9ca3af)',
                         marginBottom: '2px'
                       }}>
                         Lletra majúscula
                       </li>
                       <li style={{
-                        color: /[0-9]/.test(passwordData.newPassword) ? '#059669' : '#9ca3af',
+                        color: /[0-9]/.test(passwordData.newPassword) ? 'var(--SettingsTab-check-valid, #059669)' : 'var(--SettingsTab-icon-muted, #9ca3af)',
                         marginBottom: '2px'
                       }}>
                         Número
                       </li>
                       <li style={{
-                        color: /[^A-Za-z0-9]/.test(passwordData.newPassword) ? '#059669' : '#9ca3af'
+                        color: /[^A-Za-z0-9]/.test(passwordData.newPassword) ? 'var(--SettingsTab-check-valid, #059669)' : 'var(--SettingsTab-icon-muted, #9ca3af)'
                       }}>
                         Caràcter especial
                       </li>
@@ -684,7 +684,7 @@ export default function SettingsTab({ profile, setProfile }: SettingsTabProps) {
                 display: 'block',
                 fontSize: '14px',
                 fontWeight: '500',
-                color: '#374151',
+                color: 'var(--SettingsTab-label-color, #374151)',
                 marginBottom: '8px'
               }}>
                 Confirma Nova Contrasenya
@@ -697,15 +697,15 @@ export default function SettingsTab({ profile, setProfile }: SettingsTabProps) {
                   onChange={handlePasswordChange}
                   style={{
                     width: '100%',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
+                    border: '1px solid var(--SettingsTab-input-border, #d1d5db)',
+                    borderRadius: 'var(--SettingsTab-border-radius, 8px)',
                     padding: '8px 12px',
                     paddingRight: '40px',
                     fontSize: '14px',
                     transition: 'border-color 0.2s'
                   }}
-                  onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                  onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+                  onFocus={(e) => e.target.style.borderColor = 'var(--SettingsTab-focus-color, #3b82f6)'}
+                  onBlur={(e) => e.target.style.borderColor = 'var(--SettingsTab-input-border, #d1d5db)'}
                   required
                 />
                 <button
@@ -718,14 +718,14 @@ export default function SettingsTab({ profile, setProfile }: SettingsTabProps) {
                     transform: 'translateY(-50%)',
                     border: 'none',
                     background: 'none',
-                    color: '#9ca3af',
+                    color: 'var(--SettingsTab-icon-muted, #9ca3af)',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     transition: 'color 0.2s'
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = '#6b7280'}
-                  onMouseLeave={(e) => e.currentTarget.style.color = '#9ca3af'}
+                  onMouseEnter={(e) => e.currentTarget.style.color = 'var(--SettingsTab-text-muted, #6b7280)'}
+                  onMouseLeave={(e) => e.currentTarget.style.color = 'var(--SettingsTab-icon-muted, #9ca3af)'}
                 >
                   {showConfirmPassword ? <EyeOff style={{ width: '16px', height: '16px' }} /> : <Eye style={{ width: '16px', height: '16px' }} />}
                 </button>
@@ -739,9 +739,9 @@ export default function SettingsTab({ profile, setProfile }: SettingsTabProps) {
                 disabled={!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword || loading}
                 style={{
                   padding: '8px 24px',
-                  backgroundColor: (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword || loading) ? '#9ca3af' : '#dc2626',
-                  color: 'white',
-                  borderRadius: '8px',
+                  backgroundColor: (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword || loading) ? 'var(--SettingsTab-button-disabled, #9ca3af)' : 'var(--SettingsTab-danger-button, #dc2626)',
+                  color: 'var(--SettingsTab-button-text, white)',
+                  borderRadius: 'var(--SettingsTab-border-radius, 8px)',
                   fontSize: '14px',
                   fontWeight: '500',
                   border: 'none',
@@ -751,12 +751,12 @@ export default function SettingsTab({ profile, setProfile }: SettingsTabProps) {
                 }}
                 onMouseEnter={(e) => {
                   if (!(!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword || loading)) {
-                    e.currentTarget.style.backgroundColor = '#b91c1c';
+                    e.currentTarget.style.backgroundColor = 'var(--SettingsTab-danger-button-hover, #b91c1c)';
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!(!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword || loading)) {
-                    e.currentTarget.style.backgroundColor = '#dc2626';
+                    e.currentTarget.style.backgroundColor = 'var(--SettingsTab-danger-button, #dc2626)';
                   }
                 }}
               >

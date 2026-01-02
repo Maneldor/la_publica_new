@@ -128,7 +128,7 @@ export function ContactModal({
                   <User className="w-4 h-4 mr-1" />
                   {anunci.author.name}
                 </span>
-                <span className="font-bold text-blue-600">
+                <span className="font-bold text-info">
                   {priceDisplay}
                 </span>
               </div>
@@ -148,14 +148,14 @@ export function ContactModal({
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               rows={4}
-              className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none ${
-                errors.message ? 'border-red-500' : 'border-gray-300'
+              className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-info focus:border-info resize-none ${
+                errors.message ? 'border-error' : 'border-border'
               }`}
               placeholder="Escriu el teu missatge aquí..."
               disabled={isSubmitting}
             />
             {errors.message && (
-              <p className="mt-1 text-sm text-red-600">{errors.message}</p>
+              <p className="mt-1 text-sm text-error">{errors.message}</p>
             )}
           </div>
 
@@ -170,7 +170,7 @@ export function ContactModal({
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full p-3 border border-border rounded-lg focus:ring-2 focus:ring-info focus:border-info"
               placeholder="650 123 456"
               disabled={isSubmitting}
             />
@@ -183,8 +183,8 @@ export function ContactModal({
                 type="checkbox"
                 checked={acceptDataSharing}
                 onChange={(e) => setAcceptDataSharing(e.target.checked)}
-                className={`mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded ${
-                  errors.acceptDataSharing ? 'border-red-500' : ''
+                className={`mt-1 h-4 w-4 text-info focus:ring-info border-border rounded ${
+                  errors.acceptDataSharing ? 'border-error' : ''
                 }`}
                 disabled={isSubmitting}
               />
@@ -194,14 +194,14 @@ export function ContactModal({
               </span>
             </label>
             {errors.acceptDataSharing && (
-              <p className="mt-1 text-sm text-red-600 ml-7">{errors.acceptDataSharing}</p>
+              <p className="mt-1 text-sm text-error ml-7">{errors.acceptDataSharing}</p>
             )}
           </div>
 
           {/* Error general */}
           {errors.submit && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-              <p className="text-sm text-red-600">{errors.submit}</p>
+            <div className="bg-error-light/20 border border-error-light rounded-lg p-3">
+              <p className="text-sm text-error">{errors.submit}</p>
             </div>
           )}
 
@@ -218,7 +218,7 @@ export function ContactModal({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed font-medium transition-colors flex items-center justify-center"
+              className="flex-1 py-3 px-4 bg-primary text-white rounded-lg hover:bg-primary-light disabled:bg-primary/50 disabled:cursor-not-allowed font-medium transition-colors flex items-center justify-center"
             >
               {isSubmitting ? (
                 <>

@@ -200,41 +200,91 @@ export function ChatWindow({
     null;
 
   return (
-    <div className="flex-1 flex flex-col bg-gray-50">
+    <div style={{
+      flex: 1,
+      display: 'flex',
+      flexDirection: 'column',
+      backgroundColor: 'var(--ChatWindow-background, #f9fafb)'
+    }}>
       {/* Header de la conversación */}
-      <div className="bg-white px-5 py-3 border-b border-gray-200 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div style={{
+        backgroundColor: 'var(--ChatWindow-header-bg, #ffffff)',
+        padding: '12px 20px',
+        borderBottom: '1px solid var(--ChatWindow-border-color, #e5e7eb)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           {isMobile && (
             <button
               onClick={closeConversation}
-              className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+              style={{
+                padding: '4px',
+                backgroundColor: 'transparent',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer'
+              }}
             >
-              <ArrowLeft className="w-5 h-5 text-gray-600" />
+              <ArrowLeft style={{ width: '20px', height: '20px', color: 'var(--ChatWindow-icon-color, #4b5563)' }} />
             </button>
           )}
-          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+          <div style={{
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            backgroundColor: 'var(--ChatWindow-avatar-bg, #e5e7eb)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            overflow: 'hidden'
+          }}>
             {conversationAvatar ? (
               <Image
                 src={conversationAvatar}
                 alt={conversationName}
                 width={40}
                 height={40}
-                className="w-full h-full object-cover"
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-indigo-100 text-indigo-600 font-bold">
+              <div style={{
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: 'var(--ChatWindow-avatar-default-bg, #e0e7ff)',
+                color: 'var(--ChatWindow-avatar-default-color, #4f46e5)',
+                fontWeight: 'bold'
+              }}>
                 {conversationName.charAt(0).toUpperCase()}
               </div>
             )}
           </div>
           <div>
-            <div className="font-semibold text-gray-900">
+            <div style={{
+              fontWeight: '600',
+              color: 'var(--ChatWindow-header-title, #111827)'
+            }}>
               {conversationName}
             </div>
-            <div className={`text-xs flex items-center gap-1 ${otherParticipant?.isOnline ? 'text-green-500' : 'text-gray-500'}`}>
+            <div style={{
+              fontSize: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              color: otherParticipant?.isOnline ? 'var(--ChatWindow-online-color, #22c55e)' : 'var(--ChatWindow-offline-color, #6b7280)'
+            }}>
               {otherParticipant?.isOnline ? (
                 <>
-                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                  <span style={{
+                    width: '8px',
+                    height: '8px',
+                    backgroundColor: 'var(--ChatWindow-online-color, #22c55e)',
+                    borderRadius: '50%'
+                  }}></span>
                   En línia
                 </>
               ) : (
@@ -244,15 +294,27 @@ export function ChatWindow({
           </div>
         </div>
 
-        <div className="flex gap-2">
+        <div style={{ display: 'flex', gap: '8px' }}>
           <button
             onClick={() => setShowSearchInChat(!showSearchInChat)}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            style={{
+              padding: '8px',
+              backgroundColor: 'transparent',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer'
+            }}
           >
-            <Search className="w-5 h-5 text-gray-600" />
+            <Search style={{ width: '20px', height: '20px', color: 'var(--ChatWindow-icon-color, #4b5563)' }} />
           </button>
-          <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-            <Phone className="w-5 h-5 text-gray-600" />
+          <button style={{
+            padding: '8px',
+            backgroundColor: 'transparent',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer'
+          }}>
+            <Phone style={{ width: '20px', height: '20px', color: 'var(--ChatWindow-icon-color, #4b5563)' }} />
           </button>
           <div style={{ position: 'relative' }}>
             <button

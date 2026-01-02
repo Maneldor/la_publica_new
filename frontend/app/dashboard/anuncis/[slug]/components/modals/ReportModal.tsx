@@ -130,12 +130,12 @@ export function ReportModal({
               {reportReasons.map((reasonOption) => (
                 <label
                   key={reasonOption}
-                  className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 ${
+                  className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors hover:bg-slate-50 ${
                     reason === reasonOption
-                      ? 'border-blue-500 bg-blue-50'
+                      ? 'border-info bg-info/10'
                       : errors.reason
-                        ? 'border-red-500'
-                        : 'border-gray-300'
+                        ? 'border-error'
+                        : 'border-border'
                   }`}
                 >
                   <input
@@ -144,7 +144,7 @@ export function ReportModal({
                     value={reasonOption}
                     checked={reason === reasonOption}
                     onChange={(e) => setReason(e.target.value)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                    className="h-4 w-4 text-info focus:ring-info border-border"
                     disabled={isSubmitting}
                   />
                   <span className="text-gray-700 text-sm">{reasonOption}</span>
@@ -152,7 +152,7 @@ export function ReportModal({
               ))}
             </div>
             {errors.reason && (
-              <p className="mt-2 text-sm text-red-600">{errors.reason}</p>
+              <p className="mt-2 text-sm text-error">{errors.reason}</p>
             )}
           </div>
 
@@ -168,8 +168,8 @@ export function ReportModal({
               value={details}
               onChange={(e) => setDetails(e.target.value)}
               rows={4}
-              className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none ${
-                errors.details ? 'border-red-500' : 'border-gray-300'
+              className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-info focus:border-info resize-none ${
+                errors.details ? 'border-error' : 'border-border'
               }`}
               placeholder={
                 isDetailsRequired
@@ -179,14 +179,14 @@ export function ReportModal({
               disabled={isSubmitting}
             />
             {errors.details && (
-              <p className="mt-1 text-sm text-red-600">{errors.details}</p>
+              <p className="mt-1 text-sm text-error">{errors.details}</p>
             )}
           </div>
 
           {/* Error general */}
           {errors.submit && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-              <p className="text-sm text-red-600">{errors.submit}</p>
+            <div className="bg-error/10 border border-error-light rounded-lg p-3">
+              <p className="text-sm text-error">{errors.submit}</p>
             </div>
           )}
 
@@ -203,7 +203,7 @@ export function ReportModal({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 py-3 px-4 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-red-400 disabled:cursor-not-allowed font-medium transition-colors flex items-center justify-center"
+              className="flex-1 py-3 px-4 bg-error text-white rounded-lg hover:bg-error-dark disabled:bg-error/50 disabled:cursor-not-allowed font-medium transition-colors flex items-center justify-center"
             >
               {isSubmitting ? (
                 <>

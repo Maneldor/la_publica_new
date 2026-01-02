@@ -40,7 +40,6 @@ export function AssessmentCard({ assessment, viewMode }: AssessmentCardProps) {
   const [isHovered, setIsHovered] = useState(false);
 
   const handleViewAssessment = () => {
-    // Usar slug si está disponible, si no, usar id
     const identifier = assessment.slug || assessment.id;
     router.push(`/dashboard/assessorament/${identifier}`);
   };
@@ -70,10 +69,22 @@ export function AssessmentCard({ assessment, viewMode }: AssessmentCardProps) {
 
   const getPlanBadgeColor = () => {
     switch (assessment.company.plan) {
-      case 'Premium': return { bg: '#f59e0b', color: 'white' };
-      case 'Estàndard': return { bg: '#10b981', color: 'white' };
-      case 'Bàsic': return { bg: '#6b7280', color: 'white' };
-      default: return { bg: '#6b7280', color: 'white' };
+      case 'Premium': return {
+        bg: 'var(--AssessmentCard-plan-premium-bg, #f59e0b)',
+        color: 'var(--AssessmentCard-plan-premium-color, white)'
+      };
+      case 'Estàndard': return {
+        bg: 'var(--AssessmentCard-plan-standard-bg, #10b981)',
+        color: 'var(--AssessmentCard-plan-standard-color, white)'
+      };
+      case 'Bàsic': return {
+        bg: 'var(--AssessmentCard-plan-basic-bg, #6b7280)',
+        color: 'var(--AssessmentCard-plan-basic-color, white)'
+      };
+      default: return {
+        bg: 'var(--AssessmentCard-plan-default-bg, #6b7280)',
+        color: 'var(--AssessmentCard-plan-default-color, white)'
+      };
     }
   };
 
@@ -84,11 +95,13 @@ export function AssessmentCard({ assessment, viewMode }: AssessmentCardProps) {
       <div
         onClick={handleViewAssessment}
         style={{
-          backgroundColor: '#fff',
-          borderRadius: '12px',
-          padding: '20px',
-          border: isHovered ? '2px solid #3b82f6' : '2px solid #e5e7eb',
-          boxShadow: isHovered ? '0 8px 16px -4px rgba(59, 130, 246, 0.2)' : '0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06)',
+          backgroundColor: 'var(--AssessmentCard-background, #ffffff)',
+          borderRadius: 'var(--AssessmentCard-border-radius-list, 12px)',
+          padding: 'var(--AssessmentCard-padding, 20px)',
+          border: `2px solid ${isHovered ? 'var(--AssessmentCard-hover-border-color, #3b82f6)' : 'var(--AssessmentCard-border-color, #e5e7eb)'}`,
+          boxShadow: isHovered
+            ? 'var(--AssessmentCard-hover-shadow, 0 8px 16px -4px rgba(59, 130, 246, 0.2))'
+            : 'var(--AssessmentCard-shadow, 0 4px 6px -1px rgba(59, 130, 246, 0.1))',
           cursor: 'pointer',
           transition: 'all 0.2s ease-in-out',
           transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
@@ -104,8 +117,8 @@ export function AssessmentCard({ assessment, viewMode }: AssessmentCardProps) {
             position: 'absolute',
             top: '16px',
             right: '16px',
-            backgroundColor: '#3b82f6',
-            color: 'white',
+            backgroundColor: 'var(--AssessmentCard-highlighted-background, #3b82f6)',
+            color: 'var(--AssessmentCard-highlighted-color, white)',
             padding: '4px 8px',
             borderRadius: '4px',
             fontSize: '10px',
@@ -121,8 +134,8 @@ export function AssessmentCard({ assessment, viewMode }: AssessmentCardProps) {
         }}>
           {/* Imagen */}
           <div style={{
-            width: '120px',
-            height: '80px',
+            width: 'var(--AssessmentCard-image-width-list, 120px)',
+            height: 'var(--AssessmentCard-image-height-list, 80px)',
             borderRadius: '8px',
             backgroundImage: `url(${assessment.images[0]})`,
             backgroundSize: 'cover',
@@ -143,7 +156,7 @@ export function AssessmentCard({ assessment, viewMode }: AssessmentCardProps) {
                 <h3 style={{
                   fontSize: '16px',
                   fontWeight: '600',
-                  color: '#2c3e50',
+                  color: 'var(--AssessmentCard-title-color, #2c3e50)',
                   margin: '0 0 4px 0',
                   lineHeight: '1.3'
                 }}>
@@ -157,26 +170,28 @@ export function AssessmentCard({ assessment, viewMode }: AssessmentCardProps) {
                 }}>
                   <span style={{
                     fontSize: '12px',
-                    color: '#3b82f6',
+                    color: 'var(--AssessmentCard-type-color, #3b82f6)',
                     fontWeight: '500'
                   }}>
                     {assessment.type}
                   </span>
                   <span style={{
                     fontSize: '12px',
-                    color: '#8e8e93'
+                    color: 'var(--AssessmentCard-meta-color, #8e8e93)'
                   }}>
                     {getModeIcon()} {getModeText()}
                   </span>
                   <span style={{
                     fontSize: '12px',
-                    color: '#f59e0b'
+                    color: 'var(--AssessmentCard-duration-color, #f59e0b)'
                   }}>
                     {assessment.duration} min
                   </span>
                   <span style={{
                     fontSize: '12px',
-                    color: assessment.availableSlots > 0 ? '#10b981' : '#ef4444'
+                    color: assessment.availableSlots > 0
+                      ? 'var(--AssessmentCard-slots-available-color, #10b981)'
+                      : 'var(--AssessmentCard-slots-full-color, #ef4444)'
                   }}>
                     {assessment.availableSlots > 0 ? `${assessment.availableSlots} places` : 'Complet'}
                   </span>
@@ -187,14 +202,14 @@ export function AssessmentCard({ assessment, viewMode }: AssessmentCardProps) {
               <div style={{ textAlign: 'right' }}>
                 <div style={{
                   fontSize: '14px',
-                  color: '#f59e0b',
+                  color: 'var(--AssessmentCard-rating-color, #f59e0b)',
                   fontWeight: '600'
                 }}>
                   ⭐ {assessment.rating}
                 </div>
                 <div style={{
                   fontSize: '12px',
-                  color: '#8e8e93'
+                  color: 'var(--AssessmentCard-meta-color, #8e8e93)'
                 }}>
                   ({assessment.totalBooked} consultes)
                 </div>
@@ -203,7 +218,7 @@ export function AssessmentCard({ assessment, viewMode }: AssessmentCardProps) {
 
             <p style={{
               fontSize: '13px',
-              color: '#6c757d',
+              color: 'var(--AssessmentCard-description-color, #6c757d)',
               margin: '0 0 12px 0',
               lineHeight: '1.4',
               overflow: 'hidden',
@@ -226,8 +241,8 @@ export function AssessmentCard({ assessment, viewMode }: AssessmentCardProps) {
                 gap: '8px'
               }}>
                 <div style={{
-                  width: '24px',
-                  height: '24px',
+                  width: 'var(--AssessmentCard-avatar-size, 24px)',
+                  height: 'var(--AssessmentCard-avatar-size, 24px)',
                   borderRadius: '50%',
                   backgroundImage: `url(${assessment.company.logo})`,
                   backgroundSize: 'cover',
@@ -235,7 +250,7 @@ export function AssessmentCard({ assessment, viewMode }: AssessmentCardProps) {
                 }} />
                 <span style={{
                   fontSize: '12px',
-                  color: '#6c757d',
+                  color: 'var(--AssessmentCard-company-color, #6c757d)',
                   fontWeight: '500'
                 }}>
                   {assessment.company.name}
@@ -261,8 +276,12 @@ export function AssessmentCard({ assessment, viewMode }: AssessmentCardProps) {
                   onClick={handleToggleFavorite}
                   style={{
                     padding: '4px',
-                    backgroundColor: assessment.isFavorite ? '#ef4444' : 'transparent',
-                    color: assessment.isFavorite ? 'white' : '#6b7280',
+                    backgroundColor: assessment.isFavorite
+                      ? 'var(--AssessmentCard-favorite-active-background, #ef4444)'
+                      : 'transparent',
+                    color: assessment.isFavorite
+                      ? 'var(--AssessmentCard-favorite-active-color, white)'
+                      : 'var(--AssessmentCard-favorite-color, #6b7280)',
                     border: 'none',
                     borderRadius: '4px',
                     fontSize: '12px',
@@ -273,7 +292,7 @@ export function AssessmentCard({ assessment, viewMode }: AssessmentCardProps) {
                 </button>
                 <span style={{
                   fontSize: '11px',
-                  color: '#8e8e93'
+                  color: 'var(--AssessmentCard-meta-color, #8e8e93)'
                 }}>
                   {assessment.createdAt}
                 </span>
@@ -285,18 +304,20 @@ export function AssessmentCard({ assessment, viewMode }: AssessmentCardProps) {
     );
   }
 
-  // Vista Grid - simplificada
+  // Vista Grid
   const planBadge = getPlanBadgeColor();
 
   return (
     <div
       onClick={handleViewAssessment}
       style={{
-        backgroundColor: '#fff',
-        borderRadius: '16px',
+        backgroundColor: 'var(--AssessmentCard-background, #ffffff)',
+        borderRadius: 'var(--AssessmentCard-border-radius, 16px)',
         overflow: 'hidden',
-        border: isHovered ? '2px solid #3b82f6' : '2px solid #e5e7eb',
-        boxShadow: isHovered ? '0 8px 16px -4px rgba(59, 130, 246, 0.2)' : '0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06)',
+        border: `2px solid ${isHovered ? 'var(--AssessmentCard-hover-border-color, #3b82f6)' : 'var(--AssessmentCard-border-color, #e5e7eb)'}`,
+        boxShadow: isHovered
+          ? 'var(--AssessmentCard-hover-shadow, 0 8px 16px -4px rgba(59, 130, 246, 0.2))'
+          : 'var(--AssessmentCard-shadow, 0 4px 6px -1px rgba(59, 130, 246, 0.1))',
         cursor: 'pointer',
         transition: 'all 0.2s ease-in-out',
         transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
@@ -314,8 +335,8 @@ export function AssessmentCard({ assessment, viewMode }: AssessmentCardProps) {
           position: 'absolute',
           top: '12px',
           left: '12px',
-          backgroundColor: '#3b82f6',
-          color: 'white',
+          backgroundColor: 'var(--AssessmentCard-highlighted-background, #3b82f6)',
+          color: 'var(--AssessmentCard-highlighted-color, white)',
           padding: '4px 8px',
           borderRadius: '6px',
           fontSize: '10px',
@@ -334,8 +355,12 @@ export function AssessmentCard({ assessment, viewMode }: AssessmentCardProps) {
           top: '12px',
           right: '12px',
           padding: '6px',
-          backgroundColor: assessment.isFavorite ? '#ef4444' : 'rgba(255,255,255,0.9)',
-          color: assessment.isFavorite ? 'white' : '#6b7280',
+          backgroundColor: assessment.isFavorite
+            ? 'var(--AssessmentCard-favorite-active-background, #ef4444)'
+            : 'rgba(255,255,255,0.9)',
+          color: assessment.isFavorite
+            ? 'var(--AssessmentCard-favorite-active-color, white)'
+            : 'var(--AssessmentCard-favorite-color, #6b7280)',
           border: 'none',
           borderRadius: '50%',
           fontSize: '14px',
@@ -354,7 +379,7 @@ export function AssessmentCard({ assessment, viewMode }: AssessmentCardProps) {
 
       {/* Imagen principal */}
       <div style={{
-        height: '120px',
+        height: 'var(--AssessmentCard-cover-height, 120px)',
         backgroundImage: `url(${assessment.images[0]})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
@@ -366,8 +391,10 @@ export function AssessmentCard({ assessment, viewMode }: AssessmentCardProps) {
           position: 'absolute',
           bottom: '8px',
           left: '8px',
-          backgroundColor: assessment.availableSlots > 0 ? 'rgba(16, 185, 129, 0.9)' : 'rgba(239, 68, 68, 0.9)',
-          color: 'white',
+          backgroundColor: assessment.availableSlots > 0
+            ? 'var(--AssessmentCard-slots-badge-available-bg, rgba(16, 185, 129, 0.9))'
+            : 'var(--AssessmentCard-slots-badge-full-bg, rgba(239, 68, 68, 0.9))',
+          color: 'var(--AssessmentCard-slots-badge-color, white)',
           padding: '4px 8px',
           borderRadius: '4px',
           fontSize: '11px',
@@ -379,7 +406,7 @@ export function AssessmentCard({ assessment, viewMode }: AssessmentCardProps) {
 
       {/* Contenido */}
       <div style={{
-        padding: '16px',
+        padding: 'var(--AssessmentCard-content-padding, 16px)',
         flex: 1,
         display: 'flex',
         flexDirection: 'column'
@@ -387,7 +414,7 @@ export function AssessmentCard({ assessment, viewMode }: AssessmentCardProps) {
         {/* Tipo */}
         <span style={{
           fontSize: '12px',
-          color: '#3b82f6',
+          color: 'var(--AssessmentCard-type-color, #3b82f6)',
           fontWeight: '500',
           marginBottom: '8px'
         }}>
@@ -398,7 +425,7 @@ export function AssessmentCard({ assessment, viewMode }: AssessmentCardProps) {
         <h3 style={{
           fontSize: '16px',
           fontWeight: '600',
-          color: '#2c3e50',
+          color: 'var(--AssessmentCard-title-color, #2c3e50)',
           margin: '0 0 12px 0',
           lineHeight: '1.3',
           overflow: 'hidden',
@@ -417,13 +444,13 @@ export function AssessmentCard({ assessment, viewMode }: AssessmentCardProps) {
           gap: '8px',
           marginBottom: '12px',
           fontSize: '12px',
-          color: '#8e8e93'
+          color: 'var(--AssessmentCard-meta-color, #8e8e93)'
         }}>
           <span>{getModeIcon()} {getModeText()}</span>
           <span>•</span>
           <span>{assessment.duration} min</span>
           <span>•</span>
-          <span style={{ color: '#f59e0b' }}>⭐ {assessment.rating}</span>
+          <span style={{ color: 'var(--AssessmentCard-rating-color, #f59e0b)' }}>⭐ {assessment.rating}</span>
         </div>
 
         {/* Footer: Solo empresa */}
@@ -434,8 +461,8 @@ export function AssessmentCard({ assessment, viewMode }: AssessmentCardProps) {
           marginTop: 'auto'
         }}>
           <div style={{
-            width: '24px',
-            height: '24px',
+            width: 'var(--AssessmentCard-avatar-size, 24px)',
+            height: 'var(--AssessmentCard-avatar-size, 24px)',
             borderRadius: '50%',
             backgroundImage: `url(${assessment.company.logo})`,
             backgroundSize: 'cover',
@@ -443,7 +470,7 @@ export function AssessmentCard({ assessment, viewMode }: AssessmentCardProps) {
           }} />
           <span style={{
             fontSize: '12px',
-            color: '#6c757d',
+            color: 'var(--AssessmentCard-company-color, #6c757d)',
             fontWeight: '500'
           }}>
             {assessment.company.name}

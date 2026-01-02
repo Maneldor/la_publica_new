@@ -51,13 +51,18 @@ export const Step5Experience = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Header */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+      <div style={{ marginBottom: '32px' }}>
+        <h2 style={{
+          fontSize: '24px',
+          fontWeight: '700',
+          color: 'var(--Step5Experience-title-color, #111827)',
+          marginBottom: '8px'
+        }}>
           Experiència Professional
         </h2>
-        <p className="text-gray-600">
+        <p style={{ color: 'var(--Step5Experience-description-color, #4b5563)' }}>
           Detalla la teva trajectòria professional per mostrar la teva experiència i expertise
         </p>
       </div>

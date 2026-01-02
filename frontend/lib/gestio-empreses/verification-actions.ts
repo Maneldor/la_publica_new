@@ -3,10 +3,17 @@
 
 import { prismaClient } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 import {
   notifyLeadVerifiedForAdmin,
-  getAdminUserIds
+  getAdminUserIds,
+  notifyCompanyPublishedToGestor,
+  notifyCompanyPublishedToAdmins,
+  notifyCompanyOwnerPublished
 } from '@/lib/notifications/notification-actions'
+import { emailService } from '@/lib/email'
+import { EmailTemplate } from '@prisma/client'
 
 /**
  * Obtenir estadístiques de verificació
@@ -422,7 +429,7 @@ export async function seedVerificationLeads(userId: string) {
         email: leadData.contactEmail,
         phone: leadData.contactPhone,
         estimatedRevenue: leadData.estimatedRevenue,
-        priority: leadData.priority,
+        priority: leadData.priority as 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT',
         city: leadData.city,
         website: leadData.website,
         notes: leadData.notes,
@@ -513,4 +520,254 @@ export async function clearTestLeads() {
   })
 
   revalidatePath('/gestio/crm/verificacio')
+}
+
+// ============================================
+// FUNCIONS PER VERIFICACIÓ D'EMPRESES GESTIONADES
+// ============================================
+
+/**
+ * Obtenir empreses pendents de verificació CRM (enviades per gestors)
+ */
+export async function getPendingVerificationCompanies() {
+  const companies = await prismaClient.company.findMany({
+    where: { stage: 'PENDENT_CRM' },
+    include: {
+      accountManager: {
+        select: { id: true, name: true, email: true },
+      },
+      currentPlan: {
+        select: { id: true, nombre: true, nombreCorto: true }
+      }
+    },
+    orderBy: [
+      { profileCompletedAt: 'asc' },
+    ],
+  })
+
+  return companies.map((company) => ({
+    ...company,
+    waitingHours: company.profileCompletedAt
+      ? Math.round((new Date().getTime() - new Date(company.profileCompletedAt).getTime()) / (1000 * 60 * 60))
+      : 0,
+  }))
+}
+
+/**
+ * Obtenir estadístiques d'empreses pendents
+ */
+export async function getCompanyVerificationStats() {
+  const [pending, publishedToday, publishedWeek] = await Promise.all([
+    prismaClient.company.count({
+      where: { stage: 'PENDENT_CRM' },
+    }),
+    prismaClient.company.count({
+      where: {
+        stage: 'ACTIVA',
+        updatedAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)) },
+      },
+    }),
+    prismaClient.company.count({
+      where: {
+        stage: 'ACTIVA',
+        updatedAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+      },
+    }),
+  ])
+
+  return {
+    pending,
+    publishedToday,
+    publishedWeek,
+  }
+}
+
+/**
+ * Aprovar i publicar una empresa
+ */
+export async function approveAndPublishCompany(
+  companyId: string,
+  _userId?: string, // Deprecated: s'obté de la sessió
+  notes?: string
+) {
+  // Obtenir sessió actual
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) {
+    throw new Error('No autenticat')
+  }
+  const userId = session.user.id
+
+  // Obtenir informació de l'empresa abans d'actualitzar
+  const companyBefore = await prismaClient.company.findUnique({
+    where: { id: companyId },
+    include: {
+      currentPlan: {
+        select: { nombre: true, nombreCorto: true }
+      },
+      accountManager: {
+        select: { id: true, name: true }
+      }
+    }
+  })
+
+  if (!companyBefore) {
+    throw new Error('Empresa no trobada')
+  }
+
+  // Actualitzar empresa a PUBLICADA
+  const company = await prismaClient.company.update({
+    where: { id: companyId },
+    data: {
+      stage: 'ACTIVA',
+      status: 'PUBLISHED',
+      approvedAt: new Date(),
+      approvedById: userId,
+      updatedAt: new Date(),
+    },
+  })
+
+  // Obtenir informació del verificador
+  const verifier = await prismaClient.user.findUnique({
+    where: { id: userId },
+    select: { name: true }
+  })
+  const verifierName = verifier?.name || 'CRM'
+
+  // ============================================
+  // NOTIFICACIONS
+  // ============================================
+
+  // 1. Notificar al gestor que l'empresa ha estat publicada
+  if (company.accountManagerId) {
+    await notifyCompanyPublishedToGestor(
+      company.accountManagerId,
+      companyId,
+      company.name,
+      verifierName
+    )
+    console.log('🔔 Notificació enviada al gestor:', company.accountManagerId)
+  }
+
+  // 2. Notificar als admins
+  const adminUserIds = await getAdminUserIds()
+  if (adminUserIds.length > 0) {
+    // Excloure el verificador de les notificacions si és admin
+    const adminsToNotify = adminUserIds.filter(id => id !== userId)
+    if (adminsToNotify.length > 0) {
+      await notifyCompanyPublishedToAdmins(
+        adminsToNotify,
+        companyId,
+        company.name,
+        verifierName
+      )
+      console.log('🔔 Notificacions enviades a', adminsToNotify.length, 'admins')
+    }
+  }
+
+  // 3. Notificar al representant de l'empresa (si té usuari associat)
+  const companyUser = await prismaClient.user.findFirst({
+    where: {
+      companyId: companyId,
+      role: { in: ['COMPANY_ADMIN', 'COMPANY_STAFF'] }
+    },
+    select: { id: true, email: true, name: true }
+  })
+
+  if (companyUser) {
+    await notifyCompanyOwnerPublished(
+      companyUser.id,
+      companyId,
+      company.name
+    )
+    console.log('🔔 Notificació enviada al representant de l\'empresa:', companyUser.id)
+  }
+
+  // ============================================
+  // EMAIL DE FELICITACIÓ
+  // ============================================
+
+  // Enviar email de publicació a l'empresa
+  const companyEmail = company.contactEmail || company.email
+  if (companyEmail) {
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+
+      await emailService.sendEmail({
+        to: companyEmail,
+        subject: `🎉 Felicitats! ${company.name} ja està publicada a La Pública`,
+        template: EmailTemplate.COMPANY_PUBLISHED,
+        templateProps: {
+          companyName: company.name,
+          contactName: company.contactPerson || company.adminContactPerson || 'Usuari',
+          planName: companyBefore.currentPlan?.nombreCorto || companyBefore.currentPlan?.nombre || 'Estàndard',
+          profileUrl: `${baseUrl}/dashboard/empreses/${companyId}`,
+          dashboardUrl: `${baseUrl}/empresa/dashboard`
+        },
+        userId: companyUser?.id
+      })
+      console.log('📧 Email de publicació enviat a:', companyEmail)
+    } catch (emailError) {
+      console.error('❌ Error enviant email de publicació:', emailError)
+      // No bloquegem el flux si l'email falla
+    }
+  }
+
+  // Revalidar paths
+  revalidatePath('/gestio/crm/verificacio')
+  revalidatePath('/gestio/empreses')
+  revalidatePath('/gestio/empreses/pipeline')
+  revalidatePath(`/gestio/empreses/${companyId}`)
+  revalidatePath('/dashboard/empreses')
+
+  return company
+}
+
+/**
+ * Rebutjar empresa i retornar al gestor
+ */
+export async function rejectCompanyVerification(
+  companyId: string,
+  userId: string,
+  reason: string
+) {
+  const company = await prismaClient.company.update({
+    where: { id: companyId },
+    data: {
+      stage: 'ONBOARDING',
+      profileCompletedAt: null,
+      updatedAt: new Date(),
+    },
+  })
+
+  // Notificar al gestor que l'empresa ha estat retornada
+  if (company.accountManagerId) {
+    const verifier = await prismaClient.user.findUnique({
+      where: { id: userId },
+      select: { name: true }
+    })
+
+    await prismaClient.notification.create({
+      data: {
+        userId: company.accountManagerId,
+        type: 'COMPANY_REJECTED',
+        title: 'Empresa retornada per revisió',
+        message: `L'empresa "${company.name}" requereix modificacions: ${reason}`,
+        actionUrl: `/gestio/empreses/${companyId}`,
+        companyId,
+        metadata: {
+          companyId,
+          companyName: company.name,
+          reason,
+          rejectedBy: verifier?.name || 'CRM'
+        }
+      }
+    })
+  }
+
+  revalidatePath('/gestio/crm/verificacio')
+  revalidatePath('/gestio/empreses')
+  revalidatePath('/gestio/empreses/pipeline')
+  revalidatePath(`/gestio/empreses/${companyId}`)
+
+  return company
 }

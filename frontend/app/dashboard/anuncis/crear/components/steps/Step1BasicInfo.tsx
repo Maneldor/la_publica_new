@@ -48,15 +48,15 @@ export const Step1BasicInfo = ({ formData, errors, updateField }: Step1Props) =>
           maxLength={100}
           className={`
             w-full px-4 py-3 rounded-lg border
-            ${errors.title ? 'border-red-500 bg-red-50' : 'border-gray-300'}
-            focus:ring-2 focus:ring-blue-500 focus:border-transparent
+            ${errors.title ? 'border-error bg-error/10' : 'border-border'}
+            focus:ring-2 focus:ring-info focus:border-transparent
             transition-all
           `}
         />
         <div className="flex justify-between mt-1">
           <div>
             {errors.title && (
-              <p className="text-sm text-red-600">{errors.title}</p>
+              <p className="text-sm text-error">{errors.title}</p>
             )}
           </div>
           <p className="text-sm text-gray-500">
@@ -77,8 +77,8 @@ export const Step1BasicInfo = ({ formData, errors, updateField }: Step1Props) =>
             className={`
               p-4 rounded-lg border-2 transition-all
               ${formData.type === 'oferta'
-                ? 'border-blue-500 bg-blue-50 text-blue-700'
-                : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                ? 'border-info bg-info/10 text-info-dark'
+                : 'border-border-light bg-white text-text-secondary hover:border-border'
               }
             `}
           >
@@ -93,8 +93,8 @@ export const Step1BasicInfo = ({ formData, errors, updateField }: Step1Props) =>
             className={`
               p-4 rounded-lg border-2 transition-all
               ${formData.type === 'demanda'
-                ? 'border-green-500 bg-green-50 text-green-700'
-                : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                ? 'border-success bg-success/10 text-success-dark'
+                : 'border-border-light bg-white text-text-secondary hover:border-border'
               }
             `}
           >
@@ -116,8 +116,8 @@ export const Step1BasicInfo = ({ formData, errors, updateField }: Step1Props) =>
           onChange={(e) => updateField('category', e.target.value)}
           className={`
             w-full px-4 py-3 rounded-lg border
-            ${errors.category ? 'border-red-500 bg-red-50' : 'border-gray-300'}
-            focus:ring-2 focus:ring-blue-500 focus:border-transparent
+            ${errors.category ? 'border-error bg-error/10' : 'border-border'}
+            focus:ring-2 focus:ring-info focus:border-transparent
             transition-all
           `}
         >
@@ -128,7 +128,7 @@ export const Step1BasicInfo = ({ formData, errors, updateField }: Step1Props) =>
           ))}
         </select>
         {errors.category && (
-          <p className="text-sm text-red-600 mt-1">{errors.category}</p>
+          <p className="text-sm text-error mt-1">{errors.category}</p>
         )}
       </div>
 
@@ -146,15 +146,15 @@ export const Step1BasicInfo = ({ formData, errors, updateField }: Step1Props) =>
           maxLength={2000}
           className={`
             w-full px-4 py-3 rounded-lg border
-            ${errors.description ? 'border-red-500 bg-red-50' : 'border-gray-300'}
-            focus:ring-2 focus:ring-blue-500 focus:border-transparent
+            ${errors.description ? 'border-error bg-error/10' : 'border-border'}
+            focus:ring-2 focus:ring-info focus:border-transparent
             transition-all resize-none
           `}
         />
         <div className="flex justify-between mt-1">
           <div>
             {errors.description && (
-              <p className="text-sm text-red-600">{errors.description}</p>
+              <p className="text-sm text-error">{errors.description}</p>
             )}
           </div>
           <p className="text-sm text-gray-500">
@@ -164,11 +164,11 @@ export const Step1BasicInfo = ({ formData, errors, updateField }: Step1Props) =>
       </div>
 
       {/* Tips */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <p className="text-sm text-blue-800 font-medium mb-2">
+      <div className="bg-info/10 border border-info/30 rounded-lg p-4">
+        <p className="text-sm text-info-dark font-medium mb-2">
           💡 Consells per a un bon anunci:
         </p>
-        <ul className="text-sm text-blue-700 space-y-1">
+        <ul className="text-sm text-info space-y-1">
           <li>• Usa un títol clar i descriptiu</li>
           <li>• Inclou totes les característiques importants</li>
           <li>• Sigues honest sobre l'estat del producte</li>

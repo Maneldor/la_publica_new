@@ -1,56 +1,105 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Bell, ChevronDown, User, MessageSquare } from 'lucide-react';
 import NotificationCenter from '@/app/components/NotificationCenter';
+import MessagesCenter from '@/app/components/MessagesCenter';
+import SearchModal from '@/components/ui/SearchModal';
+import { useNotifications } from '@/app/contexts/NotificationContext';
+import { useMessages } from '@/app/contexts/MessagesContext';
 
 interface EmpresaHeaderProps {
   empresaNom: string;
   empresaLogo?: string;
-  plan: 'BÀSIC' | 'ESTÀNDARD' | 'PREMIUM' | 'EMPRESARIAL';
-  notificacionsCount: number;
-  missatgesCount: number;
+  plan: string;
+  notificacionsCount?: number;
+  missatgesCount?: number;
 }
 
 export default function EmpresaHeader({
   empresaNom,
   empresaLogo,
-  plan,
-  notificacionsCount,
-  missatgesCount
+  plan
 }: EmpresaHeaderProps) {
   const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
+  const [messagesCenterOpen, setMessagesCenterOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const { unreadCount, hasWarnings, hasErrors } = useNotifications();
+  const { totalUnread: messagesUnread } = useMessages();
+
+  // Drecera de teclat Cmd+K o Ctrl+K per obrir cerca
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Helper per a l'estil del badge del pla
   const getPlanBadgeStyle = (plan: string) => {
-    switch (plan) {
-      case 'PREMIUM': return 'bg-purple-100 text-purple-700';
-      case 'EMPRESARIAL': return 'bg-amber-100 text-amber-700';
-      case 'ESTÀNDARD': return 'bg-blue-100 text-blue-700';
-      default: return 'bg-slate-100 text-slate-700';
+    const planLower = plan.toLowerCase();
+    // Estratègic / Strategic
+    if (planLower.includes('estrateg') || planLower === 'strategic') {
+      return 'bg-purple-100 text-purple-700';
     }
+    // Enterprise / Empresarial
+    if (planLower.includes('enterprise') || planLower.includes('empresarial')) {
+      return 'bg-amber-100 text-amber-700';
+    }
+    // Estàndard / Standard
+    if (planLower.includes('estandar') || planLower.includes('standard')) {
+      return 'bg-blue-100 text-blue-700';
+    }
+    // Pioneres (default/free)
+    return 'bg-emerald-100 text-emerald-700';
   };
 
   return (
     <>
-      <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 fixed top-0 right-0 left-64 z-30 transition-all duration-300">
-        {/* Esquerra: Títol de la pàgina */}
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">Dashboard d'Empresa</h1>
+      <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between pl-8 pr-6 fixed top-0 right-0 left-64 z-30 transition-all duration-300">
+        {/* Esquerra: Nom de l'empresa + Logo */}
+        <div className="flex items-center">
+          <h1 className="text-2xl font-light text-slate-700 ml-[60px] mr-[60px]">{empresaNom}</h1>
+          {/* Logo empresa col·laboradora */}
+          <div className="h-14 w-[160px] flex items-center justify-center">
+            {empresaLogo ? (
+              <img
+                src={empresaLogo}
+                alt={empresaNom}
+                className="max-h-14 max-w-[160px] object-contain"
+              />
+            ) : (
+              <span className="text-xs text-slate-400">Logo empresa</span>
+            )}
+          </div>
         </div>
 
         {/* Dreta: Accions */}
         <div className="flex items-center gap-4">
           {/* Cerca */}
-          <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors flex items-center gap-2"
+            title="Cercar (Ctrl+K)"
+          >
             <Search className="h-5 w-5" strokeWidth={1.5} />
+            <span className="hidden md:inline text-xs text-slate-400">Ctrl+K</span>
           </button>
 
           {/* Missatges */}
-          <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg relative transition-colors">
+          <button
+            onClick={() => setMessagesCenterOpen(true)}
+            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg relative transition-colors"
+          >
             <MessageSquare className="h-5 w-5" strokeWidth={1.5} />
-            {missatgesCount > 0 && (
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-500 rounded-full"></span>
+            {messagesUnread > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 text-white text-xs font-medium rounded-full flex items-center justify-center border-2 border-white">
+                {messagesUnread > 9 ? '9+' : messagesUnread}
+              </span>
             )}
           </button>
 
@@ -59,10 +108,10 @@ export default function EmpresaHeader({
             onClick={() => setNotificationCenterOpen(true)}
             className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg relative transition-colors"
           >
-            <Bell className="h-5 w-5" strokeWidth={1.5} />
-            {notificacionsCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-medium rounded-full flex items-center justify-center border-2 border-white">
-                {notificacionsCount}
+            <Bell className={`h-5 w-5 ${hasErrors ? 'text-red-500' : hasWarnings ? 'text-amber-500' : ''}`} strokeWidth={1.5} />
+            {unreadCount > 0 && (
+              <span className={`absolute -top-1 -right-1 w-5 h-5 text-white text-xs font-medium rounded-full flex items-center justify-center border-2 border-white ${hasErrors ? 'bg-red-500' : hasWarnings ? 'bg-amber-500' : 'bg-blue-500'}`}>
+                {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}
           </button>
@@ -94,10 +143,23 @@ export default function EmpresaHeader({
         </div>
       </header>
 
-      {/* Notification Center Logic */}
+      {/* Notification Center */}
       <NotificationCenter
         isOpen={notificationCenterOpen}
         onClose={() => setNotificationCenterOpen(false)}
+      />
+
+      {/* Messages Center */}
+      <MessagesCenter
+        isOpen={messagesCenterOpen}
+        onClose={() => setMessagesCenterOpen(false)}
+      />
+
+      {/* Search Modal */}
+      <SearchModal
+        isOpen={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        baseUrl="/empresa"
       />
     </>
   );

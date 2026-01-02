@@ -77,6 +77,12 @@ function getEmpresesColumnsForRoleInternal(role: string): EmpresesPipelineColumn
         color: 'blue'
       },
       {
+        id: 'verificar_publicar',
+        label: 'Verificar i Publicar',
+        stages: ['PENDENT_CRM'],
+        color: 'amber'
+      },
+      {
         id: 'actives',
         label: 'Actives',
         stages: ['ACTIVA'],
@@ -91,8 +97,8 @@ function getEmpresesColumnsForRoleInternal(role: string): EmpresesPipelineColumn
     ]
   }
 
-  // CRM_COMERCIAL, CRM_CONTINGUT
-  if (role.includes('CRM')) {
+  // CRM_COMERCIAL - Gestió comercial d'empreses
+  if (role === 'CRM_COMERCIAL') {
     return [
       {
         id: 'per_assignar',
@@ -108,8 +114,27 @@ function getEmpresesColumnsForRoleInternal(role: string): EmpresesPipelineColumn
         color: 'blue'
       },
       {
+        id: 'verificar_publicar',
+        label: 'Verificar i Publicar',
+        stages: ['PENDENT_CRM'],
+        color: 'amber'
+      },
+      {
         id: 'actives',
         label: 'Actives',
+        stages: ['ACTIVA'],
+        color: 'green'
+      },
+    ]
+  }
+
+  // CRM_CONTINGUT - NO gestiona empreses comercialment
+  // Només veu empreses actives per gestionar-ne el contingut
+  if (role === 'CRM_CONTINGUT') {
+    return [
+      {
+        id: 'actives',
+        label: 'Empreses actives',
         stages: ['ACTIVA'],
         color: 'green'
       },
@@ -119,14 +144,14 @@ function getEmpresesColumnsForRoleInternal(role: string): EmpresesPipelineColumn
   // GESTOR_ESTANDARD, GESTOR_ESTRATEGIC, GESTOR_ENTERPRISE
   return [
     {
-      id: 'onboarding',
-      label: 'En onboarding',
+      id: 'noves',
+      label: 'Noves',
       stages: ['ASSIGNADA', 'ONBOARDING'],
       color: 'purple'
     },
     {
-      id: 'actives',
-      label: 'Les meves empreses',
+      id: 'publicades',
+      label: 'Publicades',
       stages: ['ACTIVA'],
       color: 'green'
     },
@@ -237,8 +262,8 @@ async function getSubordinates(userId: string, role: string): Promise<{
 }[]> {
   const result: { id: string; name: string; email: string; role: string; image?: string }[] = []
 
-  // SUPER_ADMIN y ADMIN ven toda la jerarquía
-  if (['SUPER_ADMIN', 'ADMIN'].includes(role)) {
+  // SUPER_ADMIN, ADMIN i ADMIN_GESTIO veuen tota la jerarquia
+  if (['SUPER_ADMIN', 'ADMIN', 'ADMIN_GESTIO'].includes(role)) {
     const allSubordinates = await getAllSubordinatesRecursive(userId)
     return allSubordinates
   }
@@ -529,9 +554,20 @@ export async function updateEmpresaStage(
     return { success: false, error: 'No autenticat' }
   }
 
+  const userId = session.user.id
   const now = new Date()
 
   try {
+    // Obtener empresa actual para verificar estado anterior
+    const currentEmpresa = await prismaClient.company.findUnique({
+      where: { id: empresaId },
+      select: { stage: true, accountManagerId: true, name: true }
+    })
+
+    if (!currentEmpresa) {
+      return { success: false, error: 'Empresa no trobada' }
+    }
+
     const updateData: any = {
       stage: newStage,
       updatedAt: now
@@ -540,8 +576,34 @@ export async function updateEmpresaStage(
     // Campos adicionales según stage
     if (newStage === 'ACTIVA') {
       updateData.onboardingCompletedAt = now
-      updateData.status = 'APPROVED'
+      updateData.status = 'PUBLISHED'
       updateData.isActive = true
+      updateData.approvedAt = now
+      updateData.approvedById = userId
+
+      // Si viene de PENDENT_CRM, notificar al gestor
+      if (currentEmpresa.stage === 'PENDENT_CRM' && currentEmpresa.accountManagerId) {
+        const verifier = await prismaClient.user.findUnique({
+          where: { id: userId },
+          select: { name: true }
+        })
+
+        await prismaClient.notification.create({
+          data: {
+            userId: currentEmpresa.accountManagerId,
+            type: 'COMPANY_APPROVED',
+            title: 'Empresa publicada! 🎉',
+            message: `L'empresa "${currentEmpresa.name}" ha estat verificada i publicada per ${verifier?.name || 'CRM'}.`,
+            actionUrl: `/gestio/empreses/${empresaId}`,
+            companyId: empresaId,
+            metadata: {
+              companyId: empresaId,
+              companyName: currentEmpresa.name,
+              verifiedBy: verifier?.name || 'CRM'
+            }
+          }
+        })
+      }
     } else if (newStage === 'INACTIVA' || newStage === 'SUSPESA') {
       updateData.isActive = false
     }
@@ -553,6 +615,7 @@ export async function updateEmpresaStage(
 
     revalidatePath('/gestio/empreses/pipeline')
     revalidatePath('/gestio/empreses')
+    revalidatePath('/gestio/crm/verificacio')
 
     return { success: true }
   } catch (error) {

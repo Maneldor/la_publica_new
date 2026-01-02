@@ -126,28 +126,60 @@ export function ChatSidebar({
 
   return (
     <>
-      <div className={`${isMobile ? 'w-full' : 'w-60'} bg-slate-800 text-white flex flex-col border-r border-slate-700`}>
+      <div style={{
+        width: isMobile ? '100%' : '240px',
+        backgroundColor: 'var(--ChatSidebar-background, #1e293b)',
+        color: 'var(--ChatSidebar-text-color, #ffffff)',
+        display: 'flex',
+        flexDirection: 'column',
+        borderRight: '1px solid var(--ChatSidebar-border-color, #334155)'
+      }}>
         {/* Header Sidebar */}
-        <div className="p-5 border-b border-slate-700">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center overflow-hidden">
+        <div style={{
+          padding: '20px',
+          borderBottom: '1px solid var(--ChatSidebar-border-color, #334155)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              backgroundColor: 'var(--ChatSidebar-avatar-bg, #334155)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden'
+            }}>
               {userAvatar ? (
                 <img
                   src={userAvatar}
                   alt={userName}
-                  className="w-full h-full object-cover"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
               ) : (
-                <UserIcon className="w-5 h-5 text-gray-400" />
+                <UserIcon style={{ width: '20px', height: '20px', color: 'var(--ChatSidebar-icon-color, #9ca3af)' }} />
               )}
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="font-semibold text-sm truncate">{userName}</div>
-              <div className="text-xs text-slate-400">En línia</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: '600', fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{userName}</div>
+              <div style={{ fontSize: '12px', color: 'var(--ChatSidebar-secondary-text, #94a3b8)' }}>En línia</div>
             </div>
             <button
               onClick={() => setShowNewConversationModal(true)}
-              className="w-8 h-8 bg-indigo-600 hover:bg-indigo-700 rounded-full flex items-center justify-center text-white text-lg transition-colors"
+              style={{
+                width: '32px',
+                height: '32px',
+                backgroundColor: 'var(--ChatSidebar-button-bg, #4f46e5)',
+                border: 'none',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--ChatSidebar-button-color, #ffffff)',
+                fontSize: '18px',
+                cursor: 'pointer',
+                transition: 'background-color 0.2s'
+              }}
               title="Nova conversa"
             >
               +
@@ -155,34 +187,70 @@ export function ChatSidebar({
           </div>
 
           {/* Buscador */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <div style={{ position: 'relative' }}>
+            <Search style={{
+              position: 'absolute',
+              left: '12px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              width: '16px',
+              height: '16px',
+              color: 'var(--ChatSidebar-icon-color, #94a3b8)'
+            }} />
             <input
               type="text"
               placeholder="Buscar converses..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              style={{
+                width: '100%',
+                paddingLeft: '36px',
+                paddingRight: '16px',
+                padding: '8px 16px 8px 36px',
+                backgroundColor: 'var(--ChatSidebar-input-bg, #334155)',
+                border: '1px solid var(--ChatSidebar-input-border, #475569)',
+                borderRadius: '8px',
+                fontSize: '14px',
+                color: 'var(--ChatSidebar-text-color, #ffffff)',
+                outline: 'none'
+              }}
             />
           </div>
         </div>
 
         {/* Filtros de navegación */}
-        <div className="flex-1 overflow-y-auto p-3">
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
           {filters.map((filter) => (
             <button
               key={filter.key}
               onClick={() => setActiveFilter(filter.key as any)}
-              className={`w-full px-3 py-2.5 rounded-lg text-sm flex items-center gap-2.5 mb-1 transition-colors ${
-                activeFilter === filter.key
-                  ? 'bg-slate-700 text-white'
-                  : 'text-slate-300 hover:bg-slate-700/50'
-              }`}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                borderRadius: '8px',
+                fontSize: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                marginBottom: '4px',
+                backgroundColor: activeFilter === filter.key ? 'var(--ChatSidebar-filter-active-bg, #334155)' : 'transparent',
+                color: activeFilter === filter.key ? 'var(--ChatSidebar-text-color, #ffffff)' : 'var(--ChatSidebar-secondary-text, #cbd5e1)',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
             >
-              <filter.icon className="w-4 h-4" />
-              <span className="flex-1 text-left">{filter.label}</span>
+              <filter.icon style={{ width: '16px', height: '16px' }} />
+              <span style={{ flex: 1, textAlign: 'left' }}>{filter.label}</span>
               {filter.badge && filter.badge > 0 && (
-                <span className="bg-red-500 text-white rounded-full px-2 py-0.5 text-xs font-semibold">
+                <span style={{
+                  backgroundColor: 'var(--ChatSidebar-badge-bg, #ef4444)',
+                  color: 'var(--ChatSidebar-badge-color, #ffffff)',
+                  borderRadius: '9999px',
+                  padding: '2px 8px',
+                  fontSize: '12px',
+                  fontWeight: '600'
+                }}>
                   {filter.badge}
                 </span>
               )}
@@ -190,59 +258,123 @@ export function ChatSidebar({
           ))}
 
           {/* Secció de contactes */}
-          <div className="mt-4 pt-4 border-t border-slate-700">
-            <div className="flex justify-between items-center mb-3 px-1">
-              <span className="text-xs font-semibold uppercase text-slate-400 tracking-wide">
+          <div style={{
+            marginTop: '16px',
+            paddingTop: '16px',
+            borderTop: '1px solid var(--ChatSidebar-border-color, #334155)'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '12px',
+              padding: '0 4px'
+            }}>
+              <span style={{
+                fontSize: '12px',
+                fontWeight: '600',
+                textTransform: 'uppercase',
+                color: 'var(--ChatSidebar-secondary-text, #94a3b8)',
+                letterSpacing: '0.05em'
+              }}>
                 Contactes ({contacts.length})
               </span>
             </div>
 
             {isLoadingContacts ? (
-              <div className="text-center py-3">
-                <Loader2 className="w-5 h-5 animate-spin mx-auto text-slate-500" />
+              <div style={{ textAlign: 'center', padding: '12px' }}>
+                <Loader2 style={{ width: '20px', height: '20px', margin: '0 auto', color: 'var(--ChatSidebar-icon-color, #64748b)' }} className="animate-spin" />
               </div>
             ) : contacts.length === 0 ? (
-              <div className="text-center py-3 text-sm text-slate-400">
-                <Users className="w-8 h-8 mx-auto mb-2 text-slate-600" />
+              <div style={{ textAlign: 'center', padding: '12px', fontSize: '14px', color: 'var(--ChatSidebar-secondary-text, #94a3b8)' }}>
+                <Users style={{ width: '32px', height: '32px', margin: '0 auto 8px', color: 'var(--ChatSidebar-icon-color, #475569)' }} />
                 <p>No tens contactes</p>
                 <button
                   onClick={() => router.push('/dashboard/membres')}
-                  className="mt-2 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 rounded-md text-white text-xs transition-colors"
+                  style={{
+                    marginTop: '8px',
+                    padding: '6px 12px',
+                    backgroundColor: 'var(--ChatSidebar-button-bg, #4f46e5)',
+                    border: 'none',
+                    borderRadius: '6px',
+                    color: 'var(--ChatSidebar-button-color, #ffffff)',
+                    fontSize: '12px',
+                    cursor: 'pointer'
+                  }}
                 >
                   Anar a Membres
                 </button>
               </div>
             ) : (
-              <div className="max-h-36 overflow-y-auto">
+              <div style={{ maxHeight: '144px', overflowY: 'auto' }}>
                 {contacts.slice(0, 5).map(contact => (
                   <button
                     key={contact.id}
                     onClick={() => startConversation(contact.id)}
-                    className="w-full p-2 rounded-md flex items-center gap-2.5 hover:bg-slate-700 transition-colors"
+                    style={{
+                      width: '100%',
+                      padding: '8px',
+                      borderRadius: '6px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      backgroundColor: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: 'inherit',
+                      transition: 'background-color 0.2s'
+                    }}
                   >
-                    <div className="relative">
+                    <div style={{ position: 'relative' }}>
                       {contact.image ? (
                         <img
                           src={contact.image}
                           alt={contact.name}
-                          className="w-7 h-7 rounded-full object-cover"
+                          style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }}
                         />
                       ) : (
-                        <div className="w-7 h-7 rounded-full bg-slate-600 flex items-center justify-center text-xs font-semibold">
+                        <div style={{
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: '50%',
+                          backgroundColor: 'var(--ChatSidebar-avatar-bg, #475569)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '12px',
+                          fontWeight: '600'
+                        }}>
                           {contact.name.charAt(0).toUpperCase()}
                         </div>
                       )}
                       {contact.isOnline && (
-                        <span className="absolute bottom-0 right-0 w-2 h-2 bg-green-500 rounded-full border-2 border-slate-800" />
+                        <span style={{
+                          position: 'absolute',
+                          bottom: 0,
+                          right: 0,
+                          width: '8px',
+                          height: '8px',
+                          backgroundColor: 'var(--ChatSidebar-online-color, #22c55e)',
+                          borderRadius: '50%',
+                          border: '2px solid var(--ChatSidebar-background, #1e293b)'
+                        }} />
                       )}
                     </div>
-                    <span className="text-sm truncate">{contact.name}</span>
+                    <span style={{ fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{contact.name}</span>
                   </button>
                 ))}
                 {contacts.length > 5 && (
                   <button
                     onClick={() => setShowNewConversationModal(true)}
-                    className="w-full py-2 text-indigo-400 hover:text-indigo-300 text-xs transition-colors"
+                    style={{
+                      width: '100%',
+                      padding: '8px',
+                      color: 'var(--ChatSidebar-link-color, #818cf8)',
+                      fontSize: '12px',
+                      backgroundColor: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer'
+                    }}
                   >
                     Veure tots ({contacts.length})
                   </button>
@@ -255,11 +387,38 @@ export function ChatSidebar({
 
       {/* Modal Nova Conversa */}
       {showNewConversationModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 50,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: 'rgba(0,0,0,0.5)'
+        }}>
+          <div style={{
+            backgroundColor: 'var(--ChatSidebar-modal-bg, #ffffff)',
+            borderRadius: '16px',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+            width: '100%',
+            maxWidth: '448px',
+            margin: '0 16px',
+            overflow: 'hidden'
+          }}>
             {/* Header Modal */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '16px 20px',
+              borderBottom: '1px solid var(--ChatSidebar-modal-border, #e5e7eb)'
+            }}>
+              <h3 style={{
+                fontSize: '18px',
+                fontWeight: '600',
+                color: 'var(--ChatSidebar-modal-title, #111827)',
+                margin: 0
+              }}>
                 Nova conversa
               </h3>
               <button
@@ -267,38 +426,63 @@ export function ChatSidebar({
                   setShowNewConversationModal(false);
                   setContactSearch('');
                 }}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                style={{
+                  padding: '8px',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer'
+                }}
               >
-                <X className="w-5 h-5 text-gray-500" />
+                <X style={{ width: '20px', height: '20px', color: 'var(--ChatSidebar-modal-icon, #6b7280)' }} />
               </button>
             </div>
 
             {/* Cercador */}
-            <div className="p-5 border-b border-gray-200">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <div style={{
+              padding: '20px',
+              borderBottom: '1px solid var(--ChatSidebar-modal-border, #e5e7eb)'
+            }}>
+              <div style={{ position: 'relative' }}>
+                <Search style={{
+                  position: 'absolute',
+                  left: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  width: '16px',
+                  height: '16px',
+                  color: 'var(--ChatSidebar-modal-icon, #9ca3af)'
+                }} />
                 <input
                   type="text"
                   placeholder="Buscar contacte..."
                   value={contactSearch}
                   onChange={(e) => setContactSearch(e.target.value)}
                   autoFocus
-                  className="w-full pl-10 pr-4 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  style={{
+                    width: '100%',
+                    padding: '10px 16px 10px 40px',
+                    border: '2px solid var(--ChatSidebar-modal-input-border, #e5e7eb)',
+                    borderRadius: '12px',
+                    fontSize: '14px',
+                    color: 'var(--ChatSidebar-modal-text, #111827)',
+                    outline: 'none'
+                  }}
                 />
               </div>
             </div>
 
             {/* Llista de contactes */}
-            <div className="max-h-80 overflow-y-auto p-2">
+            <div style={{ maxHeight: '320px', overflowY: 'auto', padding: '8px' }}>
               {isLoadingContacts ? (
-                <div className="text-center py-8">
-                  <Loader2 className="w-8 h-8 animate-spin mx-auto text-indigo-500" />
-                  <p className="mt-3 text-gray-500 text-sm">Carregant contactes...</p>
+                <div style={{ textAlign: 'center', padding: '32px' }}>
+                  <Loader2 style={{ width: '32px', height: '32px', margin: '0 auto', color: 'var(--ChatSidebar-button-bg, #4f46e5)' }} className="animate-spin" />
+                  <p style={{ marginTop: '12px', color: 'var(--ChatSidebar-modal-secondary, #6b7280)', fontSize: '14px' }}>Carregant contactes...</p>
                 </div>
               ) : filteredContacts.length === 0 ? (
-                <div className="text-center py-8">
-                  <Users className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                  <p className="text-gray-500 text-sm mb-4">
+                <div style={{ textAlign: 'center', padding: '32px' }}>
+                  <Users style={{ width: '48px', height: '48px', margin: '0 auto 12px', color: 'var(--ChatSidebar-modal-icon, #d1d5db)' }} />
+                  <p style={{ color: 'var(--ChatSidebar-modal-secondary, #6b7280)', fontSize: '14px', marginBottom: '16px' }}>
                     {contacts.length === 0
                       ? 'No tens contactes. Connecta amb altres membres primer.'
                       : 'No s\'han trobat contactes'
@@ -310,7 +494,16 @@ export function ChatSidebar({
                         setShowNewConversationModal(false);
                         router.push('/dashboard/membres');
                       }}
-                      className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors"
+                      style={{
+                        padding: '10px 20px',
+                        backgroundColor: 'var(--ChatSidebar-button-bg, #4f46e5)',
+                        color: 'var(--ChatSidebar-button-color, #ffffff)',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        cursor: 'pointer'
+                      }}
                     >
                       Anar a Membres
                     </button>
@@ -322,39 +515,75 @@ export function ChatSidebar({
                     key={contact.id}
                     onClick={() => startConversation(contact.id)}
                     disabled={isCreatingConversation}
-                    className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors ${
-                      isCreatingConversation
-                        ? 'opacity-70 cursor-wait'
-                        : 'hover:bg-gray-100'
-                    }`}
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      padding: '12px',
+                      borderRadius: '12px',
+                      backgroundColor: 'transparent',
+                      border: 'none',
+                      cursor: isCreatingConversation ? 'wait' : 'pointer',
+                      opacity: isCreatingConversation ? 0.7 : 1,
+                      transition: 'background-color 0.2s'
+                    }}
                   >
-                    <div className="relative">
+                    <div style={{ position: 'relative' }}>
                       {contact.image ? (
                         <img
                           src={contact.image}
                           alt={contact.name}
-                          className="w-11 h-11 rounded-full object-cover"
+                          style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover' }}
                         />
                       ) : (
-                        <div className="w-11 h-11 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-semibold">
+                        <div style={{
+                          width: '44px',
+                          height: '44px',
+                          borderRadius: '50%',
+                          backgroundColor: 'var(--ChatSidebar-modal-avatar-bg, #e0e7ff)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'var(--ChatSidebar-button-bg, #4f46e5)',
+                          fontWeight: '600'
+                        }}>
                           {contact.name.charAt(0).toUpperCase()}
                         </div>
                       )}
                       {contact.isOnline && (
-                        <span className="absolute bottom-0.5 right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
+                        <span style={{
+                          position: 'absolute',
+                          bottom: '2px',
+                          right: '2px',
+                          width: '12px',
+                          height: '12px',
+                          backgroundColor: 'var(--ChatSidebar-online-color, #22c55e)',
+                          borderRadius: '50%',
+                          border: '2px solid var(--ChatSidebar-modal-bg, #ffffff)'
+                        }} />
                       )}
                     </div>
-                    <div className="flex-1 text-left">
-                      <p className="text-sm font-medium text-gray-900">
+                    <div style={{ flex: 1, textAlign: 'left' }}>
+                      <p style={{
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        color: 'var(--ChatSidebar-modal-text, #111827)',
+                        margin: 0
+                      }}>
                         {contact.name}
                       </p>
                       {contact.position && (
-                        <p className="text-xs text-gray-500 mt-0.5">
+                        <p style={{
+                          fontSize: '12px',
+                          color: 'var(--ChatSidebar-modal-secondary, #6b7280)',
+                          marginTop: '2px'
+                        }}>
                           {contact.position}
                         </p>
                       )}
                     </div>
-                    <MessageCircle className="w-5 h-5 text-gray-400" />
+                    <MessageCircle style={{ width: '20px', height: '20px', color: 'var(--ChatSidebar-modal-icon, #9ca3af)' }} />
                   </button>
                 ))
               )}

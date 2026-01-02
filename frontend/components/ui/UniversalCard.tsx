@@ -113,10 +113,10 @@ export function UniversalCard({
 
   // Estilos base de la tarjeta
   const baseCardStyles = {
-    backgroundColor: '#fff',
-    borderRadius: '12px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-    border: '1px solid #e9ecef',
+    backgroundColor: 'var(--UniversalCard-background, #ffffff)',
+    borderRadius: 'var(--UniversalCard-border-radius, 12px)',
+    boxShadow: 'var(--UniversalCard-shadow, 0 2px 8px rgba(0,0,0,0.1))',
+    border: '1px solid var(--UniversalCard-border-color, #e9ecef)',
     overflow: 'hidden',
     cursor: onClick ? 'pointer' : 'default',
     transition: 'transform 0.2s ease, box-shadow 0.2s ease',
@@ -124,8 +124,8 @@ export function UniversalCard({
     flexDirection: variant === 'horizontal' ? 'row' as const : 'column' as const,
     height: '100%',
     width: '100%',
-    maxWidth: variant === 'compact' ? '320px' : '100%',  // Limitar ancho para tarjetas compactas
-    minHeight: variant === 'compact' ? '40px' : (middleZone?.content ? 'auto' : '320px') // Auto si hay contenido personalizado
+    maxWidth: variant === 'compact' ? '320px' : '100%',
+    minHeight: variant === 'compact' ? '40px' : (middleZone?.content ? 'auto' : '320px')
   };
 
   const paddingMap = {
@@ -146,15 +146,15 @@ export function UniversalCard({
 
     // Configurar el fondo según el tipo
     if (topZone.type === 'gradient') {
-      backgroundStyle.background = topZone.value || 'linear-gradient(135deg, #3b82f6, #1d4ed8)';
+      backgroundStyle.background = topZone.value || 'var(--UniversalCard-default-gradient, linear-gradient(135deg, #3b82f6, #1d4ed8))';
     } else if (topZone.type === 'solid') {
-      backgroundStyle.backgroundColor = topZone.value || '#3b82f6';
+      backgroundStyle.backgroundColor = topZone.value || 'var(--UniversalCard-default-solid-color, #3b82f6)';
     } else if (topZone.type === 'image') {
       backgroundStyle.backgroundImage = `url(${topZone.value})`;
       backgroundStyle.backgroundSize = 'cover';
       backgroundStyle.backgroundPosition = 'center';
     } else if (topZone.type === 'icon') {
-      backgroundStyle.backgroundColor = '#f3f4f6';
+      backgroundStyle.backgroundColor = 'var(--UniversalCard-icon-background, #f3f4f6)';
       content = (
         <div style={{
           width: '100%',
@@ -173,7 +173,7 @@ export function UniversalCard({
       <div style={{
         height: variant === 'horizontal' ? '100%' : `${height}px`,
         width: variant === 'horizontal' ? `${height}px` : '100%',
-        maxWidth: '100%',  // Evitar que se desborde
+        maxWidth: '100%',
         position: 'relative',
         flexShrink: 0,
         ...backgroundStyle
@@ -188,8 +188,8 @@ export function UniversalCard({
             ...(topZone.badge.position === 'top-right' && { top: '12px', right: '12px' }),
             ...(topZone.badge.position === 'bottom-left' && { bottom: '12px', left: '12px' }),
             ...(topZone.badge.position === 'bottom-right' && { bottom: '12px', right: '12px' }),
-            backgroundColor: topZone.badge.color || '#3b82f6',
-            color: '#fff',
+            backgroundColor: topZone.badge.color || 'var(--UniversalCard-badge-background, #3b82f6)',
+            color: 'var(--UniversalCard-badge-color, #ffffff)',
             padding: '4px 8px',
             borderRadius: '4px',
             fontSize: '10px',
@@ -218,8 +218,8 @@ export function UniversalCard({
           width: `${size}px`,
           height: `${size}px`,
           borderRadius: '50%',
-          backgroundColor: middleZone.metadata.avatar.src ? 'transparent' : '#3b82f6',
-          color: '#fff',
+          backgroundColor: middleZone.metadata.avatar.src ? 'transparent' : 'var(--UniversalCard-avatar-background, #3b82f6)',
+          color: 'var(--UniversalCard-avatar-color, #ffffff)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -248,8 +248,8 @@ export function UniversalCard({
         display: 'flex',
         flexDirection: 'column',
         width: '100%',
-        maxWidth: '100%',  // Evitar desbordamiento horizontal
-        overflow: 'hidden', // Ocultar cualquier contenido que se desborde
+        maxWidth: '100%',
+        overflow: 'hidden',
         boxSizing: 'border-box'
       }}>
         {/* Contenido personalizado - anula todo lo demás */}
@@ -264,7 +264,7 @@ export function UniversalCard({
               <h3 style={{
                 fontSize: variant === 'compact' ? '14px' : '16px',
                 fontWeight: '600',
-                color: '#2c3e50',
+                color: 'var(--UniversalCard-title-color, #2c3e50)',
                 marginBottom: '8px',
                 lineHeight: '1.4',
                 display: '-webkit-box',
@@ -279,7 +279,7 @@ export function UniversalCard({
             {middleZone.subtitle && (
               <p style={{
                 fontSize: '12px',
-                color: '#6c757d',
+                color: 'var(--UniversalCard-subtitle-color, #6c757d)',
                 marginBottom: '4px'
               }}>
                 {middleZone.subtitle}
@@ -289,7 +289,7 @@ export function UniversalCard({
             {middleZone.description && (
               <p style={{
                 fontSize: '14px',
-                color: '#6c757d',
+                color: 'var(--UniversalCard-description-color, #6c757d)',
                 lineHeight: '1.5',
                 marginBottom: '12px',
                 display: '-webkit-box',
@@ -316,12 +316,12 @@ export function UniversalCard({
             {(middleZone.metadata.author || middleZone.metadata.date) && (
               <div>
                 {middleZone.metadata.author && (
-                  <div style={{ fontSize: '12px', fontWeight: '500', color: '#2c3e50' }}>
+                  <div style={{ fontSize: '12px', fontWeight: '500', color: 'var(--UniversalCard-author-color, #2c3e50)' }}>
                     {middleZone.metadata.author}
                   </div>
                 )}
                 {middleZone.metadata.date && (
-                  <div style={{ fontSize: '10px', color: '#6c757d' }}>
+                  <div style={{ fontSize: '10px', color: 'var(--UniversalCard-date-color, #6c757d)' }}>
                     {middleZone.metadata.date}
                   </div>
                 )}
@@ -350,7 +350,7 @@ export function UniversalCard({
               <h3 style={{
                 fontSize: '14px',
                 fontWeight: '500',
-                color: '#6c757d',
+                color: 'var(--UniversalCard-stat-label-color, #6c757d)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px',
                 margin: 0,
@@ -365,7 +365,7 @@ export function UniversalCard({
               {middleZone.stats[0].trend && (
                 <span style={{
                   fontSize: '12px',
-                  color: '#28a745',
+                  color: 'var(--UniversalCard-trend-color, #28a745)',
                   fontWeight: '600',
                   marginLeft: '8px',
                   flexShrink: 0
@@ -377,7 +377,7 @@ export function UniversalCard({
             <div style={{
               fontSize: '24px',
               fontWeight: '700',
-              color: '#2c3e50'
+              color: 'var(--UniversalCard-stat-value-color, #2c3e50)'
             }}>
               {middleZone.stats[0].value}
             </div>
@@ -396,11 +396,11 @@ export function UniversalCard({
     return (
       <div style={{
         padding: `0 ${paddingMap[padding]} ${paddingMap[padding]}`,
-        borderTop: '1px solid #e9ecef',
+        borderTop: '1px solid var(--UniversalCard-divider-color, #e9ecef)',
         marginTop: 'auto',
         width: '100%',
-        maxWidth: '100%',  // Evitar desbordamiento
-        boxSizing: 'border-box' // Incluir padding en el ancho total
+        maxWidth: '100%',
+        boxSizing: 'border-box'
       }}>
         <div style={{
           display: 'flex',
@@ -414,7 +414,7 @@ export function UniversalCard({
               display: 'flex',
               gap: '12px',
               fontSize: '12px',
-              color: '#6c757d'
+              color: 'var(--UniversalCard-bottom-stats-color, #6c757d)'
             }}>
               {bottomZone.stats.map((stat, index) => (
                 <span key={index}>
@@ -430,7 +430,7 @@ export function UniversalCard({
             {bottomZone.secondaryAction && (
               <button style={{
                 fontSize: '12px',
-                color: '#6c757d',
+                color: 'var(--UniversalCard-secondary-action-color, #6c757d)',
                 fontWeight: '500',
                 border: 'none',
                 backgroundColor: 'transparent',
@@ -448,9 +448,9 @@ export function UniversalCard({
               <button style={{
                 fontSize: '12px',
                 fontWeight: '500',
-                border: bottomZone.primaryAction.style === 'button' ? '1px solid #3b82f6' : 'none',
-                backgroundColor: bottomZone.primaryAction.style === 'button' ? '#3b82f6' : 'transparent',
-                color: bottomZone.primaryAction.style === 'button' ? 'white' : '#3b82f6',
+                border: bottomZone.primaryAction.style === 'button' ? '1px solid var(--UniversalCard-primary-action-border-color, #3b82f6)' : 'none',
+                backgroundColor: bottomZone.primaryAction.style === 'button' ? 'var(--UniversalCard-primary-action-background, #3b82f6)' : 'transparent',
+                color: bottomZone.primaryAction.style === 'button' ? 'var(--UniversalCard-primary-action-color, white)' : 'var(--UniversalCard-primary-action-link-color, #3b82f6)',
                 borderRadius: '6px',
                 padding: bottomZone.primaryAction.style === 'button' ? '6px 12px' : '4px 8px',
                 cursor: 'pointer'
@@ -475,13 +475,13 @@ export function UniversalCard({
       onMouseEnter={(e) => {
         if (onClick) {
           e.currentTarget.style.transform = 'translateY(-2px)';
-          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+          e.currentTarget.style.boxShadow = 'var(--UniversalCard-hover-shadow, 0 4px 12px rgba(0,0,0,0.15))';
         }
       }}
       onMouseLeave={(e) => {
         if (onClick) {
           e.currentTarget.style.transform = 'translateY(0)';
-          e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+          e.currentTarget.style.boxShadow = 'var(--UniversalCard-shadow, 0 2px 8px rgba(0,0,0,0.1))';
         }
       }}
     >

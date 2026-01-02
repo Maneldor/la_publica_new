@@ -96,8 +96,8 @@ async function checkAccess(empresaId: string) {
   const role = session.user.role as string
   const userId = session.user.id
 
-  // Admin i CRM_COMERCIAL poden accedir a tot
-  if (['SUPER_ADMIN', 'ADMIN', 'CRM_COMERCIAL'].includes(role)) {
+  // Admin, Admin Gestió i CRM_COMERCIAL poden accedir a tot
+  if (['SUPER_ADMIN', 'ADMIN', 'ADMIN_GESTIO', 'CRM_COMERCIAL'].includes(role)) {
     return { authorized: true, userId, role }
   }
 
@@ -287,7 +287,7 @@ export async function updateEmpresaStep(
         break
 
       case 7: // Configuració (només admin/CRM)
-        if (['SUPER_ADMIN', 'ADMIN', 'CRM_COMERCIAL'].includes(access.role!)) {
+        if (['SUPER_ADMIN', 'ADMIN', 'ADMIN_GESTIO', 'CRM_COMERCIAL'].includes(access.role!)) {
           updateData = {
             status: data.status,
             isActive: data.isActive

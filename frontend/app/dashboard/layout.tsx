@@ -256,10 +256,10 @@ export default function DashboardLayout({
       title: 'El Meu Espai',
       defaultOpen: true,
       items: [
-        { name: 'Agenda', href: '/dashboard/agenda', icon: CalendarDays, iconColor: 'text-amber-300' },
-        { name: 'Avui', href: '/dashboard/avui', icon: Home, iconColor: 'text-rose-300' },
-        { name: 'El Meu Perfil', href: '/dashboard/perfil', icon: UserCircle, iconColor: 'text-cyan-300' },
-        { name: 'Missatges', href: '/dashboard/missatges', icon: MessageCircle, iconColor: 'text-teal-300' },
+        { name: 'Agenda', href: '/dashboard/agenda', icon: CalendarDays, iconColor: 'text-blue-500' },
+        { name: 'Avui', href: '/dashboard/avui', icon: Home, iconColor: 'text-emerald-500' },
+        { name: 'El Meu Perfil', href: '/dashboard/perfil', icon: UserCircle, iconColor: 'text-violet-500' },
+        { name: 'Missatges', href: '/dashboard/missatges', icon: MessageCircle, iconColor: 'text-green-500' },
       ],
     },
     {
@@ -267,12 +267,12 @@ export default function DashboardLayout({
       title: 'Comunitat',
       defaultOpen: true,
       items: [
-        { name: 'Xarxa Social', href: '/dashboard', icon: Home, iconColor: 'text-rose-300' },
-        { name: 'Membres', href: '/dashboard/membres', icon: UsersRound, iconColor: 'text-purple-300' },
-        { name: 'Grups', href: '/dashboard/grups', icon: Users, iconColor: 'text-blue-300' },
-        { name: 'Fòrums', href: '/dashboard/forums', icon: MessagesSquare, iconColor: 'text-orange-300' },
-        { name: 'Blogs', href: '/dashboard/blogs', icon: FileText, iconColor: 'text-emerald-300' },
-        { name: 'Anuncis', href: '/dashboard/anuncis', icon: Megaphone, iconColor: 'text-yellow-300' },
+        { name: 'Xarxa Social', href: '/dashboard', icon: Home, iconColor: 'text-rose-500' },
+        { name: 'Membres', href: '/dashboard/membres', icon: UsersRound, iconColor: 'text-fuchsia-500' },
+        { name: 'Grups', href: '/dashboard/grups', icon: Users, iconColor: 'text-sky-500' },
+        { name: 'Fòrums', href: '/dashboard/forums', icon: MessagesSquare, iconColor: 'text-teal-500' },
+        { name: 'Blogs', href: '/dashboard/blogs', icon: FileText, iconColor: 'text-indigo-500' },
+        { name: 'Anuncis', href: '/dashboard/anuncis', icon: Megaphone, iconColor: 'text-pink-500' },
       ],
     },
     {
@@ -280,13 +280,13 @@ export default function DashboardLayout({
       title: 'Serveis',
       defaultOpen: false,
       items: [
-        { name: 'Empreses i Col·laboradors', href: '/dashboard/empreses', icon: Building2, iconColor: 'text-slate-300' },
-        { name: 'Ofertes', href: '/dashboard/ofertes', icon: Gift, iconColor: 'text-pink-300' },
-        { name: 'Assessorament', href: '/dashboard/assessorament', icon: Lightbulb, iconColor: 'text-amber-300' },
-        { name: 'Enllaços d\'Interès', href: '/dashboard/enllacos', icon: LinkIcon, iconColor: 'text-cyan-300' },
-        { name: 'Formació', href: '/dashboard/formacio', icon: GraduationCap, iconColor: 'text-indigo-300' },
-        { name: 'Recursos', href: '/dashboard/recursos', icon: FolderOpen, iconColor: 'text-lime-300' },
-        { name: 'Calendari', href: '/dashboard/calendari', icon: Calendar, iconColor: 'text-violet-300' },
+        { name: 'Empreses i Col·laboradors', href: '/dashboard/empreses', icon: Building2, iconColor: 'text-slate-600' },
+        { name: 'Ofertes', href: '/dashboard/ofertes', icon: Gift, iconColor: 'text-emerald-500' },
+        { name: 'Assessorament', href: '/dashboard/assessorament', icon: Lightbulb, iconColor: 'text-purple-500' },
+        { name: 'Enllaços d\'Interès', href: '/dashboard/enllacos', icon: LinkIcon, iconColor: 'text-cyan-500' },
+        { name: 'Formació', href: '/dashboard/formacio', icon: GraduationCap, iconColor: 'text-violet-500' },
+        { name: 'Recursos', href: '/dashboard/recursos', icon: FolderOpen, iconColor: 'text-blue-500' },
+        { name: 'Calendari', href: '/dashboard/calendari', icon: Calendar, iconColor: 'text-indigo-500' },
       ],
     },
   ];
@@ -304,16 +304,13 @@ export default function DashboardLayout({
         {/* Nueva estructura: Sidebar height completa | Header + Content */}
         <div className="flex h-screen overflow-hidden">
           {/* SIDEBAR - Fijo con sticky */}
-          <aside 
-            className="w-64 flex-shrink-0 h-screen sticky top-0 flex flex-col border-r-2 border-gray-300"
-            style={{
-              background: 'linear-gradient(180deg, #A78BFA 0%, #60A5FA 100%)',
-            }}
+          <aside
+            className="w-64 flex-shrink-0 h-screen sticky top-0 flex flex-col bg-white border-r border-gray-200"
           >
             {/* Logo - Logo original con colores */}
-            <div className="flex items-center justify-center border-b-2 border-gray-300 px-5" style={{ height: '72px' }}>
+            <div className="flex items-center justify-center border-b border-gray-200 px-5" style={{ height: '72px' }}>
               <Link href="/dashboard" className="flex items-center justify-center">
-                <img 
+                <img
                   src="/images/cropped-logo_la-Pública-ok-2.png"
                   alt="La Pública"
                   className="h-14 w-auto"
@@ -328,7 +325,7 @@ export default function DashboardLayout({
                   {/* Section header - clickable to expand/collapse */}
                   <button
                     onClick={() => toggleSection(section.id)}
-                    className="w-full flex items-center justify-between px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white/60 hover:text-white/90 hover:bg-white/5 transition-colors"
+                    className="w-full flex items-center justify-between px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-blue-400 hover:text-blue-500 hover:bg-gray-50 transition-colors"
                   >
                     <span>{section.title}</span>
                     <motion.span
@@ -352,23 +349,23 @@ export default function DashboardLayout({
                         {section.items.map((item) => {
                           const Icon = item.icon
                           const active = isActive(item.href)
-                          
+
                           return (
                             <Link
                               key={item.name}
                               href={item.href}
                               className={`
-                                flex items-center gap-3 px-5 py-2.5 mx-2 rounded-lg text-sm font-medium transition-all duration-200 group
-                                ${active 
-                                  ? "bg-white/20 text-white border-l-3 border-white" 
-                                  : "text-white/85 hover:bg-white/10 hover:text-white"
+                                flex items-center gap-3 px-5 py-2.5 mx-2 rounded-lg text-sm transition-all duration-200 group
+                                ${active
+                                  ? "bg-orange-50 text-orange-600 font-medium"
+                                  : "text-gray-700 hover:bg-gray-50"
                                 }
                               `}
-                              style={active ? { borderLeft: '3px solid white', paddingLeft: '17px' } : {}}
+                              style={active ? { borderLeft: '3px solid #F97316', paddingLeft: '17px' } : {}}
                             >
                               <span className={`
-                                transition-transform duration-200 group-hover:scale-110 
-                                ${active ? "text-amber-300" : item.iconColor}
+                                transition-transform duration-200 group-hover:scale-110
+                                ${active ? "text-orange-500" : item.iconColor}
                               `}>
                                 <Icon className="w-5 h-5" strokeWidth={1.75} />
                               </span>
@@ -387,7 +384,7 @@ export default function DashboardLayout({
           {/* CONTENEDOR DERECHO: Header + Contenido */}
           <div className="flex-1 flex flex-col overflow-hidden">
             {/* HEADER - Sin logo, solo funcionalidades */}
-            <header className="bg-white border-b-2 border-gray-300 flex items-center justify-between px-6 flex-shrink-0 sticky top-0 z-10" style={{ height: '72px' }}>
+            <header className="bg-white border-b border-gray-200 flex items-center justify-between px-6 flex-shrink-0 sticky top-0 z-10" style={{ height: '72px' }}>
               {/* Barra de búsqueda */}
               <div className="flex-1 max-w-xl">
                 <div className="relative">

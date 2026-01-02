@@ -33,11 +33,11 @@ export function ForumHeader({ viewMode, onViewChange, totalResults, activeTab }:
 
   return (
     <div style={{
-      backgroundColor: '#fff',
-      borderRadius: '12px',
-      padding: '20px',
-      border: '2px solid #e5e7eb',
-      boxShadow: '0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06)',
+      backgroundColor: 'var(--ForumHeader-background, #ffffff)',
+      borderRadius: 'var(--ForumHeader-border-radius, 12px)',
+      padding: 'var(--ForumHeader-padding, 20px)',
+      border: '2px solid var(--ForumHeader-border-color, #e5e7eb)',
+      boxShadow: 'var(--ForumHeader-shadow, 0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06))',
       marginBottom: '20px'
     }}>
       <div style={{
@@ -52,14 +52,14 @@ export function ForumHeader({ viewMode, onViewChange, totalResults, activeTab }:
           <h2 style={{
             fontSize: '20px',
             fontWeight: '600',
-            color: '#2c3e50',
+            color: 'var(--ForumHeader-title-color, #2c3e50)',
             margin: '0 0 4px 0'
           }}>
             {getTitle()}
           </h2>
           <p style={{
             fontSize: '14px',
-            color: '#6c757d',
+            color: 'var(--ForumHeader-subtitle-color, #6c757d)',
             margin: 0
           }}>
             {totalResults} fòrum{totalResults !== 1 ? 's' : ''} trobat{totalResults !== 1 ? 's' : ''}
@@ -77,8 +77,8 @@ export function ForumHeader({ viewMode, onViewChange, totalResults, activeTab }:
             onClick={handleCreatePost}
             style={{
               padding: '10px 16px',
-              backgroundColor: '#10b981',
-              color: 'white',
+              backgroundColor: 'var(--ForumHeader-create-button-bg, #10b981)',
+              color: 'var(--ForumHeader-create-button-color, #ffffff)',
               border: 'none',
               borderRadius: '8px',
               fontSize: '14px',
@@ -90,11 +90,11 @@ export function ForumHeader({ viewMode, onViewChange, totalResults, activeTab }:
               gap: '6px'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#059669';
+              e.currentTarget.style.backgroundColor = 'var(--ForumHeader-create-button-hover-bg, #059669)';
               e.currentTarget.style.transform = 'translateY(-1px)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#10b981';
+              e.currentTarget.style.backgroundColor = 'var(--ForumHeader-create-button-bg, #10b981)';
               e.currentTarget.style.transform = 'translateY(0)';
             }}
           >
@@ -113,7 +113,7 @@ export function ForumHeader({ viewMode, onViewChange, totalResults, activeTab }:
       <div style={{
         marginTop: '12px',
         paddingTop: '12px',
-        borderTop: '1px solid #f0f0f0'
+        borderTop: '1px solid var(--ForumHeader-divider-color, #f0f0f0)'
       }}>
         {activeTab === 'meus' && (
           <div style={{
@@ -121,7 +121,7 @@ export function ForumHeader({ viewMode, onViewChange, totalResults, activeTab }:
             alignItems: 'center',
             gap: '8px',
             fontSize: '13px',
-            color: '#10b981',
+            color: 'var(--ForumHeader-tab-meus-color, #10b981)',
             fontWeight: '500'
           }}>
             <span>Aquests són els fòrums que has creat</span>
@@ -134,7 +134,7 @@ export function ForumHeader({ viewMode, onViewChange, totalResults, activeTab }:
             alignItems: 'center',
             gap: '8px',
             fontSize: '13px',
-            color: '#3b82f6',
+            color: 'var(--ForumHeader-tab-seguits-color, #3b82f6)',
             fontWeight: '500'
           }}>
             <span>Fòrums que segueixes per rebre notificacions</span>
@@ -147,7 +147,7 @@ export function ForumHeader({ viewMode, onViewChange, totalResults, activeTab }:
             alignItems: 'center',
             gap: '8px',
             fontSize: '13px',
-            color: '#f59e0b',
+            color: 'var(--ForumHeader-tab-populars-color, #f59e0b)',
             fontWeight: '500'
           }}>
             <span>Fòrums amb més votacions i comentaris</span>
@@ -160,7 +160,7 @@ export function ForumHeader({ viewMode, onViewChange, totalResults, activeTab }:
             alignItems: 'center',
             gap: '8px',
             fontSize: '13px',
-            color: '#6c757d',
+            color: 'var(--ForumHeader-tab-tots-color, #6c757d)',
             fontWeight: '500'
           }}>
             <span>Explora tots els fòrums de la plataforma</span>

@@ -74,11 +74,11 @@ export function AnunciSidebar({
     <div className="sticky top-24 space-y-6 lg:sticky lg:top-24">
       {/* Preu i badges */}
       <div style={{
-        backgroundColor: 'white',
-        borderRadius: '12px',
-        padding: '24px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-        border: '1px solid #f0f0f0',
+        backgroundColor: 'var(--AnunciSidebar-background, #ffffff)',
+        borderRadius: 'var(--AnunciSidebar-border-radius, 12px)',
+        padding: 'var(--AnunciSidebar-padding, 24px)',
+        boxShadow: 'var(--AnunciSidebar-shadow, 0 2px 8px rgba(0,0,0,0.1))',
+        border: '1px solid var(--AnunciSidebar-border-color, #f0f0f0)',
         marginBottom: '24px'
       }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '16px' }}>
@@ -98,8 +98,8 @@ export function AnunciSidebar({
             <div style={{
               display: 'inline-block',
               fontSize: '14px',
-              color: '#2563eb',
-              backgroundColor: '#dbeafe',
+              color: 'var(--AnunciSidebar-category-color, #2563eb)',
+              backgroundColor: 'var(--AnunciSidebar-category-bg, #dbeafe)',
               padding: '4px 8px',
               borderRadius: '6px',
               marginLeft: '8px'
@@ -113,7 +113,7 @@ export function AnunciSidebar({
           fontSize: '36px',
           fontWeight: '700',
           marginBottom: '24px',
-          color: anunci.type === 'oferta' ? '#16a34a' : '#2563eb'
+          color: anunci.type === 'oferta' ? 'var(--AnunciSidebar-price-oferta, #16a34a)' : 'var(--AnunciSidebar-price-demanda, #2563eb)'
         }}>
           {priceDisplay}
         </div>
@@ -124,10 +124,10 @@ export function AnunciSidebar({
             onClick={onContactClick}
             style={{
               width: '100%',
-              backgroundColor: '#3b82f6',
-              color: 'white',
+              backgroundColor: 'var(--AnunciSidebar-primary-button, #3b82f6)',
+              color: 'var(--AnunciSidebar-primary-button-text, white)',
               padding: '12px 16px',
-              borderRadius: '8px',
+              borderRadius: 'var(--AnunciSidebar-button-radius, 8px)',
               fontWeight: '600',
               border: 'none',
               cursor: 'pointer',
@@ -150,10 +150,10 @@ export function AnunciSidebar({
               style={{
                 flex: 1,
                 padding: '8px 16px',
-                borderRadius: '8px',
-                border: '1px solid #10b981',
-                backgroundColor: '#ecfdf5',
-                color: '#10b981',
+                borderRadius: 'var(--AnunciSidebar-button-radius, 8px)',
+                border: '1px solid var(--AnunciSidebar-phone-border, #10b981)',
+                backgroundColor: 'var(--AnunciSidebar-phone-bg, #ecfdf5)',
+                color: 'var(--AnunciSidebar-phone-color, #10b981)',
                 fontWeight: '500',
                 textDecoration: 'none',
                 display: 'flex',
@@ -171,10 +171,10 @@ export function AnunciSidebar({
               style={{
                 flex: 1,
                 padding: '8px 16px',
-                borderRadius: '8px',
-                border: '1px solid #f59e0b',
-                backgroundColor: '#fffbeb',
-                color: '#f59e0b',
+                borderRadius: 'var(--AnunciSidebar-button-radius, 8px)',
+                border: '1px solid var(--AnunciSidebar-email-border, #f59e0b)',
+                backgroundColor: 'var(--AnunciSidebar-email-bg, #fffbeb)',
+                color: 'var(--AnunciSidebar-email-color, #f59e0b)',
                 fontWeight: '500',
                 textDecoration: 'none',
                 display: 'flex',
@@ -200,10 +200,10 @@ export function AnunciSidebar({
               style={{
                 flex: 1,
                 padding: '8px 16px',
-                borderRadius: '8px',
-                border: `1px solid ${isGuardat ? '#3b82f6' : '#e5e7eb'}`,
-                backgroundColor: isGuardat ? '#dbeafe' : '#f9fafb',
-                color: isGuardat ? '#2563eb' : '#6b7280',
+                borderRadius: 'var(--AnunciSidebar-button-radius, 8px)',
+                border: `1px solid ${isGuardat ? 'var(--AnunciSidebar-saved-border, #3b82f6)' : 'var(--AnunciSidebar-secondary-border, #e5e7eb)'}`,
+                backgroundColor: isGuardat ? 'var(--AnunciSidebar-saved-bg, #dbeafe)' : 'var(--AnunciSidebar-secondary-bg, #f9fafb)',
+                color: isGuardat ? 'var(--AnunciSidebar-saved-color, #2563eb)' : 'var(--AnunciSidebar-secondary-color, #6b7280)',
                 fontWeight: '500',
                 cursor: isLoadingGuardat ? 'not-allowed' : 'pointer',
                 display: 'flex',
@@ -228,10 +228,10 @@ export function AnunciSidebar({
               style={{
                 flex: 1,
                 padding: '8px 16px',
-                borderRadius: '8px',
-                border: '1px solid #e5e7eb',
-                backgroundColor: '#f9fafb',
-                color: '#6b7280',
+                borderRadius: 'var(--AnunciSidebar-button-radius, 8px)',
+                border: '1px solid var(--AnunciSidebar-secondary-border, #e5e7eb)',
+                backgroundColor: 'var(--AnunciSidebar-secondary-bg, #f9fafb)',
+                color: 'var(--AnunciSidebar-secondary-color, #6b7280)',
                 fontWeight: '500',
                 cursor: 'pointer',
                 display: 'flex',

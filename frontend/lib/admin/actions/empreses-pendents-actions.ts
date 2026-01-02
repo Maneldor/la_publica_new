@@ -4,13 +4,14 @@ import { prismaClient } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
-import { notifyCompanyRegistered, getCRMUserIds, getUserById } from '@/lib/notifications/notification-actions'
 
 // ============================================
 // TIPUS
 // ============================================
 
-export interface LeadPendentRegistre {
+export type LeadPhase = 'GESTOR' | 'CRM' | 'ADMIN'
+
+export interface LeadPipeline {
   id: string
   companyName: string
   cif: string | null
@@ -25,26 +26,45 @@ export interface LeadPendentRegistre {
   estimatedValue: number | null
   priority: string
   stage: string | null
+  status: string
   notes: string | null
   internalNotes: string | null
   createdAt: Date
   updatedAt: Date
+  assignedAt: Date | null
   assignedTo: {
     id: string
     name: string | null
     email: string
   } | null
-  // Camps afegits per al workflow
-  paymentStatus?: 'PENDING' | 'CONTACTED' | 'PAYMENT_SENT' | 'PAYMENT_CONFIRMED'
-  paymentConfirmedAt?: Date | null
-  adminNotes?: string | null
+  phase: LeadPhase
+  daysInPipeline: number
+  crmVerification?: any
+  precontract?: any
 }
 
-export interface LeadsPendentsStats {
+export interface PipelineStats {
   total: number
-  perContactar: number
-  contactats: number
-  pagamentPendent: number
+  gestor: number
+  crm: number
+  admin: number
+}
+
+// ============================================
+// FUNCIONS AUXILIARS
+// ============================================
+
+function getLeadPhase(stage: string | null): LeadPhase {
+  if (['PRE_CONTRACTE', 'EN_REVISIO'].includes(stage || '')) return 'ADMIN'
+  if (['PER_VERIFICAR', 'VERIFICAT'].includes(stage || '')) return 'CRM'
+  return 'GESTOR'
+}
+
+function calculateDaysInPipeline(assignedAt: Date | null, createdAt: Date): number {
+  const startDate = assignedAt || createdAt
+  const now = new Date()
+  const diffTime = Math.abs(now.getTime() - startDate.getTime())
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
 }
 
 // ============================================
@@ -66,12 +86,13 @@ async function checkAdminAccess() {
 }
 
 // ============================================
-// OBTENIR LEADS PENDENTS
+// OBTENIR LEADS DEL PIPELINE (ACTIUS)
 // ============================================
 
-export async function getLeadById(leadId: string): Promise<{
+export async function getLeadsPipeline(phaseFilter?: LeadPhase): Promise<{
   success: boolean
-  data?: LeadPendentRegistre
+  data?: LeadPipeline[]
+  stats?: PipelineStats
   error?: string
 }> {
   const access = await checkAdminAccess()
@@ -80,48 +101,23 @@ export async function getLeadById(leadId: string): Promise<{
   }
 
   try {
-    const lead = await prismaClient.companyLead.findUnique({
-      where: { id: leadId },
-      include: {
-        assignedTo: {
-          select: { id: true, name: true, email: true }
-        }
-      }
-    })
+    // Només stages actius (exclou NOU sense assignar, CONTRACTAT i PERDUT)
+    const activeStages = ['ASSIGNAT', 'TREBALLANT', 'PER_VERIFICAR', 'VERIFICAT', 'PRE_CONTRACTE', 'EN_REVISIO']
 
-    if (!lead) {
-      return { success: false, error: 'Lead no trobat' }
+    let stageFilter: string[] = activeStages
+    if (phaseFilter === 'GESTOR') {
+      stageFilter = ['ASSIGNAT', 'TREBALLANT']
+    } else if (phaseFilter === 'CRM') {
+      stageFilter = ['PER_VERIFICAR', 'VERIFICAT']
+    } else if (phaseFilter === 'ADMIN') {
+      stageFilter = ['PRE_CONTRACTE', 'EN_REVISIO']
     }
 
-    return {
-      success: true,
-      data: {
-        ...lead,
-        estimatedValue: lead.estimatedValue ? Number(lead.estimatedValue) : null,
-        assignedTo: lead.assignedTo
-      } as LeadPendentRegistre
-    }
-  } catch (error) {
-    console.error('Error obtenint lead:', error)
-    return { success: false, error: 'Error obtenint lead' }
-  }
-}
-
-export async function getLeadsPendentsRegistre(): Promise<{
-  success: boolean
-  data?: LeadPendentRegistre[]
-  error?: string
-}> {
-  const access = await checkAdminAccess()
-  if (!access.authorized) {
-    return { success: false, error: access.error }
-  }
-
-  try {
     const leads = await prismaClient.companyLead.findMany({
       where: {
-        stage: 'PENDING_ADMIN',
-        convertedToCompanyId: null  // Encara no convertit a empresa
+        stage: { in: stageFilter },
+        convertedToCompanyId: null, // No convertit encara
+        status: { notIn: ['WON', 'LOST'] } // Exclou finalitzats
       },
       include: {
         assignedTo: {
@@ -130,88 +126,65 @@ export async function getLeadsPendentsRegistre(): Promise<{
       },
       orderBy: [
         { priority: 'desc' },
+        { assignedAt: 'asc' },
         { createdAt: 'asc' }
       ]
     })
 
-    return {
-      success: true,
-      data: leads.map(lead => ({
-        ...lead,
-        estimatedValue: lead.estimatedValue ? Number(lead.estimatedValue) : null,
-        assignedTo: lead.assignedTo
-      })) as LeadPendentRegistre[]
+    // Comptar per fase (tots els actius)
+    const allLeads = await prismaClient.companyLead.findMany({
+      where: {
+        stage: { in: activeStages },
+        convertedToCompanyId: null,
+        status: { notIn: ['WON', 'LOST'] }
+      },
+      select: { stage: true }
+    })
+
+    const stats: PipelineStats = {
+      total: allLeads.length,
+      gestor: allLeads.filter(l => ['ASSIGNAT', 'TREBALLANT'].includes(l.stage || '')).length,
+      crm: allLeads.filter(l => ['PER_VERIFICAR', 'VERIFICAT'].includes(l.stage || '')).length,
+      admin: allLeads.filter(l => ['PRE_CONTRACTE', 'EN_REVISIO'].includes(l.stage || '')).length
     }
+
+    const formattedLeads: LeadPipeline[] = leads.map(lead => ({
+      id: lead.id,
+      companyName: lead.companyName,
+      cif: lead.cif,
+      sector: lead.sector,
+      contactName: lead.contactName,
+      contactRole: lead.contactRole,
+      email: lead.email,
+      phone: lead.phone,
+      website: lead.website,
+      address: lead.address,
+      city: lead.city,
+      estimatedValue: lead.estimatedValue ? Number(lead.estimatedValue) : null,
+      priority: lead.priority,
+      stage: lead.stage,
+      status: lead.status,
+      notes: lead.notes,
+      internalNotes: lead.internalNotes,
+      createdAt: lead.createdAt,
+      updatedAt: lead.updatedAt,
+      assignedAt: lead.assignedAt,
+      assignedTo: lead.assignedTo,
+      phase: getLeadPhase(lead.stage),
+      daysInPipeline: calculateDaysInPipeline(lead.assignedAt, lead.createdAt),
+      crmVerification: (lead as any).crmVerification,
+      precontract: (lead as any).precontract
+    }))
+
+    return { success: true, data: formattedLeads, stats }
   } catch (error) {
-    console.error('Error obtenint leads pendents:', error)
-    return { success: false, error: 'Error obtenint leads pendents' }
+    console.error('Error obtenint leads pipeline:', error)
+    return { success: false, error: 'Error obtenint leads del pipeline' }
   }
 }
 
 // ============================================
-// ESTADÍSTIQUES
-// ============================================
-
-export async function getLeadsPendentsStats(): Promise<{
-  success: boolean
-  data?: LeadsPendentsStats
-  error?: string
-}> {
-  const access = await checkAdminAccess()
-  if (!access.authorized) {
-    return { success: false, error: access.error }
-  }
-
-  try {
-    // Comptar leads pendents d'admin (no convertits encara)
-    const [total, ambNotes, senseNotes] = await Promise.all([
-      // Total de leads pendents
-      prismaClient.companyLead.count({
-        where: {
-          stage: 'PENDING_ADMIN',
-          convertedToCompanyId: null
-        }
-      }),
-      // Leads amb notes (considerats contactats)
-      prismaClient.companyLead.count({
-        where: {
-          stage: 'PENDING_ADMIN',
-          convertedToCompanyId: null,
-          internalNotes: {
-            not: null
-          }
-        }
-      }),
-      // Leads sense notes (per contactar)
-      prismaClient.companyLead.count({
-        where: {
-          stage: 'PENDING_ADMIN',
-          convertedToCompanyId: null,
-          OR: [
-            { internalNotes: null },
-            { internalNotes: '' }
-          ]
-        }
-      })
-    ])
-
-    return {
-      success: true,
-      data: {
-        total,
-        perContactar: senseNotes,
-        contactats: ambNotes,
-        pagamentPendent: 0  // Per implementar en el futur amb tracking de pagaments
-      }
-    }
-  } catch (error) {
-    console.error('Error obtenint estadístiques:', error)
-    return { success: false, error: 'Error obtenint estadístiques' }
-  }
-}
-
-// ============================================
-// ACTUALITZAR NOTES ADMIN
+// ACTUALITZAR NOTES
 // ============================================
 
 export async function updateLeadAdminNotes(
@@ -226,13 +199,9 @@ export async function updateLeadAdminNotes(
   try {
     await prismaClient.companyLead.update({
       where: { id: leadId },
-      data: {
-        internalNotes: notes,
-        updatedAt: new Date()
-      }
+      data: { internalNotes: notes, updatedAt: new Date() }
     })
-
-    revalidatePath('/admin/empreses-pendents')
+    revalidatePath('/gestio/admin/empreses-pendents')
     return { success: true }
   } catch (error) {
     console.error('Error actualitzant notes:', error)
@@ -240,8 +209,78 @@ export async function updateLeadAdminNotes(
   }
 }
 
+// Compatibilitat amb codi antic
+export type LeadPendentRegistre = LeadPipeline
+export type LeadsPendentsStats = PipelineStats
+export async function getLeadsPendentsRegistre() { return getLeadsPipeline('ADMIN') }
+export async function getLeadsPendentsStats() {
+  const result = await getLeadsPipeline()
+  return result.success ? { success: true, data: { total: result.stats?.admin || 0, perContactar: 0, contactats: 0, pagamentPendent: 0 } } : result
+}
+
 // ============================================
-// MARCAR COM GUANYAT (quan es crea l'empresa)
+// OBTENIR LEAD PER ID
+// ============================================
+
+export async function getLeadById(leadId: string): Promise<{
+  success: boolean
+  data?: LeadPipeline
+  error?: string
+}> {
+  const access = await checkAdminAccess()
+  if (!access.authorized) {
+    return { success: false, error: access.error }
+  }
+
+  try {
+    const lead = await prismaClient.companyLead.findUnique({
+      where: { id: leadId },
+      include: {
+        assignedTo: {
+          select: { id: true, name: true, email: true }
+        }
+      }
+    })
+
+    if (!lead) {
+      return { success: false, error: 'Lead no trobat' }
+    }
+
+    const formattedLead: LeadPipeline = {
+      id: lead.id,
+      companyName: lead.companyName,
+      cif: lead.cif,
+      sector: lead.sector,
+      contactName: lead.contactName,
+      contactRole: lead.contactRole,
+      email: lead.email,
+      phone: lead.phone,
+      website: lead.website,
+      address: lead.address,
+      city: lead.city,
+      estimatedValue: lead.estimatedValue ? Number(lead.estimatedValue) : null,
+      priority: lead.priority,
+      stage: lead.stage,
+      status: lead.status,
+      notes: lead.notes,
+      internalNotes: lead.internalNotes,
+      createdAt: lead.createdAt,
+      updatedAt: lead.updatedAt,
+      assignedAt: lead.assignedAt,
+      assignedTo: lead.assignedTo,
+      phase: getLeadPhase(lead.stage),
+      daysInPipeline: calculateDaysInPipeline(lead.assignedAt, lead.createdAt)
+    }
+
+    return { success: true, data: formattedLead }
+  } catch (error) {
+    console.error('Error obtenint lead:', error)
+    return { success: false, error: 'Error obtenint lead' }
+  }
+}
+
+// ============================================
+// MARCAR LEAD COM GUANYAT
 // ============================================
 
 export async function marcarLeadGuanyat(
@@ -254,52 +293,18 @@ export async function marcarLeadGuanyat(
   }
 
   try {
-    // Obtenir dades del lead abans d'actualitzar
-    const lead = await prismaClient.companyLead.findUnique({
-      where: { id: leadId },
-      select: { companyName: true }
-    })
-
-    if (!lead) {
-      return { success: false, error: 'Lead no trobat' }
-    }
-
-    // Actualitzar el lead com a convertit
     await prismaClient.companyLead.update({
       where: { id: leadId },
       data: {
-        stage: 'WON',
-        status: 'WON',  // Sincronitzar status amb stage
+        status: 'WON',
+        stage: 'CONTRACTAT',
         convertedToCompanyId: companyId,
-        convertedAt: new Date(),
         updatedAt: new Date()
       }
     })
-
-    // Enviar notificació al CRM que s'ha registrat una empresa
-    try {
-      const crmUserIds = await getCRMUserIds()
-      const adminUser = await getUserById(access.userId!)
-      const adminName = adminUser?.name || 'Admin'
-
-      if (crmUserIds.length > 0) {
-        await notifyCompanyRegistered(
-          crmUserIds,
-          companyId,
-          lead.companyName,
-          adminName
-        )
-        console.log('🔔 Notificacions enviades a', crmUserIds.length, 'usuaris CRM per empresa registrada:', lead.companyName)
-      }
-    } catch (notificationError) {
-      console.error('Error enviant notificació de empresa registrada:', notificationError)
-      // No falla la operació principal si hi ha error en notificacions
-    }
-
-    revalidatePath('/admin/empreses-pendents')
-    revalidatePath('/gestio/admin/empreses-pendents')  // Nova ruta de gestió
+    revalidatePath('/gestio/admin/empreses-pendents')
+    revalidatePath('/gestio/admin/empreses-collaboradores')
     revalidatePath('/gestio/leads')
-    revalidatePath('/gestio/pipeline')
     return { success: true }
   } catch (error) {
     console.error('Error marcant lead com guanyat:', error)
@@ -308,13 +313,53 @@ export async function marcarLeadGuanyat(
 }
 
 // ============================================
-// DATA FETCHING OPTIMIZAT
+// EMPRESES COL·LABORADORES (LEADS CONVERTITS)
 // ============================================
 
-export async function getLeadsPendentsDashboardData(): Promise<{
+export interface EmpresaCollaboradora {
+  id: string
+  companyName: string
+  cif: string | null
+  sector: string | null
+  status: string
+  createdAt: Date
+  // Dades del lead original
+  leadId: string | null
+  leadCompanyName: string | null
+  leadContactName: string | null
+  leadEmail: string | null
+  leadPhone: string | null
+  leadAssignedTo: {
+    id: string
+    name: string | null
+    email: string
+  } | null
+  leadConvertedAt: Date | null
+  // Dades de l'usuari empresa
+  owner: {
+    id: string
+    name: string | null
+    email: string
+    isActive: boolean
+    isEmailVerified: boolean
+    lastLogin: Date | null
+  } | null
+  // Pla subscrit
+  planName: string | null
+  planTier: string | null
+}
+
+export interface EmpresaCollaboradoraStats {
+  total: number
+  actives: number
+  pendents: number
+  inactives: number
+}
+
+export async function getEmpresasCollaboradores(): Promise<{
   success: boolean
-  leads?: LeadPendentRegistre[]
-  stats?: LeadsPendentsStats
+  data?: EmpresaCollaboradora[]
+  stats?: EmpresaCollaboradoraStats
   error?: string
 }> {
   const access = await checkAdminAccess()
@@ -323,56 +368,76 @@ export async function getLeadsPendentsDashboardData(): Promise<{
   }
 
   try {
-    const [leads, stats] = await Promise.all([
-      // 1. Obtenir Leads
-      prismaClient.companyLead.findMany({
-        where: {
-          stage: 'PENDING_ADMIN',
-          convertedToCompanyId: null
-        },
-        include: {
-          assignedTo: {
-            select: { id: true, name: true, email: true }
+    // Obtenir TOTES les empreses del sistema de gestió
+    const companies = await prismaClient.company.findMany({
+      include: {
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            isActive: true,
+            isEmailVerified: true,
+            lastLogin: true
           }
         },
-        orderBy: [
-          { priority: 'desc' },
-          { createdAt: 'asc' }
-        ]
-      }),
-      // 2. Obtenir Stats (Optimitzat: agrupant o comptant paral·lelament ja dins d'aquesta Promise.all global)
-      // Nota: Prisma count en paral·lel és ràpid.
-      Promise.all([
-        prismaClient.companyLead.count({
-          where: { stage: 'PENDING_ADMIN', convertedToCompanyId: null }
-        }),
-        prismaClient.companyLead.count({
-          where: { stage: 'PENDING_ADMIN', convertedToCompanyId: null, internalNotes: { not: null } }
-        }),
-        prismaClient.companyLead.count({
-          where: { stage: 'PENDING_ADMIN', convertedToCompanyId: null, OR: [{ internalNotes: null }, { internalNotes: '' }] }
-        })
-      ])
-    ])
+        currentPlan: {
+          select: { name: true, tier: true }
+        },
+        accountManager: {
+          select: { id: true, name: true, email: true }
+        },
+        originalLead: {
+          select: {
+            id: true,
+            companyName: true,
+            contactName: true,
+            email: true,
+            phone: true,
+            convertedAt: true,
+            assignedTo: {
+              select: { id: true, name: true, email: true }
+            }
+          }
+        }
+      },
+      orderBy: { updatedAt: 'desc' }
+    })
 
-    const formattedLeads = leads.map(lead => ({
-      ...lead,
-      estimatedValue: lead.estimatedValue ? Number(lead.estimatedValue) : null,
-      assignedTo: lead.assignedTo
-    })) as LeadPendentRegistre[]
-
-    return {
-      success: true,
-      leads: formattedLeads,
-      stats: {
-        total: stats[0],
-        contactats: stats[1],
-        perContactar: stats[2],
-        pagamentPendent: 0
+    // Formatejar les dades
+    const empreses: EmpresaCollaboradora[] = companies.map(company => {
+      const lead = company.originalLead
+      return {
+        id: company.id,
+        companyName: company.name,
+        cif: company.cif,
+        sector: company.sector,
+        status: company.status,
+        createdAt: company.createdAt,
+        leadId: lead?.id || null,
+        leadCompanyName: lead?.companyName || null,
+        leadContactName: lead?.contactName || null,
+        leadEmail: lead?.email || null,
+        leadPhone: lead?.phone || null,
+        leadAssignedTo: lead?.assignedTo || company.accountManager || null,
+        leadConvertedAt: lead?.convertedAt || null,
+        owner: company.owner || null,
+        planName: company.currentPlan?.name || null,
+        planTier: company.currentPlan?.tier || null
       }
+    })
+
+    // Stats
+    const stats: EmpresaCollaboradoraStats = {
+      total: empreses.length,
+      actives: empreses.filter(e => e.status === 'PUBLISHED' || e.status === 'APPROVED').length,
+      pendents: empreses.filter(e => e.status === 'PENDING').length,
+      inactives: empreses.filter(e => e.status === 'INACTIVE' || e.status === 'SUSPENDED').length
     }
+
+    return { success: true, data: empreses, stats }
   } catch (error) {
-    console.error('Error carregant dashboard data:', error)
-    return { success: false, error: 'Error carregant dades del sistema' }
+    console.error('Error obtenint empreses col·laboradores:', error)
+    return { success: false, error: 'Error obtenint empreses col·laboradores' }
   }
 }

@@ -17,46 +17,46 @@ interface StatCardProps {
 
 const colorConfig = {
   blue: {
-    border: 'border-blue-500',
-    icon: 'text-blue-500',
-    trend: 'text-blue-600',
-    badge: 'bg-blue-100 text-blue-800'
+    border: '#3b82f6',
+    icon: '#3b82f6',
+    trend: '#2563eb',
+    badge: { bg: '#dbeafe', color: '#1e40af' }
   },
   green: {
-    border: 'border-green-500',
-    icon: 'text-green-500',
-    trend: 'text-green-600',
-    badge: 'bg-green-100 text-green-800'
+    border: '#22c55e',
+    icon: '#22c55e',
+    trend: '#16a34a',
+    badge: { bg: '#dcfce7', color: '#166534' }
   },
   purple: {
-    border: 'border-purple-500',
-    icon: 'text-purple-500',
-    trend: 'text-purple-600',
-    badge: 'bg-purple-100 text-purple-800'
+    border: '#a855f7',
+    icon: '#a855f7',
+    trend: '#9333ea',
+    badge: { bg: '#f3e8ff', color: '#6b21a8' }
   },
   red: {
-    border: 'border-red-500',
-    icon: 'text-red-500',
-    trend: 'text-red-600',
-    badge: 'bg-red-100 text-red-800'
+    border: '#ef4444',
+    icon: '#ef4444',
+    trend: '#dc2626',
+    badge: { bg: '#fee2e2', color: '#991b1b' }
   },
   orange: {
-    border: 'border-orange-500',
-    icon: 'text-orange-500',
-    trend: 'text-orange-600',
-    badge: 'bg-orange-100 text-orange-800'
+    border: '#f97316',
+    icon: '#f97316',
+    trend: '#ea580c',
+    badge: { bg: '#ffedd5', color: '#9a3412' }
   },
   yellow: {
-    border: 'border-yellow-500',
-    icon: 'text-yellow-500',
-    trend: 'text-yellow-600',
-    badge: 'bg-yellow-100 text-yellow-800'
+    border: '#eab308',
+    icon: '#eab308',
+    trend: '#ca8a04',
+    badge: { bg: '#fef9c3', color: '#854d0e' }
   },
   gray: {
-    border: 'border-gray-500',
-    icon: 'text-gray-500',
-    trend: 'text-gray-600',
-    badge: 'bg-gray-100 text-gray-800'
+    border: '#6b7280',
+    icon: '#6b7280',
+    trend: '#4b5563',
+    badge: { bg: '#f3f4f6', color: '#374151' }
   }
 };
 
@@ -73,37 +73,95 @@ export function StatCard({
   const colors = colorConfig[color];
 
   return (
-    <div className={`bg-white rounded-lg shadow p-4 border-l-4 ${colors.border} ${className}`}>
-      <div className="flex items-center justify-between">
-        <div className="flex-1">
-          <p className="text-sm text-gray-600 font-medium">{title}</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">
+    <div
+      className={className}
+      style={{
+        backgroundColor: 'var(--StatCard-background, #ffffff)',
+        borderRadius: 'var(--StatCard-border-radius, 8px)',
+        boxShadow: 'var(--StatCard-shadow, 0 1px 3px 0 rgb(0 0 0 / 0.1))',
+        padding: 'var(--StatCard-padding, 16px)',
+        borderLeft: `4px solid ${colors.border}`,
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ flex: 1 }}>
+          <p
+            style={{
+              fontSize: 'var(--StatCard-title-size, 14px)',
+              fontWeight: '500',
+              color: 'var(--StatCard-title-color, #4b5563)',
+              margin: 0,
+            }}
+          >
+            {title}
+          </p>
+          <p
+            style={{
+              fontSize: 'var(--StatCard-value-size, 1.5rem)',
+              fontWeight: 'var(--StatCard-value-weight, 700)',
+              color: 'var(--StatCard-value-color, #111827)',
+              margin: '4px 0 0 0',
+            }}
+          >
             {typeof value === 'number' ? value.toLocaleString() : value}
           </p>
 
           {/* Subtitle or Trend */}
           {subtitle && !trend && (
-            <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
+            <p
+              style={{
+                fontSize: '12px',
+                color: 'var(--StatCard-subtitle-color, #6b7280)',
+                margin: '4px 0 0 0',
+              }}
+            >
+              {subtitle}
+            </p>
           )}
 
           {trend && (
-            <p className={`text-xs mt-1 font-medium ${
-              trend.isPositive ? colors.trend : 'text-red-600'
-            }`}>
+            <p
+              style={{
+                fontSize: '12px',
+                fontWeight: '500',
+                margin: '4px 0 0 0',
+                color: trend.isPositive
+                  ? 'var(--StatCard-trend-up-color, ' + colors.trend + ')'
+                  : 'var(--StatCard-trend-down-color, #dc2626)',
+              }}
+            >
               {trend.value} {trend.label}
             </p>
           )}
 
           {/* Badge for special cases */}
           {badge && (
-            <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full mt-2 ${colors.badge}`}>
+            <span
+              style={{
+                display: 'inline-block',
+                padding: '4px 8px',
+                fontSize: '12px',
+                fontWeight: '500',
+                borderRadius: '9999px',
+                marginTop: '8px',
+                backgroundColor: 'var(--StatCard-badge-background, ' + colors.badge.bg + ')',
+                color: 'var(--StatCard-badge-color, ' + colors.badge.color + ')',
+              }}
+            >
               {badge}
             </span>
           )}
         </div>
 
         {/* Icon */}
-        <div className={`${colors.icon} opacity-50 ml-4 flex-shrink-0`}>
+        <div
+          style={{
+            color: colors.icon,
+            opacity: 0.5,
+            marginLeft: '16px',
+            flexShrink: 0,
+          }}
+        >
           {icon}
         </div>
       </div>

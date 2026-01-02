@@ -3,54 +3,67 @@
 interface ViewToggleProps {
   viewMode: 'grid' | 'list';
   onViewChange: (mode: 'grid' | 'list') => void;
+  className?: string;
+  style?: React.CSSProperties;
 }
 
-export function ViewToggle({ viewMode, onViewChange }: ViewToggleProps) {
+export function ViewToggle({ viewMode, onViewChange, className = '', style }: ViewToggleProps) {
+  const containerStyles: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 'var(--ViewToggle-gap, 8px)',
+    backgroundColor: 'var(--ViewToggle-background, #f8f9fa)',
+    padding: 'var(--ViewToggle-padding, 4px)',
+    borderRadius: 'var(--ViewToggle-border-radius, 8px)',
+    border: '1px solid var(--ViewToggle-border-color, #e9ecef)',
+    ...style,
+  };
+
+  const labelStyles: React.CSSProperties = {
+    fontSize: 'var(--ViewToggle-label-font-size, 12px)',
+    color: 'var(--ViewToggle-label-color, #6c757d)',
+    fontWeight: 500,
+    marginLeft: '8px',
+  };
+
+  const getButtonStyles = (isActive: boolean): React.CSSProperties => ({
+    padding: 'var(--ViewToggle-button-padding, 6px 12px)',
+    backgroundColor: isActive
+      ? 'var(--ViewToggle-active-background, #3b82f6)'
+      : 'transparent',
+    color: isActive
+      ? 'var(--ViewToggle-active-color, #ffffff)'
+      : 'var(--ViewToggle-inactive-color, #6c757d)',
+    border: 'none',
+    borderRadius: 'var(--ViewToggle-button-border-radius, 6px)',
+    fontSize: 'var(--ViewToggle-button-font-size, 12px)',
+    fontWeight: 500,
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+  });
+
   return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px',
-      backgroundColor: '#f8f9fa',
-      padding: '4px',
-      borderRadius: '8px',
-      border: '1px solid #e9ecef'
-    }}>
-      <span style={{
-        fontSize: '12px',
-        color: '#6c757d',
-        fontWeight: '500',
-        marginLeft: '8px'
-      }}>
+    <div className={className} style={containerStyles}>
+      <span style={labelStyles}>
         Vista:
       </span>
 
       <button
         onClick={() => onViewChange('grid')}
-        style={{
-          padding: '6px 12px',
-          backgroundColor: viewMode === 'grid' ? '#3b82f6' : 'transparent',
-          color: viewMode === 'grid' ? 'white' : '#6c757d',
-          border: 'none',
-          borderRadius: '6px',
-          fontSize: '12px',
-          fontWeight: '500',
-          cursor: 'pointer',
-          transition: 'all 0.2s',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px'
-        }}
+        style={getButtonStyles(viewMode === 'grid')}
         onMouseEnter={(e) => {
           if (viewMode !== 'grid') {
-            e.currentTarget.style.backgroundColor = '#e9ecef';
-            e.currentTarget.style.color = '#374151';
+            e.currentTarget.style.backgroundColor = 'var(--ViewToggle-hover-background, #e9ecef)';
+            e.currentTarget.style.color = 'var(--ViewToggle-hover-color, #374151)';
           }
         }}
         onMouseLeave={(e) => {
           if (viewMode !== 'grid') {
             e.currentTarget.style.backgroundColor = 'transparent';
-            e.currentTarget.style.color = '#6c757d';
+            e.currentTarget.style.color = 'var(--ViewToggle-inactive-color, #6c757d)';
           }
         }}
         title="Vista en graella"
@@ -63,30 +76,17 @@ export function ViewToggle({ viewMode, onViewChange }: ViewToggleProps) {
 
       <button
         onClick={() => onViewChange('list')}
-        style={{
-          padding: '6px 12px',
-          backgroundColor: viewMode === 'list' ? '#3b82f6' : 'transparent',
-          color: viewMode === 'list' ? 'white' : '#6c757d',
-          border: 'none',
-          borderRadius: '6px',
-          fontSize: '12px',
-          fontWeight: '500',
-          cursor: 'pointer',
-          transition: 'all 0.2s',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px'
-        }}
+        style={getButtonStyles(viewMode === 'list')}
         onMouseEnter={(e) => {
           if (viewMode !== 'list') {
-            e.currentTarget.style.backgroundColor = '#e9ecef';
-            e.currentTarget.style.color = '#374151';
+            e.currentTarget.style.backgroundColor = 'var(--ViewToggle-hover-background, #e9ecef)';
+            e.currentTarget.style.color = 'var(--ViewToggle-hover-color, #374151)';
           }
         }}
         onMouseLeave={(e) => {
           if (viewMode !== 'list') {
             e.currentTarget.style.backgroundColor = 'transparent';
-            e.currentTarget.style.color = '#6c757d';
+            e.currentTarget.style.color = 'var(--ViewToggle-inactive-color, #6c757d)';
           }
         }}
         title="Vista en llista"

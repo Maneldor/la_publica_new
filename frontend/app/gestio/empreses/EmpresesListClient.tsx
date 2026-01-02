@@ -15,14 +15,20 @@ import {
   User,
   Calendar,
   ExternalLink,
-  RefreshCw
+  RefreshCw,
+  CheckCircle,
+  Globe
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { EmpresesListData, EmpresaListItem } from '@/lib/gestio-empreses/empreses-list-actions'
+import { AssignarGestorModal } from './AssignarGestorModal'
+import { CompanyEditPanel } from '@/components/gestio/empreses/CompanyEditPanel'
 
 const EMPRESA_TABS = [
-  { id: 'noves', label: 'Noves', description: 'Menys d\'1 any', color: 'blue' },
-  { id: 'renovades', label: 'Renovades', description: 'Més d\'1 any', color: 'green' },
+  { id: 'per_assignar', label: 'Per assignar', description: 'Sense gestor', color: 'orange' },
+  { id: 'en_gestio', label: 'En Gestió', description: 'Amb gestor', color: 'blue' },
+  { id: 'publicades', label: 'Publicades', description: 'Al directori', color: 'green' },
+  { id: 'renovades', label: 'Renovades', description: 'Més d\'1 any', color: 'emerald' },
   { id: 'cancellades', label: 'Cancel·lades', description: 'Inactives', color: 'red' },
 ]
 
@@ -37,15 +43,46 @@ interface EmpresesListClientProps {
 
 export function EmpresesListClient({ initialData, currentUser }: EmpresesListClientProps) {
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState('noves')
+  const [activeTab, setActiveTab] = useState('per_assignar')
   const [search, setSearch] = useState('')
   const [showFilters, setShowFilters] = useState(false)
   const stats = initialData.stats
 
+  // Modal d'assignació
+  const [modalAssignar, setModalAssignar] = useState<{
+    isOpen: boolean
+    empresa: EmpresaListItem | null
+  }>({ isOpen: false, empresa: null })
+
+  // Panel d'edició
+  const [editPanel, setEditPanel] = useState<{
+    isOpen: boolean
+    empresaId: string | null
+  }>({ isOpen: false, empresaId: null })
+
+  const handleOpenAssignar = (empresa: EmpresaListItem) => {
+    setModalAssignar({ isOpen: true, empresa })
+  }
+
+  const handleOpenEdit = (empresa: EmpresaListItem) => {
+    setEditPanel({ isOpen: true, empresaId: empresa.id })
+  }
+
+  const handleAssigned = () => {
+    setModalAssignar({ isOpen: false, empresa: null })
+    router.refresh()
+  }
+
+  const handleEditSaved = () => {
+    router.refresh()
+  }
+
   // Filtrar por pestaña y búsqueda
   const filteredEmpreses = initialData.empreses.filter(emp => {
     const matchesTab =
-      (activeTab === 'noves' && emp.classification === 'nova') ||
+      (activeTab === 'per_assignar' && emp.classification === 'per_assignar') ||
+      (activeTab === 'en_gestio' && emp.classification === 'en_gestio') ||
+      (activeTab === 'publicades' && emp.classification === 'publicada') ||
       (activeTab === 'renovades' && emp.classification === 'renovada') ||
       (activeTab === 'cancellades' && emp.classification === 'cancellada')
 
@@ -60,7 +97,9 @@ export function EmpresesListClient({ initialData, currentUser }: EmpresesListCli
 
   const getCountForTab = (tabId: string) => {
     switch (tabId) {
-      case 'noves': return stats.noves
+      case 'per_assignar': return stats.perAssignar
+      case 'en_gestio': return stats.enGestio
+      case 'publicades': return stats.publicades
       case 'renovades': return stats.renovades
       case 'cancellades': return stats.cancellades
       default: return 0
@@ -107,19 +146,29 @@ export function EmpresesListClient({ initialData, currentUser }: EmpresesListCli
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-6 gap-4">
         <div className="bg-white rounded-xl border border-slate-200 p-4">
           <p className="text-sm font-medium text-slate-500">Total empreses</p>
           <p className="text-2xl font-semibold text-slate-800 mt-1">{stats.total}</p>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-4">
-          <p className="text-sm font-medium text-slate-500">Noves</p>
-          <p className="text-2xl font-semibold text-blue-600 mt-1">{stats.noves}</p>
-          <p className="text-xs text-slate-400 mt-1">{'< 1 any'}</p>
+          <p className="text-sm font-medium text-slate-500">Per assignar</p>
+          <p className="text-2xl font-semibold text-orange-600 mt-1">{stats.perAssignar}</p>
+          <p className="text-xs text-slate-400 mt-1">Sense gestor</p>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-200 p-4">
+          <p className="text-sm font-medium text-slate-500">En Gestió</p>
+          <p className="text-2xl font-semibold text-blue-600 mt-1">{stats.enGestio}</p>
+          <p className="text-xs text-slate-400 mt-1">Amb gestor</p>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-200 p-4">
+          <p className="text-sm font-medium text-slate-500">Publicades</p>
+          <p className="text-2xl font-semibold text-green-600 mt-1">{stats.publicades}</p>
+          <p className="text-xs text-slate-400 mt-1">Al directori</p>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-4">
           <p className="text-sm font-medium text-slate-500">Renovades</p>
-          <p className="text-2xl font-semibold text-green-600 mt-1">{stats.renovades}</p>
+          <p className="text-2xl font-semibold text-emerald-600 mt-1">{stats.renovades}</p>
           <p className="text-xs text-slate-400 mt-1">{'> 1 any'}</p>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-4">
@@ -236,11 +285,25 @@ export function EmpresesListClient({ initialData, currentUser }: EmpresesListCli
                 <tr key={emp.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
-                        <Building2 className="h-4 w-4 text-slate-500" strokeWidth={1.5} />
+                      <div className={cn(
+                        "w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0",
+                        emp.status === 'PUBLISHED' ? "bg-green-100" : "bg-slate-100"
+                      )}>
+                        {emp.status === 'PUBLISHED' ? (
+                          <CheckCircle className="h-4 w-4 text-green-600" strokeWidth={1.5} />
+                        ) : (
+                          <Building2 className="h-4 w-4 text-slate-500" strokeWidth={1.5} />
+                        )}
                       </div>
                       <div className="min-w-0">
-                        <p className="font-medium text-slate-900 truncate">{emp.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-slate-900 truncate">{emp.name}</p>
+                          {emp.status === 'PUBLISHED' && (
+                            <span className="px-1.5 py-0.5 text-[10px] font-medium bg-green-100 text-green-700 rounded">
+                              Publicada
+                            </span>
+                          )}
+                        </div>
                         {emp.cif && (
                           <p className="text-xs text-slate-500">{emp.cif}</p>
                         )}
@@ -288,7 +351,12 @@ export function EmpresesListClient({ initialData, currentUser }: EmpresesListCli
                         <span className="text-sm text-slate-600">{emp.accountManager.name}</span>
                       </div>
                     ) : (
-                      <span className="text-xs text-orange-500 font-medium">Sense gestor</span>
+                      <button
+                        onClick={() => handleOpenAssignar(emp)}
+                        className="text-xs text-orange-500 font-medium hover:text-orange-700 hover:underline cursor-pointer"
+                      >
+                        Sense gestor
+                      </button>
                     )}
                   </td>
                   <td className="px-4 py-3">
@@ -303,15 +371,37 @@ export function EmpresesListClient({ initialData, currentUser }: EmpresesListCli
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-2">
+                      {emp.status === 'PUBLISHED' && (
+                        <button
+                          onClick={() => window.open(`/dashboard/empreses/${emp.id}`, '_blank')}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-green-600 hover:text-green-800 hover:bg-green-50 rounded-lg transition-colors"
+                          title="Veure perfil públic"
+                        >
+                          <Globe className="h-3 w-3" strokeWidth={1.5} />
+                          Públic
+                        </button>
+                      )}
+                      {emp.accountManager ? (
+                        <button
+                          onClick={() => handleOpenEdit(emp)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors"
+                        >
+                          Editar Perfil
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleOpenAssignar(emp)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-orange-600 hover:text-orange-800 hover:bg-orange-50 rounded-lg transition-colors"
+                        >
+                          Assignar Gestor
+                        </button>
+                      )}
                       <button
                         onClick={() => handleViewEmpresa(emp.id)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
+                        className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                        title="Obrir en nova pestanya"
                       >
-                        Veure
-                        <ExternalLink className="h-3 w-3" strokeWidth={1.5} />
-                      </button>
-                      <button className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
-                        <MoreHorizontal className="h-4 w-4" strokeWidth={1.5} />
+                        <ExternalLink className="h-4 w-4" strokeWidth={1.5} />
                       </button>
                     </div>
                   </td>
@@ -330,6 +420,29 @@ export function EmpresesListClient({ initialData, currentUser }: EmpresesListCli
           </div>
         )}
       </div>
+
+      {/* Modal d'assignació de gestor */}
+      {modalAssignar.empresa && (
+        <AssignarGestorModal
+          isOpen={modalAssignar.isOpen}
+          onClose={() => setModalAssignar({ isOpen: false, empresa: null })}
+          empresa={{
+            id: modalAssignar.empresa.id,
+            name: modalAssignar.empresa.name,
+            accountManagerId: modalAssignar.empresa.accountManager?.id || null,
+            accountManager: modalAssignar.empresa.accountManager
+          }}
+          onAssigned={handleAssigned}
+        />
+      )}
+
+      {/* Panel d'edició del perfil de l'empresa */}
+      <CompanyEditPanel
+        companyId={editPanel.empresaId}
+        isOpen={editPanel.isOpen}
+        onClose={() => setEditPanel({ isOpen: false, empresaId: null })}
+        onSaved={handleEditSaved}
+      />
     </div>
   )
 }

@@ -13,7 +13,7 @@ export async function bulkAssignLeads(leadIds: string[], gestorId: string, userI
 
     // Verificar permisos
     const userType = session.role || 'USER'
-    const canAssign = ['SUPER_ADMIN', 'ADMIN', 'COMPANY_MANAGER', 'ACCOUNT_MANAGER'].includes(userType)
+    const canAssign = ['SUPER_ADMIN', 'ADMIN', 'ADMIN_GESTIO', 'COMPANY_MANAGER', 'ACCOUNT_MANAGER'].includes(userType)
 
     if (!canAssign) {
       throw new Error('No tens permisos per assignar leads')
@@ -70,7 +70,7 @@ export async function bulkUpdateLeadStatus(leadIds: string[], status: string, us
 
     // Verificar permisos
     const userType = session.role || 'USER'
-    const canUpdate = ['SUPER_ADMIN', 'ADMIN', 'COMPANY_MANAGER', 'ACCOUNT_MANAGER', 'SALES_REP'].includes(userType)
+    const canUpdate = ['SUPER_ADMIN', 'ADMIN', 'ADMIN_GESTIO', 'COMPANY_MANAGER', 'ACCOUNT_MANAGER', 'SALES_REP'].includes(userType)
 
     if (!canUpdate) {
       throw new Error('No tens permisos per actualitzar l\'estat dels leads')
@@ -142,9 +142,9 @@ export async function bulkDeleteLeads(leadIds: string[], userId: string) {
       throw new Error('No autenticat')
     }
 
-    // Verificar permisos - només admins poden eliminar
+    // Verificar permisos - només admins i ADMIN_GESTIO poden eliminar
     const userType = session.role || 'USER'
-    const canDelete = ['SUPER_ADMIN', 'ADMIN'].includes(userType)
+    const canDelete = ['SUPER_ADMIN', 'ADMIN', 'ADMIN_GESTIO'].includes(userType)
 
     if (!canDelete) {
       throw new Error('No tens permisos per eliminar leads')
@@ -227,7 +227,7 @@ export async function getFilteredLeads(params: {
 
     const userId = session.userId
     const userType = session.role || 'USER'
-    const isSupervisor = ['SUPER_ADMIN', 'ADMIN', 'COMPANY_MANAGER', 'ACCOUNT_MANAGER'].includes(userType)
+    const isSupervisor = ['SUPER_ADMIN', 'ADMIN', 'ADMIN_GESTIO', 'COMPANY_MANAGER', 'ACCOUNT_MANAGER'].includes(userType)
 
     const {
       search,

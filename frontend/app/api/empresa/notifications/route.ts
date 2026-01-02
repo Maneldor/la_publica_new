@@ -34,8 +34,40 @@ export async function GET(request: NextRequest) {
 
     const company = user.ownedCompany;
     const currentSubscription = company.subscriptions[0];
-    const notifications = [];
+    const notifications: any[] = [];
     const now = new Date();
+
+    // 0. Obtener notificaciones reales de la base de datos
+    const dbNotifications = await prismaClient.notification.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+      include: {
+        sender: {
+          select: {
+            id: true,
+            name: true,
+            image: true
+          }
+        }
+      }
+    });
+
+    // Mapear notificaciones de BD al formato esperado
+    const mappedDbNotifications = dbNotifications.map(n => ({
+      id: n.id,
+      type: mapNotificationType(n.type),
+      priority: mapPriority(n.priority),
+      title: n.title,
+      message: n.message,
+      actionText: 'Veure',
+      actionUrl: n.actionUrl || undefined,
+      createdAt: n.createdAt,
+      read: n.isRead,
+      sender: n.sender
+    }));
+
+    notifications.push(...mappedDbNotifications);
 
     // 1. Check trial ending
     if (currentSubscription?.startDate && currentSubscription?.endDate) {
@@ -141,4 +173,113 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+// Marcar notificación como leída
+export async function PATCH(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { notificationId, markAll } = body;
+
+    if (markAll) {
+      // Marcar todas como leídas
+      await prismaClient.notification.updateMany({
+        where: {
+          userId: session.user.id,
+          isRead: false
+        },
+        data: {
+          isRead: true,
+          readAt: new Date()
+        }
+      });
+      return NextResponse.json({ success: true, message: 'Totes les notificacions marcades com a llegides' });
+    }
+
+    if (!notificationId) {
+      return NextResponse.json({ error: 'ID de notificació requerit' }, { status: 400 });
+    }
+
+    // Marcar una específica como leída
+    await prismaClient.notification.update({
+      where: {
+        id: notificationId,
+        userId: session.user.id
+      },
+      data: {
+        isRead: true,
+        readAt: new Date()
+      }
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error marcant notificació:', error);
+    return NextResponse.json({ error: 'Error al marcar notificació' }, { status: 500 });
+  }
+}
+
+// Eliminar notificación
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const notificationId = searchParams.get('id');
+
+    if (!notificationId) {
+      return NextResponse.json({ error: 'ID de notificació requerit' }, { status: 400 });
+    }
+
+    await prismaClient.notification.delete({
+      where: {
+        id: notificationId,
+        userId: session.user.id
+      }
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error eliminant notificació:', error);
+    return NextResponse.json({ error: 'Error al eliminar notificació' }, { status: 500 });
+  }
+}
+
+// Funciones auxiliares de mapeo
+function mapNotificationType(type: string): 'info' | 'success' | 'warning' | 'error' {
+  const typeMap: Record<string, 'info' | 'success' | 'warning' | 'error'> = {
+    'COMPANY_PUBLISHED': 'success',
+    'COMPANY_APPROVED': 'success',
+    'COMPANY_COMPLETED': 'success',
+    'CONNECTION_ACCEPTED': 'success',
+    'LEAD_CONVERTED': 'success',
+    'COMPANY_REJECTED': 'error',
+    'CONNECTION_REJECTED': 'warning',
+    'LEAD_EXPIRING': 'warning',
+    'LEAD_INACTIVE_REMINDER': 'warning',
+    'GENERAL': 'info',
+    'NEW_MESSAGE': 'info',
+    'CONNECTION_REQUEST': 'info',
+    'COMPANY_ASSIGNED': 'info',
+    'COMPANY_PENDING': 'info'
+  };
+  return typeMap[type] || 'info';
+}
+
+function mapPriority(priority: string): 'low' | 'medium' | 'high' | 'critical' {
+  const priorityMap: Record<string, 'low' | 'medium' | 'high' | 'critical'> = {
+    'LOW': 'low',
+    'NORMAL': 'medium',
+    'HIGH': 'high',
+    'URGENT': 'critical'
+  };
+  return priorityMap[priority] || 'medium';
 }

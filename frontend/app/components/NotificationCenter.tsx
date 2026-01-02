@@ -2,8 +2,10 @@
 
 import { useEffect, useRef } from 'react';
 import { useNotifications } from '@/app/contexts/NotificationContext';
-import { X, AlertCircle, AlertTriangle, Info, CheckCircle, ExternalLink } from 'lucide-react';
+import { X, AlertCircle, AlertTriangle, Info, CheckCircle, ExternalLink, Trash2 } from 'lucide-react';
 import Link from 'next/link';
+import { formatDistanceToNow } from 'date-fns';
+import { ca } from 'date-fns/locale';
 
 interface NotificationCenterProps {
   isOpen: boolean;
@@ -11,7 +13,7 @@ interface NotificationCenterProps {
 }
 
 export default function NotificationCenter({ isOpen, onClose }: NotificationCenterProps) {
-  const { notifications, unreadCount, markAsRead, markAllAsRead, isLoading } = useNotifications();
+  const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification, isLoading } = useNotifications();
   const panelRef = useRef<HTMLDivElement>(null);
 
   // Close on click outside
@@ -112,53 +114,74 @@ export default function NotificationCenter({ isOpen, onClose }: NotificationCent
               </div>
             ) : (
               <div className="divide-y divide-gray-200">
-                {notifications.map(notification => (
-                  <div
-                    key={notification.id}
-                    className={`p-4 hover:bg-gray-50 transition-colors ${
-                      !notification.read ? 'bg-blue-50/50' : ''
-                    }`}
-                  >
-                    <div className={`p-3 rounded-lg ${getTypeStyles(notification.type)}`}>
-                      <div className="flex gap-3">
-                        <div className="flex-shrink-0 mt-0.5">
-                          {getIcon(notification.type)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-sm font-semibold text-gray-900 mb-1">
-                            {notification.title}
-                          </h3>
-                          <p className="text-sm text-gray-700 leading-relaxed">
-                            {notification.message}
-                          </p>
+                {notifications.map(notification => {
+                  const canDelete = !notification.id.startsWith('trial-') && !notification.id.startsWith('limit-');
+                  return (
+                    <div
+                      key={notification.id}
+                      className={`p-4 hover:bg-gray-50 transition-colors ${
+                        !notification.read ? 'bg-blue-50/50' : ''
+                      }`}
+                    >
+                      <div className={`p-3 rounded-lg ${getTypeStyles(notification.type)}`}>
+                        <div className="flex gap-3">
+                          <div className="flex-shrink-0 mt-0.5">
+                            {getIcon(notification.type)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                              <h3 className="text-sm font-semibold text-gray-900 mb-1">
+                                {notification.title}
+                              </h3>
+                              {canDelete && (
+                                <button
+                                  onClick={() => deleteNotification(notification.id)}
+                                  className="p-1 text-gray-400 hover:text-red-500 rounded transition-colors flex-shrink-0"
+                                  title="Eliminar notificació"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              )}
+                            </div>
+                            <p className="text-sm text-gray-700 leading-relaxed">
+                              {notification.message}
+                            </p>
 
-                          {notification.actionUrl && (
-                            <Link
-                              href={notification.actionUrl}
-                              onClick={() => {
-                                markAsRead(notification.id);
-                                onClose();
-                              }}
-                              className="inline-flex items-center gap-1 mt-2 text-sm font-medium text-blue-600 hover:text-blue-700"
-                            >
-                              {notification.actionText || 'Veure més'}
-                              <ExternalLink className="w-3 h-3" />
-                            </Link>
-                          )}
+                            <p className="text-xs text-gray-500 mt-1">
+                              {formatDistanceToNow(new Date(notification.createdAt), {
+                                addSuffix: true,
+                                locale: ca
+                              })}
+                            </p>
 
-                          {!notification.read && (
-                            <button
-                              onClick={() => markAsRead(notification.id)}
-                              className="block mt-2 text-xs text-gray-500 hover:text-gray-700"
-                            >
-                              Marcar com llegida
-                            </button>
-                          )}
+                            {notification.actionUrl && (
+                              <Link
+                                href={notification.actionUrl}
+                                onClick={() => {
+                                  markAsRead(notification.id);
+                                  onClose();
+                                }}
+                                className="inline-flex items-center gap-1 mt-2 text-sm font-medium text-blue-600 hover:text-blue-700"
+                              >
+                                {notification.actionText || 'Veure més'}
+                                <ExternalLink className="w-3 h-3" />
+                              </Link>
+                            )}
+
+                            {!notification.read && (
+                              <button
+                                onClick={() => markAsRead(notification.id)}
+                                className="block mt-2 text-xs text-gray-500 hover:text-gray-700"
+                              >
+                                Marcar com llegida
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

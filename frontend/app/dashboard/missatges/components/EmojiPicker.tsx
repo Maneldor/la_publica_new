@@ -14,10 +14,10 @@ export function EmojiPicker({ isOpen, onClose, onSelectEmoji }: EmojiPickerProps
       position: 'absolute',
       bottom: '100%',
       left: 0,
-      backgroundColor: 'white',
-      borderRadius: '12px',
-      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-      padding: '16px',
+      backgroundColor: 'var(--EmojiPicker-background, #ffffff)',
+      borderRadius: 'var(--EmojiPicker-border-radius, 12px)',
+      boxShadow: 'var(--EmojiPicker-shadow, 0 4px 12px rgba(0,0,0,0.15))',
+      padding: 'var(--EmojiPicker-padding, 16px)',
       width: '320px',
       maxHeight: '400px',
       marginBottom: '8px',
@@ -30,12 +30,12 @@ export function EmojiPicker({ isOpen, onClose, onSelectEmoji }: EmojiPickerProps
         alignItems: 'center',
         marginBottom: '12px',
         paddingBottom: '8px',
-        borderBottom: '1px solid #f0f0f0'
+        borderBottom: '1px solid var(--EmojiPicker-border-color, #f0f0f0)'
       }}>
         <h4 style={{
           fontSize: '16px',
           fontWeight: '600',
-          color: '#2c3e50',
+          color: 'var(--EmojiPicker-title-color, #2c3e50)',
           margin: 0
         }}>
           Emojis
@@ -175,11 +175,11 @@ export function EmojiPicker({ isOpen, onClose, onSelectEmoji }: EmojiPickerProps
       <div style={{
         marginTop: '12px',
         paddingTop: '12px',
-        borderTop: '1px solid #f0f0f0'
+        borderTop: '1px solid var(--EmojiPicker-border-color, #f0f0f0)'
       }}>
         <div style={{
           fontSize: '12px',
-          color: '#6c757d',
+          color: 'var(--EmojiPicker-label-color, #6c757d)',
           marginBottom: '8px',
           fontWeight: '500'
         }}>

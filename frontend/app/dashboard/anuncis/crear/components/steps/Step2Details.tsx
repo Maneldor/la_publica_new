@@ -60,8 +60,8 @@ export const Step2Details = ({ formData, errors, updateField }: Step2Props) => {
             step="0.01"
             className={`
               w-full px-4 py-3 pl-12 rounded-lg border
-              ${errors.price ? 'border-red-500 bg-red-50' : 'border-gray-300'}
-              focus:ring-2 focus:ring-blue-500 focus:border-transparent
+              ${errors.price ? 'border-error bg-error/10' : 'border-border'}
+              focus:ring-2 focus:ring-info focus:border-transparent
               transition-all
             `}
           />
@@ -70,7 +70,7 @@ export const Step2Details = ({ formData, errors, updateField }: Step2Props) => {
           </div>
         </div>
         {errors.price && (
-          <p className="text-sm text-red-600 mt-1">{errors.price}</p>
+          <p className="text-sm text-error mt-1">{errors.price}</p>
         )}
         <p className="text-sm text-gray-500 mt-1">
           Deixa buit si és gratuït o a consultar
@@ -89,8 +89,8 @@ export const Step2Details = ({ formData, errors, updateField }: Step2Props) => {
             className={`
               p-4 rounded-lg border-2 transition-all text-left
               ${formData.priceType === 'fix'
-                ? 'border-blue-500 bg-blue-50'
-                : 'border-gray-200 bg-white hover:border-gray-300'
+                ? 'border-info bg-info/10'
+                : 'border-border-light bg-white hover:border-border'
               }
             `}
           >
@@ -106,8 +106,8 @@ export const Step2Details = ({ formData, errors, updateField }: Step2Props) => {
             className={`
               p-4 rounded-lg border-2 transition-all text-left
               ${formData.priceType === 'negociable'
-                ? 'border-blue-500 bg-blue-50'
-                : 'border-gray-200 bg-white hover:border-gray-300'
+                ? 'border-info bg-info/10'
+                : 'border-border-light bg-white hover:border-border'
               }
             `}
           >
@@ -128,7 +128,7 @@ export const Step2Details = ({ formData, errors, updateField }: Step2Props) => {
         <select
           value={formData.condition}
           onChange={(e) => updateField('condition', e.target.value)}
-          className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+          className="w-full px-4 py-3 rounded-lg border border-border focus:ring-2 focus:ring-info focus:border-transparent transition-all"
         >
           <option value="nou">🆕 Nou - Sense estrenar</option>
           <option value="com_nou">✨ Com nou - Usat molt poc</option>
@@ -157,7 +157,7 @@ export const Step2Details = ({ formData, errors, updateField }: Step2Props) => {
                 <button
                   type="button"
                   onClick={() => removeSpecification(key)}
-                  className="text-red-600 hover:text-red-700 transition-colors"
+                  className="text-error hover:text-error-dark transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -174,14 +174,14 @@ export const Step2Details = ({ formData, errors, updateField }: Step2Props) => {
               value={newSpecKey}
               onChange={(e) => setNewSpecKey(e.target.value)}
               placeholder="Nom (Ex: Marca)"
-              className="px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-4 py-2 rounded-lg border border-border focus:ring-2 focus:ring-info focus:border-transparent"
             />
             <input
               type="text"
               value={newSpecValue}
               onChange={(e) => setNewSpecValue(e.target.value)}
               placeholder="Valor (Ex: Apple)"
-              className="px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-4 py-2 rounded-lg border border-border focus:ring-2 focus:ring-info focus:border-transparent"
             />
           </div>
           <button
@@ -191,8 +191,8 @@ export const Step2Details = ({ formData, errors, updateField }: Step2Props) => {
             className={`
               w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-all
               ${newSpecKey.trim() && newSpecValue.trim()
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                ? 'bg-primary text-white hover:bg-primary-light'
+                : 'bg-slate-100 text-slate-400 cursor-not-allowed'
               }
             `}
           >
@@ -207,11 +207,11 @@ export const Step2Details = ({ formData, errors, updateField }: Step2Props) => {
       </div>
 
       {/* Info Box */}
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-        <p className="text-sm text-green-800 font-medium mb-2">
+      <div className="bg-success/10 border border-success/30 rounded-lg p-4">
+        <p className="text-sm text-success-dark font-medium mb-2">
           💰 Consells sobre el preu:
         </p>
-        <ul className="text-sm text-green-700 space-y-1">
+        <ul className="text-sm text-success space-y-1">
           <li>• Investiga preus similars abans de publicar</li>
           <li>• Sigues realista amb l'estat del producte</li>
           <li>• Considera els costos d'enviament</li>

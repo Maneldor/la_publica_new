@@ -34,18 +34,18 @@ export function ProfileCompletionCard() {
 
   return (
     <div style={{
-      backgroundColor: '#fff',
-      borderRadius: '12px',
-      padding: '20px',
-      border: '2px solid #e5e7eb',
-      boxShadow: '0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06)',
+      backgroundColor: 'var(--ProfileCompletionCard-background, #ffffff)',
+      borderRadius: 'var(--ProfileCompletionCard-border-radius, 12px)',
+      padding: 'var(--ProfileCompletionCard-padding, 20px)',
+      border: '2px solid var(--ProfileCompletionCard-border-color, #e5e7eb)',
+      boxShadow: 'var(--ProfileCompletionCard-shadow, 0 4px 6px -1px rgba(59, 130, 246, 0.1))',
       marginBottom: '20px'
     }}>
       <h3 style={{
         fontSize: '16px',
         fontWeight: '600',
         marginBottom: '16px',
-        color: '#2c3e50',
+        color: 'var(--ProfileCompletionCard-title-color, #2c3e50)',
         textAlign: 'center'
       }}>
         Completa el teu Perfil
@@ -69,7 +69,7 @@ export function ProfileCompletionCard() {
               cx="45"
               cy="45"
               r={radius}
-              stroke="#e9ecef"
+              stroke="var(--ProfileCompletionCard-progress-track-color, #e9ecef)"
               strokeWidth="6"
               fill="none"
             />
@@ -78,7 +78,7 @@ export function ProfileCompletionCard() {
               cx="45"
               cy="45"
               r={radius}
-              stroke="#10b981"
+              stroke="var(--ProfileCompletionCard-progress-color, #10b981)"
               strokeWidth="6"
               fill="none"
               strokeLinecap="round"
@@ -99,7 +99,7 @@ export function ProfileCompletionCard() {
             <div style={{
               fontSize: '24px',
               fontWeight: 'bold',
-              color: '#2c3e50'
+              color: 'var(--ProfileCompletionCard-percentage-color, #2c3e50)'
             }}>
               {completionPercentage}%
             </div>
@@ -107,7 +107,7 @@ export function ProfileCompletionCard() {
         </div>
         <div style={{
           fontSize: '13px',
-          color: '#6c757d',
+          color: 'var(--ProfileCompletionCard-label-color, #6c757d)',
           marginTop: '8px'
         }}>
           Completat
@@ -132,15 +132,17 @@ export function ProfileCompletionCard() {
               width: '18px',
               height: '18px',
               borderRadius: '50%',
-              border: item.completed ? 'none' : '2px solid #dee2e6',
-              backgroundColor: item.completed ? '#10b981' : 'transparent',
+              border: item.completed ? 'none' : '2px solid var(--ProfileCompletionCard-checkbox-border-color, #dee2e6)',
+              backgroundColor: item.completed
+                ? 'var(--ProfileCompletionCard-checkbox-completed-background, #10b981)'
+                : 'transparent',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0
             }}>
               {item.completed && (
-                <span style={{ color: 'white', fontSize: '11px' }}>✓</span>
+                <span style={{ color: 'var(--ProfileCompletionCard-checkbox-completed-color, white)', fontSize: '11px' }}>✓</span>
               )}
             </div>
             <div style={{
@@ -150,13 +152,17 @@ export function ProfileCompletionCard() {
               alignItems: 'center'
             }}>
               <span style={{
-                color: item.completed ? '#6c757d' : '#2c3e50',
+                color: item.completed
+                  ? 'var(--ProfileCompletionCard-item-completed-color, #6c757d)'
+                  : 'var(--ProfileCompletionCard-item-pending-color, #2c3e50)',
                 textDecoration: item.completed ? 'line-through' : 'none'
               }}>
                 {item.label}
               </span>
               <span style={{
-                color: item.completed ? '#10b981' : '#6c757d',
+                color: item.completed
+                  ? 'var(--ProfileCompletionCard-count-completed-color, #10b981)'
+                  : 'var(--ProfileCompletionCard-count-pending-color, #6c757d)',
                 fontWeight: '500',
                 fontSize: '12px'
               }}>
@@ -173,9 +179,9 @@ export function ProfileCompletionCard() {
         style={{
           width: '100%',
           padding: '10px',
-          backgroundColor: '#fff',
-          color: '#2c3e50',
-          border: '2px solid #e9ecef',
+          backgroundColor: 'var(--ProfileCompletionCard-button-background, #ffffff)',
+          color: 'var(--ProfileCompletionCard-button-color, #2c3e50)',
+          border: '2px solid var(--ProfileCompletionCard-button-border-color, #e9ecef)',
           borderRadius: '8px',
           fontSize: '13px',
           fontWeight: '600',
@@ -183,12 +189,12 @@ export function ProfileCompletionCard() {
           transition: 'all 0.2s',
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = '#f8f9fa';
-          e.currentTarget.style.borderColor = '#dee2e6';
+          e.currentTarget.style.backgroundColor = 'var(--ProfileCompletionCard-button-hover-background, #f8f9fa)';
+          e.currentTarget.style.borderColor = 'var(--ProfileCompletionCard-button-hover-border-color, #dee2e6)';
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = '#fff';
-          e.currentTarget.style.borderColor = '#e9ecef';
+          e.currentTarget.style.backgroundColor = 'var(--ProfileCompletionCard-button-background, #ffffff)';
+          e.currentTarget.style.borderColor = 'var(--ProfileCompletionCard-button-border-color, #e9ecef)';
         }}
       >
         Completar Perfil

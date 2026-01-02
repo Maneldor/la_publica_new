@@ -1,407 +1,360 @@
-'use client';
+'use client'
 
-import { useEffect, useState } from 'react';
-import { ArrowLeft, Crown, CheckCircle2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import PlanCard from '@/components/plans/PlanCard';
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import {
+  ArrowLeft,
+  Crown,
+  TrendingUp,
+  CheckCircle2,
+  Loader2,
+  AlertCircle,
+  X,
+  Sparkles
+} from 'lucide-react'
 
-interface AvailablePlan {
-  id: string;
-  slug: string;
-  tier: string;
-  name: string;
-  nameEs?: string;
-  nameEn?: string;
-  basePrice: number;
-  firstYearDiscount: number;
-  maxActiveOffers: number;
-  maxTeamMembers: number;
-  maxFeaturedOffers: number;
-  maxStorage: number;
-  badge?: string;
-  badgeColor?: string;
-  destacado?: boolean;
-  color?: string;
-  icono?: string;
-  funcionalidades?: string;
-  features: Record<string, boolean>;
-  isActive?: boolean;
-  isVisible?: boolean;
+interface Plan {
+  id: string
+  slug: string
+  tier: string
+  name: string
+  basePrice: number
+  firstYearDiscount: number
+  maxActiveOffers: number | null
+  maxTeamMembers: number | null
+  maxFeaturedOffers: number | null
+  maxStorage: number | null
+  badge?: string
+  badgeColor?: string
+  destacado?: boolean
+  color?: string
+  icono?: string
+  funcionalidades?: string
+  features: Record<string, boolean>
+  isActive?: boolean
+  isVisible?: boolean
 }
 
 interface CurrentPlanData {
   plan: {
-    tier: string;
-    name: string;
-    price: number;
-  };
+    tier: string
+    name: string
+    price: number
+  }
 }
 
+interface UpgradePreview {
+  currentPlan: {
+    name: string
+    basePrice: number
+    paidPrice: number
+    discount: number
+  }
+  targetPlan: {
+    name: string
+    tier: string
+    basePrice: number
+    discountedPrice: number
+    discount: number
+  }
+  proration?: {
+    daysRemaining: number
+    dailyRate: number
+    remainingCredit: number
+    amountToPay: number
+  }
+  priceDiff?: number
+}
+
+const PLAN_HIERARCHY = ['PIONERES', 'STANDARD', 'STRATEGIC', 'ENTERPRISE']
+
 export default function MillorarPlaPage() {
-  const router = useRouter();
-  const [currentPlan, setCurrentPlan] = useState<CurrentPlanData | null>(null);
-  const [availablePlans, setAvailablePlans] = useState<AvailablePlan[]>([]);
-  const [upgradeablePlans, setUpgradeablePlans] = useState<AvailablePlan[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const router = useRouter()
+  const [currentPlan, setCurrentPlan] = useState<CurrentPlanData | null>(null)
+  const [availablePlans, setAvailablePlans] = useState<Plan[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Upgrade modal state
+  const [upgradePreview, setUpgradePreview] = useState<UpgradePreview | null>(null)
+  const [showModal, setShowModal] = useState(false)
+  const [upgrading, setUpgrading] = useState(false)
 
   useEffect(() => {
-    loadCurrentPlan();
-    loadAvailablePlans();
-  }, []);
+    const loadData = async () => {
+      try {
+        const [planRes, plansRes] = await Promise.all([
+          fetch('/api/empresa/plan'),
+          fetch('/api/plans')
+        ])
 
-  async function loadCurrentPlan() {
-    try {
-      const response = await fetch('/api/empresa/plan');
-      const data = await response.json();
+        const planData = await planRes.json()
+        const plansData = await plansRes.json()
 
-      if (data.success) {
-        setCurrentPlan(data);
-      } else {
-        setError(data.error || 'Error al carregar pla actual');
-      }
-    } catch (err) {
-      setError('Error de connexió');
-    }
-  }
-
-  async function loadAvailablePlans() {
-    try {
-      const response = await fetch('/api/plans');
-      const data = await response.json();
-
-      if (data.success) {
-        const mappedPlans = (data.data || []).map((plan: any) => ({
-          id: plan.id,
-          slug: plan.slug,
-          tier: plan.tier,
-          name: plan.name,
-          nameEs: plan.nameEs,
-          nameEn: plan.nameEn,
-          basePrice: plan.basePrice,
-          firstYearDiscount: plan.firstYearDiscount,
-          maxActiveOffers: plan.maxActiveOffers,
-          maxTeamMembers: plan.maxTeamMembers,
-          maxFeaturedOffers: plan.maxFeaturedOffers,
-          maxStorage: plan.maxStorage,
-          badge: plan.badge,
-          badgeColor: plan.badgeColor,
-          destacado: plan.destacado,
-          color: plan.color,
-          icono: plan.icono,
-          funcionalidades: plan.funcionalidades,
-          features: plan.features || {},
-          isActive: plan.isActive,
-          isVisible: plan.isVisible,
-        }));
-        setAvailablePlans(mappedPlans);
-      }
-    } catch (err) {
-      console.error('Error loading plans:', err);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  // Actualizar upgradeablePlans cuando cambien currentPlan o availablePlans
-  useEffect(() => {
-    async function loadUpgradeablePlans() {
-      if (currentPlan && availablePlans.length > 0) {
-        // Usar lógica local directamente (no Prisma en frontend)
-        const planHierarchy = ['PIONERES', 'STANDARD', 'STRATEGIC', 'ENTERPRISE'];
-        const currentIndex = planHierarchy.indexOf(currentPlan.plan.tier);
-        if (currentIndex !== -1) {
-          const upgradeable = availablePlans.filter(plan => {
-            const planIndex = planHierarchy.indexOf(plan.tier);
-            return planIndex > currentIndex && plan.isVisible && plan.isActive;
-          });
-          setUpgradeablePlans(upgradeable);
+        if (!planData.success) {
+          setError(planData.error || 'Error carregant el pla actual')
+          return
         }
+
+        setCurrentPlan(planData)
+
+        if (plansData.success) {
+          setAvailablePlans(plansData.data || [])
+        }
+      } catch (err) {
+        console.error('Error:', err)
+        setError('Error de connexió')
+      } finally {
+        setLoading(false)
       }
     }
 
-    loadUpgradeablePlans();
-  }, [currentPlan, availablePlans]);
+    loadData()
+  }, [])
 
-  const [upgradeData, setUpgradeData] = useState<any>(null);
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [loadingUpgrade, setLoadingUpgrade] = useState(false);
+  // Filter upgradeable plans
+  const upgradeablePlans = availablePlans
+    .filter(plan => {
+      if (!currentPlan) return false
+      const currentIndex = PLAN_HIERARCHY.indexOf(currentPlan.plan.tier)
+      const planIndex = PLAN_HIERARCHY.indexOf(plan.tier)
+      return planIndex > currentIndex && plan.isVisible && plan.isActive
+    })
+    .sort((a, b) => PLAN_HIERARCHY.indexOf(a.tier) - PLAN_HIERARCHY.indexOf(b.tier))
 
-  const handleSelectPlan = async (selectedPlan: AvailablePlan) => {
-    // Validar que el plan seleccionado sea realmente un upgrade válido
-    const planHierarchy = ['PIONERES', 'STANDARD', 'STRATEGIC', 'ENTERPRISE'];
-    const currentIndex = planHierarchy.indexOf(currentPlan?.plan.tier || '');
-    const selectedIndex = planHierarchy.indexOf(selectedPlan.tier);
-
-    if (selectedIndex <= currentIndex) {
-      alert('Solo puedes actualizar a un plan superior.');
-      return;
-    }
-
-    setLoadingUpgrade(true);
+  const handleSelectPlan = async (plan: Plan) => {
+    setUpgrading(true)
     try {
-      // Obtener información de prorrateo del endpoint
-      const response = await fetch(`/api/empresa/plan/upgrade?targetTier=${selectedPlan.tier}`);
-      const data = await response.json();
+      const response = await fetch(`/api/empresa/plan/upgrade?targetTier=${plan.tier}`)
+      const data = await response.json()
 
       if (data.success) {
-        setUpgradeData(data.preview);
-        setShowUpgradeModal(true);
+        setUpgradePreview(data.preview)
+        setShowModal(true)
       } else {
-        alert(`❌ Error: ${data.error}`);
+        alert(`Error: ${data.error}`)
       }
-    } catch (error) {
-      console.error('Error fetching upgrade data:', error);
-      alert('❌ Error obtenint informació de l\'upgrade');
+    } catch (err) {
+      console.error('Error:', err)
+      alert('Error obtenint informació de l\'upgrade')
     } finally {
-      setLoadingUpgrade(false);
+      setUpgrading(false)
     }
-  };
+  }
 
   const handleConfirmUpgrade = async () => {
-    if (!upgradeData) return;
+    if (!upgradePreview) return
 
-    setLoadingUpgrade(true);
+    setUpgrading(true)
     try {
       const response = await fetch('/api/empresa/plan/upgrade', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          newPlan: upgradeData.targetPlan.tier
-        })
-      });
+        body: JSON.stringify({ newPlan: upgradePreview.targetPlan.tier })
+      })
 
-      const data = await response.json();
+      const data = await response.json()
 
       if (data.success) {
-        alert(`✅ ${data.message}`);
-        setShowUpgradeModal(false);
-        router.push('/empresa/pla'); // Redirigir de vuelta al plan
+        setShowModal(false)
+        router.push('/empresa/pla')
       } else {
-        alert(`❌ Error: ${data.error}`);
+        alert(`Error: ${data.error}`)
       }
-    } catch (error) {
-      console.error('Error confirming upgrade:', error);
-      alert('❌ Error confirmant l\'upgrade');
+    } catch (err) {
+      console.error('Error:', err)
+      alert('Error confirmant l\'upgrade')
     } finally {
-      setLoadingUpgrade(false);
+      setUpgrading(false)
     }
-  };
+  }
 
   if (loading) {
     return (
-      <div className="p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
+          <p className="text-slate-500">Carregant plans...</p>
         </div>
       </div>
-    );
+    )
   }
 
   if (error || !currentPlan) {
     return (
-      <div className="p-6">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <p className="text-red-800">{error || 'No s\'ha pogut carregar el pla actual'}</p>
-          <button
-            onClick={() => router.back()}
-            className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-3 text-center">
+          <AlertCircle className="h-12 w-12 text-red-500" />
+          <p className="text-slate-900 font-medium">Error carregant els plans</p>
+          <p className="text-slate-500">{error}</p>
+          <Link
+            href="/empresa/pla"
+            className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             Tornar
-          </button>
+          </Link>
         </div>
       </div>
-    );
+    )
   }
 
+  const isEnterprise = currentPlan.plan.tier === 'ENTERPRISE'
+
   return (
-    <div className="p-6 space-y-6">
-      {/* Header with back button */}
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          Tornar
-        </button>
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Millorar el Meu Pla</h1>
-          <p className="text-gray-600 mt-1">Selecciona un pla superior per obtenir més funcionalitats</p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-start gap-4">
+          <Link
+            href="/empresa/pla"
+            className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center hover:bg-slate-200 transition-colors"
+          >
+            <ArrowLeft className="h-5 w-5 text-slate-600" strokeWidth={1.5} />
+          </Link>
+          <div>
+            <h1 className="text-2xl font-semibold text-slate-900">Millorar el Pla</h1>
+            <p className="text-slate-500">Selecciona un pla superior per obtenir més funcionalitats</p>
+          </div>
         </div>
       </div>
 
       {/* Current Plan Summary */}
-      <div className="bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-lg p-6">
-        <div className="flex items-center gap-3 mb-2">
-          <Crown className="w-6 h-6 text-indigo-600" />
-          <h2 className="text-xl font-semibold text-gray-900">Pla Actual</h2>
+      <div className="bg-white border border-slate-200 rounded-xl p-6">
+        <div className="flex items-center gap-3 mb-3">
+          <Crown className="w-5 h-5 text-blue-600" strokeWidth={1.5} />
+          <h2 className="font-semibold text-slate-900">Pla Actual</h2>
         </div>
-        <div className="flex items-baseline gap-2">
-          <span className="text-2xl font-bold text-gray-900">{currentPlan.plan.name}</span>
-          <span className="text-gray-600">
+        <div className="flex items-baseline gap-3">
+          <span className="text-2xl font-semibold text-slate-900">{currentPlan.plan.name}</span>
+          <span className="text-slate-500">
             {currentPlan.plan.price === 0 ? 'Gratis' : `${currentPlan.plan.price}€/any`}
           </span>
         </div>
       </div>
 
-      {/* Available Upgrades */}
-      <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
-        <div className="mb-6">
-          <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <CheckCircle2 className="w-6 h-6 text-green-600" />
-            Plans Disponibles per Actualitzar
-          </h3>
-          {upgradeablePlans.length === 0 ? (
-            <div className="mt-4 text-center py-12">
-              <p className="text-gray-600 text-lg">
-                {currentPlan.plan.tier === 'ENTERPRISE'
-                  ? '🎉 Ja tens el pla més alt disponible!'
-                  : 'No hi ha plans superiors disponibles en aquest moment.'}
-              </p>
-              <button
-                onClick={() => router.back()}
-                className="mt-4 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-              >
-                Tornar al Meu Pla
-              </button>
-            </div>
-          ) : (
-            <p className="text-gray-600 mt-2">
-              Selecciona un dels següents plans per obtenir més funcionalitats i límits més alts.
-            </p>
-          )}
+      {/* Upgradeable Plans */}
+      <div className="bg-white border border-slate-200 rounded-xl p-6">
+        <div className="flex items-center gap-2 mb-6">
+          <Sparkles className="w-5 h-5 text-blue-600" strokeWidth={1.5} />
+          <h3 className="font-semibold text-slate-900">Plans Disponibles</h3>
         </div>
 
-        {upgradeablePlans.length > 0 && (
+        {isEnterprise ? (
+          <div className="text-center py-12">
+            <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-4" />
+            <p className="text-lg font-medium text-slate-900 mb-2">
+              Ja tens el pla més alt disponible!
+            </p>
+            <p className="text-slate-500 mb-6">
+              Gaudeixes de totes les funcionalitats de La Pública
+            </p>
+            <Link
+              href="/empresa/pla"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Tornar al Meu Pla
+            </Link>
+          </div>
+        ) : upgradeablePlans.length === 0 ? (
+          <div className="text-center py-12">
+            <AlertCircle className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+            <p className="text-slate-500">
+              No hi ha plans superiors disponibles en aquest moment
+            </p>
+          </div>
+        ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {upgradeablePlans
-              .sort((a, b) => {
-                const order = ['PIONERES', 'STANDARD', 'STRATEGIC', 'ENTERPRISE'];
-                return order.indexOf(a.tier) - order.indexOf(b.tier);
-              })
-              .map((plan) => (
-                <PlanCard
-                  key={plan.tier}
-                  plan={plan}
-                  isAdminView={false}
-                  isCurrentPlan={false}
-                  onSelectPlan={handleSelectPlan}
-                />
-              ))}
+            {upgradeablePlans.map((plan) => (
+              <PlanUpgradeCard
+                key={plan.id}
+                plan={plan}
+                onSelect={() => handleSelectPlan(plan)}
+                loading={upgrading}
+              />
+            ))}
           </div>
         )}
       </div>
 
-      {/* Modal de Confirmación de Upgrade */}
-      {showUpgradeModal && upgradeData && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            {/* Header */}
-            <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between rounded-t-xl">
+      {/* Upgrade Modal */}
+      {showModal && upgradePreview && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-slate-200">
               <div>
-                <h3 className="text-xl font-bold text-gray-900">Confirmar Actualització de Pla</h3>
-                <p className="text-sm text-gray-600">Revisa els detalls del canvi abans de confirmar</p>
+                <h3 className="text-lg font-semibold text-slate-900">Confirmar Actualització</h3>
+                <p className="text-sm text-slate-500">Revisa els detalls abans de confirmar</p>
               </div>
               <button
-                onClick={() => setShowUpgradeModal(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-                aria-label="Tancar modal"
+                onClick={() => setShowModal(false)}
+                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
               >
-                ✕
+                <X className="w-5 h-5" />
               </button>
             </div>
 
+            {/* Modal Content */}
             <div className="p-6 space-y-6">
               {/* Plans Comparison */}
-              <div className="grid md:grid-cols-2 gap-4">
-                {/* Current Plan */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-semibold text-gray-900 mb-2">Pla Actual</h4>
-                  <p className="text-lg font-bold text-gray-700">{upgradeData.currentPlan.name}</p>
-                  <p className="text-sm text-gray-600">
-                    Preu base: {upgradeData.currentPlan.basePrice}€
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Preu pagat: <span className="font-semibold">{upgradeData.currentPlan.paidPrice}€</span>
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    (Amb {upgradeData.currentPlan.discount}% descompte)
-                  </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-slate-50 rounded-lg p-4">
+                  <p className="text-xs text-slate-500 mb-1">Pla Actual</p>
+                  <p className="font-semibold text-slate-900">{upgradePreview.currentPlan.name}</p>
+                  <p className="text-sm text-slate-600">{upgradePreview.currentPlan.paidPrice}€/any</p>
                 </div>
-
-                {/* Target Plan */}
-                <div className="bg-blue-50 rounded-lg p-4 border-2 border-blue-200">
-                  <h4 className="font-semibold text-blue-900 mb-2">Nou Pla</h4>
-                  <p className="text-lg font-bold text-blue-700">{upgradeData.targetPlan.name}</p>
-                  <p className="text-sm text-blue-600">
-                    Preu base: {upgradeData.targetPlan.basePrice}€
-                  </p>
-                  <p className="text-sm text-blue-600">
-                    Preu amb descompte: <span className="font-semibold">{upgradeData.targetPlan.discountedPrice}€</span>
-                  </p>
-                  <p className="text-xs text-blue-500">
-                    (Amb {upgradeData.targetPlan.discount}% descompte primer any)
-                  </p>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-xs text-blue-600 mb-1">Nou Pla</p>
+                  <p className="font-semibold text-blue-900">{upgradePreview.targetPlan.name}</p>
+                  <p className="text-sm text-blue-700">{upgradePreview.targetPlan.discountedPrice}€/any</p>
                 </div>
               </div>
 
               {/* Proration Details */}
-              {upgradeData.proration && (
-                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                  <h4 className="font-semibold text-orange-900 mb-3">📊 Detalls del Prorrateo</h4>
-
+              {upgradePreview.proration && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <p className="text-sm font-medium text-amber-900 mb-3">Detalls del Prorrateo</p>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Dies restants del pla actual:</span>
-                      <span className="font-semibold">{upgradeData.proration.daysRemaining} dies</span>
+                      <span className="text-slate-600">Dies restants:</span>
+                      <span className="font-medium">{upgradePreview.proration.daysRemaining} dies</span>
                     </div>
-
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Tarifa diària pagada:</span>
-                      <span className="font-semibold">{upgradeData.proration.dailyRate}€/dia</span>
+                      <span className="text-slate-600">Crèdit per dies no usats:</span>
+                      <span className="font-medium text-green-600">+{upgradePreview.proration.remainingCredit}€</span>
                     </div>
-
-                    <div className="flex justify-between border-t pt-2">
-                      <span className="text-gray-600">Crèdit per dies no usats:</span>
-                      <span className="font-semibold text-green-600">+{upgradeData.proration.remainingCredit}€</span>
-                    </div>
-
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Preu nou pla (amb descompte):</span>
-                      <span className="font-semibold">{upgradeData.targetPlan.discountedPrice}€</span>
-                    </div>
-
-                    <div className="flex justify-between border-t pt-2 text-lg">
-                      <span className="text-gray-900 font-semibold">Import a pagar ara:</span>
-                      <span className="font-bold text-blue-600">{upgradeData.proration.amountToPay}€</span>
+                    <div className="flex justify-between pt-2 border-t border-amber-200">
+                      <span className="font-medium text-slate-900">Import a pagar:</span>
+                      <span className="font-semibold text-blue-600">{upgradePreview.proration.amountToPay}€</span>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Action Buttons */}
-              <div className="flex gap-3 pt-4">
+              {/* Actions */}
+              <div className="flex gap-3">
                 <button
-                  onClick={() => setShowUpgradeModal(false)}
-                  className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-                  disabled={loadingUpgrade}
+                  onClick={() => setShowModal(false)}
+                  disabled={upgrading}
+                  className="flex-1 px-4 py-2.5 border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium disabled:opacity-50"
                 >
                   Cancel·lar
                 </button>
                 <button
                   onClick={handleConfirmUpgrade}
-                  disabled={loadingUpgrade}
-                  className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-medium"
+                  disabled={upgrading}
+                  className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  {loadingUpgrade ? (
+                  {upgrading ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                      <Loader2 className="w-4 h-4 animate-spin" />
                       Processant...
                     </>
                   ) : (
                     <>
-                      Confirmar Upgrade - {upgradeData.proration?.amountToPay || upgradeData.priceDiff}€
+                      <TrendingUp className="w-4 h-4" />
+                      Confirmar - {upgradePreview.proration?.amountToPay || upgradePreview.priceDiff}€
                     </>
                   )}
                 </button>
@@ -411,5 +364,141 @@ export default function MillorarPlaPage() {
         </div>
       )}
     </div>
-  );
+  )
+}
+
+// Icon mapping for plan icons
+const PLAN_ICONS: Record<string, string> = {
+  'package': '📦',
+  'target': '🎯',
+  'crown': '👑',
+  'zap': '⚡',
+  'rocket': '🚀',
+  'star': '⭐',
+  'sparkles': '✨',
+  'building': '🏢',
+}
+
+// Plan Card Component
+function PlanUpgradeCard({
+  plan,
+  onSelect,
+  loading
+}: {
+  plan: Plan
+  onSelect: () => void
+  loading: boolean
+}) {
+  // Normalize discount: if > 1, it's a percentage (50), otherwise it's decimal (0.5)
+  const discountDecimal = plan.firstYearDiscount > 1
+    ? plan.firstYearDiscount / 100
+    : plan.firstYearDiscount
+  const discountedPrice = plan.basePrice * (1 - discountDecimal)
+  const discountPercent = Math.round(discountDecimal * 100)
+  const features = plan.funcionalidades?.split('\n').filter(f => f.trim()) || []
+
+  // Get icon emoji from name or use directly if it's already an emoji
+  const iconDisplay = plan.icono
+    ? (PLAN_ICONS[plan.icono.toLowerCase()] || plan.icono)
+    : null
+
+  return (
+    <div className={`bg-white border-2 rounded-xl overflow-hidden flex flex-col ${
+      plan.destacado ? 'border-blue-500 ring-2 ring-blue-100' : 'border-slate-200'
+    }`}>
+      {/* Header */}
+      <div className="p-5 border-b border-slate-100">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            {iconDisplay && <span className="text-xl">{iconDisplay}</span>}
+            <h4 className="text-lg font-semibold text-slate-900">{plan.name}</h4>
+          </div>
+          {plan.destacado && (
+            <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded">
+              {plan.badge || 'Recomanat'}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Price */}
+      <div className="px-5 py-4 bg-slate-50">
+        <div className="flex items-baseline gap-2">
+          <span className="text-2xl font-semibold text-slate-900">
+            {discountedPrice === 0 ? 'Gratis' : `${Math.round(discountedPrice)}€`}
+          </span>
+          {discountedPrice > 0 && <span className="text-slate-500">/any</span>}
+        </div>
+        {discountPercent > 0 && plan.basePrice > 0 && (
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-sm text-slate-400 line-through">{plan.basePrice}€</span>
+            <span className="text-xs text-green-600 font-medium">-{discountPercent}% 1r any</span>
+          </div>
+        )}
+      </div>
+
+      {/* Limits */}
+      <div className="px-5 py-4 space-y-2 border-b border-slate-100">
+        <LimitRow label="Ofertes actives" value={plan.maxActiveOffers} />
+        <LimitRow label="Membres equip" value={plan.maxTeamMembers} />
+        <LimitRow label="Ofertes destacades" value={plan.maxFeaturedOffers} />
+        <LimitRow label="Emmagatzematge" value={plan.maxStorage} unit=" GB" isStorage />
+      </div>
+
+      {/* Features */}
+      <div className="px-5 py-4 flex-grow">
+        <p className="text-sm font-medium text-slate-700 mb-2">Funcionalitats</p>
+        <ul className="text-sm text-slate-600 space-y-1">
+          {features.slice(0, 5).map((feature, idx) => (
+            <li key={idx} className="flex items-start gap-2">
+              <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+              <span>{feature}</span>
+            </li>
+          ))}
+          {features.length > 5 && (
+            <li className="text-slate-400 text-xs">+{features.length - 5} més</li>
+          )}
+        </ul>
+      </div>
+
+      {/* Action */}
+      <div className="p-5 border-t border-slate-100">
+        <button
+          onClick={onSelect}
+          disabled={loading}
+          className="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          {loading ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <>
+              <TrendingUp className="w-4 h-4" />
+              Canviar a {plan.name}
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function LimitRow({ label, value, unit = '', isStorage = false }: { label: string; value: number | null; unit?: string; isStorage?: boolean }) {
+  let displayValue: string
+
+  if (value === null || value === undefined || value === -1) {
+    displayValue = 'Il·limitat'
+  } else if (isStorage && value === 0) {
+    displayValue = 'Il·limitat'
+  } else if (value >= 999) {
+    displayValue = 'Il·limitat'
+  } else {
+    displayValue = `${value}${unit}`
+  }
+
+  return (
+    <div className="flex justify-between text-sm">
+      <span className="text-slate-600">{label}</span>
+      <span className="font-medium text-slate-900">{displayValue}</span>
+    </div>
+  )
 }

@@ -52,42 +52,73 @@ export const Step4Education = ({
   ];
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Header */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+      <div style={{ marginBottom: '32px' }}>
+        <h2 style={{
+          fontSize: '24px',
+          fontWeight: '700',
+          color: 'var(--Step4Education-title-color, #111827)',
+          marginBottom: '8px'
+        }}>
           Formació Acadèmica
         </h2>
-        <p className="text-gray-600">
+        <p style={{ color: 'var(--Step4Education-description-color, #4b5563)' }}>
           Afegeix els teus estudis, títols i certificacions per mostrar la teva preparació professional
         </p>
       </div>
 
       {/* Education List */}
-      <div className="space-y-6">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {education.map((edu, index) => (
-          <div key={edu.id} className="bg-white border border-gray-200 rounded-lg p-6">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                  <GraduationCap className="w-5 h-5 text-blue-600" />
+          <div key={edu.id} style={{
+            backgroundColor: 'var(--Step4Education-card-bg, #ffffff)',
+            border: '1px solid var(--Step4Education-card-border, #e5e7eb)',
+            borderRadius: '8px',
+            padding: '24px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  backgroundColor: 'var(--Step4Education-icon-bg, #dbeafe)',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <GraduationCap style={{ width: '20px', height: '20px', color: 'var(--Step4Education-icon-color, #2563eb)' }} />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900">
+                <h3 style={{ fontSize: '18px', fontWeight: '500', color: 'var(--Step4Education-card-title, #111827)' }}>
                   Estudi #{index + 1}
                 </h3>
               </div>
               <button
                 onClick={() => edu.id && deleteEducation(edu.id)}
-                className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                style={{
+                  padding: '8px',
+                  color: 'var(--Step4Education-delete-color, #ef4444)',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer'
+                }}
               >
-                <X className="w-4 h-4" />
+                <X style={{ width: '16px', height: '16px' }} />
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
               {/* Title */}
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div style={{ gridColumn: 'span 2' }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  color: 'var(--Step4Education-label-color, #374151)',
+                  marginBottom: '8px'
+                }}>
                   Títol / Nom de l'Estudi *
                 </label>
                 <input
@@ -100,7 +131,15 @@ export const Step4Education = ({
                   }}
                   placeholder="Ex: Màster en Administració i Direcció d'Empreses (MBA)"
                   list={`degrees-${edu.id}`}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--Step4Education-input-border, #d1d5db)',
+                    color: 'var(--Step4Education-input-text, #111827)',
+                    backgroundColor: 'var(--Step4Education-input-bg, #ffffff)',
+                    transition: 'all 0.2s'
+                  }}
                 />
                 <datalist id={`degrees-${edu.id}`}>
                   {commonDegrees.map((degree) => (
@@ -111,7 +150,13 @@ export const Step4Education = ({
 
               {/* Institution */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label style={{
+                  display: 'block',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  color: 'var(--Step4Education-label-color, #374151)',
+                  marginBottom: '8px'
+                }}>
                   Institució / Universitat *
                 </label>
                 <input
@@ -123,13 +168,27 @@ export const Step4Education = ({
                     }
                   }}
                   placeholder="Ex: Universitat Pompeu Fabra"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--Step4Education-input-border, #d1d5db)',
+                    color: 'var(--Step4Education-input-text, #111827)',
+                    backgroundColor: 'var(--Step4Education-input-bg, #ffffff)',
+                    transition: 'all 0.2s'
+                  }}
                 />
               </div>
 
               {/* Specialization */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label style={{
+                  display: 'block',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  color: 'var(--Step4Education-label-color, #374151)',
+                  marginBottom: '8px'
+                }}>
                   Especialització / Descripció
                 </label>
                 <input
@@ -141,19 +200,41 @@ export const Step4Education = ({
                     }
                   }}
                   placeholder="Ex: Especialització en Gestió Pública"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--Step4Education-input-border, #d1d5db)',
+                    color: 'var(--Step4Education-input-text, #111827)',
+                    backgroundColor: 'var(--Step4Education-input-bg, #ffffff)',
+                    transition: 'all 0.2s'
+                  }}
                 />
               </div>
 
               {/* Years */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label style={{
+                  display: 'block',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  color: 'var(--Step4Education-label-color, #374151)',
+                  marginBottom: '8px'
+                }}>
                   Any d'Inici
                 </label>
                 <select
                   value={edu.startYear}
                   onChange={(e) => updateEducation(edu.id, 'startYear', e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--Step4Education-input-border, #d1d5db)',
+                    color: 'var(--Step4Education-input-text, #111827)',
+                    backgroundColor: 'var(--Step4Education-input-bg, #ffffff)',
+                    transition: 'all 0.2s'
+                  }}
                 >
                   <option value="">Selecciona l'any</option>
                   {years.map((year) => (
@@ -165,13 +246,27 @@ export const Step4Education = ({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label style={{
+                  display: 'block',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  color: 'var(--Step4Education-label-color, #374151)',
+                  marginBottom: '8px'
+                }}>
                   Any de Fi
                 </label>
                 <select
                   value={edu.endYear}
                   onChange={(e) => updateEducation(edu.id, 'endYear', e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--Step4Education-input-border, #d1d5db)',
+                    color: 'var(--Step4Education-input-text, #111827)',
+                    backgroundColor: 'var(--Step4Education-input-bg, #ffffff)',
+                    transition: 'all 0.2s'
+                  }}
                 >
                   <option value="">Selecciona l'any</option>
                   {years.map((year) => (
@@ -180,9 +275,6 @@ export const Step4Education = ({
                     </option>
                   ))}
                 </select>
-                {errors[`education_${index}_years`] && (
-                  <p className="text-sm text-red-600 mt-1">{errors[`education_${index}_years`]}</p>
-                )}
               </div>
             </div>
           </div>
@@ -191,20 +283,43 @@ export const Step4Education = ({
         {/* Add Education Button */}
         <button
           onClick={addEducation}
-          className="w-full flex items-center justify-center gap-2 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all text-gray-600 hover:text-blue-600"
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            padding: '16px',
+            border: '2px dashed var(--Step4Education-add-border, #d1d5db)',
+            borderRadius: '8px',
+            backgroundColor: 'transparent',
+            color: 'var(--Step4Education-add-text, #4b5563)',
+            cursor: 'pointer',
+            transition: 'all 0.2s'
+          }}
         >
-          <Plus className="w-5 h-5" />
+          <Plus style={{ width: '20px', height: '20px' }} />
           Afegir Formació Acadèmica
         </button>
       </div>
 
       {/* Quick Add Suggestions */}
       {education.length === 0 && (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-          <h4 className="text-sm font-medium text-gray-900 mb-3">
+        <div style={{
+          backgroundColor: 'var(--Step4Education-suggestions-bg, #f9fafb)',
+          border: '1px solid var(--Step4Education-suggestions-border, #e5e7eb)',
+          borderRadius: '8px',
+          padding: '24px'
+        }}>
+          <h4 style={{
+            fontSize: '14px',
+            fontWeight: '500',
+            color: 'var(--Step4Education-suggestions-title, #111827)',
+            marginBottom: '12px'
+          }}>
             Exemples de formació habitual en l'administració pública:
           </h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
             {[
               'Grau en Administració i Direcció d\'Empreses',
               'Grau en Dret',
@@ -222,7 +337,17 @@ export const Step4Education = ({
                     isCurrent: false
                   });
                 }}
-                className="text-left p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors text-sm"
+                style={{
+                  textAlign: 'left',
+                  padding: '12px',
+                  backgroundColor: 'var(--Step4Education-suggestion-bg, #ffffff)',
+                  border: '1px solid var(--Step4Education-suggestion-border, #e5e7eb)',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  color: 'var(--Step4Education-suggestion-text, #374151)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
               >
                 {degree}
               </button>
@@ -232,11 +357,30 @@ export const Step4Education = ({
       )}
 
       {/* Tips */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <p className="text-sm text-blue-800 font-medium mb-2">
-          📚 Consells per afegir la formació:
+      <div style={{
+        backgroundColor: 'var(--Step4Education-tips-bg, #eff6ff)',
+        border: '1px solid var(--Step4Education-tips-border, #bfdbfe)',
+        borderRadius: '8px',
+        padding: '16px'
+      }}>
+        <p style={{
+          fontSize: '14px',
+          color: 'var(--Step4Education-tips-title, #1e40af)',
+          fontWeight: '500',
+          marginBottom: '8px'
+        }}>
+          Consells per afegir la formació:
         </p>
-        <ul className="text-sm text-blue-700 space-y-1">
+        <ul style={{
+          fontSize: '14px',
+          color: 'var(--Step4Education-tips-text, #1d4ed8)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '4px',
+          margin: 0,
+          paddingLeft: '0',
+          listStyle: 'none'
+        }}>
           <li>• Inclou títols oficials, postgraus, màsters i certificacions rellevants</li>
           <li>• Especifica l'especialització si és aplicable</li>
           <li>• Afegeix la formació més recent primer</li>
@@ -247,13 +391,23 @@ export const Step4Education = ({
 
       {/* Education Summary */}
       {education.length > 0 && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <h4 className="text-sm font-medium text-green-800 mb-2">
-            ✅ Resum de la teva formació:
+        <div style={{
+          backgroundColor: 'var(--Step4Education-summary-bg, #f0fdf4)',
+          border: '1px solid var(--Step4Education-summary-border, #bbf7d0)',
+          borderRadius: '8px',
+          padding: '16px'
+        }}>
+          <h4 style={{
+            fontSize: '14px',
+            fontWeight: '500',
+            color: 'var(--Step4Education-summary-title, #166534)',
+            marginBottom: '8px'
+          }}>
+            Resum de la teva formació:
           </h4>
-          <div className="space-y-2">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {education.map((edu, index) => (
-              <div key={edu.id} className="text-sm text-green-700">
+              <div key={edu.id} style={{ fontSize: '14px', color: 'var(--Step4Education-summary-text, #15803d)' }}>
                 <strong>{index + 1}.</strong> {edu.title || 'Títol pendent'}
                 {edu.institution && ` - ${edu.institution}`}
                 {edu.startYear && edu.endYear && ` (${edu.startYear}-${edu.endYear})`}

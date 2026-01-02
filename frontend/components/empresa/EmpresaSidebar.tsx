@@ -23,12 +23,16 @@ import {
 import { signOut } from 'next-auth/react';
 
 // Component reutilitzable per al logo
-export function LaPublicaLogo({ className }: { className?: string }) {
+export function LaPublicaLogo({ className, size = 'default' }: { className?: string; size?: 'default' | 'large' }) {
   return (
     <img
       src="/images/cropped-logo_la-Pública-ok-2.png"
       alt="La Pública"
-      className={cn("h-8 w-auto object-contain", className)}
+      className={cn(
+        "w-auto object-contain",
+        size === 'large' ? "h-12" : "h-8",
+        className
+      )}
     />
   )
 }
@@ -86,7 +90,7 @@ const EMPRESA_SIDEBAR_SECTIONS: Section[] = [
 ];
 
 interface EmpresaSidebarProps {
-  plan: 'BÀSIC' | 'ESTÀNDARD' | 'PREMIUM' | 'EMPRESARIAL';
+  plan: string;
   missatgesCount?: number;
   notificacionsCount?: number;
 }
@@ -113,8 +117,8 @@ export default function EmpresaSidebar({
   return (
     <aside className="fixed top-0 left-0 w-64 bg-white border-r border-slate-200 h-screen flex flex-col z-40 transition-all duration-300">
       {/* Logo */}
-      <div className="h-16 flex items-center px-6 border-b border-slate-200 shrink-0">
-        <LaPublicaLogo />
+      <div className="h-16 flex items-center justify-center border-b border-slate-200 shrink-0">
+        <LaPublicaLogo size="large" />
       </div>
 
       {/* Navegació */}

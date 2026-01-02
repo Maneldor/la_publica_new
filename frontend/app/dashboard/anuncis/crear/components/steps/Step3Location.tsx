@@ -41,8 +41,8 @@ export const Step3Location = ({ formData, errors, updateField }: Step3Props) => 
           onChange={(e) => updateField('province', e.target.value)}
           className={`
             w-full px-4 py-3 rounded-lg border
-            ${errors.province ? 'border-red-500 bg-red-50' : 'border-gray-300'}
-            focus:ring-2 focus:ring-blue-500 focus:border-transparent
+            ${errors.province ? 'border-error bg-error/10' : 'border-border'}
+            focus:ring-2 focus:ring-info focus:border-transparent
             transition-all
           `}
         >
@@ -53,7 +53,7 @@ export const Step3Location = ({ formData, errors, updateField }: Step3Props) => 
           ))}
         </select>
         {errors.province && (
-          <p className="text-sm text-red-600 mt-1">{errors.province}</p>
+          <p className="text-sm text-error mt-1">{errors.province}</p>
         )}
       </div>
 
@@ -69,13 +69,13 @@ export const Step3Location = ({ formData, errors, updateField }: Step3Props) => 
           placeholder="Ex: Barcelona, Girona, Lleida..."
           className={`
             w-full px-4 py-3 rounded-lg border
-            ${errors.city ? 'border-red-500 bg-red-50' : 'border-gray-300'}
-            focus:ring-2 focus:ring-blue-500 focus:border-transparent
+            ${errors.city ? 'border-error bg-error/10' : 'border-border'}
+            focus:ring-2 focus:ring-info focus:border-transparent
             transition-all
           `}
         />
         {errors.city && (
-          <p className="text-sm text-red-600 mt-1">{errors.city}</p>
+          <p className="text-sm text-error mt-1">{errors.city}</p>
         )}
       </div>
 
@@ -90,7 +90,7 @@ export const Step3Location = ({ formData, errors, updateField }: Step3Props) => 
           onChange={(e) => updateField('postalCode', e.target.value)}
           placeholder="Ex: 08001"
           maxLength={5}
-          className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+          className="w-full px-4 py-3 rounded-lg border border-border focus:ring-2 focus:ring-info focus:border-transparent transition-all"
         />
         <p className="text-sm text-gray-500 mt-1">
           No es mostrarà públicament, només per filtrar cerca
@@ -113,14 +113,14 @@ export const Step3Location = ({ formData, errors, updateField }: Step3Props) => 
         <div className="space-y-3">
           {/* Recogida en persona */}
           <label className={`
-            flex items-start p-4 border-2 rounded-lg cursor-pointer transition-all hover:bg-gray-50
-            ${formData.pickupAvailable ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}
+            flex items-start p-4 border-2 rounded-lg cursor-pointer transition-all hover:bg-slate-50
+            ${formData.pickupAvailable ? 'border-info bg-info/10' : 'border-border-light'}
           `}>
             <input
               type="checkbox"
               checked={formData.pickupAvailable}
               onChange={(e) => updateField('pickupAvailable', e.target.checked)}
-              className="mt-1 w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+              className="mt-1 w-5 h-5 text-info rounded focus:ring-2 focus:ring-info"
             />
             <div className="ml-3 flex-1">
               <div className="flex items-center gap-2">
@@ -137,14 +137,14 @@ export const Step3Location = ({ formData, errors, updateField }: Step3Props) => 
 
           {/* Envío disponible */}
           <label className={`
-            flex items-start p-4 border-2 rounded-lg cursor-pointer transition-all hover:bg-gray-50
-            ${formData.shippingAvailable ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}
+            flex items-start p-4 border-2 rounded-lg cursor-pointer transition-all hover:bg-slate-50
+            ${formData.shippingAvailable ? 'border-info bg-info/10' : 'border-border-light'}
           `}>
             <input
               type="checkbox"
               checked={formData.shippingAvailable}
               onChange={(e) => updateField('shippingAvailable', e.target.checked)}
-              className="mt-1 w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+              className="mt-1 w-5 h-5 text-info rounded focus:ring-2 focus:ring-info"
             />
             <div className="ml-3 flex-1">
               <div className="flex items-center gap-2">
@@ -161,18 +161,18 @@ export const Step3Location = ({ formData, errors, updateField }: Step3Props) => 
 
           {/* Envío incluido */}
           <label className={`
-            flex items-start p-4 border-2 rounded-lg cursor-pointer transition-all hover:bg-gray-50
-            ${formData.shippingIncluded ? 'border-green-500 bg-green-50' : 'border-gray-200'}
+            flex items-start p-4 border-2 rounded-lg cursor-pointer transition-all hover:bg-slate-50
+            ${formData.shippingIncluded ? 'border-success bg-success/10' : 'border-border-light'}
           `}>
             <input
               type="checkbox"
               checked={formData.shippingIncluded}
               onChange={(e) => updateField('shippingIncluded', e.target.checked)}
-              className="mt-1 w-5 h-5 text-green-600 rounded focus:ring-2 focus:ring-green-500"
+              className="mt-1 w-5 h-5 text-success rounded focus:ring-2 focus:ring-success"
             />
             <div className="ml-3 flex-1">
               <div className="flex items-center gap-2">
-                <Truck className="w-5 h-5 text-green-600" />
+                <Truck className="w-5 h-5 text-success" />
                 <span className="font-medium text-gray-900">
                   Enviament inclòs
                 </span>
@@ -185,16 +185,16 @@ export const Step3Location = ({ formData, errors, updateField }: Step3Props) => 
         </div>
 
         {errors.delivery && (
-          <p className="text-sm text-red-600 mt-2">{errors.delivery}</p>
+          <p className="text-sm text-error mt-2">{errors.delivery}</p>
         )}
       </div>
 
       {/* Info Box */}
-      <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-        <p className="text-sm text-orange-800 font-medium mb-2">
+      <div className="bg-warning/10 border border-warning/30 rounded-lg p-4">
+        <p className="text-sm text-warning-dark font-medium mb-2">
           📍 Privacitat i ubicació:
         </p>
-        <ul className="text-sm text-orange-700 space-y-1">
+        <ul className="text-sm text-warning space-y-1">
           <li>• La ubicació exacta només es comparteix després del contacte</li>
           <li>• El codi postal no es mostra públicament</li>
           <li>• Només es mostra la província i població</li>

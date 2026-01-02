@@ -41,11 +41,13 @@ export function LinkCard({ link, viewMode }: LinkCardProps) {
     return (
       <div
         style={{
-          backgroundColor: '#fff',
-          borderRadius: '12px',
-          padding: '20px',
-          border: isHovered ? '2px solid #3b82f6' : '2px solid #e5e7eb',
-          boxShadow: isHovered ? '0 8px 16px -4px rgba(59, 130, 246, 0.2)' : '0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06)',
+          backgroundColor: 'var(--LinkCard-background, #ffffff)',
+          borderRadius: 'var(--LinkCard-border-radius-list, 12px)',
+          padding: 'var(--LinkCard-padding, 20px)',
+          border: `2px solid ${isHovered ? 'var(--LinkCard-hover-border-color, #3b82f6)' : 'var(--LinkCard-border-color, #e5e7eb)'}`,
+          boxShadow: isHovered
+            ? 'var(--LinkCard-hover-shadow, 0 8px 16px -4px rgba(59, 130, 246, 0.2))'
+            : 'var(--LinkCard-shadow, 0 4px 6px -1px rgba(59, 130, 246, 0.1))',
           cursor: 'default',
           transition: 'all 0.2s ease-in-out',
           transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
@@ -61,8 +63,8 @@ export function LinkCard({ link, viewMode }: LinkCardProps) {
             position: 'absolute',
             top: '16px',
             right: '16px',
-            backgroundColor: '#3b82f6',
-            color: 'white',
+            backgroundColor: 'var(--LinkCard-highlighted-background, #3b82f6)',
+            color: 'var(--LinkCard-highlighted-color, white)',
             padding: '4px 8px',
             borderRadius: '4px',
             fontSize: '10px',
@@ -78,8 +80,8 @@ export function LinkCard({ link, viewMode }: LinkCardProps) {
         }}>
           {/* Logo */}
           <div style={{
-            width: '80px',
-            height: '80px',
+            width: 'var(--LinkCard-logo-size-list, 80px)',
+            height: 'var(--LinkCard-logo-size-list, 80px)',
             borderRadius: '12px',
             backgroundImage: `url(${link.logo})`,
             backgroundSize: 'cover',
@@ -100,7 +102,7 @@ export function LinkCard({ link, viewMode }: LinkCardProps) {
                 <h3 style={{
                   fontSize: '16px',
                   fontWeight: '600',
-                  color: '#2c3e50',
+                  color: 'var(--LinkCard-title-color, #2c3e50)',
                   margin: '0 0 4px 0',
                   lineHeight: '1.3'
                 }}>
@@ -108,7 +110,7 @@ export function LinkCard({ link, viewMode }: LinkCardProps) {
                 </h3>
                 <p style={{
                   fontSize: '13px',
-                  color: '#3b82f6',
+                  color: 'var(--LinkCard-slogan-color, #3b82f6)',
                   margin: '0 0 8px 0',
                   fontStyle: 'italic'
                 }}>
@@ -122,8 +124,8 @@ export function LinkCard({ link, viewMode }: LinkCardProps) {
                 }}>
                   <span style={{
                     fontSize: '12px',
-                    color: '#6b7280',
-                    backgroundColor: '#f3f4f6',
+                    color: 'var(--LinkCard-category-text-color, #6b7280)',
+                    backgroundColor: 'var(--LinkCard-category-background, #f3f4f6)',
                     padding: '2px 6px',
                     borderRadius: '4px',
                     fontWeight: '500'
@@ -132,7 +134,7 @@ export function LinkCard({ link, viewMode }: LinkCardProps) {
                   </span>
                   <span style={{
                     fontSize: '12px',
-                    color: '#8e8e93'
+                    color: 'var(--LinkCard-meta-color, #8e8e93)'
                   }}>
                     {link.totalVisits} visites
                   </span>
@@ -144,8 +146,12 @@ export function LinkCard({ link, viewMode }: LinkCardProps) {
                 onClick={handleToggleFavorite}
                 style={{
                   padding: '4px',
-                  backgroundColor: link.isFavorite ? '#ef4444' : 'transparent',
-                  color: link.isFavorite ? 'white' : '#6b7280',
+                  backgroundColor: link.isFavorite
+                    ? 'var(--LinkCard-favorite-active-background, #ef4444)'
+                    : 'transparent',
+                  color: link.isFavorite
+                    ? 'var(--LinkCard-favorite-active-color, white)'
+                    : 'var(--LinkCard-favorite-color, #6b7280)',
                   border: 'none',
                   borderRadius: '4px',
                   fontSize: '12px',
@@ -158,7 +164,7 @@ export function LinkCard({ link, viewMode }: LinkCardProps) {
 
             <p style={{
               fontSize: '13px',
-              color: '#6c757d',
+              color: 'var(--LinkCard-description-color, #6c757d)',
               margin: '0 0 12px 0',
               lineHeight: '1.4',
               overflow: 'hidden',
@@ -182,19 +188,19 @@ export function LinkCard({ link, viewMode }: LinkCardProps) {
               }}>
                 <span style={{
                   fontSize: '12px',
-                  color: '#6c757d'
+                  color: 'var(--LinkCard-contact-color, #6c757d)'
                 }}>
                   Tel: {link.phone}
                 </span>
                 <span style={{
                   fontSize: '12px',
-                  color: '#6c757d'
+                  color: 'var(--LinkCard-contact-color, #6c757d)'
                 }}>
                   {link.email}
                 </span>
                 <span style={{
                   fontSize: '11px',
-                  color: '#8e8e93'
+                  color: 'var(--LinkCard-meta-color, #8e8e93)'
                 }}>
                   {link.createdAt}
                 </span>
@@ -204,8 +210,8 @@ export function LinkCard({ link, viewMode }: LinkCardProps) {
                 onClick={handleVisitWebsite}
                 style={{
                   padding: '8px 16px',
-                  backgroundColor: '#3b82f6',
-                  color: 'white',
+                  backgroundColor: 'var(--LinkCard-button-background, #3b82f6)',
+                  color: 'var(--LinkCard-button-color, white)',
                   border: 'none',
                   borderRadius: '6px',
                   fontSize: '12px',
@@ -214,10 +220,10 @@ export function LinkCard({ link, viewMode }: LinkCardProps) {
                   transition: 'all 0.2s'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#2563eb';
+                  e.currentTarget.style.backgroundColor = 'var(--LinkCard-button-hover-background, #2563eb)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#3b82f6';
+                  e.currentTarget.style.backgroundColor = 'var(--LinkCard-button-background, #3b82f6)';
                 }}
               >
                 Accedir a la web
@@ -229,15 +235,17 @@ export function LinkCard({ link, viewMode }: LinkCardProps) {
     );
   }
 
-  // Vista Grid - simplificada
+  // Vista Grid
   return (
     <div
       style={{
-        backgroundColor: '#fff',
-        borderRadius: '16px',
+        backgroundColor: 'var(--LinkCard-background, #ffffff)',
+        borderRadius: 'var(--LinkCard-border-radius, 16px)',
         overflow: 'hidden',
-        border: isHovered ? '2px solid #3b82f6' : '2px solid #e5e7eb',
-        boxShadow: isHovered ? '0 8px 16px -4px rgba(59, 130, 246, 0.2)' : '0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06)',
+        border: `2px solid ${isHovered ? 'var(--LinkCard-hover-border-color, #3b82f6)' : 'var(--LinkCard-border-color, #e5e7eb)'}`,
+        boxShadow: isHovered
+          ? 'var(--LinkCard-hover-shadow, 0 8px 16px -4px rgba(59, 130, 246, 0.2))'
+          : 'var(--LinkCard-shadow, 0 4px 6px -1px rgba(59, 130, 246, 0.1))',
         cursor: 'default',
         transition: 'all 0.2s ease-in-out',
         transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
@@ -255,8 +263,8 @@ export function LinkCard({ link, viewMode }: LinkCardProps) {
           position: 'absolute',
           top: '12px',
           left: '12px',
-          backgroundColor: '#3b82f6',
-          color: 'white',
+          backgroundColor: 'var(--LinkCard-highlighted-background, #3b82f6)',
+          color: 'var(--LinkCard-highlighted-color, white)',
           padding: '4px 8px',
           borderRadius: '6px',
           fontSize: '10px',
@@ -275,8 +283,12 @@ export function LinkCard({ link, viewMode }: LinkCardProps) {
           top: '12px',
           right: '12px',
           padding: '6px',
-          backgroundColor: link.isFavorite ? '#ef4444' : 'rgba(255,255,255,0.9)',
-          color: link.isFavorite ? 'white' : '#6b7280',
+          backgroundColor: link.isFavorite
+            ? 'var(--LinkCard-favorite-active-background, #ef4444)'
+            : 'rgba(255,255,255,0.9)',
+          color: link.isFavorite
+            ? 'var(--LinkCard-favorite-active-color, white)'
+            : 'var(--LinkCard-favorite-color, #6b7280)',
           border: 'none',
           borderRadius: '50%',
           fontSize: '14px',
@@ -295,7 +307,7 @@ export function LinkCard({ link, viewMode }: LinkCardProps) {
 
       {/* Logo principal */}
       <div style={{
-        height: '120px',
+        height: 'var(--LinkCard-cover-height, 120px)',
         backgroundImage: `url(${link.logo})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
@@ -307,8 +319,8 @@ export function LinkCard({ link, viewMode }: LinkCardProps) {
           position: 'absolute',
           bottom: '8px',
           left: '8px',
-          backgroundColor: 'rgba(59, 130, 246, 0.9)',
-          color: 'white',
+          backgroundColor: 'var(--LinkCard-category-badge-background, rgba(59, 130, 246, 0.9))',
+          color: 'var(--LinkCard-category-badge-color, white)',
           padding: '4px 8px',
           borderRadius: '4px',
           fontSize: '11px',
@@ -320,7 +332,7 @@ export function LinkCard({ link, viewMode }: LinkCardProps) {
 
       {/* Contenido */}
       <div style={{
-        padding: '16px',
+        padding: 'var(--LinkCard-content-padding, 16px)',
         flex: 1,
         display: 'flex',
         flexDirection: 'column'
@@ -329,7 +341,7 @@ export function LinkCard({ link, viewMode }: LinkCardProps) {
         <h3 style={{
           fontSize: '16px',
           fontWeight: '600',
-          color: '#2c3e50',
+          color: 'var(--LinkCard-title-color, #2c3e50)',
           margin: '0 0 6px 0',
           lineHeight: '1.3',
           overflow: 'hidden',
@@ -343,7 +355,7 @@ export function LinkCard({ link, viewMode }: LinkCardProps) {
         {/* Slogan */}
         <p style={{
           fontSize: '12px',
-          color: '#3b82f6',
+          color: 'var(--LinkCard-slogan-color, #3b82f6)',
           margin: '0 0 12px 0',
           fontStyle: 'italic',
           overflow: 'hidden',
@@ -364,7 +376,7 @@ export function LinkCard({ link, viewMode }: LinkCardProps) {
         }}>
           <div style={{
             fontSize: '12px',
-            color: '#6c757d'
+            color: 'var(--LinkCard-contact-color, #6c757d)'
           }}>
             <div>Tel: {link.phone}</div>
             <div>{link.email}</div>
@@ -374,8 +386,8 @@ export function LinkCard({ link, viewMode }: LinkCardProps) {
             onClick={handleVisitWebsite}
             style={{
               padding: '8px 12px',
-              backgroundColor: '#3b82f6',
-              color: 'white',
+              backgroundColor: 'var(--LinkCard-button-background, #3b82f6)',
+              color: 'var(--LinkCard-button-color, white)',
               border: 'none',
               borderRadius: '6px',
               fontSize: '12px',
@@ -384,10 +396,10 @@ export function LinkCard({ link, viewMode }: LinkCardProps) {
               transition: 'all 0.2s'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#2563eb';
+              e.currentTarget.style.backgroundColor = 'var(--LinkCard-button-hover-background, #2563eb)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#3b82f6';
+              e.currentTarget.style.backgroundColor = 'var(--LinkCard-button-background, #3b82f6)';
             }}
           >
             Accedir a la web

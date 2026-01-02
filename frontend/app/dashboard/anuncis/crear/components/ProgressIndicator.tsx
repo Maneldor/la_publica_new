@@ -25,14 +25,14 @@ export const ProgressIndicator = ({ currentStep, totalSteps, steps }: ProgressIn
                 <div
                   className={`
                     w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all
-                    ${isCompleted ? 'bg-green-500 text-white' : ''}
-                    ${isCurrent ? 'bg-blue-600 text-white' : ''}
-                    ${!isCompleted && !isCurrent ? 'bg-gray-200 text-gray-600' : ''}
+                    ${isCompleted ? 'bg-success text-white' : ''}
+                    ${isCurrent ? 'bg-primary text-white' : ''}
+                    ${!isCompleted && !isCurrent ? 'bg-slate-200 text-slate-600' : ''}
                   `}
                 >
                   {isCompleted ? <Check className="w-5 h-5" /> : stepNumber}
                 </div>
-                <p className={`mt-2 text-sm text-center ${isCurrent ? 'font-semibold text-blue-600' : 'text-gray-600'}`}>
+                <p className={`mt-2 text-sm text-center ${isCurrent ? 'font-semibold text-primary' : 'text-slate-600'}`}>
                   {step}
                 </p>
               </div>
@@ -42,7 +42,7 @@ export const ProgressIndicator = ({ currentStep, totalSteps, steps }: ProgressIn
                 <div
                   className={`
                     flex-1 h-1 mx-2 transition-all
-                    ${isCompleted ? 'bg-green-500' : 'bg-gray-200'}
+                    ${isCompleted ? 'bg-success' : 'bg-slate-200'}
                   `}
                 />
               )}

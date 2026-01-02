@@ -52,7 +52,7 @@ async function verifyAccess() {
   }
   const userRole = (session.user as any).role || 'USER'
   const userType = (session.user as any).userType || 'USER'
-  const isSupervisor = ['SUPER_ADMIN', 'ADMIN', 'ACCOUNT_MANAGER'].includes(userType)
+  const isSupervisor = ['SUPER_ADMIN', 'ADMIN', 'ADMIN_GESTIO', 'ACCOUNT_MANAGER'].includes(userType)
   return { user: session.user, isSupervisor, userRole }
 }
 

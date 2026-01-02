@@ -71,6 +71,13 @@ export async function GET(request: NextRequest) {
         createdAt: true,
         updatedAt: true,
         lastLogin: true,
+        // Incluir empresa asociada
+        memberCompany: {
+          select: { id: true, name: true }
+        },
+        ownedCompany: {
+          select: { id: true, name: true }
+        }
       },
       orderBy: {
         createdAt: 'desc'
@@ -78,21 +85,28 @@ export async function GET(request: NextRequest) {
     });
 
     // Formatear respuesta para compatibilidad con el frontend
-    const formattedUsers = users.map(user => ({
-      id: user.id,
-      nick: user.nick,
-      email: user.email,
-      name: user.name,
-      image: user.image || null,
-      role: user.role,
-      userType: user.userType,
-      isActive: user.isActive,
-      isEmailVerified: user.isEmailVerified || false,
-      communityId: user.communityId || null,
-      cargo: user.cargo || null,
-      createdAt: user.createdAt.toISOString(),
-      lastLogin: user.lastLogin?.toISOString() || null,
-    }));
+    const formattedUsers = users.map(user => {
+      // Determinar la empresa asociada (prioridad: ownedCompany > memberCompany)
+      const company = user.ownedCompany || user.memberCompany
+      return {
+        id: user.id,
+        nick: user.nick,
+        email: user.email,
+        name: user.name,
+        image: user.image || null,
+        role: user.role,
+        userType: user.userType,
+        isActive: user.isActive,
+        isEmailVerified: user.isEmailVerified || false,
+        communityId: user.communityId || null,
+        cargo: user.cargo || null,
+        createdAt: user.createdAt.toISOString(),
+        lastLogin: user.lastLogin?.toISOString() || null,
+        // Datos de empresa
+        companyId: company?.id || null,
+        companyName: company?.name || null,
+      }
+    });
 
     return NextResponse.json({
       success: true,
@@ -214,13 +228,19 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Crear nombre completo basado en userData
-    let fullName = '';
+    // Crear nombre completo de la persona de contacto
+    let contactPersonName = '';
     if (userData.firstName && userData.lastName) {
-      fullName = `${userData.firstName} ${userData.lastName}`;
+      contactPersonName = `${userData.firstName} ${userData.lastName}`;
     } else if (userData.name) {
-      fullName = userData.name;
+      contactPersonName = userData.name;
     }
+
+    // Para usuarios COMPANY: name = nombre empresa, cargo = persona contacto
+    // Para otros usuarios: name = nombre persona, cargo = sector/cargo
+    const isCompanyUser = userType === 'EMPRESA' || userType === 'COMPANY_OWNER';
+    const userDisplayName = isCompanyUser ? (companyName || contactPersonName) : contactPersonName;
+    const userCargo = isCompanyUser ? contactPersonName : (sector || null);
 
     // Usar transacción para crear usuario y empresa atómicamente
     const result = await prismaClient.$transaction(async (tx) => {
@@ -228,8 +248,9 @@ export async function POST(request: NextRequest) {
       console.log('📝 Datos a guardar:', {
         userType: prismaUserType,
         role: role,
-        sector: sector,
-        cargo: sector || null
+        isCompanyUser,
+        userDisplayName,
+        userCargo
       });
 
       // 1. Crear usuario primero
@@ -237,11 +258,11 @@ export async function POST(request: NextRequest) {
         data: {
           email,
           password: hashedPassword,
-          name: fullName || null,
+          name: userDisplayName || null, // Empresa para COMPANY, persona para otros
           userType: prismaUserType,
           role: role,
           isActive: true,
-          cargo: sector || null, // Guardar el sector en campo cargo
+          cargo: userCargo, // Persona contacto para COMPANY, sector para otros
         }
       });
 

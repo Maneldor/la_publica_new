@@ -168,21 +168,32 @@ export const Step2Personal = ({ data, updateProfile, isSaving }: Step2Props) => 
   };
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Header */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+      <div style={{ marginBottom: '32px' }}>
+        <h2 style={{
+          fontSize: '24px',
+          fontWeight: '700',
+          color: 'var(--Step2Personal-title-color, #111827)',
+          marginBottom: '8px'
+        }}>
           Informació Personal
         </h2>
-        <p className="text-gray-600">
+        <p style={{ color: 'var(--Step2Personal-description-color, #4b5563)' }}>
           Afegeix detalls sobre tu que ajudaran altres usuaris a conèixer-te millor
         </p>
       </div>
 
       {/* Bio */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          <FileText className="w-4 h-4 inline mr-2" />
+        <label style={{
+          display: 'block',
+          fontSize: '14px',
+          fontWeight: '500',
+          color: 'var(--Step2Personal-label-color, #374151)',
+          marginBottom: '8px'
+        }}>
+          <FileText style={{ width: '16px', height: '16px', display: 'inline', marginRight: '8px' }} />
           Descripció Personal *
         </label>
         <textarea
@@ -192,21 +203,35 @@ export const Step2Personal = ({ data, updateProfile, isSaving }: Step2Props) => 
           placeholder="Explica'ns sobre tu: la teva passió pel treball públic, experiència, interessos professionals, objectius... Aquesta descripció apareixerà a la secció 'Sobre mi' del teu perfil."
           rows={6}
           maxLength={1000}
-          className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none text-gray-900 placeholder:text-gray-400"
+          style={{
+            width: '100%',
+            padding: '12px 16px',
+            borderRadius: '8px',
+            border: '1px solid var(--Step2Personal-input-border, #d1d5db)',
+            resize: 'none',
+            color: 'var(--Step2Personal-input-text, #111827)',
+            backgroundColor: 'var(--Step2Personal-input-bg, #ffffff)',
+            transition: 'all 0.2s'
+          }}
         />
-        <div className="flex justify-between mt-1">
-          <div></div>
-          <p className="text-sm text-gray-500">
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
+          <p style={{ fontSize: '14px', color: 'var(--Step2Personal-hint-color, #6b7280)' }}>
             {formData.bio.length}/1000
           </p>
         </div>
       </div>
 
       {/* Birth Date and Location */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '24px' }}>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            <Calendar className="w-4 h-4 inline mr-2" />
+          <label style={{
+            display: 'block',
+            fontSize: '14px',
+            fontWeight: '500',
+            color: 'var(--Step2Personal-label-color, #374151)',
+            marginBottom: '8px'
+          }}>
+            <Calendar style={{ width: '16px', height: '16px', display: 'inline', marginRight: '8px' }} />
             Data de Naixement
           </label>
           <input
@@ -215,16 +240,30 @@ export const Step2Personal = ({ data, updateProfile, isSaving }: Step2Props) => 
             onChange={(e) => handleChange('birthDate', e.target.value)}
             onBlur={() => handleBlur('birthDate')}
             max={new Date().toISOString().split('T')[0]}
-            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              borderRadius: '8px',
+              border: '1px solid var(--Step2Personal-input-border, #d1d5db)',
+              color: 'var(--Step2Personal-input-text, #111827)',
+              backgroundColor: 'var(--Step2Personal-input-bg, #ffffff)',
+              transition: 'all 0.2s'
+            }}
           />
-          <p className="text-sm text-gray-500 mt-1">
+          <p style={{ fontSize: '14px', color: 'var(--Step2Personal-hint-color, #6b7280)', marginTop: '4px' }}>
             Opcional - només l'any serà visible públicament
           </p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            <MapPin className="w-4 h-4 inline mr-2" />
+          <label style={{
+            display: 'block',
+            fontSize: '14px',
+            fontWeight: '500',
+            color: 'var(--Step2Personal-label-color, #374151)',
+            marginBottom: '8px'
+          }}>
+            <MapPin style={{ width: '16px', height: '16px', display: 'inline', marginRight: '8px' }} />
             Ciutat
           </label>
           <input
@@ -233,13 +272,27 @@ export const Step2Personal = ({ data, updateProfile, isSaving }: Step2Props) => 
             onChange={(e) => handleChange('city', e.target.value)}
             onBlur={() => handleBlur('city')}
             placeholder="Ex: Barcelona"
-            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              borderRadius: '8px',
+              border: '1px solid var(--Step2Personal-input-border, #d1d5db)',
+              color: 'var(--Step2Personal-input-text, #111827)',
+              backgroundColor: 'var(--Step2Personal-input-bg, #ffffff)',
+              transition: 'all 0.2s'
+            }}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            <MapPin className="w-4 h-4 inline mr-2" />
+          <label style={{
+            display: 'block',
+            fontSize: '14px',
+            fontWeight: '500',
+            color: 'var(--Step2Personal-label-color, #374151)',
+            marginBottom: '8px'
+          }}>
+            <MapPin style={{ width: '16px', height: '16px', display: 'inline', marginRight: '8px' }} />
             Província
           </label>
           <input
@@ -248,16 +301,30 @@ export const Step2Personal = ({ data, updateProfile, isSaving }: Step2Props) => 
             onChange={(e) => handleChange('province', e.target.value)}
             onBlur={() => handleBlur('province')}
             placeholder="Ex: Catalunya"
-            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              borderRadius: '8px',
+              border: '1px solid var(--Step2Personal-input-border, #d1d5db)',
+              color: 'var(--Step2Personal-input-text, #111827)',
+              backgroundColor: 'var(--Step2Personal-input-bg, #ffffff)',
+              transition: 'all 0.2s'
+            }}
           />
         </div>
       </div>
 
       {/* Current Job */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px' }}>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            <Briefcase className="w-4 h-4 inline mr-2" />
+          <label style={{
+            display: 'block',
+            fontSize: '14px',
+            fontWeight: '500',
+            color: 'var(--Step2Personal-label-color, #374151)',
+            marginBottom: '8px'
+          }}>
+            <Briefcase style={{ width: '16px', height: '16px', display: 'inline', marginRight: '8px' }} />
             Organització
           </label>
           <input
@@ -267,13 +334,27 @@ export const Step2Personal = ({ data, updateProfile, isSaving }: Step2Props) => 
             onBlur={() => handleBlur('organization')}
             placeholder="Ex: Ajuntament de Barcelona"
             maxLength={100}
-            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              borderRadius: '8px',
+              border: '1px solid var(--Step2Personal-input-border, #d1d5db)',
+              color: 'var(--Step2Personal-input-text, #111827)',
+              backgroundColor: 'var(--Step2Personal-input-bg, #ffffff)',
+              transition: 'all 0.2s'
+            }}
           />
         </div>
-        
+
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            <Briefcase className="w-4 h-4 inline mr-2" />
+          <label style={{
+            display: 'block',
+            fontSize: '14px',
+            fontWeight: '500',
+            color: 'var(--Step2Personal-label-color, #374151)',
+            marginBottom: '8px'
+          }}>
+            <Briefcase style={{ width: '16px', height: '16px', display: 'inline', marginRight: '8px' }} />
             Càrrec
           </label>
           <input
@@ -283,12 +364,26 @@ export const Step2Personal = ({ data, updateProfile, isSaving }: Step2Props) => 
             onBlur={() => handleBlur('position')}
             placeholder="Ex: Tècnic en Transformació Digital"
             maxLength={100}
-            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              borderRadius: '8px',
+              border: '1px solid var(--Step2Personal-input-border, #d1d5db)',
+              color: 'var(--Step2Personal-input-text, #111827)',
+              backgroundColor: 'var(--Step2Personal-input-bg, #ffffff)',
+              transition: 'all 0.2s'
+            }}
           />
         </div>
-        
+
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label style={{
+            display: 'block',
+            fontSize: '14px',
+            fontWeight: '500',
+            color: 'var(--Step2Personal-label-color, #374151)',
+            marginBottom: '8px'
+          }}>
             Departament
           </label>
           <input
@@ -298,12 +393,26 @@ export const Step2Personal = ({ data, updateProfile, isSaving }: Step2Props) => 
             onBlur={() => handleBlur('department')}
             placeholder="Ex: Sistemes d'Informació"
             maxLength={100}
-            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              borderRadius: '8px',
+              border: '1px solid var(--Step2Personal-input-border, #d1d5db)',
+              color: 'var(--Step2Personal-input-text, #111827)',
+              backgroundColor: 'var(--Step2Personal-input-bg, #ffffff)',
+              transition: 'all 0.2s'
+            }}
           />
         </div>
-        
+
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label style={{
+            display: 'block',
+            fontSize: '14px',
+            fontWeight: '500',
+            color: 'var(--Step2Personal-label-color, #374151)',
+            marginBottom: '8px'
+          }}>
             Anys al Sector Públic
           </label>
           <input
@@ -313,7 +422,15 @@ export const Step2Personal = ({ data, updateProfile, isSaving }: Step2Props) => 
             value={formData.yearsInPublicSector}
             onChange={(e) => handleChange('yearsInPublicSector', parseInt(e.target.value) || 0)}
             onBlur={() => handleBlur('yearsInPublicSector')}
-            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              borderRadius: '8px',
+              border: '1px solid var(--Step2Personal-input-border, #d1d5db)',
+              color: 'var(--Step2Personal-input-text, #111827)',
+              backgroundColor: 'var(--Step2Personal-input-bg, #ffffff)',
+              transition: 'all 0.2s'
+            }}
           />
         </div>
       </div>
@@ -331,10 +448,16 @@ export const Step2Personal = ({ data, updateProfile, isSaving }: Step2Props) => 
       )}
 
       {/* Personal Website + Headline */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px' }}>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            <Globe className="w-4 h-4 inline mr-2" />
+          <label style={{
+            display: 'block',
+            fontSize: '14px',
+            fontWeight: '500',
+            color: 'var(--Step2Personal-label-color, #374151)',
+            marginBottom: '8px'
+          }}>
+            <Globe style={{ width: '16px', height: '16px', display: 'inline', marginRight: '8px' }} />
             Lloc Web Personal
           </label>
           <input
@@ -343,16 +466,30 @@ export const Step2Personal = ({ data, updateProfile, isSaving }: Step2Props) => 
             onChange={(e) => handleChange('website', e.target.value)}
             onBlur={() => handleBlur('website')}
             placeholder="https://el-meu-web.cat"
-            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              borderRadius: '8px',
+              border: '1px solid var(--Step2Personal-input-border, #d1d5db)',
+              color: 'var(--Step2Personal-input-text, #111827)',
+              backgroundColor: 'var(--Step2Personal-input-bg, #ffffff)',
+              transition: 'all 0.2s'
+            }}
           />
-          <p className="text-sm text-gray-500 mt-1">
+          <p style={{ fontSize: '14px', color: 'var(--Step2Personal-hint-color, #6b7280)', marginTop: '4px' }}>
             Opcional - pot ser el teu blog, portfolio, LinkedIn, etc.
           </p>
         </div>
-        
+
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            <FileText className="w-4 h-4 inline mr-2" />
+          <label style={{
+            display: 'block',
+            fontSize: '14px',
+            fontWeight: '500',
+            color: 'var(--Step2Personal-label-color, #374151)',
+            marginBottom: '8px'
+          }}>
+            <FileText style={{ width: '16px', height: '16px', display: 'inline', marginRight: '8px' }} />
             Títol Professional
           </label>
           <input
@@ -362,20 +499,46 @@ export const Step2Personal = ({ data, updateProfile, isSaving }: Step2Props) => 
             onBlur={() => handleBlur('headline')}
             placeholder="Ex: Expert en Transformació Digital Pública"
             maxLength={100}
-            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400"
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              borderRadius: '8px',
+              border: '1px solid var(--Step2Personal-input-border, #d1d5db)',
+              color: 'var(--Step2Personal-input-text, #111827)',
+              backgroundColor: 'var(--Step2Personal-input-bg, #ffffff)',
+              transition: 'all 0.2s'
+            }}
           />
-          <p className="text-sm text-gray-500 mt-1">
+          <p style={{ fontSize: '14px', color: 'var(--Step2Personal-hint-color, #6b7280)', marginTop: '4px' }}>
             Apareix com a subtítol al teu perfil
           </p>
         </div>
       </div>
 
       {/* Example Bio Section */}
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-        <h4 className="text-sm font-medium text-gray-900 mb-3">
-          💡 Exemple de descripció personal:
+      <div style={{
+        backgroundColor: 'var(--Step2Personal-example-bg, #f9fafb)',
+        border: '1px solid var(--Step2Personal-example-border, #e5e7eb)',
+        borderRadius: '8px',
+        padding: '24px'
+      }}>
+        <h4 style={{
+          fontSize: '14px',
+          fontWeight: '500',
+          color: 'var(--Step2Personal-example-title, #111827)',
+          marginBottom: '12px'
+        }}>
+          Exemple de descripció personal:
         </h4>
-        <div className="text-sm text-gray-700 bg-white p-4 rounded-lg border border-gray-200 italic">
+        <div style={{
+          fontSize: '14px',
+          color: 'var(--Step2Personal-example-text, #374151)',
+          backgroundColor: 'var(--Step2Personal-example-quote-bg, #ffffff)',
+          padding: '16px',
+          borderRadius: '8px',
+          border: '1px solid var(--Step2Personal-example-quote-border, #e5e7eb)',
+          fontStyle: 'italic'
+        }}>
           "Funcionari públic apassionat per la innovació tecnològica i la modernització de l'administració.
           M'especialitzo en transformació digital i processos administratius eficients. Sempre buscant maneres
           de millorar l'experiència ciutadana a través de la tecnologia. Amb més de 10 anys d'experiència en
@@ -384,11 +547,30 @@ export const Step2Personal = ({ data, updateProfile, isSaving }: Step2Props) => 
       </div>
 
       {/* Tips */}
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-        <p className="text-sm text-green-800 font-medium mb-2">
-          ✨ Consells per a una bona descripció:
+      <div style={{
+        backgroundColor: 'var(--Step2Personal-tips-bg, #f0fdf4)',
+        border: '1px solid var(--Step2Personal-tips-border, #bbf7d0)',
+        borderRadius: '8px',
+        padding: '16px'
+      }}>
+        <p style={{
+          fontSize: '14px',
+          color: 'var(--Step2Personal-tips-title, #166534)',
+          fontWeight: '500',
+          marginBottom: '8px'
+        }}>
+          Consells per a una bona descripció:
         </p>
-        <ul className="text-sm text-green-700 space-y-1">
+        <ul style={{
+          fontSize: '14px',
+          color: 'var(--Step2Personal-tips-text, #15803d)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '4px',
+          margin: 0,
+          paddingLeft: '0',
+          listStyle: 'none'
+        }}>
           <li>• Explica la teva passió pel treball en l'administració pública</li>
           <li>• Menciona les teves especialitats o àrees d'expertesa</li>
           <li>• Inclou els teus objectius professionals o personals</li>

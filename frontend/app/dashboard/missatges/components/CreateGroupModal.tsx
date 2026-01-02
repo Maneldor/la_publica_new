@@ -130,12 +130,12 @@ export function CreateGroupModal({ isOpen, onClose, onGroupCreated }: CreateGrou
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: 'rgba(0, 0, 0, 0.5)'
+      backgroundColor: 'var(--CreateGroupModal-overlay, rgba(0, 0, 0, 0.5))'
     }}>
       <div style={{
-        backgroundColor: 'white',
-        borderRadius: '16px',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+        backgroundColor: 'var(--CreateGroupModal-background, #ffffff)',
+        borderRadius: 'var(--CreateGroupModal-border-radius, 16px)',
+        boxShadow: 'var(--CreateGroupModal-shadow, 0 25px 50px -12px rgba(0, 0, 0, 0.25))',
         width: '100%',
         maxWidth: '480px',
         margin: '16px',
@@ -150,14 +150,14 @@ export function CreateGroupModal({ isOpen, onClose, onGroupCreated }: CreateGrou
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '16px 20px',
-          borderBottom: '1px solid #e5e7eb'
+          borderBottom: '1px solid var(--CreateGroupModal-border-color, #e5e7eb)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{
               width: '40px',
               height: '40px',
               borderRadius: '10px',
-              backgroundColor: '#dbeafe',
+              backgroundColor: 'var(--CreateGroupModal-icon-bg, #dbeafe)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
@@ -168,14 +168,14 @@ export function CreateGroupModal({ isOpen, onClose, onGroupCreated }: CreateGrou
               <h3 style={{
                 fontSize: '18px',
                 fontWeight: '600',
-                color: '#1f2937',
+                color: 'var(--CreateGroupModal-title-color, #1f2937)',
                 margin: 0
               }}>
                 Crear grup
               </h3>
               <p style={{
                 fontSize: '13px',
-                color: '#6b7280',
+                color: 'var(--CreateGroupModal-subtitle-color, #6b7280)',
                 margin: 0
               }}>
                 {selectedContacts.length} participant{selectedContacts.length !== 1 ? 's' : ''} seleccionat{selectedContacts.length !== 1 ? 's' : ''}
@@ -200,12 +200,12 @@ export function CreateGroupModal({ isOpen, onClose, onGroupCreated }: CreateGrou
         </div>
 
         {/* Nom del grup */}
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid #e5e7eb' }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--CreateGroupModal-border-color, #e5e7eb)' }}>
           <label style={{
             display: 'block',
             fontSize: '13px',
             fontWeight: '500',
-            color: '#374151',
+            color: 'var(--CreateGroupModal-label-color, #374151)',
             marginBottom: '6px'
           }}>
             Nom del grup
@@ -218,26 +218,26 @@ export function CreateGroupModal({ isOpen, onClose, onGroupCreated }: CreateGrou
             style={{
               width: '100%',
               padding: '10px 14px',
-              border: '2px solid #e5e7eb',
-              borderRadius: '10px',
+              border: '2px solid var(--CreateGroupModal-input-border, #e5e7eb)',
+              borderRadius: 'var(--CreateGroupModal-input-radius, 10px)',
               fontSize: '14px',
-              color: '#1f2937',
-              backgroundColor: '#ffffff',
+              color: 'var(--CreateGroupModal-input-text, #1f2937)',
+              backgroundColor: 'var(--CreateGroupModal-input-bg, #ffffff)',
               outline: 'none',
               transition: 'border-color 0.2s'
             }}
-            onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-            onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+            onFocus={(e) => e.target.style.borderColor = 'var(--CreateGroupModal-focus-color, #3b82f6)'}
+            onBlur={(e) => e.target.style.borderColor = 'var(--CreateGroupModal-input-border, #e5e7eb)'}
           />
         </div>
 
         {/* Cercador de participants */}
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid #e5e7eb' }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--CreateGroupModal-border-color, #e5e7eb)' }}>
           <label style={{
             display: 'block',
             fontSize: '13px',
             fontWeight: '500',
-            color: '#374151',
+            color: 'var(--CreateGroupModal-label-color, #374151)',
             marginBottom: '6px'
           }}>
             Afegir participants
@@ -250,7 +250,7 @@ export function CreateGroupModal({ isOpen, onClose, onGroupCreated }: CreateGrou
               transform: 'translateY(-50%)',
               width: '16px',
               height: '16px',
-              color: '#9ca3af'
+              color: 'var(--CreateGroupModal-icon-muted, #9ca3af)'
             }} />
             <input
               type="text"
@@ -260,16 +260,16 @@ export function CreateGroupModal({ isOpen, onClose, onGroupCreated }: CreateGrou
               style={{
                 width: '100%',
                 padding: '10px 14px 10px 40px',
-                border: '2px solid #e5e7eb',
-                borderRadius: '10px',
+                border: '2px solid var(--CreateGroupModal-input-border, #e5e7eb)',
+                borderRadius: 'var(--CreateGroupModal-input-radius, 10px)',
                 fontSize: '14px',
-                color: '#1f2937',
-                backgroundColor: '#ffffff',
+                color: 'var(--CreateGroupModal-input-text, #1f2937)',
+                backgroundColor: 'var(--CreateGroupModal-input-bg, #ffffff)',
                 outline: 'none',
                 transition: 'border-color 0.2s'
               }}
-              onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-              onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+              onFocus={(e) => e.target.style.borderColor = 'var(--CreateGroupModal-focus-color, #3b82f6)'}
+              onBlur={(e) => e.target.style.borderColor = 'var(--CreateGroupModal-input-border, #e5e7eb)'}
             />
           </div>
         </div>
@@ -400,8 +400,8 @@ export function CreateGroupModal({ isOpen, onClose, onGroupCreated }: CreateGrou
         {error && (
           <div style={{
             padding: '12px 20px',
-            backgroundColor: '#fef2f2',
-            color: '#dc2626',
+            backgroundColor: 'var(--CreateGroupModal-error-bg, #fef2f2)',
+            color: 'var(--CreateGroupModal-error-text, #dc2626)',
             fontSize: '14px',
             textAlign: 'center'
           }}>
@@ -412,7 +412,7 @@ export function CreateGroupModal({ isOpen, onClose, onGroupCreated }: CreateGrou
         {/* Footer amb botons */}
         <div style={{
           padding: '16px 20px',
-          borderTop: '1px solid #e5e7eb',
+          borderTop: '1px solid var(--CreateGroupModal-border-color, #e5e7eb)',
           display: 'flex',
           gap: '12px'
         }}>
@@ -421,12 +421,12 @@ export function CreateGroupModal({ isOpen, onClose, onGroupCreated }: CreateGrou
             style={{
               flex: 1,
               padding: '12px',
-              backgroundColor: '#f3f4f6',
+              backgroundColor: 'var(--CreateGroupModal-cancel-bg, #f3f4f6)',
               border: 'none',
-              borderRadius: '10px',
+              borderRadius: 'var(--CreateGroupModal-input-radius, 10px)',
               fontSize: '14px',
               fontWeight: '500',
-              color: '#374151',
+              color: 'var(--CreateGroupModal-cancel-text, #374151)',
               cursor: 'pointer',
               transition: 'background-color 0.2s'
             }}
@@ -439,12 +439,12 @@ export function CreateGroupModal({ isOpen, onClose, onGroupCreated }: CreateGrou
             style={{
               flex: 1,
               padding: '12px',
-              backgroundColor: isCreating || !groupName.trim() || selectedContacts.length === 0 ? '#9ca3af' : '#3b82f6',
+              backgroundColor: isCreating || !groupName.trim() || selectedContacts.length === 0 ? 'var(--CreateGroupModal-button-disabled, #9ca3af)' : 'var(--CreateGroupModal-primary-button, #3b82f6)',
               border: 'none',
-              borderRadius: '10px',
+              borderRadius: 'var(--CreateGroupModal-input-radius, 10px)',
               fontSize: '14px',
               fontWeight: '500',
-              color: 'white',
+              color: 'var(--CreateGroupModal-button-text, white)',
               cursor: isCreating || !groupName.trim() || selectedContacts.length === 0 ? 'not-allowed' : 'pointer',
               display: 'flex',
               alignItems: 'center',

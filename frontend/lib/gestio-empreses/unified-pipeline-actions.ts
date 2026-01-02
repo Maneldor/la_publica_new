@@ -78,13 +78,6 @@ function getColumnsForRole(role: string): PipelineColumn[] {
         color: 'blue'
       },
       {
-        id: 'formalitzar',
-        label: 'Formalitzar contracte',
-        stages: ['FORMALITZANT'],
-        type: 'lead',
-        color: 'amber'
-      },
-      {
         id: 'empresa_creada',
         label: 'Empresa creada',
         stages: ['CONTRACTAT'],
@@ -329,14 +322,14 @@ async function getSubordinates(userId: string, role: string): Promise<{
 }[]> {
   const result: { id: string; name: string; email: string; role: string; image?: string }[] = []
 
-  // SUPER_ADMIN y ADMIN ven toda la jerarquía
-  if (['SUPER_ADMIN', 'ADMIN'].includes(role)) {
+  // SUPER_ADMIN, ADMIN i ADMIN_GESTIO veuen tota la jerarquia
+  if (['SUPER_ADMIN', 'ADMIN', 'ADMIN_GESTIO'].includes(role)) {
     const allSubordinates = await getAllSubordinatesRecursive(userId)
     return allSubordinates
   }
 
-  // ADMIN_GESTIO ve CRMs y Gestores
-  if (role === 'ADMIN_GESTIO') {
+  // CRM veu els seus gestors subordinats
+  if (role.includes('CRM')) {
     const subordinates = await prismaClient.user.findMany({
       where: {
         supervisorId: userId,
